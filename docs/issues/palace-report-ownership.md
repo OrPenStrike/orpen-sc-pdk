@@ -55,11 +55,14 @@ Verified local changes:
   local Palace Electrostatic coarse solve, so the public fixture proves
   generated terminal matrix CSVs can be loaded back with `positive`/`negative`
   labels from `palace_index_map.json`.
+- `orpen-sc-pdk` now validates the public Driven CPW fixture against a real
+  optional local Palace coarse solve, proving `port-S.csv` loads through
+  `gsim.palace.SParams` with `o1`/`o2` port labels.
 
 Remaining slices:
 
-- run real Palace coarse-solve smoke checks for Driven and Eigenmode fixtures
-  when a Palace binary is available on the local machine;
+- run a real Palace coarse-solve smoke check for the Eigenmode fixture when a
+  Palace binary is available on the local machine;
 - extend the reusable report layer toward material-loss/T1/gamma summaries only
   where that information belongs in public `gsim` schemas or PDK-owned material
   overlays;

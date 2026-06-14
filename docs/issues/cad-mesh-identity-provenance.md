@@ -83,6 +83,10 @@ Verified local changes:
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
   indices;
+- the same driven fixture now has an opt-in local Palace coarse-solve smoke
+  path that confirms the generated mesh/config can produce a non-empty
+  `port-S.csv` and parse it back through public `gsim.palace.SParams` with
+  `o1`/`o2` port labels;
 - `orpen-sc-pdk` local test `tests/test_gsim_eigenmode_resonator_workflow.py`:
   proves the manifest/index-map artifacts on a generated public resonator
   eigenmode mesh instead of hand-built physical group dictionaries;
@@ -130,11 +134,14 @@ Verified local changes:
 - validation after the report-loader smoke extension: the public electrostatic
   fixture passed both the default skip path and the opt-in local Palace solve,
   including terminal matrix loading through `palace_index_map.json`.
+- validation after the Driven smoke extension: the public driven CPW fixture
+  passed both the default skip path and the opt-in local Palace solve,
+  including S-parameter parsing through `gsim.palace.SParams`.
 
 Remaining implementation slices:
 
-- run optional local Palace coarse-solve smoke checks for Driven and Eigenmode
-  public fixtures when a Palace binary is available on the local machine;
+- run an optional local Palace coarse-solve smoke check for the Eigenmode public
+  fixture when a Palace binary is available on the local machine;
 - extend report summaries toward material-loss/T1/gamma only after the public
   ownership split between `gsim` result schemas and PDK material overlays is
   explicit.

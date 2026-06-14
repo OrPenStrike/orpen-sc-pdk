@@ -40,12 +40,15 @@ Verified local changes:
   Electrostatic mesh/config/artifact handoff through local editable `gsim`.
 - the public electrostatic fixture now has an opt-in local Palace coarse solve
   that verifies non-empty terminal capacitance outputs.
+- the public driven CPW fixture now has an opt-in local Palace coarse solve that
+  verifies generated Driven config and CPW lumped-port metadata can produce
+  parsed `SParams` output through local `gsim`.
 
 Remaining slices:
 
 - convert executable fixtures into publication-safe notebooks or examples;
-- add optional local Palace coarse-solve smoke checks for Driven and Eigenmode
-  fixtures when available.
+- add an optional local Palace coarse-solve smoke check for the Eigenmode
+  fixture when available.
 
 Related features:
 

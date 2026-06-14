@@ -34,6 +34,10 @@ Current public notebook:
 
 Current executable smoke coverage:
 
+- the public Driven CPW fixture has an opt-in local Palace coarse solve guarded
+  by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
+- the Driven smoke verifies `gsim.palace.SParams` parsing, `o1`/`o2` port
+  labels, and non-empty `port-S.csv` output;
 - the public Electrostatic capacitor fixture has an opt-in local Palace coarse
   solve guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
 - the smoke path accepts either a Palace SIF (`PALACE_SIF`) or a direct local
@@ -42,7 +46,7 @@ Current executable smoke coverage:
 - the Electrostatic smoke verifies both non-empty solver matrix outputs and the
   `gsim.palace.load_terminal_matrix()` report-loader round trip through
   `palace_index_map.json`;
-- Driven and Eigenmode still need equivalent opt-in solver smokes.
+- Eigenmode still needs an equivalent opt-in solver smoke.
 
 Acceptance direction:
 

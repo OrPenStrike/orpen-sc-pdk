@@ -30,6 +30,10 @@ Verified local changes:
   writes Driven `config.json`, persists `mesh_manifest.json`, persists
   `palace_index_map.json`, and verifies CPW port-surface Power `SurfaceFlux`
   indices map back to `P1`/`P2` port metadata;
+- the same driven fixture now includes an optional local Palace coarse-solve
+  smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies that
+  `run_local()` returns public `gsim.palace.SParams`, resolves `o1`/`o2` port
+  labels, and preserves a non-empty `port-S.csv` result file;
 - eigenmode now has an executable public fixture in
   `tests/test_gsim_eigenmode_resonator_workflow.py`: it builds the public
   `resonator` cell, runs local `gsim` `EigenmodeSim` coarse meshing, writes
@@ -59,6 +63,8 @@ Verified local changes:
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - optional local Palace validation passed with
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
+- optional local Driven Palace validation passed with
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py -q`;
 - direct macOS development binaries may also require local dynamic-library
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
@@ -68,8 +74,8 @@ Verified local changes:
 
 Remaining slices:
 
-- add optional local Palace coarse-solve smoke checks for the public Driven and
-  Eigenmode fixtures.
+- add an optional local Palace coarse-solve smoke check for the public
+  Eigenmode fixture.
 
 Acceptance checks:
 

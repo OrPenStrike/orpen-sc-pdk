@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -9,24 +10,15 @@ import orpen_sc_pdk
 from orpen_sc_pdk.cells import cpw_straight
 
 
-def test_public_cpw_driven_gsim_port_postprocessing_artifacts(
-    tmp_path: Path,
-) -> None:
-    """Public CPW driven fixture exercises gsim CPW port and index artifacts."""
-
+def _public_cpw_driven_sim(output_dir: Path):
     pytest.importorskip("gmsh")
     pytest.importorskip("gsim")
 
     from gsim.palace import DrivenSim
-    from gsim.palace.mesh import (
-        SurfaceFluxSpec,
-        build_postprocessing_config_from_manifest,
-    )
 
     orpen_sc_pdk.activate()
     component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
 
-    output_dir = tmp_path / "palace-sim"
     sim = DrivenSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
@@ -58,6 +50,22 @@ def test_public_cpw_driven_gsim_port_postprocessing_artifacts(
         auto_size=False,
     )
     mesh_result = sim._last_mesh_result
+
+    return sim, mesh_result
+
+
+def test_public_cpw_driven_gsim_port_postprocessing_artifacts(
+    tmp_path: Path,
+) -> None:
+    """Public CPW driven fixture exercises gsim CPW port and index artifacts."""
+
+    output_dir = tmp_path / "palace-sim"
+    sim, mesh_result = _public_cpw_driven_sim(output_dir)
+
+    from gsim.palace.mesh import (
+        SurfaceFluxSpec,
+        build_postprocessing_config_from_manifest,
+    )
 
     postprocessing = build_postprocessing_config_from_manifest(
         mesh_result.manifest,
@@ -114,3 +122,68 @@ def test_public_cpw_driven_gsim_port_postprocessing_artifacts(
         assert row["entry_name"] in {"P1_E0", "P1_E1", "P2_E0", "P2_E1"}
         assert row["metadata"]["port_type"] == "cpw"
         assert row["attributes"] == flux_by_index[row["index"]]["Attributes"]
+
+
+def test_public_cpw_driven_optional_local_palace_coarse_smoke(
+    tmp_path: Path,
+) -> None:
+    """Optional local Palace smoke proves the public driven CPW fixture solves."""
+
+    if os.environ.get("ORPEN_RUN_LOCAL_PALACE_SMOKE") != "1":
+        pytest.skip("set ORPEN_RUN_LOCAL_PALACE_SMOKE=1 to run local Palace smoke")
+
+    palace_sif = os.environ.get("PALACE_SIF")
+    palace_executable = os.environ.get("PALACE_EXECUTABLE")
+    if not palace_sif and not palace_executable:
+        pytest.skip("set PALACE_SIF or PALACE_EXECUTABLE for local Palace smoke")
+
+    executable_mode = os.environ.get("PALACE_EXECUTABLE_MODE", "wrapper")
+    if executable_mode not in {"wrapper", "binary"}:
+        msg = "PALACE_EXECUTABLE_MODE must be 'wrapper' or 'binary'"
+        raise ValueError(msg)
+
+    output_dir = tmp_path / "palace-smoke"
+    sim, mesh_result = _public_cpw_driven_sim(output_dir)
+
+    from gsim.palace import SParams
+    from gsim.palace.mesh import (
+        SurfaceFluxSpec,
+        build_postprocessing_config_from_manifest,
+    )
+
+    postprocessing = build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        surface_flux=(
+            SurfaceFluxSpec(
+                role="port_surface",
+                flux_type="Power",
+                two_sided=None,
+            ),
+        ),
+    )
+    sim.write_config(postprocessing=postprocessing, validate_mesh=False)
+
+    use_apptainer = palace_sif is not None
+    run_kwargs = {
+        "use_apptainer": use_apptainer,
+        "num_processes": int(os.environ.get("PALACE_NP", "1")),
+        "num_threads": int(os.environ.get("PALACE_NT", "1")),
+        "verbose": False,
+    }
+    if use_apptainer:
+        run_kwargs["palace_sif_path"] = palace_sif
+    else:
+        run_kwargs["palace_executable"] = palace_executable
+        run_kwargs["executable_mode"] = executable_mode
+        run_kwargs["serial"] = os.environ.get("PALACE_SERIAL") == "1"
+
+    results = sim.run_local(**run_kwargs)
+
+    assert isinstance(results, SParams)
+    assert results.port_names == ["o1", "o2"]
+    assert len(results.freq) == 3
+    assert ("o1", "o1") in results.keys()
+    assert ("o2", "o1") in results.keys()
+    assert "port-S.csv" in results.files
+    assert results.files["port-S.csv"].stat().st_size > 0
+    assert results.to_dataframe().notna().all().all()
