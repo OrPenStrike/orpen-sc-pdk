@@ -12,6 +12,8 @@ Local/implemented capability:
 
 - CAD and mesh stages can preserve physical names for volumes, conductor
   surfaces, ports, exterior boundaries, and interfaces;
+- generated interface and exterior names can follow meshwell-style `___` and
+  `___None` delimiters while older `gsim` artifacts remain parseable;
 - physical-group tables can map names to entity tags and solver attributes;
 - surface registries can map postprocessing rows back to surface roles and
   material/layer semantics;

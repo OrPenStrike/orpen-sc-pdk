@@ -36,6 +36,9 @@ Local prototype status:
   domain/boundary postprocessing fragments into `config.json`, persist
   `mesh_manifest.json`, persist `palace_index_map.json`, and reuse the last
   explicit postprocessing config when upload/run code regenerates the config.
+- third `gsim` CAD identity slice cliff-cuts generated interface and exterior
+  physical names to meshwell-style `___` and `___None` labels while preserving
+  legacy parser support for older generated meshes.
 
 Verified local changes:
 
@@ -50,6 +53,9 @@ Verified local changes:
   physical groups and lets electrostatic terminals select one island by XY
   center while preserving layer-level terminal selection when no center is
   provided;
+- `gsim` commit `3541ace`: generated interface and exterior physical names now
+  use meshwell-style `___` and `___None` delimiters; mesh manifest and group
+  consumers still parse legacy `__` labels for old artifacts;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -69,11 +75,15 @@ Verified local changes:
 - validation for `bd0a2bc`: manifest/workflow tests passed, public
   driven/eigenmode/electrostatic fixtures passed, Ruff check/format passed, and
   targeted Pyright passed for the changed model/group surface.
+- validation for `3541ace`: mesh manifest, integration, workflow, and
+  curved-meshing tests passed; public driven/eigenmode/electrostatic fixtures
+  passed through editable `gsim`; Ruff check/format passed; targeted Pyright
+  passed for the changed mesh/group parsing surface.
 
 Remaining implementation slices:
 
-- decide whether to cliff-cut `gsim` interface labels from `__` to meshwell's
-  `___` delimiter.
+- run optional local Palace coarse-solve smoke checks and connect solver report
+  parsing back through the generated manifest/index-map artifacts.
 
 Acceptance checks:
 
