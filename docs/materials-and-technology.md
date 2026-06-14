@@ -24,6 +24,21 @@ When `materials.json` is introduced or imported, it should remain a first-class
 data source rather than a generated afterthought. It should be schema-validated
 and treated as part of the public PDK contract.
 
+The current public bridge is intentionally small:
+
+- `orpen_sc_pdk.materials.get_material_records()` returns a copy of the public
+  material records;
+- `orpen_sc_pdk.materials.get_gsim_material_overlay()` adapts those records to
+  the `gsim` material overlay mapping;
+- `orpen_sc_pdk.materials.write_gsim_material_overlay()` writes the same
+  mapping as strict JSON for tools that consume overlay files.
+
+Finite public dielectric records are exported as constant material models.
+Conductor-like records currently represented by
+`relative_permittivity = inf` are preserved as material-role metadata until
+explicit conductivity, surface impedance, or London-depth values are part of
+the public material record.
+
 ## Existing Ecosystem Material DB
 
 The local `gsim` fork already has a common material database and resolver:

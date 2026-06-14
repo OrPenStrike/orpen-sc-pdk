@@ -46,9 +46,16 @@ Verified local changes:
 - the public eigenmode resonator fixture now has an opt-in local Palace coarse
   solve that verifies generated Eigenmode config can produce non-empty
   `eig.csv` and `domain-E.csv` outputs through local `gsim`.
+- `gsim` commit `20538ec` and the local `orpen-sc-pdk` material export helper
+  establish the public material overlay schema bridge needed before config
+  generation accepts PDK material overlays directly.
 
 Remaining slices:
 
+- add a `material_overlay=` entrypoint in `gsim` Palace config generation so
+  public and private PDK material overlays can flow into solver material blocks
+  without mutating `LayerStack.materials`;
+- record material-overlay provenance in generated config/report artifacts;
 - convert executable fixtures into publication-safe notebooks or examples;
 - keep normal docs and CI paths independent from local Palace while exposing
   opt-in solver validation commands for local development.

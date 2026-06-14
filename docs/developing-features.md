@@ -21,7 +21,7 @@ layout/IP, private run folders, or private benchmark evidence.
 |---|---|---|
 | Simulation intent attached to GDSFactory ports and component metadata | `gsim`, with public examples in `orpen-sc-pdk` | Keep component authorship in GDSFactory terms; let `gsim` translate port and terminal intent into solver inputs. |
 | Driven, eigenmode, electrostatic, and magnetostatic Palace configuration assembly | `gsim` | Extend existing Palace simulation/config generation APIs instead of creating a PDK-owned solver runtime. |
-| Material policy, material aliases, and Palace material translation | `orpen-sc-pdk` and `gsim` | PDK owns public material names and records; `gsim` owns overlays, frequency evaluation, and solver translation. |
+| Material policy, material aliases, and Palace material translation | `orpen-sc-pdk` and `gsim` | PDK owns public material names and records; `gsim` owns overlays, frequency evaluation, and solver translation; local branches now have a public material overlay export bridge. |
 | CAD/XAO/mesh physical names and solver index provenance | `meshwell` and `gsim` | Build on meshwell physical-name and interface-tag conventions, then expose a Palace role/index manifest in `gsim`. |
 | Surface-Q, EPR, capacitance, eigenmode, and driven-result report parsing | `gsim` | Keep reusable result loaders and report schemas upstream; local `gsim` now has indexed domain-energy, surface-Q, port-EPR, electrostatic matrix, Eigenmode modal/history primitives, and a composed Eigenmode report bundle. |
 | Runtime handoff, local/cloud execution, and normalized performance records | `gsim` | Keep Palace as an external executable and report sanitized run metadata through reusable records; local `gsim` can now run wrapper-style commands or direct development binaries for opt-in coarse smokes. |
@@ -60,7 +60,7 @@ participation, loss, and surface-Q contributors in a publication-safe way.
 
 **Target:** `orpen-sc-pdk` and `gsim`
 
-**Status:** candidate
+**Status:** prototype
 
 Keep SCQ material records in the PDK while adapting them into `gsim` material
 resolver overlays for Palace and other solver workflows.

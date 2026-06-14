@@ -9,9 +9,14 @@ from functools import lru_cache, partial
 
 from gdsfactory.typings import ComponentFactory
 
-from . import cells, config, helper, models, tech
+from . import cells, config, helper, materials, models, tech
 from .config import PATH
 from .logger import logger
+from .materials import (
+    get_gsim_material_overlay,
+    get_material_records,
+    write_gsim_material_overlay,
+)
 from .pdk import PDK, activate, get_pdk
 from .tech import LAYER, LAYER_CONNECTIVITY, LAYER_STACK, LAYER_VIEWS
 
@@ -48,9 +53,13 @@ __all__ = [
     "get_sample_functions",
     "get_pdk",
     "helper",
+    "get_gsim_material_overlay",
+    "get_material_records",
     "logger",
+    "materials",
     "models",
     "tech",
+    "write_gsim_material_overlay",
 ]
 
 __version__ = "0.1.0"
