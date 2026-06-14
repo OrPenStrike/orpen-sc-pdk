@@ -154,24 +154,26 @@ def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
 
     results = sim.run_local(**run_kwargs)
 
-    from gsim.palace import load_eigenmode_history, load_eigenmodes
+    from gsim.palace import load_eigenmode_report
 
     eig_path = results.get("eig.csv")
     assert eig_path is not None
     assert eig_path.stat().st_size > 0
     assert results["domain-E.csv"].stat().st_size > 0
 
-    eigenmodes = load_eigenmodes(results)
-    assert eigenmodes.n_modes == 2
-    assert eigenmodes.freq_real_ghz.min() > 0
-    assert eigenmodes.q.min() > 0
+    report = load_eigenmode_report(results)
+    assert report.eigenmodes.n_modes == 2
+    assert report.eigenmodes.freq_real_ghz.min() > 0
+    assert report.eigenmodes.q.min() > 0
     assert {
         "frequency_ghz",
         "imaginary_frequency_ghz",
         "q_factor",
-    } <= set(eigenmodes.to_report_dataframe().columns)
+    } <= set(report.modes.columns)
+    assert not report.domain_energy.empty
+    assert bool(report.sources.set_index("name").loc["domain-E.csv", "loaded"])
 
-    history = load_eigenmode_history(output_dir)
+    history = report.mode_history
     assert history["source_kind"].tolist() == ["final", "final"]
     assert history["mode_index"].tolist() == [1, 2]
     assert history["frequency_ghz"].min() > 0

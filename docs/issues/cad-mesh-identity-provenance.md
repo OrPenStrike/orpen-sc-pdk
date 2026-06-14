@@ -48,6 +48,9 @@ Local prototype status:
   convergence summaries on top of the same indexed terminal labels.
 - seventh `gsim` results slice builds indexed domain-energy, surface-Q, and
   port-EPR summary frames on top of the same `palace_index_map.json` artifact.
+- eighth `gsim` results slice composes Eigenmode final modes, AMR history,
+  pass summaries, optional EPR report tables, index-map provenance, and source
+  bookkeeping into one public report bundle.
 
 Verified local changes:
 
@@ -79,6 +82,10 @@ Verified local changes:
 - `gsim` commit `a584079`: adds a direct-binary mode for local Palace execution
   so development builds can run the same public fixtures without wrapper-only
   launcher assumptions;
+- `gsim` commit `ca471b4`: adds public `EigenmodeReport` and
+  `load_eigenmode_report()` so notebooks can load final modal rows, AMR
+  history, pass summaries, indexed EPR tables, index-map rows, and source
+  bookkeeping through one public `gsim.palace` entrypoint;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -93,7 +100,7 @@ Verified local changes:
 - the same eigenmode fixture now has an opt-in local Palace coarse-solve smoke
   path that confirms the generated mesh/config can produce non-empty `eig.csv`
   and `domain-E.csv` outputs for a public resonator and load them through public
-  `gsim.palace.load_eigenmodes()`;
+  `gsim.palace.load_eigenmode_report()`;
 - `orpen-sc-pdk` local test
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: proves electrostatic
   terminal index-map artifacts on a generated public same-layer Martinis
@@ -145,6 +152,9 @@ Verified local changes:
   eigenmode fixture passed both the default skip path and the opt-in local
   Palace solve, including positive eigenfrequency rows and final-source
   visibility from the public Eigenmode loader.
+- validation after the Eigenmode report bundle slice: `gsim` result, manifest,
+  and workflow tests passed; Ruff check/format passed; targeted Pyright passed
+  for the changed results public surface.
 
 Remaining implementation slices:
 

@@ -43,7 +43,8 @@ Verified local changes:
 - the same eigenmode fixture now includes an optional local Palace coarse-solve
   smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies non-empty
   `eig.csv` and `domain-E.csv` outputs, then loads two positive eigenfrequency
-  rows through public `gsim.palace.load_eigenmodes()`;
+  rows, source visibility, and domain-energy rows through public
+  `gsim.palace.load_eigenmode_report()`;
 - electrostatic now has an executable public fixture in
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: it builds the public
   same-layer Martinis differential ribbon capacitor fixture, uses local `gsim`
@@ -71,6 +72,8 @@ Verified local changes:
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py -q`;
 - optional local Eigenmode Palace validation passed with
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_eigenmode_resonator_workflow.py -q`;
+- the same optional Eigenmode validation now exercises
+  `gsim.palace.load_eigenmode_report()` against real local solver output;
 - direct macOS development binaries may also require local dynamic-library
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
@@ -82,8 +85,9 @@ Remaining slices:
 
 - expose the opt-in solver smoke paths in publication-safe notebook/example
   form without making normal docs builds depend on local Palace;
-- extend reusable Eigenmode reporting toward EPR/material summaries by composing
-  `load_eigenmodes()` with the existing indexed report loaders.
+- extend reusable Eigenmode reporting beyond raw Palace tables only after
+  material-loss/T1/gamma ownership is split between `gsim` report schemas and
+  PDK material overlays.
 
 Acceptance checks:
 

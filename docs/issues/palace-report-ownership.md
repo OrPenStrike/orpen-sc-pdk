@@ -65,14 +65,26 @@ Verified local changes:
   `summarize_eigenmode_history()` so Eigenmode `eig.csv` outputs have stable
   normalized fields, notebook-facing aliases, source visibility, and
   HFSS-style pass summaries instead of notebook-local parsing.
+- `gsim` commit `ca471b4`: adds `EigenmodeReport` and
+  `load_eigenmode_report()` as a thin composition layer over final
+  `eig.csv`, AMR history, pass summaries, `palace_index_map.json`,
+  `domain-E.csv`, `surface-Q.csv`, and `port-EPR.csv`;
+- optional EPR report families load independently and missing optional reports
+  are recorded in the report `sources`/`missing_reports` table rather than
+  forcing every Eigenmode run to emit all EPR outputs;
 - `orpen-sc-pdk` now routes the public Eigenmode smoke through
-  `load_eigenmodes()` and `load_eigenmode_history()`.
+  `load_eigenmode_report()`, proving a real local resonator solve can read
+  positive modal rows, final-source visibility, and domain-energy rows through
+  the public report bundle.
+- optional local Eigenmode Palace validation passed after the report-bundle
+  wiring with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`, a direct local Palace binary,
+  and `gsim.palace.load_eigenmode_report()`.
 
 Remaining slices:
 
-- extend the reusable report layer toward material-loss/T1/gamma summaries only
-  where that information belongs in public `gsim` schemas or PDK-owned material
-  overlays;
+- extend the reusable report layer toward material-loss/T1/gamma summaries
+  only after the public ownership split between raw `gsim` report schemas and
+  PDK-owned material overlays is explicit;
 - keep native masked Surface EPR as a Palace-source/upstream capability rather
   than a Python replay in the public PDK.
 
