@@ -30,6 +30,12 @@ Current public baseline:
 - `orpen-sc-pdk` exposes `get_gsim_material_overlay()` and
   `write_gsim_material_overlay()` so public PDK material records can be handed
   to `gsim` either in memory or as strict JSON;
+- `gsim` commit `49be250` adds `material_overlay=` to Palace config generation
+  and high-level `write_config()`, so public PDK overlays can affect effective
+  Palace `Domains.Materials` without mutating `LayerStack.materials`;
+- public Driven, Eigenmode, and Electrostatic fixtures now pass
+  `get_gsim_material_overlay()` into local `gsim` config generation and verify
+  that the public `Si` record reaches the generated substrate material block;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
@@ -38,8 +44,8 @@ Remaining slices:
 
 - add a validated material-record schema and aliases table once the public
   material contract grows beyond the current minimal records;
-- let `gsim` Palace config generation accept material overlays without
-  mutating PDK layer stacks;
+- add explicit material validity/provenance fields so generated configs and
+  reports can explain which PDK overlay values were applied;
 - derive material-loss/T1/gamma report tables only after raw report rows and
   effective Palace config material fields are joined in a public `gsim` layer.
 

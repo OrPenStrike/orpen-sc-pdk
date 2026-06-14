@@ -36,6 +36,9 @@ Acceptance direction:
   electrostatic examples using only public PDK metadata;
 - generated configs include auditable material, boundary, terminal, and
   postprocessing provenance;
+- public PDK material overlays can be passed to `gsim` config generation and
+  produce effective `Domains.Materials` values without mutating the source
+  layer stack;
 - private consumers can mount their own layouts without changing the public
   config generation contract;
 - Palace remains an external executable, not a Python package dependency of the

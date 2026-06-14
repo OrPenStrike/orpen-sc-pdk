@@ -31,7 +31,10 @@ The current public bridge is intentionally small:
 - `orpen_sc_pdk.materials.get_gsim_material_overlay()` adapts those records to
   the `gsim` material overlay mapping;
 - `orpen_sc_pdk.materials.write_gsim_material_overlay()` writes the same
-  mapping as strict JSON for tools that consume overlay files.
+  mapping as strict JSON for tools that consume overlay files;
+- local `gsim` Palace config generation accepts the overlay through
+  `material_overlay=` and applies public material values to effective
+  `Domains.Materials` without mutating the source layer stack.
 
 Finite public dielectric records are exported as constant material models.
 Conductor-like records currently represented by
@@ -54,8 +57,9 @@ should be:
 
 1. Keep SCQ material records in `orpen-sc-pdk`.
 2. Export or adapt those records into the `gsim` material overlay/schema.
-3. Upstream reusable adapter support into `gsim` when it is not PDK-specific.
-4. Keep Palace-specific material evaluation in `gsim`, not in the PDK core.
+3. Pass the overlay into `gsim` Palace config generation, keeping
+   Palace-specific material evaluation in `gsim`, not in the PDK core.
+4. Upstream reusable adapter support into `gsim` when it is not PDK-specific.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the

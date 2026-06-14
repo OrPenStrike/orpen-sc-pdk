@@ -5,9 +5,11 @@ import os
 from pathlib import Path
 
 import pytest
+from material_overlay_assertions import assert_public_si_overlay_material
 
 import orpen_sc_pdk
 from orpen_sc_pdk.cells import cpw_straight
+from orpen_sc_pdk.materials import get_gsim_material_overlay
 
 
 def _public_cpw_driven_sim(output_dir: Path):
@@ -77,7 +79,10 @@ def test_public_cpw_driven_gsim_port_postprocessing_artifacts(
             ),
         ),
     )
-    config_path = sim.write_config(postprocessing=postprocessing)
+    config_path = sim.write_config(
+        postprocessing=postprocessing,
+        material_overlay=get_gsim_material_overlay(),
+    )
 
     config = json.loads(Path(config_path).read_text())
     manifest = json.loads((output_dir / "mesh_manifest.json").read_text())
@@ -85,6 +90,7 @@ def test_public_cpw_driven_gsim_port_postprocessing_artifacts(
 
     assert (output_dir / "palace.msh").stat().st_size > 0
     assert config["Problem"]["Type"] == "Driven"
+    assert_public_si_overlay_material(config, manifest)
 
     lumped_ports = config["Boundaries"]["LumpedPort"]
     assert [port["Index"] for port in lumped_ports] == [1, 2]
@@ -161,7 +167,11 @@ def test_public_cpw_driven_optional_local_palace_coarse_smoke(
             ),
         ),
     )
-    sim.write_config(postprocessing=postprocessing, validate_mesh=False)
+    sim.write_config(
+        postprocessing=postprocessing,
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+    )
 
     use_apptainer = palace_sif is not None
     run_kwargs = {

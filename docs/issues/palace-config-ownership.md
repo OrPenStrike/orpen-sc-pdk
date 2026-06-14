@@ -49,12 +49,15 @@ Verified local changes:
 - `gsim` commit `20538ec` and the local `orpen-sc-pdk` material export helper
   establish the public material overlay schema bridge needed before config
   generation accepts PDK material overlays directly.
+- `gsim` commit `49be250` adds `material_overlay=` to Palace config generation
+  and high-level `write_config()`, with validation preserving the same overlay
+  when it regenerates config files.
+- public `orpen-sc-pdk` Driven, Eigenmode, and Electrostatic fixtures now pass
+  `get_gsim_material_overlay()` into `gsim` config generation and verify that
+  public `Si` material data reaches the generated Palace domain material block.
 
 Remaining slices:
 
-- add a `material_overlay=` entrypoint in `gsim` Palace config generation so
-  public and private PDK material overlays can flow into solver material blocks
-  without mutating `LayerStack.materials`;
 - record material-overlay provenance in generated config/report artifacts;
 - convert executable fixtures into publication-safe notebooks or examples;
 - keep normal docs and CI paths independent from local Palace while exposing

@@ -73,3 +73,44 @@ def test_written_gsim_material_overlay_loads_through_gsim(tmp_path) -> None:
     assert in_memory_overlay["Si"].permittivity == pytest.approx(11.45)
     assert file_overlay["Si"].permittivity == pytest.approx(11.45)
     assert file_overlay["AlOx_native_generic"].permittivity == pytest.approx(10.0)
+
+
+def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
+    pytest.importorskip("gsim")
+    from gsim.common.stack import LayerStack
+    from gsim.palace.mesh.config_generator import generate_palace_config
+
+    groups = {
+        "volumes": {
+            "silicon": {"phys_group": 1},
+            "air": {"phys_group": 2},
+        },
+        "conductor_surfaces": {},
+        "pec_surfaces": {},
+        "port_surfaces": {},
+        "boundary_surfaces": {},
+    }
+
+    config_path = generate_palace_config(
+        groups=groups,
+        ports=[],
+        port_info=[],
+        stack=LayerStack(
+            materials={
+                "silicon": {"permittivity": 11.9, "conductivity": 2.0},
+                "air": {"permittivity": 1.0, "loss_tangent": 0.0},
+            },
+        ),
+        output_path=tmp_path,
+        model_name="palace",
+        fmax=10e9,
+        absorbing_boundary=False,
+        material_overlay=get_gsim_material_overlay(),
+    )
+
+    materials = json.loads(config_path.read_text())["Domains"]["Materials"]
+    by_attr = {tuple(row["Attributes"]): row for row in materials}
+
+    assert by_attr[(1,)]["Permittivity"] == pytest.approx(11.45)
+    assert by_attr[(1,)]["Conductivity"] == pytest.approx(2.0)
+    assert by_attr[(2,)]["Permittivity"] == pytest.approx(1.0)

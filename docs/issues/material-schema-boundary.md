@@ -34,6 +34,13 @@ Verified local changes:
   `write_gsim_material_overlay()` so the current `tech.material_properties`
   records can be consumed by `gsim.common.stack.load_overlay_data()` or
   `load_overlay()` without importing private material registries;
+- `gsim` commit `49be250`: adds `material_overlay=` to Palace config
+  generation, keeps overlay resolution out of `LayerStack` mutation, and maps
+  PDK aliases such as `Si` onto existing `gsim` material names such as
+  `silicon`;
+- public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
+  Driven, Eigenmode, and Electrostatic `gsim` config generation and verify the
+  generated substrate material block uses the public `Si` permittivity;
 - the exported overlay keeps finite dielectric records as constant material
   models and keeps conductor-like `inf` records out of solver permittivity.
 
@@ -42,8 +49,8 @@ Remaining slices:
 - introduce a validated public material-record schema when the current dict
   grows to include aliases, provenance, conditions, loss, conductivity,
   London-depth, or surface/interface presets;
-- add a `gsim` Palace config-generation path that accepts PDK overlays without
-  mutating `LayerStack.materials`;
+- add explicit material validity ranges and provenance fields to remove
+  ambiguity from effective config/report material interpretation;
 - add effective material/loss report joins on top of raw `EigenmodeReport` and
   electrostatic report frames before deriving T1/gamma tables.
 

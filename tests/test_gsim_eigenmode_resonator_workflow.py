@@ -5,9 +5,11 @@ import os
 from pathlib import Path
 
 import pytest
+from material_overlay_assertions import assert_public_si_overlay_material
 
 import orpen_sc_pdk
 from orpen_sc_pdk.cells import resonator
+from orpen_sc_pdk.materials import get_gsim_material_overlay
 
 
 def _public_resonator_eigenmode_sim(output_dir: Path):
@@ -80,7 +82,10 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
     sim, mesh_result = _public_resonator_eigenmode_sim(output_dir)
 
     postprocessing = _eigenmode_postprocessing(mesh_result)
-    config_path = sim.write_config(postprocessing=postprocessing)
+    config_path = sim.write_config(
+        postprocessing=postprocessing,
+        material_overlay=get_gsim_material_overlay(),
+    )
 
     config = json.loads(Path(config_path).read_text())
     manifest = json.loads((output_dir / "mesh_manifest.json").read_text())
@@ -88,6 +93,7 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
 
     assert (output_dir / "palace.msh").stat().st_size > 0
     assert config["Problem"]["Type"] == "Eigenmode"
+    assert_public_si_overlay_material(config, manifest)
     assert config["Domains"]["Postprocessing"]["Energy"]
     surface_flux = config["Boundaries"]["Postprocessing"]["SurfaceFlux"]
     assert len(surface_flux) == 1
@@ -136,6 +142,7 @@ def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
     sim.write_config(
         postprocessing=_eigenmode_postprocessing(mesh_result),
         validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
     )
 
     use_apptainer = palace_sif is not None
