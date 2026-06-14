@@ -24,21 +24,29 @@ Proposed path:
 
 Verified local changes:
 
+- driven now has an executable public fixture in
+  `tests/test_gsim_driven_cpw_workflow.py`: it builds the public
+  `cpw_straight` cell, uses local `gsim` `DrivenSim` CPW port configuration,
+  writes Driven `config.json`, persists `mesh_manifest.json`, persists
+  `palace_index_map.json`, and verifies CPW port-surface Power `SurfaceFlux`
+  indices map back to `P1`/`P2` port metadata;
 - eigenmode now has an executable public fixture in
-  `tests/test_gsim_eigenmode_resonator_workflow.py`;
-- the fixture builds the public `resonator` cell, runs local `gsim`
-  `EigenmodeSim` coarse meshing, writes Eigenmode `config.json`, persists
-  `mesh_manifest.json`, persists `palace_index_map.json`, and verifies the
-  absorbing boundary maps to a Palace Power `SurfaceFlux` postprocessing index;
+  `tests/test_gsim_eigenmode_resonator_workflow.py`: it builds the public
+  `resonator` cell, runs local `gsim` `EigenmodeSim` coarse meshing, writes
+  Eigenmode `config.json`, persists `mesh_manifest.json`, persists
+  `palace_index_map.json`, and verifies the absorbing boundary maps to a Palace
+  Power `SurfaceFlux` postprocessing index;
 - validation passed with
-  `uv run --group ecosystem-dev python -m pytest tests/test_gsim_eigenmode_resonator_workflow.py -q`;
-- Ruff check and format-check passed for the new test.
+  `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py -q`;
+- Ruff check and format-check passed for both executable fixtures.
 
 Remaining slices:
 
 - convert the executable eigenmode fixture into a publication-safe notebook or
   notebook-equivalent example page;
-- add public driven and electrostatic fixtures with equivalent artifact checks;
+- convert the executable driven fixture into a publication-safe notebook or
+  notebook-equivalent example page;
+- add a public electrostatic fixture with equivalent artifact checks;
 - add optional local Palace coarse-solve smoke checks when a Palace binary is
   available.
 

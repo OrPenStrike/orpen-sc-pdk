@@ -43,6 +43,10 @@ Verified local changes:
   postprocessing index map, config merge points, and unit coverage;
 - `gsim` commit `cb052db`: added high-level `write_config(postprocessing=...)`
   wiring and artifact persistence;
+- `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
+  CPW port-surface manifest/index-map artifacts on a generated public driven
+  mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
+  indices;
 - `orpen-sc-pdk` local test `tests/test_gsim_eigenmode_resonator_workflow.py`:
   proves the manifest/index-map artifacts on a generated public resonator
   eigenmode mesh instead of hand-built physical group dictionaries;
