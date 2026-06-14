@@ -35,9 +35,12 @@ Current public baseline:
   `palace_index_map.json` physical names;
 - composed Eigenmode reports expose those configured interface rows through
   `EigenmodeReport.dielectric_interfaces`;
-- this proves configured MA/MS/SA-style interface parameters can round trip
-  through public artifacts, but it does not yet derive loss, T1, gamma, or
-  automatic interface presets.
+- local `gsim` commit `f12312c` derives `surface_loss` and `loss_budget`
+  tables from `surface-Q.csv`, configured interface metadata, and mode
+  frequency, so gamma/T1 columns are available when the Eigenmode frequency is
+  known;
+- automatic public interface presets are still not part of the PDK material
+  contract.
 
 Related issue:
 

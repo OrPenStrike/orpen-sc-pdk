@@ -87,16 +87,22 @@ Verified local changes:
   `EigenmodeReport.dielectric_interfaces`, so configured dielectric
   postprocessing interface rows can be loaded from `config.json` and joined to
   index-map physical names without PDK-owned report parsing.
+- `gsim` commit `f12312c`: adds reusable loss-budget interpretation through
+  `summarize_domain_loss()`, `summarize_surface_loss()`,
+  `summarize_loss_budget()`, and composed Eigenmode report fields for
+  `domain_loss`, `surface_loss`, and `loss_budget`.
 - `orpen-sc-pdk` public material-overlay fixtures now verify the generated
   public `Si` substrate material row can be read back through this reusable
   `gsim` report/index-map surface for Driven, Eigenmode, and Electrostatic
   artifact handoffs.
+- `orpen-sc-pdk` public material-overlay fixtures now verify that a synthetic
+  public Eigenmode artifact bundle can derive inverse-Q, equivalent Q, gamma,
+  and T1-ready loss budget rows through `gsim.palace.load_eigenmode_report()`.
 
 Remaining slices:
 
-- extend the reusable report layer toward material-loss/T1/gamma summaries
-  on top of the now-explicit ownership split between raw `gsim` report schemas,
-  PDK-owned material overlays, and configured dielectric interface summaries;
+- add richer material/interface provenance and public preset validation before
+  treating MA/MS/SA defaults as part of the PDK contract;
 - keep native masked Surface EPR as a Palace-source/upstream capability rather
   than a Python replay in the public PDK.
 

@@ -41,6 +41,9 @@ Current public baseline:
   `EigenmodeReport.dielectric_interfaces`, so configured
   `Boundaries.Postprocessing.Dielectric` interface parameters can be joined to
   index-map physical names;
+- `gsim` commit `f12312c` adds domain/surface loss interpretation on top of
+  the existing report joins, deriving inverse-Q, equivalent Q, gamma, and T1
+  columns without moving report parsing into the PDK;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -57,10 +60,7 @@ Remaining slices:
 - add explicit material validity/provenance fields so generated configs and
   reports can explain which PDK overlay values were applied;
 - add a validated public interface-preset schema before treating MA/MS/SA
-  thickness, permittivity, and loss tangent values as PDK-owned defaults;
-- derive material-loss/T1/gamma report tables on top of the effective material
-  and configured interface joins once material validity, provenance, and
-  surface/interface material policies are explicit.
+  thickness, permittivity, and loss tangent values as PDK-owned defaults.
 
 Related issue:
 

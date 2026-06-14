@@ -42,6 +42,9 @@ The current public bridge is intentionally small:
   `Boundaries.Postprocessing.Dielectric` rows, including `Thickness`,
   `Permittivity`, and `LossTan`, and join them to interface physical names
   through `palace_index_map.json`.
+- local `gsim` can derive reusable domain/surface loss budgets from those
+  loaded artifacts, including inverse-Q, equivalent Q, gamma, and T1 columns
+  when mode frequency is available.
 
 Finite public dielectric records are exported as constant material models.
 Conductor-like records currently represented by

@@ -208,3 +208,111 @@ def test_gsim_dielectric_interface_summary_loads_public_interface_config(
     assert row["thickness"] == pytest.approx(0.003)
     assert row["permittivity"] == pytest.approx(4.0)
     assert row["loss_tangent"] == pytest.approx(0.0017)
+
+
+def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:
+    pytest.importorskip("gsim")
+    from gsim.palace import load_eigenmode_report
+
+    eig_path = tmp_path / "eig.csv"
+    eig_path.write_text(
+        "m, Re{f} (GHz), Im{f} (GHz), Q, Error (Bkwd.), Error (Abs.)\n"
+        "1, 5.0, 0.0, 2.0e6, 0.0, 0.0\n"
+    )
+    domain_e_path = tmp_path / "domain-E.csv"
+    domain_e_path.write_text("m, E_elec[1] (J), p_elec[1]\n1, 1.0, 0.25\n")
+    surface_q_path = tmp_path / "surface-Q.csv"
+    surface_q_path.write_text("m, p_surf[2], Q_surf[2]\n1, 0.125, 1.0e6\n")
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "Domains": {
+                    "Materials": [
+                        {
+                            "Attributes": [10],
+                            "Name": "Si",
+                            "Permittivity": 11.45,
+                            "LossTan": 2.0e-6,
+                        }
+                    ]
+                },
+                "Boundaries": {
+                    "Postprocessing": {
+                        "Dielectric": [
+                            {
+                                "Index": 2,
+                                "Attributes": [20],
+                                "Type": "SA",
+                                "Thickness": 0.003,
+                                "Permittivity": 4.0,
+                                "LossTan": 0.0017,
+                            }
+                        ]
+                    }
+                },
+            }
+        )
+    )
+    index_map_path = tmp_path / "palace_index_map.json"
+    index_map_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "entries": [
+                    {
+                        "section": "Domains.Postprocessing.Energy",
+                        "index": 1,
+                        "entry_name": "substrate",
+                        "role": "dielectric_volume",
+                        "attributes": [10],
+                        "physical_names": ["D1_SUBSTRATE"],
+                        "dimension": 3,
+                    },
+                    {
+                        "section": "Boundaries.Postprocessing.Dielectric",
+                        "index": 2,
+                        "entry_name": "sa_interface",
+                        "role": "boundary_surface",
+                        "attributes": [20],
+                        "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                        "dimension": 2,
+                        "Type": "SA",
+                    },
+                ],
+            }
+        )
+    )
+
+    report = load_eigenmode_report(
+        {
+            "eig.csv": eig_path,
+            "domain-E.csv": domain_e_path,
+            "surface-Q.csv": surface_q_path,
+            "config.json": config_path,
+            "palace_index_map.json": index_map_path,
+        }
+    )
+
+    domain_row = report.domain_loss.set_index("domain_index").loc[1]
+    assert domain_row["source_name"] == "D1_SUBSTRATE"
+    assert domain_row["material_name"] == "Si"
+    assert domain_row["p_elec"] == pytest.approx(0.25)
+    assert domain_row["loss_tangent"] == pytest.approx(2.0e-6)
+    assert domain_row["inverse_q"] == pytest.approx(5.0e-7)
+
+    surface_row = report.surface_loss.set_index("surface_index").loc[2]
+    assert surface_row["source_name"] == "SA:D1_SUBSTRATE___OUTER_VACUUM"
+    assert surface_row["interface_type"] == "SA"
+    assert surface_row["thickness"] == pytest.approx(0.003)
+    assert surface_row["loss_tangent"] == pytest.approx(0.0017)
+    assert surface_row["inverse_q"] == pytest.approx(1.0e-6)
+
+    budget_row = report.loss_budget.set_index("mode_index").loc[1]
+    assert budget_row["frequency_ghz"] == pytest.approx(5.0)
+    assert budget_row["inverse_q_eig"] == pytest.approx(5.0e-7)
+    assert budget_row["domain_inverse_q_sum"] == pytest.approx(5.0e-7)
+    assert budget_row["surface_inverse_q_sum"] == pytest.approx(1.0e-6)
+    assert budget_row["total_inverse_q_sum"] == pytest.approx(1.5e-6)
+    assert budget_row["q_total"] == pytest.approx(1.0 / 1.5e-6)
+    assert budget_row["domain_vs_eig_relative_error"] == pytest.approx(0.0)

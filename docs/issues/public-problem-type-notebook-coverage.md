@@ -95,8 +95,8 @@ Remaining slices:
 - expose the opt-in solver smoke paths in publication-safe notebook/example
   form without making normal docs builds depend on local Palace;
 - extend reusable reporting beyond raw Palace tables and effective material
-  joins toward material-loss/T1/gamma ownership between `gsim` report schemas
-  and PDK material overlays.
+  joins into publication-safe notebook examples that display the `gsim`
+  domain/surface loss budget tables without depending on private layouts.
 
 Acceptance checks:
 

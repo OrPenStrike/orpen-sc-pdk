@@ -42,6 +42,12 @@ Current public baseline:
 - composed Eigenmode reports expose those rows through
   `EigenmodeReport.domain_materials` and
   `EigenmodeReport.dielectric_interfaces`;
+- local `gsim` commit `f12312c` adds `summarize_domain_loss()`,
+  `summarize_surface_loss()`, and `summarize_loss_budget()`;
+- composed Eigenmode reports now expose derived `domain_loss`,
+  `surface_loss`, and `loss_budget` tables, using effective domain material
+  loss tangent, Palace `Q_surf`, configured interface metadata, and mode
+  frequency for gamma/T1 columns;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

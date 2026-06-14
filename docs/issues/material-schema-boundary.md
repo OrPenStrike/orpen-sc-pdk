@@ -48,11 +48,19 @@ Verified local changes:
   `EigenmodeReport.dielectric_interfaces`, joining configured
   `Boundaries.Postprocessing.Dielectric` rows back to index-map physical names
   while keeping derived loss/T1/gamma out of this slice;
+- `gsim` commit `f12312c`: adds `summarize_domain_loss()`,
+  `summarize_surface_loss()`, `summarize_loss_budget()`, and
+  `EigenmodeReport.domain_loss` / `surface_loss` / `loss_budget`, deriving
+  inverse-Q, equivalent Q, gamma, and T1 columns from reusable public report
+  frames;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
   verify the effective substrate material row is loadable through the reusable
   `gsim` report/index-map API;
+- public `orpen-sc-pdk` tests now also verify a synthetic Eigenmode artifact
+  bundle can load through `gsim.palace.load_eigenmode_report()` and expose
+  public domain/surface loss budget rows;
 - the exported overlay keeps finite dielectric records as constant material
   models and keeps conductor-like `inf` records out of solver permittivity.
 
@@ -64,9 +72,7 @@ Remaining slices:
 - add explicit material validity ranges and provenance fields to remove
   ambiguity from effective config/report material interpretation;
 - introduce a validated public interface-preset schema for MA/MS/SA-style
-  thickness, permittivity, and loss tangent records;
-- derive material-loss/T1/gamma tables after effective domain material and
-  configured interface summaries are explicit enough for downstream analysis.
+  thickness, permittivity, and loss tangent records.
 
 Related feature:
 
