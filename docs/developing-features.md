@@ -23,7 +23,7 @@ layout/IP, private run folders, or private benchmark evidence.
 | Driven, eigenmode, electrostatic, and magnetostatic Palace configuration assembly | `gsim` | Extend existing Palace simulation/config generation APIs instead of creating a PDK-owned solver runtime. |
 | Material policy, material aliases, and Palace material translation | `orpen-sc-pdk` and `gsim` | PDK owns public material names and records; `gsim` owns overlays, frequency evaluation, and solver translation. |
 | CAD/XAO/mesh physical names and solver index provenance | `meshwell` and `gsim` | Build on meshwell physical-name and interface-tag conventions, then expose a Palace role/index manifest in `gsim`. |
-| Surface-Q, EPR, capacitance, eigenmode, and driven-result report parsing | `gsim` | Keep reusable result loaders and report schemas upstream; private consumers only mount layouts and compare local evidence. |
+| Surface-Q, EPR, capacitance, eigenmode, and driven-result report parsing | `gsim` | Keep reusable result loaders and report schemas upstream; local `gsim` now has indexed domain-energy, surface-Q, port-EPR, and electrostatic matrix summary primitives. |
 | Runtime handoff, local/cloud execution, and normalized performance records | `gsim` | Keep Palace as an external executable and report sanitized run metadata through reusable records. |
 | Public problem-type notebooks for workflow validation | `orpen-sc-pdk` examples using `gsim` | Rebuild driven, eigenmode, and electrostatic notebooks with public fixtures instead of copying private notebooks. |
 
@@ -36,7 +36,7 @@ layout/IP, private run folders, or private benchmark evidence.
 
 **Target:** `gsim`
 
-**Status:** candidate
+**Status:** prototype
 
 Define reusable electrostatic and EPR report surfaces that can consume public
 PDK layer/material metadata without depending on private layout repos.

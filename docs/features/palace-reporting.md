@@ -29,6 +29,9 @@ Current public baseline:
   with terminal labels resolved from `Boundaries.Terminal` index-map rows;
 - electrostatic terminal matrix AMR histories can be summarized through
   `load_terminal_matrix_history()` and `summarize_terminal_matrix_history()`;
+- indexed Palace EPR reports can be reshaped into summary frames through
+  `load_domain_energy_summary()`, `load_surface_q_summary()`,
+  `summarize_surface_q_by_interface()`, and `load_port_epr_summary()`;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

@@ -44,13 +44,23 @@ Verified local changes:
   `summarize_terminal_matrix_history()` so electrostatic AMR pass matrices can
   be loaded, final-pass duplicates can be dropped, and convergence deltas can be
   summarized without notebook-local parsing.
+- `gsim` commit `76b383a`: adds indexed EPR summary helpers on top of
+  `load_indexed_csv()`;
+- `load_domain_energy_summary()`, `load_surface_q_summary()`,
+  `summarize_surface_q_by_interface()`, and `load_port_epr_summary()` reshape
+  `domain-E.csv`, `surface-Q.csv`, and `port-EPR.csv` into public-safe report
+  frames with index-map provenance, interface totals, and port participation
+  fractions.
 
 Remaining slices:
 
 - run real Palace coarse-solve smoke checks when a Palace binary is available
   on the local machine;
-- build higher-level EPR/surface-Q summary frames on top of the reusable indexed
-  CSV loader instead of copying private report code.
+- extend the reusable report layer toward material-loss/T1/gamma summaries only
+  where that information belongs in public `gsim` schemas or PDK-owned material
+  overlays;
+- keep native masked Surface EPR as a Palace-source/upstream capability rather
+  than a Python replay in the public PDK.
 
 Related features:
 

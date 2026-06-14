@@ -46,6 +46,8 @@ Local prototype status:
   `Boundaries.Terminal` rows from `palace_index_map.json`.
 - sixth `gsim` results slice builds electrostatic terminal matrix history and
   convergence summaries on top of the same indexed terminal labels.
+- seventh `gsim` results slice builds indexed domain-energy, surface-Q, and
+  port-EPR summary frames on top of the same `palace_index_map.json` artifact.
 
 Verified local changes:
 
@@ -71,6 +73,9 @@ Verified local changes:
   column labels resolved from `Boundaries.Terminal` index-map rows;
 - `gsim` commit `3c0dad9`: adds public terminal matrix AMR history and summary
   helpers that reuse the indexed terminal labels and emit convergence deltas;
+- `gsim` commit `76b383a`: adds public indexed EPR report summary helpers for
+  `domain-E.csv`, `surface-Q.csv`, and `port-EPR.csv`, including surface
+  interface totals and port participation fractions;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -106,13 +111,17 @@ Verified local changes:
   public driven/eigenmode/electrostatic fixtures passed through editable
   `gsim`; Ruff check/format passed; targeted Pyright passed for the changed
   results public surface.
+- validation for `76b383a`: `gsim` result, manifest, and workflow tests passed;
+  Ruff check/format passed; targeted Pyright passed for the changed results
+  public surface.
 
 Remaining implementation slices:
 
 - run optional local Palace coarse-solve smoke checks when a Palace binary is
   available on the local machine;
-- add higher-level EPR/surface-Q summary frames on top of the reusable indexed
-  CSV loader.
+- extend report summaries toward material-loss/T1/gamma only after the public
+  ownership split between `gsim` result schemas and PDK material overlays is
+  explicit.
 
 Acceptance checks:
 
