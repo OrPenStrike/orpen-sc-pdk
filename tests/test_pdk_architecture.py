@@ -13,7 +13,11 @@ def test_orpen_style_public_import_surface() -> None:
     assert cells.cpw_straight
     assert cells.interdigital_capacitor
     assert cells.launcher
+    assert cells.martinis2022_differential_ribbon_capacitor
     assert cells.resonator
+    assert cells.sim_flip_chip_distance
+    assert cells.sim_flip_chip_distance_keepout_global_routing_demo
+    assert cells.sim_flip_chip_distance_keepout_routing_demo
     assert cells.taper
     assert (tech.LAYER.D0_TOP_M1_DRAW.layer, tech.LAYER.D0_TOP_M1_DRAW.datatype) == (1, 0)
     assert (tech.LAYER.D1_D2_UNDER_BUMP.layer, tech.LAYER.D1_D2_UNDER_BUMP.datatype) == (41, 1)
@@ -35,8 +39,12 @@ def test_pdk_registry_contains_public_cells() -> None:
         "interdigital_capacitor",
         "launcher",
         "manhattan_style_junction",
+        "martinis2022_differential_ribbon_capacitor",
         "single_trace_flip_chip_xs_chip",
         "single_trace_xs_chip",
+        "sim_flip_chip_distance",
+        "sim_flip_chip_distance_keepout_global_routing_demo",
+        "sim_flip_chip_distance_keepout_routing_demo",
         "straight",
         "two_trace_flip_chip_xs_chip",
         "two_trace_xs_chip",
@@ -60,6 +68,7 @@ def test_pdk_registry_removed_misleading_cell_names() -> None:
     }
 
     assert removed.isdisjoint(PDK.cells)
+    assert not any(name.startswith("as_") for name in PDK.cells)
     assert not hasattr(cells, "as" + "_interdigital_capacitor")
     assert not hasattr(cells, "as" + "_indium_bump")
     assert not hasattr(cells, "as" + "_indium_ground")
@@ -85,14 +94,15 @@ def test_pdk_registry_does_not_publish_generic_gf_cells() -> None:
 
 def test_pdk_registry_contains_public_cpw_cross_sections() -> None:
     expected = {
-        "as_coplanar_waveguide",
-        "as_cpw_2dot7_4_2dot7",
-        "as_cpw_6_7_6",
-        "as_cpw_6_10_6",
-        "as_cpw_15_5_15",
+        "coplanar_waveguide",
+        "cpw_2dot7_4_2dot7",
+        "cpw_6_7_6",
+        "cpw_6_10_6",
+        "cpw_15_5_15",
     }
 
     assert expected <= set(PDK.cross_sections)
+    assert not any(name.startswith("as_") for name in PDK.cross_sections)
 
 
 def test_layer_yaml_matches_public_layer_map() -> None:
@@ -121,7 +131,19 @@ def test_gdsfactory_get_component_works_after_activation() -> None:
     assert gf.get_component("cpw_straight").name.startswith("cpw_straight")
     assert gf.get_component("launcher").ports
     assert gf.get_component("interdigital_capacitor").ports
+    assert gf.get_component("martinis2022_differential_ribbon_capacitor").ports
     assert gf.get_component("resonator").ports
+    assert gf.get_component("sim_flip_chip_distance").ports
+    assert gf.get_component(
+        "sim_flip_chip_distance_keepout_routing_demo",
+        show_route_centerline=False,
+        show_route_keepout=False,
+    )
+    assert gf.get_component(
+        "sim_flip_chip_distance_keepout_global_routing_demo",
+        show_route_centerline=False,
+        show_route_keepout=False,
+    )
     assert gf.get_component("taper").ports
 
 

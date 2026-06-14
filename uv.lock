@@ -2394,6 +2394,8 @@ source = { editable = "." }
 dependencies = [
     { name = "doroutes" },
     { name = "gdsfactory" },
+    { name = "networkx" },
+    { name = "numpy" },
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
@@ -2437,6 +2439,8 @@ requires-dist = [
     { name = "gdsfactory", specifier = "~=9.43.0" },
     { name = "gdsfactoryplus", marker = "extra == 'gdsfactoryplus'" },
     { name = "httpx", marker = "extra == 'gdsfactoryplus'" },
+    { name = "networkx", specifier = ">=3.0" },
+    { name = "numpy", specifier = ">=2.0" },
     { name = "pydantic", specifier = ">=2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.11" },

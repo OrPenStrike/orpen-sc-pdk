@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-108.100 -183.100 431.200 366.200" role="img" aria-label="launcher">
+  <rect x="-108.100" y="-183.100" width="431.200" height="366.200" rx="10.780" fill="#f8fafc"/>
+  <g>
+    <path d="M 0.000 75.000 L 0.000 -75.000 L 150.000 -75.000 L 300.000 -5.000 L 300.000 5.000 L 150.000 75.000 Z" fill="#0f766e" fill-opacity="0.94" stroke="#0f766e" stroke-opacity="0.72" stroke-width="0.776" />
+<path d="M -85.000 160.000 L -85.000 -160.000 L 150.000 -160.000 L 300.000 -11.000 L 300.000 -5.000 L 150.000 -75.000 L 0.000 -75.000 L 0.000 75.000 L 150.000 75.000 L 300.000 5.000 L 300.000 11.000 L 150.000 160.000 Z" fill="#99f6e4" fill-opacity="0.42" stroke="#99f6e4" stroke-opacity="0.72" stroke-width="0.776" />
+<path d="M -85.000 160.000 L -85.000 -160.000 L 150.000 -160.000 L 300.000 -11.000 L 300.000 11.000 L 150.000 160.000 Z" fill="#134e4a" fill-opacity="0.16" stroke="#134e4a" stroke-opacity="0.72" stroke-width="0.776" />
+  </g>
+</svg>

@@ -6,7 +6,11 @@ from orpen_sc_pdk.cells import (
     dicing_edge,
     interdigital_capacitor,
     launcher,
+    martinis2022_differential_ribbon_capacitor,
     resonator,
+    sim_flip_chip_distance,
+    sim_flip_chip_distance_keepout_global_routing_demo,
+    sim_flip_chip_distance_keepout_routing_demo,
     taper,
 )
 from orpen_sc_pdk.tech import LAYER, LAYER_STACK
@@ -21,7 +25,17 @@ def test_pdk_activates_and_builds_public_cells() -> None:
     assert cpw_straight().ports
     assert launcher().ports
     assert interdigital_capacitor().ports
+    assert martinis2022_differential_ribbon_capacitor().ports
     assert resonator().ports
+    assert sim_flip_chip_distance().ports
+    assert sim_flip_chip_distance_keepout_routing_demo(
+        show_route_centerline=False,
+        show_route_keepout=False,
+    )
+    assert sim_flip_chip_distance_keepout_global_routing_demo(
+        show_route_centerline=False,
+        show_route_keepout=False,
+    )
     assert taper().ports
     assert dicing_edge()
 
@@ -31,6 +45,8 @@ def test_public_pdk_has_no_private_imports_or_gds() -> None:
     source_text = "\n".join(path.read_text() for path in package_root.rglob("*.py"))
 
     assert "ncuas_designs" not in source_text
+    assert "as_single" not in source_text
+    assert "as_reference" not in source_text
     assert "AS Reference" not in source_text
     assert "AS Circular" not in source_text
     assert not list(package_root.rglob("*.gds"))
