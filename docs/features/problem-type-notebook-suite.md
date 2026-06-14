@@ -2,7 +2,7 @@
 
 **Target:** `orpen-sc-pdk` examples using `gsim`
 
-**Status:** candidate
+**Status:** prototype
 
 The public PDK should provide a small notebook suite that proves the reusable
 simulation workflow works for representative Palace problem types without
@@ -26,6 +26,12 @@ Public fixture direction:
 - electrostatic: a public capacitor fixture with named terminals and
   capacitance/report outputs.
 
+Current public notebook:
+
+- {doc}`../notebooks/public_simulation_workflows` runs public Driven,
+  Eigenmode, and Electrostatic mesh/config/artifact handoffs with local `gsim`
+  and public `orpen-sc-pdk` cells only.
+
 Acceptance direction:
 
 - each notebook uses `gsim` APIs and `orpen-sc-pdk` public metadata only;
@@ -38,3 +44,9 @@ Acceptance direction:
 Related issue:
 
 - {doc}`../issues/public-problem-type-notebook-coverage`
+
+```{toctree}
+:hidden:
+
+../notebooks/public_simulation_workflows
+```

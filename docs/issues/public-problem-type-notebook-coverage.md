@@ -43,18 +43,17 @@ Verified local changes:
   Electrostatic `config.json`, persists `mesh_manifest.json`, persists
   `palace_index_map.json`, and verifies the positive/negative terminal indices
   map back to separate `D0_TOP_M1` physical names;
+- `notebooks/src/public_simulation_workflows.py` is a publication-safe Jupytext
+  notebook source that runs public Driven, Eigenmode, and Electrostatic
+  mesh/config/artifact handoffs and displays scrubbed summaries only;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - Ruff check and format-check passed for all three executable fixtures.
+- `just docs` converts and executes the public simulation workflow notebook as
+  part of the docs build.
 
 Remaining slices:
 
-- convert the executable driven fixture into a publication-safe notebook or
-  notebook-equivalent example page;
-- convert the executable eigenmode fixture into a publication-safe notebook or
-  notebook-equivalent example page;
-- convert the executable electrostatic fixture into a publication-safe notebook
-  or notebook-equivalent example page;
 - add optional local Palace coarse-solve smoke checks when a Palace binary is
   available.
 
