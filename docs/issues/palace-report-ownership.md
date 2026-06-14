@@ -34,15 +34,20 @@ Verified local changes:
 - focused `gsim` tests cover directory sources, results-dict sources,
   domain-energy mapping, surface-Q mapping, unmapped index preservation, Ruff,
   and targeted Pyright.
+- `gsim` commit `38787ff`: adds `TerminalMatrix` and
+  `load_terminal_matrix()` to the public `gsim.palace` surface;
+- `load_terminal_matrix()` can load `terminal-C.csv`, `terminal-Cm.csv`, and
+  `terminal-Cinv.csv`, label rows/columns from `Boundaries.Terminal` rows in
+  `palace_index_map.json`, preserve SI values, expose display-scaled matrices,
+  and emit long-form terminal-pair rows for report tables.
 
 Remaining slices:
 
-- add electrostatic capacitance matrix loaders that consume
-  `Boundaries.Terminal` rows from `palace_index_map.json`;
 - run real Palace coarse-solve smoke checks when a Palace binary is available
   on the local machine;
-- build higher-level EPR/surface-Q summary frames on top of the indexed CSV
-  loader instead of copying private report code.
+- build higher-level EPR/surface-Q and electrostatic convergence summary frames
+  on top of the reusable indexed CSV and terminal matrix loaders instead of
+  copying private report code.
 
 Related features:
 

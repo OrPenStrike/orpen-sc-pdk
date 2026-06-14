@@ -25,6 +25,8 @@ Current public baseline:
   `load_indexed_csv()` as the first reusable report-loading surface;
 - indexed Palace CSV columns can be annotated from `palace_index_map.json`
   without reading private mesh files or notebook-local physical-name maps;
+- electrostatic terminal matrices can be loaded through `load_terminal_matrix()`
+  with terminal labels resolved from `Boundaries.Terminal` index-map rows;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 
