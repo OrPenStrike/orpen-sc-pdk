@@ -24,7 +24,7 @@ layout/IP, private run folders, or private benchmark evidence.
 | Material policy, material aliases, and Palace material translation | `orpen-sc-pdk` and `gsim` | PDK owns public material names and records; `gsim` owns overlays, frequency evaluation, and solver translation. |
 | CAD/XAO/mesh physical names and solver index provenance | `meshwell` and `gsim` | Build on meshwell physical-name and interface-tag conventions, then expose a Palace role/index manifest in `gsim`. |
 | Surface-Q, EPR, capacitance, eigenmode, and driven-result report parsing | `gsim` | Keep reusable result loaders and report schemas upstream; local `gsim` now has indexed domain-energy, surface-Q, port-EPR, and electrostatic matrix summary primitives. |
-| Runtime handoff, local/cloud execution, and normalized performance records | `gsim` | Keep Palace as an external executable and report sanitized run metadata through reusable records. |
+| Runtime handoff, local/cloud execution, and normalized performance records | `gsim` | Keep Palace as an external executable and report sanitized run metadata through reusable records; local `gsim` can now run wrapper-style commands or direct development binaries for opt-in coarse smokes. |
 | Public problem-type notebooks for workflow validation | `orpen-sc-pdk` examples using `gsim` | Rebuild driven, eigenmode, and electrostatic notebooks with public fixtures instead of copying private notebooks. |
 
 ::::{grid} 1 1 2 3
@@ -120,7 +120,7 @@ from CAD/XAO generation through Palace postprocessing.
 
 **Target:** `orpen-sc-pdk` examples using `gsim`
 
-**Status:** candidate
+**Status:** prototype
 
 Provide public driven, eigenmode, and electrostatic notebooks that validate the
 same workflow nodes as private consumers without publishing private layouts.

@@ -76,6 +76,9 @@ Verified local changes:
 - `gsim` commit `76b383a`: adds public indexed EPR report summary helpers for
   `domain-E.csv`, `surface-Q.csv`, and `port-EPR.csv`, including surface
   interface totals and port participation fractions;
+- `gsim` commit `a584079`: adds a direct-binary mode for local Palace execution
+  so development builds can run the same public fixtures without wrapper-only
+  launcher assumptions;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -87,6 +90,9 @@ Verified local changes:
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: proves electrostatic
   terminal index-map artifacts on a generated public same-layer Martinis
   differential ribbon capacitor mesh;
+- the same electrostatic fixture now has an opt-in local Palace coarse-solve
+  smoke path that confirms the generated mesh/config can produce non-empty
+  terminal capacitance matrices through public `gsim` execution;
 - validation for `cb052db`: manifest/workflow/curved-meshing tests passed,
   mesh integration tests passed, Ruff check/format passed, and targeted Pyright
   reported no errors.
@@ -114,11 +120,15 @@ Verified local changes:
 - validation for `76b383a`: `gsim` result, manifest, and workflow tests passed;
   Ruff check/format passed; targeted Pyright passed for the changed results
   public surface.
+- validation for `a584079`: `gsim` result, manifest, and workflow tests passed;
+  Ruff check/format passed; targeted Pyright passed for the changed local
+  execution surface; the public electrostatic fixture passed an opt-in local
+  Palace coarse solve against a direct development binary.
 
 Remaining implementation slices:
 
-- run optional local Palace coarse-solve smoke checks when a Palace binary is
-  available on the local machine;
+- run optional local Palace coarse-solve smoke checks for Driven and Eigenmode
+  public fixtures when a Palace binary is available on the local machine;
 - extend report summaries toward material-loss/T1/gamma only after the public
   ownership split between `gsim` result schemas and PDK material overlays is
   explicit.

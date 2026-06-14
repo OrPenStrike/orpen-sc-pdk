@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -9,16 +10,11 @@ import orpen_sc_pdk
 from orpen_sc_pdk.cells import martinis2022_differential_ribbon_capacitor
 
 
-def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
-    tmp_path: Path,
-) -> None:
-    """Public same-layer capacitor fixture exercises terminal index artifacts."""
-
+def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
     pytest.importorskip("gmsh")
     pytest.importorskip("gsim")
 
     from gsim.palace import ElectrostaticSim
-    from gsim.palace.mesh import build_postprocessing_config_from_manifest
 
     orpen_sc_pdk.activate()
     component = martinis2022_differential_ribbon_capacitor(
@@ -33,7 +29,6 @@ def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
 
     assert positive_port.layer == negative_port.layer
 
-    output_dir = tmp_path / "palace-sim"
     sim = ElectrostaticSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
@@ -58,6 +53,19 @@ def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
         auto_size=False,
     )
     mesh_result = sim._last_mesh_result
+
+    return sim, mesh_result
+
+
+def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
+    tmp_path: Path,
+) -> None:
+    """Public same-layer capacitor fixture exercises terminal index artifacts."""
+
+    output_dir = tmp_path / "palace-sim"
+    sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
+
+    from gsim.palace.mesh import build_postprocessing_config_from_manifest
 
     postprocessing = build_postprocessing_config_from_manifest(mesh_result.manifest)
     config_path = sim.write_config(postprocessing=postprocessing)
@@ -89,3 +97,51 @@ def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
         "negative",
     }
     assert {row["metadata"]["layer"] for row in terminal_rows} == {"D0_TOP_M1"}
+
+
+def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
+    tmp_path: Path,
+) -> None:
+    """Optional local Palace smoke proves the public electrostatic fixture solves."""
+
+    if os.environ.get("ORPEN_RUN_LOCAL_PALACE_SMOKE") != "1":
+        pytest.skip("set ORPEN_RUN_LOCAL_PALACE_SMOKE=1 to run local Palace smoke")
+
+    palace_sif = os.environ.get("PALACE_SIF")
+    palace_executable = os.environ.get("PALACE_EXECUTABLE")
+    if not palace_sif and not palace_executable:
+        pytest.skip("set PALACE_SIF or PALACE_EXECUTABLE for local Palace smoke")
+
+    executable_mode = os.environ.get("PALACE_EXECUTABLE_MODE", "wrapper")
+    if executable_mode not in {"wrapper", "binary"}:
+        msg = "PALACE_EXECUTABLE_MODE must be 'wrapper' or 'binary'"
+        raise ValueError(msg)
+
+    output_dir = tmp_path / "palace-smoke"
+    sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
+
+    from gsim.palace.mesh import build_postprocessing_config_from_manifest
+
+    postprocessing = build_postprocessing_config_from_manifest(mesh_result.manifest)
+    sim.write_config(postprocessing=postprocessing, validate_mesh=False)
+
+    use_apptainer = palace_sif is not None
+    run_kwargs = {
+        "use_apptainer": use_apptainer,
+        "num_processes": int(os.environ.get("PALACE_NP", "1")),
+        "num_threads": int(os.environ.get("PALACE_NT", "1")),
+        "verbose": False,
+    }
+    if use_apptainer:
+        run_kwargs["palace_sif_path"] = palace_sif
+    else:
+        run_kwargs["palace_executable"] = palace_executable
+        run_kwargs["executable_mode"] = executable_mode
+        run_kwargs["serial"] = os.environ.get("PALACE_SERIAL") == "1"
+
+    results = sim.run_local(**run_kwargs)
+
+    for filename in ("terminal-C.csv", "terminal-Cm.csv", "terminal-Cinv.csv"):
+        path = results.get(filename)
+        assert path is not None
+        assert Path(path).stat().st_size > 0

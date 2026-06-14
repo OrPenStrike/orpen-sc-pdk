@@ -32,13 +32,20 @@ Verified local changes:
 - `gsim` commit `bd0a2bc`: same-layer planar conductor islands can now be
   selected by electrostatic terminal center points, preserving the layer-level
   terminal fallback when no center is provided;
+- `gsim` commit `a584079`: `run_local()` can execute either the Palace wrapper
+  command or a direct solver binary, so local coarse smokes can use packaged
+  wrappers, Apptainer SIFs, or local development binaries without changing PDK
+  fixtures;
 - public `orpen-sc-pdk` executable fixtures now validate Driven, Eigenmode, and
   Electrostatic mesh/config/artifact handoff through local editable `gsim`.
+- the public electrostatic fixture now has an opt-in local Palace coarse solve
+  that verifies non-empty terminal capacitance outputs.
 
 Remaining slices:
 
 - convert executable fixtures into publication-safe notebooks or examples;
-- add optional local Palace coarse-solve smoke checks when available.
+- add optional local Palace coarse-solve smoke checks for Driven and Eigenmode
+  fixtures when available.
 
 Related features:
 

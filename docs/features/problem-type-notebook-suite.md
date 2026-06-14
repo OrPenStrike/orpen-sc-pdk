@@ -32,6 +32,15 @@ Current public notebook:
   Eigenmode, and Electrostatic mesh/config/artifact handoffs with local `gsim`
   and public `orpen-sc-pdk` cells only.
 
+Current executable smoke coverage:
+
+- the public Electrostatic capacitor fixture has an opt-in local Palace coarse
+  solve guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
+- the smoke path accepts either a Palace SIF (`PALACE_SIF`) or a direct local
+  executable (`PALACE_EXECUTABLE`), with `PALACE_EXECUTABLE_MODE=binary` for
+  development binaries that do not accept wrapper launcher flags;
+- Driven and Eigenmode still need equivalent opt-in solver smokes.
+
 Acceptance direction:
 
 - each notebook uses `gsim` APIs and `orpen-sc-pdk` public metadata only;

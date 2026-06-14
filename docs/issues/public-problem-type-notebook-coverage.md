@@ -43,19 +43,31 @@ Verified local changes:
   Electrostatic `config.json`, persists `mesh_manifest.json`, persists
   `palace_index_map.json`, and verifies the positive/negative terminal indices
   map back to separate `D0_TOP_M1` physical names;
+- the same electrostatic fixture now includes an optional local Palace
+  coarse-solve smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it can
+  run through a local Palace wrapper or direct solver binary and verifies that
+  public outputs include non-empty `terminal-C.csv`, `terminal-Cm.csv`, and
+  `terminal-Cinv.csv`;
 - `notebooks/src/public_simulation_workflows.py` is a publication-safe Jupytext
   notebook source that runs public Driven, Eigenmode, and Electrostatic
   mesh/config/artifact handoffs and displays scrubbed summaries only;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
+- optional local Palace validation passed with
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
+- direct macOS development binaries may also require local dynamic-library
+  loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
+  paths outside public docs and CI defaults;
 - Ruff check and format-check passed for all three executable fixtures.
 - `just docs` converts and executes the public simulation workflow notebook as
   part of the docs build.
 
 Remaining slices:
 
-- add optional local Palace coarse-solve smoke checks when a Palace binary is
-  available.
+- add optional local Palace coarse-solve smoke checks for the public Driven and
+  Eigenmode fixtures;
+- load electrostatic terminal matrices through the public indexed report
+  helpers in the optional smoke path, not only by checking output files.
 
 Acceptance checks:
 
