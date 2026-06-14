@@ -60,13 +60,16 @@ Verified local changes:
   `gsim.palace.SParams` with `o1`/`o2` port labels.
 - `orpen-sc-pdk` now validates the public Eigenmode resonator fixture against a
   real optional local Palace coarse solve, proving `eig.csv` and `domain-E.csv`
-  are produced for a public resonator; Eigenmode still lacks a dedicated public
-  eigenvalue report loader.
+  are produced for a public resonator.
+- `gsim` now exposes `load_eigenmodes()`, `load_eigenmode_history()`, and
+  `summarize_eigenmode_history()` so Eigenmode `eig.csv` outputs have stable
+  normalized fields, notebook-facing aliases, source visibility, and
+  HFSS-style pass summaries instead of notebook-local parsing.
+- `orpen-sc-pdk` now routes the public Eigenmode smoke through
+  `load_eigenmodes()` and `load_eigenmode_history()`.
 
 Remaining slices:
 
-- add a reusable `gsim` eigenvalue report loader if Eigenmode reports need
-  notebook-facing schema support beyond raw `eig.csv`;
 - extend the reusable report layer toward material-loss/T1/gamma summaries only
   where that information belongs in public `gsim` schemas or PDK-owned material
   overlays;

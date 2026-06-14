@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import json
 import os
 from pathlib import Path
@@ -155,17 +154,24 @@ def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
 
     results = sim.run_local(**run_kwargs)
 
+    from gsim.palace import load_eigenmode_history, load_eigenmodes
+
     eig_path = results.get("eig.csv")
     assert eig_path is not None
     assert eig_path.stat().st_size > 0
     assert results["domain-E.csv"].stat().st_size > 0
 
-    with eig_path.open(newline="") as handle:
-        reader = csv.reader(handle)
-        header = [column.strip() for column in next(reader)]
-        rows = list(reader)
+    eigenmodes = load_eigenmodes(results)
+    assert eigenmodes.n_modes == 2
+    assert eigenmodes.freq_real_ghz.min() > 0
+    assert eigenmodes.q.min() > 0
+    assert {
+        "frequency_ghz",
+        "imaginary_frequency_ghz",
+        "q_factor",
+    } <= set(eigenmodes.to_report_dataframe().columns)
 
-    assert "Re{f} (GHz)" in header
-    assert "Q" in header
-    assert len(rows) == 2
-    assert all(float(row[1]) > 0 for row in rows)
+    history = load_eigenmode_history(output_dir)
+    assert history["source_kind"].tolist() == ["final", "final"]
+    assert history["mode_index"].tolist() == [1, 2]
+    assert history["frequency_ghz"].min() > 0

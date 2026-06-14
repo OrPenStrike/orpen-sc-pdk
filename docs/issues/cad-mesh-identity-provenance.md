@@ -92,7 +92,8 @@ Verified local changes:
   eigenmode mesh instead of hand-built physical group dictionaries;
 - the same eigenmode fixture now has an opt-in local Palace coarse-solve smoke
   path that confirms the generated mesh/config can produce non-empty `eig.csv`
-  and `domain-E.csv` outputs for a public resonator;
+  and `domain-E.csv` outputs for a public resonator and load them through public
+  `gsim.palace.load_eigenmodes()`;
 - `orpen-sc-pdk` local test
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: proves electrostatic
   terminal index-map artifacts on a generated public same-layer Martinis
@@ -142,7 +143,8 @@ Verified local changes:
   including S-parameter parsing through `gsim.palace.SParams`.
 - validation after the Eigenmode smoke extension: the public resonator
   eigenmode fixture passed both the default skip path and the opt-in local
-  Palace solve, including positive eigenfrequency rows from `eig.csv`.
+  Palace solve, including positive eigenfrequency rows and final-source
+  visibility from the public Eigenmode loader.
 
 Remaining implementation slices:
 

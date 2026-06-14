@@ -42,8 +42,8 @@ Verified local changes:
   Power `SurfaceFlux` postprocessing index;
 - the same eigenmode fixture now includes an optional local Palace coarse-solve
   smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies non-empty
-  `eig.csv` and `domain-E.csv` outputs and reads two positive eigenfrequency
-  rows from the public resonator solve;
+  `eig.csv` and `domain-E.csv` outputs, then loads two positive eigenfrequency
+  rows through public `gsim.palace.load_eigenmodes()`;
 - electrostatic now has an executable public fixture in
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: it builds the public
   same-layer Martinis differential ribbon capacitor fixture, uses local `gsim`
@@ -82,8 +82,8 @@ Remaining slices:
 
 - expose the opt-in solver smoke paths in publication-safe notebook/example
   form without making normal docs builds depend on local Palace;
-- add a reusable `gsim` eigenvalue report loader if Eigenmode reports need the
-  same public schema treatment as S-parameters and terminal matrices.
+- extend reusable Eigenmode reporting toward EPR/material summaries by composing
+  `load_eigenmodes()` with the existing indexed report loaders.
 
 Acceptance checks:
 
