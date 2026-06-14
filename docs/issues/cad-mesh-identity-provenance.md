@@ -46,6 +46,10 @@ Verified local changes:
 - `gsim` commit `73c8d98`: writes `Boundaries.Terminal` rows into
   `palace_index_map.json` for electrostatic configs, linking terminal indices
   to manifest physical names;
+- `gsim` commit `bd0a2bc`: splits same-layer planar PEC islands into separate
+  physical groups and lets electrostatic terminals select one island by XY
+  center while preserving layer-level terminal selection when no center is
+  provided;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -55,20 +59,21 @@ Verified local changes:
   eigenmode mesh instead of hand-built physical group dictionaries;
 - `orpen-sc-pdk` local test
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: proves electrostatic
-  terminal index-map artifacts on a generated public two-layer capacitor mesh;
+  terminal index-map artifacts on a generated public same-layer Martinis
+  differential ribbon capacitor mesh;
 - validation for `cb052db`: manifest/workflow/curved-meshing tests passed,
   mesh integration tests passed, Ruff check/format passed, and targeted Pyright
   reported no errors.
 - validation for `73c8d98`: manifest/workflow tests passed, Ruff
   check/format passed, and targeted Pyright reported no errors.
+- validation for `bd0a2bc`: manifest/workflow tests passed, public
+  driven/eigenmode/electrostatic fixtures passed, Ruff check/format passed, and
+  targeted Pyright passed for the changed model/group surface.
 
 Remaining implementation slices:
 
 - decide whether to cliff-cut `gsim` interface labels from `__` to meshwell's
-  `___` delimiter;
-- extend same-layer conductor terminal selection so public differential
-  capacitors can map two terminals on one metal layer without collapsing them
-  into one layer-level PEC physical group.
+  `___` delimiter.
 
 Acceptance checks:
 

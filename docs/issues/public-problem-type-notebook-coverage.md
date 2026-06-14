@@ -37,12 +37,12 @@ Verified local changes:
   `palace_index_map.json`, and verifies the absorbing boundary maps to a Palace
   Power `SurfaceFlux` postprocessing index;
 - electrostatic now has an executable public fixture in
-  `tests/test_gsim_electrostatic_capacitor_workflow.py`: it builds a public
-  two-layer capacitor fixture from `orpen-sc-pdk` layer metadata, uses local
-  `gsim` `ElectrostaticSim` terminal configuration, writes Electrostatic
-  `config.json`, persists `mesh_manifest.json`, persists `palace_index_map.json`,
-  and verifies terminal indices map back to `D0_TOP_M1`/`D1_BOTTOM_M1`
-  physical names;
+  `tests/test_gsim_electrostatic_capacitor_workflow.py`: it builds the public
+  same-layer Martinis differential ribbon capacitor fixture, uses local `gsim`
+  `ElectrostaticSim` center-selected terminal configuration, writes
+  Electrostatic `config.json`, persists `mesh_manifest.json`, persists
+  `palace_index_map.json`, and verifies the positive/negative terminal indices
+  map back to separate `D0_TOP_M1` physical names;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - Ruff check and format-check passed for all three executable fixtures.
@@ -55,9 +55,6 @@ Remaining slices:
   notebook-equivalent example page;
 - convert the executable electrostatic fixture into a publication-safe notebook
   or notebook-equivalent example page;
-- extend `gsim` terminal selection beyond layer-level terminals so the public
-  same-layer differential ribbon capacitor can become the electrostatic
-  notebook-equivalent example page;
 - add optional local Palace coarse-solve smoke checks when a Palace binary is
   available.
 

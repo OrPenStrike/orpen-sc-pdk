@@ -3,17 +3,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import gdsfactory as gf
 import pytest
 
 import orpen_sc_pdk
-from orpen_sc_pdk.tech import LAYER
+from orpen_sc_pdk.cells import martinis2022_differential_ribbon_capacitor
 
 
-def test_public_two_layer_capacitor_electrostatic_gsim_terminal_artifacts(
+def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
     tmp_path: Path,
 ) -> None:
-    """Public electrostatic fixture exercises terminal and index artifacts."""
+    """Public same-layer capacitor fixture exercises terminal index artifacts."""
 
     pytest.importorskip("gmsh")
     pytest.importorskip("gsim")
@@ -22,17 +21,17 @@ def test_public_two_layer_capacitor_electrostatic_gsim_terminal_artifacts(
     from gsim.palace.mesh import build_postprocessing_config_from_manifest
 
     orpen_sc_pdk.activate()
-    component = gf.Component("public_two_layer_capacitor_fixture")
-    component << gf.components.rectangle(
-        size=(120, 60),
-        centered=True,
-        layer=LAYER.D0_TOP_M1_DRAW,
+    component = martinis2022_differential_ribbon_capacitor(
+        a_um=20,
+        b_um=35,
+        ell_r_um=160,
     )
-    component << gf.components.rectangle(
-        size=(100, 50),
-        centered=True,
-        layer=LAYER.D1_BOTTOM_M1_DRAW,
-    )
+    positive_port = component.ports["o_mesh_positive_electrode"]
+    negative_port = component.ports["o_mesh_negative_electrode"]
+    positive_center = tuple(float(value) for value in positive_port.center)
+    negative_center = tuple(float(value) for value in negative_port.center)
+
+    assert positive_port.layer == negative_port.layer
 
     output_dir = tmp_path / "palace-sim"
     sim = ElectrostaticSim()
@@ -45,8 +44,8 @@ def test_public_two_layer_capacitor_electrostatic_gsim_terminal_artifacts(
         add_passivation_dielectric=False,
     )
     sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
-    sim.add_terminal("top", layer="D0_TOP_M1")
-    sim.add_terminal("bottom", layer="D1_BOTTOM_M1")
+    sim.add_terminal("positive", layer="D0_TOP_M1", center=positive_center)
+    sim.add_terminal("negative", layer="D0_TOP_M1", center=negative_center)
     sim.set_electrostatic(save_fields=0)
 
     sim.mesh(
@@ -76,18 +75,17 @@ def test_public_two_layer_capacitor_electrostatic_gsim_terminal_artifacts(
     assert all(terminal["Attributes"] for terminal in terminals)
     assert set(terminals[0]["Attributes"]).isdisjoint(terminals[1]["Attributes"])
 
-    pec_entries = {
-        entry["name"]: entry for entry in manifest["entries"] if entry["role"] == "pec_surface"
-    }
-    assert {"D0_TOP_M1", "D1_BOTTOM_M1"} <= set(pec_entries)
+    pec_entries = [entry for entry in manifest["entries"] if entry["role"] == "pec_surface"]
+    assert len(pec_entries) == 2
+    assert {entry["metadata"]["layer"] for entry in pec_entries} == {"D0_TOP_M1"}
 
     energy_rows = config["Domains"]["Postprocessing"]["Energy"]
     assert energy_rows
 
     terminal_rows = [row for row in index_map["entries"] if row["section"] == "Boundaries.Terminal"]
     assert {row["index"] for row in terminal_rows} == {1, 2}
-    assert {row["terminal_name"] for row in terminal_rows} == {"top", "bottom"}
-    assert {row["physical_names"][0] for row in terminal_rows} == {
-        "D0_TOP_M1",
-        "D1_BOTTOM_M1",
+    assert {row["terminal_name"] for row in terminal_rows} == {
+        "positive",
+        "negative",
     }
+    assert {row["metadata"]["layer"] for row in terminal_rows} == {"D0_TOP_M1"}

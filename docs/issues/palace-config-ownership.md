@@ -29,13 +29,14 @@ Verified local changes:
 - `gsim` commit `73c8d98`: high-level `write_config()` now persists terminal
   index-map rows for electrostatic configs, so generated capacitance terminal
   indices can be traced back to manifest physical names;
+- `gsim` commit `bd0a2bc`: same-layer planar conductor islands can now be
+  selected by electrostatic terminal center points, preserving the layer-level
+  terminal fallback when no center is provided;
 - public `orpen-sc-pdk` executable fixtures now validate Driven, Eigenmode, and
   Electrostatic mesh/config/artifact handoff through local editable `gsim`.
 
 Remaining slices:
 
-- extend `gsim` terminal selection beyond layer-level terminals for same-layer
-  differential capacitors;
 - convert executable fixtures into publication-safe notebooks or examples;
 - add optional local Palace coarse-solve smoke checks when available.
 
