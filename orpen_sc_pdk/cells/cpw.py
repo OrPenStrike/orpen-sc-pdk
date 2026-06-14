@@ -57,14 +57,14 @@ def cpw_straight(
     return component
 
 
-@gf.cell(tags=["AS", "elements"])
+@gf.cell(tags=["elements"])
 def launcher(
     pad_width: float = 150.0,
     pad_length: float = 150.0,
     taper_length: float = 150.0,
     side_gap_height: float = 85.0,
     end_gap_width: float = 85.0,
-    cpw_xs: CrossSectionSpec = "as_coplanar_waveguide",
+    cpw_xs: CrossSectionSpec = "coplanar_waveguide",
     draw_layer: Layer = LAYER.D0_TOP_M1_DRAW,
     etch_layer: Layer = LAYER.D0_TOP_M1_ETCH,
     ground_mask_layer: Layer = LAYER.D0_TOP_GROUND_MASK,
@@ -73,8 +73,8 @@ def launcher(
     """Return a tapered CPW launcher from a large pad to a CPW neck."""
 
     xs = gf.get_cross_section(cpw_xs)
-    cpw_width = xs["as_cpw_draw"].width
-    cpw_gap = xs["as_cpw_etch_pos"].width
+    cpw_width = xs["cpw_draw"].width
+    cpw_gap = xs["cpw_etch_pos"].width
 
     component = gf.Component()
 

@@ -38,6 +38,4 @@ def add_etch_for_component(
     return result
 
 
-as_add_etch_for_component = add_etch_for_component
-
-__all__ = ["add_etch_for_component", "as_add_etch_for_component"]
+__all__ = ["add_etch_for_component"]

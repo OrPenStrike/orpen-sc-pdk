@@ -14,7 +14,7 @@ def bend_circular(
     angular_step: float | None = None,
     layer: LayerSpec | None = None,
     width: float | None = None,
-    cross_section: CrossSectionSpec = "as_cpw_6_7_6",
+    cross_section: CrossSectionSpec = "cpw_6_7_6",
     allow_min_radius_violation: bool = False,
 ) -> gf.Component:
     """Return a GF circular bend with a project CPW default cross-section."""
@@ -41,7 +41,7 @@ def bend_euler(
     angular_step: float | None = None,
     layer: LayerSpec | None = None,
     width: float | None = None,
-    cross_section: CrossSectionSpec = "as_cpw_6_7_6",
+    cross_section: CrossSectionSpec = "cpw_6_7_6",
     allow_min_radius_violation: bool = False,
 ) -> gf.Component:
     """Return a GF Euler bend with a project CPW default cross-section."""
@@ -64,7 +64,7 @@ def bend_euler(
 def straight(
     length: float = 10.0,
     npoints: int = 2,
-    cross_section: CrossSectionSpec = "as_cpw_6_7_6",
+    cross_section: CrossSectionSpec = "cpw_6_7_6",
     width: float | None = None,
 ) -> gf.Component:
     """Return a GF straight with a project CPW default cross-section."""

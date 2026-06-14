@@ -8,7 +8,7 @@ from klayout import db as kdb
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
-@gf.cell(tags=["AS", "elements"])
+@gf.cell(tags=["elements"])
 def indium_bump(
     indium_bump_size: float = 20.0,
     under_bump_size: float = 40.0,

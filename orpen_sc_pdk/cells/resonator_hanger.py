@@ -9,12 +9,12 @@ from orpen_sc_pdk.ports import MeshProfile, add_mesh_port
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
-@gf.cell(tags=["AS", "elements"])
+@gf.cell(tags=["elements"])
 def resonator_hanger(
     coupling_length: float = 200.0,
     straight_length: float = 160.0,
     # XS
-    cpw_xs: CrossSectionSpec = "as_cpw_6_10_6",
+    cpw_xs: CrossSectionSpec = "cpw_6_10_6",
     cpw_radius: float = 100.0,
     bend_npoints: int | None = 16,
     bend_segment2_angle: Literal[-90, 90] = -90,

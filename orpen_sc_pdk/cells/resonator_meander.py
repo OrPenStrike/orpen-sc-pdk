@@ -5,20 +5,20 @@ from gdsfactory.typings import ComponentSpec, CrossSectionSpec
 
 from orpen_sc_pdk.ports import MeshProfile, add_mesh_port
 from orpen_sc_pdk.tech import (
-    AS_CPW_ETCH_POS,
-    AS_CPW_GROUND_MASK,
+    CPW_ETCH_POS,
+    CPW_GROUND_MASK,
     LAYER,
     Layer,
 )
 
 
-@gf.cell(tags=["AS", "elements"])
+@gf.cell(tags=["elements"])
 def resonator_meander(
     length: float = 4000.0,
     meanders: int = 6,
     straight_length_weights: tuple[float, ...] | None = None,
     bend_spec: ComponentSpec = "bend_euler",
-    cpw_xs: CrossSectionSpec = "as_cpw_6_10_6",
+    cpw_xs: CrossSectionSpec = "cpw_6_10_6",
     cpw_radius: float = 100.0,
     bend_npoints: int | None = 16,
     start_with_bend: bool = False,
@@ -30,7 +30,7 @@ def resonator_meander(
     etch_layer: Layer = LAYER.D0_TOP_M1_ETCH,
     ground_mask_layer: Layer = LAYER.D0_TOP_GROUND_MASK,
 ) -> gf.Component:
-    """Create a meandering AS coplanar waveguide resonator.
+    """Create a meandering coplanar waveguide resonator.
 
     The CPW cross-section is rebuilt with the provided DRAW / ETCH /
     GROUND_MASK layers, so the same resonator can be placed on either chip face.
@@ -159,8 +159,8 @@ def resonator_meander(
         raise ValueError("Resonator could not be generated correctly.")
 
     if open_end or open_start:
-        etch_section = xs[AS_CPW_ETCH_POS]
-        ground_mask_section = xs[AS_CPW_GROUND_MASK]
+        etch_section = xs[CPW_ETCH_POS]
+        ground_mask_section = xs[CPW_GROUND_MASK]
         open_etch_comp = gf.components.rectangle(
             size=(
                 etch_section.width,

@@ -8,19 +8,19 @@ from gdsfactory.typings import CrossSectionSpec
 
 from orpen_sc_pdk.ports import add_q2d_conductor_port
 from orpen_sc_pdk.tech import (
-    AS_CPW_ETCH_NEG,
-    AS_CPW_ETCH_POS,
-    AS_CPW_GROUND_MASK,
+    CPW_ETCH_NEG,
+    CPW_ETCH_POS,
+    CPW_GROUND_MASK,
     LAYER,
     LayerSpec,
-    as_coplanar_waveguide,
+    coplanar_waveguide,
 )
 
 
 @gf.cell(tags=["chips", "q2d", "cross_section"])
 def single_trace_xs_chip(
     length_um: float = 1000.0,
-    cpw_xs: CrossSectionSpec = "as_cpw_6_10_6",
+    cpw_xs: CrossSectionSpec = "cpw_6_10_6",
     cpw_gap_width_gap_um: tuple[float, float, float] | None = None,
     draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
     etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
@@ -180,7 +180,7 @@ def two_trace_xs_chip(
 @gf.cell(tags=["chips", "q2d", "cross_section", "flip_chip"])
 def single_trace_flip_chip_xs_chip(
     length_um: float = 1000.0,
-    cpw_xs: CrossSectionSpec = "as_cpw_6_10_6",
+    cpw_xs: CrossSectionSpec = "cpw_6_10_6",
     cpw_gap_width_gap_um: tuple[float, float, float] | None = None,
     d0_draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
     d0_etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
@@ -298,7 +298,7 @@ def two_trace_flip_chip_xs_chip(
         raise ValueError("signal_assignment_names must contain two non-empty names.")
 
     c = gf.Component()
-    d0_xs = as_coplanar_waveguide(
+    d0_xs = coplanar_waveguide(
         width=cpw_width,
         gap=cpw_gap,
         draw_layer=d0_draw_layer,
@@ -306,7 +306,7 @@ def two_trace_flip_chip_xs_chip(
         ground_mask_layer=d0_ground_mask_layer,
         radius=None,
     )
-    d1_xs = as_coplanar_waveguide(
+    d1_xs = coplanar_waveguide(
         width=cpw_width,
         gap=cpw_gap,
         draw_layer=d1_draw_layer,
@@ -398,7 +398,7 @@ def _resolve_symmetric_cpw_xs(
             ground_mask_layer=ground_mask_layer,
         )
     gap_um, width_um = _symmetric_gap_width_gap(cpw_gap_width_gap_um)
-    return as_coplanar_waveguide(
+    return coplanar_waveguide(
         width=width_um,
         gap=gap_um,
         draw_layer=draw_layer,
@@ -597,16 +597,16 @@ def _symmetric_cpw_gap(xs: CrossSection) -> float:
     gaps = [
         float(section.width)
         for section in xs.sections
-        if section.name in {AS_CPW_ETCH_NEG, AS_CPW_ETCH_POS}
+        if section.name in {CPW_ETCH_NEG, CPW_ETCH_POS}
     ]
     if len(gaps) != 2 or gaps[0] != gaps[1]:
         raise ValueError(
-            "single_trace_xs_chip requires a symmetric AS CPW cross-section "
-            f"with {AS_CPW_ETCH_NEG!r} and {AS_CPW_ETCH_POS!r} sections."
+            "single_trace_xs_chip requires a symmetric CPW cross-section "
+            f"with {CPW_ETCH_NEG!r} and {CPW_ETCH_POS!r} sections."
         )
-    if not any(section.name == AS_CPW_GROUND_MASK for section in xs.sections):
+    if not any(section.name == CPW_GROUND_MASK for section in xs.sections):
         raise ValueError(
-            f"single_trace_xs_chip requires an AS CPW cross-section with {AS_CPW_GROUND_MASK!r}."
+            f"single_trace_xs_chip requires a CPW cross-section with {CPW_GROUND_MASK!r}."
         )
     return gaps[0]
 

@@ -460,52 +460,14 @@ def xsection(func: Callable[..., CrossSection]) -> Callable[..., CrossSection]:
     return decorated_cross_section
 
 
+CPW_ETCH_NEG = "cpw_etch_neg"
+CPW_DRAW = "cpw_draw"
+CPW_ETCH_POS = "cpw_etch_pos"
+CPW_GROUND_MASK = "cpw_ground_mask"
+
+
 @xsection
 def coplanar_waveguide(
-    width: float = 10.0,
-    gap: float = 6.0,
-    waveguide_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
-    etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
-    radius: float | None = 100.0,
-) -> CrossSection:
-    """Return a public CPW cross-section with signal and etch sections."""
-
-    return gf.cross_section.cross_section(
-        width=width,
-        layer=waveguide_layer,
-        radius=radius,
-        sections=(
-            gf.Section(
-                width=gap,
-                offset=(gap + width) / 2,
-                layer=etch_layer,
-                name="etch_offset_pos",
-            ),
-            gf.Section(
-                width=gap,
-                offset=-(gap + width) / 2,
-                layer=etch_layer,
-                name="etch_offset_neg",
-            ),
-            gf.Section(width=width, layer=LAYER.WG, name="waveguide"),
-        ),
-    )
-
-
-cpw = coplanar_waveguide
-etch = etch_only = partial(
-    coplanar_waveguide,
-    waveguide_layer=LAYER.D0_TOP_M1_ETCH,
-)
-
-AS_CPW_ETCH_NEG = "as_cpw_etch_neg"
-AS_CPW_DRAW = "as_cpw_draw"
-AS_CPW_ETCH_POS = "as_cpw_etch_pos"
-AS_CPW_GROUND_MASK = "as_cpw_ground_mask"
-
-
-@xsection
-def as_coplanar_waveguide(
     width: float = 10.0,
     gap: float = 6.0,
     draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
@@ -513,7 +475,7 @@ def as_coplanar_waveguide(
     ground_mask_layer: LayerSpec = LAYER.D0_TOP_GROUND_MASK,
     radius: float | None = 100.0,
 ) -> CrossSection:
-    """Return the public AS CPW cross-section with named DRAW/ETCH/MASK sections."""
+    """Return the public CPW cross-section with named DRAW/ETCH/MASK sections."""
 
     if width <= 0:
         raise ValueError(f"width must be positive, got {width!r}.")
@@ -527,32 +489,41 @@ def as_coplanar_waveguide(
         width=gap,
         offset=-etch_offset,
         layer=etch_layer,
-        name=AS_CPW_ETCH_NEG,
+        name=CPW_ETCH_NEG,
     )
     etch_pos = gf.Section(
         width=gap,
         offset=etch_offset,
         layer=etch_layer,
-        name=AS_CPW_ETCH_POS,
+        name=CPW_ETCH_POS,
     )
     ground_mask = gf.Section(
         width=ground_mask_width,
         offset=0.0,
         layer=ground_mask_layer,
-        name=AS_CPW_GROUND_MASK,
+        name=CPW_GROUND_MASK,
     )
 
     return gf.cross_section.cross_section(
         width=width,
         layer=draw_layer,
-        main_section_name=AS_CPW_DRAW,
+        main_section_name=CPW_DRAW,
         sections=(etch_neg, etch_pos, ground_mask),
         radius=radius,
     )
 
 
+cpw = coplanar_waveguide
+etch = etch_only = partial(
+    coplanar_waveguide,
+    draw_layer=LAYER.D0_TOP_M1_ETCH,
+    etch_layer=LAYER.D0_TOP_M1_ETCH,
+    ground_mask_layer=LAYER.D0_TOP_M1_ETCH,
+)
+
+
 @xsection
-def as_cpw_2dot7_4_2dot7(
+def cpw_2dot7_4_2dot7(
     width: float = 4.0,
     draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
     etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
@@ -561,7 +532,7 @@ def as_cpw_2dot7_4_2dot7(
 ) -> CrossSection:
     """Return a symmetric CPW cross-section with 2.7-4-2.7 widths."""
 
-    return as_coplanar_waveguide(
+    return coplanar_waveguide(
         width=width,
         gap=2.7,
         draw_layer=draw_layer,
@@ -572,7 +543,7 @@ def as_cpw_2dot7_4_2dot7(
 
 
 @xsection
-def as_cpw_6_10_6(
+def cpw_6_10_6(
     width: float = 10.0,
     draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
     etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
@@ -581,7 +552,7 @@ def as_cpw_6_10_6(
 ) -> CrossSection:
     """Return a symmetric CPW cross-section with 6-10-6 widths."""
 
-    return as_coplanar_waveguide(
+    return coplanar_waveguide(
         width=width,
         gap=6.0,
         draw_layer=draw_layer,
@@ -592,7 +563,7 @@ def as_cpw_6_10_6(
 
 
 @xsection
-def as_cpw_6_7_6(
+def cpw_6_7_6(
     width: float = 7.0,
     draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
     etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
@@ -601,7 +572,7 @@ def as_cpw_6_7_6(
 ) -> CrossSection:
     """Return a symmetric CPW cross-section with 6-7-6 widths."""
 
-    return as_coplanar_waveguide(
+    return coplanar_waveguide(
         width=width,
         gap=6.0,
         draw_layer=draw_layer,
@@ -612,7 +583,7 @@ def as_cpw_6_7_6(
 
 
 @xsection
-def as_cpw_15_5_15(
+def cpw_15_5_15(
     width: float = 5.0,
     gap: float = 15.0,
     draw_layer: LayerSpec = LAYER.D1_BOTTOM_M1_DRAW,
@@ -622,7 +593,7 @@ def as_cpw_15_5_15(
 ) -> CrossSection:
     """Return the floating-coupler CPW cross-section with 15-5-15 widths."""
 
-    return as_coplanar_waveguide(
+    return coplanar_waveguide(
         width=width,
         gap=gap,
         draw_layer=draw_layer,
@@ -730,10 +701,10 @@ routing_strategies: dict[str, Callable[..., object]] = {
 gf.CONF.layer_error_path = L.ERROR_PATH
 
 __all__ = [
-    "AS_CPW_DRAW",
-    "AS_CPW_ETCH_NEG",
-    "AS_CPW_ETCH_POS",
-    "AS_CPW_GROUND_MASK",
+    "CPW_DRAW",
+    "CPW_ETCH_NEG",
+    "CPW_ETCH_POS",
+    "CPW_GROUND_MASK",
     "L",
     "LAYER",
     "LAYER_CONNECTIVITY",
@@ -743,12 +714,11 @@ __all__ = [
     "Layer",
     "LayerMapOrpenSCPDK",
     "LayerSpec",
-    "as_coplanar_waveguide",
-    "as_cpw_15_5_15",
-    "as_cpw_2dot7_4_2dot7",
-    "as_cpw_6_10_6",
-    "as_cpw_6_7_6",
     "coplanar_waveguide",
+    "cpw_15_5_15",
+    "cpw_2dot7_4_2dot7",
+    "cpw_6_10_6",
+    "cpw_6_7_6",
     "cpw",
     "cross_sections",
     "etch",

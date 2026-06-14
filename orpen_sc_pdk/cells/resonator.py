@@ -7,11 +7,11 @@ from gdsfactory.typings import ComponentSpec, CrossSectionSpec
 
 from orpen_sc_pdk.cells.resonator_hanger import resonator_hanger
 from orpen_sc_pdk.cells.resonator_meander import resonator_meander
-from orpen_sc_pdk.helpers.layout.etch import as_add_etch_for_component
+from orpen_sc_pdk.helpers.layout.etch import add_etch_for_component
 from orpen_sc_pdk.ports import MeshProfile, add_mesh_port
 from orpen_sc_pdk.tech import (
-    AS_CPW_ETCH_POS,
-    AS_CPW_GROUND_MASK,
+    CPW_ETCH_POS,
+    CPW_GROUND_MASK,
     LAYER,
     Layer,
 )
@@ -26,7 +26,7 @@ def _component_length(component: gf.Component, name: str) -> float:
     return float(length)
 
 
-@gf.cell(tags=["AS", "resonators"])
+@gf.cell(tags=["resonators"])
 def resonator(
     length: float = 4000.0,
     meanders: int = 6,
@@ -41,7 +41,7 @@ def resonator(
     qubit_resonator_segment_gap: float = 10.0,
     route_to_qubit_resonator_segment: bool = False,
     # XS
-    cpw_xs: CrossSectionSpec = "as_cpw_6_10_6",
+    cpw_xs: CrossSectionSpec = "cpw_6_10_6",
     cpw_radius: float = 100.0,
     hanger_radius: float | None = None,
     meander_radius: float | None = None,
@@ -410,7 +410,7 @@ def _add_tail(
 def _qubit_resonator_segment(
     length: float,
     gap: float = 10.0,
-    cpw_xs: CrossSectionSpec = "as_cpw_6_10_6",
+    cpw_xs: CrossSectionSpec = "cpw_6_10_6",
     draw_layer: Layer = LAYER.D0_TOP_M1_DRAW,
     etch_layer: Layer = LAYER.D0_TOP_M1_ETCH,
     ground_mask_layer: Layer = LAYER.D0_TOP_GROUND_MASK,
@@ -464,7 +464,7 @@ def _qubit_resonator_segment(
         layer=ground_mask_layer,
     )
 
-    c = as_add_etch_for_component(
+    c = add_etch_for_component(
         component=c,
         draw_layer=draw_layer,
         mask_layer=ground_mask_layer,
@@ -485,8 +485,8 @@ def _qubit_resonator_segment(
 def _add_open_end(component: gf.Component, port: gf.Port, cross_section: gf.CrossSection) -> None:
     """Add the open-end ETCH and GROUND_MASK caps for an unterminated CPW."""
 
-    etch_section = cross_section[AS_CPW_ETCH_POS]
-    ground_mask_section = cross_section[AS_CPW_GROUND_MASK]
+    etch_section = cross_section[CPW_ETCH_POS]
+    ground_mask_section = cross_section[CPW_GROUND_MASK]
 
     open_etch_comp = gf.components.rectangle(
         size=(

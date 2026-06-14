@@ -12,7 +12,7 @@ from orpen_sc_pdk.helpers.layout import add_etch_for_component
 from orpen_sc_pdk.tech import LAYER
 
 
-@gf.cell(tags=["AS", "elements"])
+@gf.cell(tags=["elements"])
 def interdigital_capacitor(
     fingers: int = 20,
     finger_length: float = 100.0,
@@ -20,7 +20,7 @@ def interdigital_capacitor(
     finger_width: float = 3.3,
     taper_length: float = 150.0,
     capacitor_ground_gap: float = 85.0,
-    cpw_xs: CrossSectionSpec = "as_coplanar_waveguide",
+    cpw_xs: CrossSectionSpec = "coplanar_waveguide",
     half: bool = False,
     draw_layer: Layer = LAYER.D0_TOP_M1_DRAW,
     etch_layer: Layer = LAYER.D0_TOP_M1_ETCH,
@@ -29,8 +29,8 @@ def interdigital_capacitor(
     """Return a CPW-coupled interdigital capacitor with derived etch geometry."""
 
     xs = gf.get_cross_section(cpw_xs)
-    cpw_width = xs["as_cpw_draw"].width
-    cpw_gap = xs["as_cpw_etch_pos"].width
+    cpw_width = xs["cpw_draw"].width
+    cpw_gap = xs["cpw_etch_pos"].width
 
     component = gf.Component()
     core_capacitor_temp = gf.Component()

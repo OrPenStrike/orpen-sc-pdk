@@ -5,7 +5,7 @@ import gdsfactory as gf
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
-@gf.cell(tags=["AS", "elements"])
+@gf.cell(tags=["elements"])
 def taper(
     width1: float = 10.0,
     width2: float = 7.0,

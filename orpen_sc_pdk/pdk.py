@@ -27,13 +27,12 @@ from orpen_sc_pdk.cells import (
 )
 from orpen_sc_pdk.ports import register_sim_port_types
 from orpen_sc_pdk.tech import (
-    as_coplanar_waveguide,
-    as_cpw_2dot7_4_2dot7,
-    as_cpw_6_7_6,
-    as_cpw_6_10_6,
-    as_cpw_15_5_15,
     coplanar_waveguide,
     cpw,
+    cpw_2dot7_4_2dot7,
+    cpw_6_7_6,
+    cpw_6_10_6,
+    cpw_15_5_15,
     etch,
     etch_only,
     josephson_junction_cross_section_narrow,
@@ -66,13 +65,12 @@ _cells = {
 }
 
 _cross_sections = {
-    "as_coplanar_waveguide": as_coplanar_waveguide,
-    "as_cpw_2dot7_4_2dot7": as_cpw_2dot7_4_2dot7,
-    "as_cpw_6_7_6": as_cpw_6_7_6,
-    "as_cpw_6_10_6": as_cpw_6_10_6,
-    "as_cpw_15_5_15": as_cpw_15_5_15,
     "coplanar_waveguide": coplanar_waveguide,
     "cpw": cpw,
+    "cpw_2dot7_4_2dot7": cpw_2dot7_4_2dot7,
+    "cpw_6_7_6": cpw_6_7_6,
+    "cpw_6_10_6": cpw_6_10_6,
+    "cpw_15_5_15": cpw_15_5_15,
     "etch": etch,
     "etch_only": etch_only,
     "josephson_junction_cross_section_narrow": josephson_junction_cross_section_narrow,
