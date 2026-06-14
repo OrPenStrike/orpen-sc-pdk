@@ -43,6 +43,9 @@ Verified local changes:
   postprocessing index map, config merge points, and unit coverage;
 - `gsim` commit `cb052db`: added high-level `write_config(postprocessing=...)`
   wiring and artifact persistence;
+- `orpen-sc-pdk` local test `tests/test_gsim_eigenmode_resonator_workflow.py`:
+  proves the manifest/index-map artifacts on a generated public resonator
+  eigenmode mesh instead of hand-built physical group dictionaries;
 - validation for `cb052db`: manifest/workflow/curved-meshing tests passed,
   mesh integration tests passed, Ruff check/format passed, and targeted Pyright
   reported no errors.

@@ -22,6 +22,26 @@ Proposed path:
 - keep notebooks thin: component metadata, `gsim` call, coarse local Palace
   execution when available, and report loading.
 
+Verified local changes:
+
+- eigenmode now has an executable public fixture in
+  `tests/test_gsim_eigenmode_resonator_workflow.py`;
+- the fixture builds the public `resonator` cell, runs local `gsim`
+  `EigenmodeSim` coarse meshing, writes Eigenmode `config.json`, persists
+  `mesh_manifest.json`, persists `palace_index_map.json`, and verifies the
+  absorbing boundary maps to a Palace Power `SurfaceFlux` postprocessing index;
+- validation passed with
+  `uv run --group ecosystem-dev python -m pytest tests/test_gsim_eigenmode_resonator_workflow.py -q`;
+- Ruff check and format-check passed for the new test.
+
+Remaining slices:
+
+- convert the executable eigenmode fixture into a publication-safe notebook or
+  notebook-equivalent example page;
+- add public driven and electrostatic fixtures with equivalent artifact checks;
+- add optional local Palace coarse-solve smoke checks when a Palace binary is
+  available.
+
 Acceptance checks:
 
 - notebooks import `orpen_sc_pdk` and `gsim`, not private layout modules;
