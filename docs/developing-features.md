@@ -11,6 +11,22 @@ Feature status labels:
 - `integration`: mature enough to slice into an upstream-review branch.
 - `accepted`: merged or otherwise adopted by the target public repo.
 
+## Local/Implemented Feature Inventory
+
+The private simulation workflow already exercises these reusable capabilities.
+They should be mapped into the GDSFactory ecosystem without publishing private
+layout/IP, private run folders, or private benchmark evidence.
+
+| Implemented capability | Public ecosystem home | Direction |
+|---|---|---|
+| Simulation intent attached to GDSFactory ports and component metadata | `gsim`, with public examples in `orpen-sc-pdk` | Keep component authorship in GDSFactory terms; let `gsim` translate port and terminal intent into solver inputs. |
+| Driven, eigenmode, electrostatic, and magnetostatic Palace configuration assembly | `gsim` | Extend existing Palace simulation/config generation APIs instead of creating a PDK-owned solver runtime. |
+| Material policy, material aliases, and Palace material translation | `orpen-sc-pdk` and `gsim` | PDK owns public material names and records; `gsim` owns overlays, frequency evaluation, and solver translation. |
+| CAD/XAO/mesh physical names and solver index provenance | `meshwell` and `gsim` | Build on meshwell physical-name and interface-tag conventions, then expose a Palace role/index manifest in `gsim`. |
+| Surface-Q, EPR, capacitance, eigenmode, and driven-result report parsing | `gsim` | Keep reusable result loaders and report schemas upstream; private consumers only mount layouts and compare local evidence. |
+| Runtime handoff, local/cloud execution, and normalized performance records | `gsim` | Keep Palace as an external executable and report sanitized run metadata through reusable records. |
+| Public problem-type notebooks for workflow validation | `orpen-sc-pdk` examples using `gsim` | Rebuild driven, eigenmode, and electrostatic notebooks with public fixtures instead of copying private notebooks. |
+
 ::::{grid} 1 1 2 3
 :gutter: 3
 
@@ -74,6 +90,42 @@ Keep the PDK in a flat package layout with public `cells/`, reserved `models/`,
 and GDSFactory+ metadata so VSCode preview works on the active repo.
 :::
 
+:::{grid-item-card} FEAT-006 Palace config generation
+:link: features/palace-config-generation
+:link-type: doc
+
+**Target:** `gsim` with `orpen-sc-pdk` metadata
+
+**Status:** prototype
+
+Generate Palace configuration from public PDK layer/material metadata,
+component-mounted simulation intent, and mesh role manifests.
+:::
+
+:::{grid-item-card} FEAT-007 CAD/XAO metadata handoff
+:link: features/cad-xao-metadata-handoff
+:link-type: doc
+
+**Target:** `meshwell` and `gsim`
+
+**Status:** prototype
+
+Preserve physical names, interface identities, mesh roles, and solver indices
+from CAD/XAO generation through Palace postprocessing.
+:::
+
+:::{grid-item-card} FEAT-008 Problem-type notebook suite
+:link: features/problem-type-notebook-suite
+:link-type: doc
+
+**Target:** `orpen-sc-pdk` examples using `gsim`
+
+**Status:** candidate
+
+Provide public driven, eigenmode, and electrostatic notebooks that validate the
+same workflow nodes as private consumers without publishing private layouts.
+:::
+
 ::::
 
 ```{toctree}
@@ -84,4 +136,7 @@ features/surface-q-index-mapping
 features/material-db-overlay
 features/benchmark-cost-analysis
 features/gdsfactoryplus-discovery
+features/palace-config-generation
+features/cad-xao-metadata-handoff
+features/problem-type-notebook-suite
 ```

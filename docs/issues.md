@@ -55,6 +55,42 @@ Prototype branches may move quickly. Upstream PR branches should be rebuilt
 from upstream `main` and contain only one human-reviewable feature slice.
 :::
 
+:::{grid-item-card} ISSUE-005 Palace config ownership
+:link: issues/palace-config-ownership
+:link-type: doc
+
+**Repo:** `gsim`
+
+**Related features:** FEAT-001, FEAT-003, FEAT-006, FEAT-008
+
+Reusable Palace config generation should extend `gsim` and consume PDK metadata
+instead of creating a solver runtime inside `orpen-sc-pdk`.
+:::
+
+:::{grid-item-card} ISSUE-006 CAD/mesh identity provenance
+:link: issues/cad-mesh-identity-provenance
+:link-type: doc
+
+**Repo:** `meshwell`, `gsim`
+
+**Related features:** FEAT-002, FEAT-006, FEAT-007
+
+Physical names, interface identities, mesh roles, and Palace indices need one
+public handoff contract across CAD, mesh, config, and reports.
+:::
+
+:::{grid-item-card} ISSUE-007 Public problem-type notebook coverage
+:link: issues/public-problem-type-notebook-coverage
+:link-type: doc
+
+**Repo:** `orpen-sc-pdk`, `gsim`
+
+**Related features:** FEAT-001, FEAT-006, FEAT-008
+
+Public notebooks should validate driven, eigenmode, and electrostatic workflows
+with public fixtures and coarse local Palace smoke tests.
+:::
+
 ::::
 
 ```{toctree}
@@ -64,4 +100,7 @@ issues/palace-report-ownership
 issues/material-schema-boundary
 issues/gplugins-boundary
 issues/integration-branch-hygiene
+issues/palace-config-ownership
+issues/cad-mesh-identity-provenance
+issues/public-problem-type-notebook-coverage
 ```
