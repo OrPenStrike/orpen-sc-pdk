@@ -20,8 +20,9 @@ Proposed path:
 - make those records exportable in the `gsim` overlay schema;
 - keep frequency evaluation and Palace config material blocks in `gsim`;
 - keep effective config material report joins in `gsim`;
+- keep configured dielectric interface report joins in `gsim`;
 - add material-loss/T1/gamma report interpretation on top of raw Palace
-  reports joined to effective config material fields.
+  reports joined to effective config material and interface fields.
 
 Verified local changes:
 
@@ -43,6 +44,10 @@ Verified local changes:
   `EigenmodeReport.domain_materials`, joining effective `Domains.Materials`
   rows from `config.json` back to domain physical names through
   `palace_index_map.json`;
+- `gsim` commit `bbd74fe`: adds `load_dielectric_interface_summary()` and
+  `EigenmodeReport.dielectric_interfaces`, joining configured
+  `Boundaries.Postprocessing.Dielectric` rows back to index-map physical names
+  while keeping derived loss/T1/gamma out of this slice;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
@@ -58,8 +63,10 @@ Remaining slices:
   London-depth, or surface/interface presets;
 - add explicit material validity ranges and provenance fields to remove
   ambiguity from effective config/report material interpretation;
-- extend material/loss report joins toward surface/interface material policies
-  and electrostatic frames before deriving T1/gamma tables.
+- introduce a validated public interface-preset schema for MA/MS/SA-style
+  thickness, permittivity, and loss tangent records;
+- derive material-loss/T1/gamma tables after effective domain material and
+  configured interface summaries are explicit enough for downstream analysis.
 
 Related feature:
 

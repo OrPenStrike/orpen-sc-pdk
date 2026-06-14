@@ -35,8 +35,13 @@ Current public baseline:
 - effective Palace domain material rows can be loaded through
   `load_domain_material_summary()` and joined from `config.json` material
   attributes to `palace_index_map.json` domain physical names;
+- configured dielectric interface postprocessing rows can be loaded through
+  `load_dielectric_interface_summary()` and joined from
+  `Boundaries.Postprocessing.Dielectric` config rows to index-map physical
+  names;
 - composed Eigenmode reports expose those rows through
-  `EigenmodeReport.domain_materials`;
+  `EigenmodeReport.domain_materials` and
+  `EigenmodeReport.dielectric_interfaces`;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

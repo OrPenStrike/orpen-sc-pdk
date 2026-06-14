@@ -37,6 +37,10 @@ Current public baseline:
   `EigenmodeReport.domain_materials`, so effective Palace material rows can be
   loaded from `config.json` and joined to domain physical names through
   `palace_index_map.json`;
+- `gsim` commit `bbd74fe` adds `load_dielectric_interface_summary()` and wires
+  `EigenmodeReport.dielectric_interfaces`, so configured
+  `Boundaries.Postprocessing.Dielectric` interface parameters can be joined to
+  index-map physical names;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -52,9 +56,11 @@ Remaining slices:
   material contract grows beyond the current minimal records;
 - add explicit material validity/provenance fields so generated configs and
   reports can explain which PDK overlay values were applied;
+- add a validated public interface-preset schema before treating MA/MS/SA
+  thickness, permittivity, and loss tangent values as PDK-owned defaults;
 - derive material-loss/T1/gamma report tables on top of the effective material
-  join once material validity, provenance, and surface/interface material
-  policies are explicit.
+  and configured interface joins once material validity, provenance, and
+  surface/interface material policies are explicit.
 
 Related issue:
 

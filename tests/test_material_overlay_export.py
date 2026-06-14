@@ -148,3 +148,63 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     assert si_row["source_name"] == "D1_SUBSTRATE"
     assert si_row["physical_name"] == "D1_SUBSTRATE"
     assert si_row["permittivity"] == pytest.approx(11.45)
+
+
+def test_gsim_dielectric_interface_summary_loads_public_interface_config(
+    tmp_path,
+) -> None:
+    pytest.importorskip("gsim")
+    from gsim.palace import load_dielectric_interface_summary
+
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "Boundaries": {
+                    "Postprocessing": {
+                        "Dielectric": [
+                            {
+                                "Index": 7,
+                                "Attributes": [70],
+                                "Type": "SA",
+                                "Thickness": 0.003,
+                                "Permittivity": 4.0,
+                                "LossTan": 0.0017,
+                            }
+                        ]
+                    }
+                }
+            }
+        )
+    )
+    index_map_path = tmp_path / "palace_index_map.json"
+    index_map_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "entries": [
+                    {
+                        "section": "Boundaries.Postprocessing.Dielectric",
+                        "index": 7,
+                        "entry_name": "sa_interface",
+                        "role": "boundary_surface",
+                        "attributes": [70],
+                        "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                        "dimension": 2,
+                        "Type": "SA",
+                    }
+                ],
+            }
+        )
+    )
+
+    summary = load_dielectric_interface_summary(
+        {"config.json": config_path, "palace_index_map.json": index_map_path}
+    )
+
+    row = summary.set_index("surface_index").loc[7]
+    assert row["source_name"] == "SA:D1_SUBSTRATE___OUTER_VACUUM"
+    assert row["interface_type"] == "SA"
+    assert row["thickness"] == pytest.approx(0.003)
+    assert row["permittivity"] == pytest.approx(4.0)
+    assert row["loss_tangent"] == pytest.approx(0.0017)

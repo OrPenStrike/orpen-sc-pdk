@@ -59,6 +59,10 @@ Verified local changes:
   through `load_domain_material_summary()`, so config material attributes can
   be joined back to generated domain physical names without PDK-owned report
   parsing.
+- `gsim` commit `bbd74fe` exposes generated dielectric interface
+  postprocessing rows through `load_dielectric_interface_summary()`, so
+  configured interface thickness, permittivity, and loss-tangent values can be
+  joined back to generated physical names.
 - public `orpen-sc-pdk` material-overlay tests now verify that the generated
   `Si` substrate material row can be loaded back through this `gsim` API for
   Driven, Eigenmode, and Electrostatic artifacts.
@@ -67,6 +71,8 @@ Remaining slices:
 
 - record richer material-overlay provenance in generated config/report
   artifacts;
+- record richer dielectric interface provenance before promoting interface
+  presets into public PDK material data;
 - convert executable fixtures into publication-safe notebooks or examples;
 - keep normal docs and CI paths independent from local Palace while exposing
   opt-in solver validation commands for local development.

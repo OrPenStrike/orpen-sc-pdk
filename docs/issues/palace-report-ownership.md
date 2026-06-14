@@ -83,6 +83,10 @@ Verified local changes:
   `EigenmodeReport.domain_materials`, so effective Palace `Domains.Materials`
   rows can be loaded from `config.json` and joined to domain physical names
   through `palace_index_map.json`.
+- `gsim` commit `bbd74fe`: adds `load_dielectric_interface_summary()` and
+  `EigenmodeReport.dielectric_interfaces`, so configured dielectric
+  postprocessing interface rows can be loaded from `config.json` and joined to
+  index-map physical names without PDK-owned report parsing.
 - `orpen-sc-pdk` public material-overlay fixtures now verify the generated
   public `Si` substrate material row can be read back through this reusable
   `gsim` report/index-map surface for Driven, Eigenmode, and Electrostatic
@@ -91,8 +95,8 @@ Verified local changes:
 Remaining slices:
 
 - extend the reusable report layer toward material-loss/T1/gamma summaries
-  on top of the now-explicit ownership split between raw `gsim` report schemas
-  and PDK-owned material overlays;
+  on top of the now-explicit ownership split between raw `gsim` report schemas,
+  PDK-owned material overlays, and configured dielectric interface summaries;
 - keep native masked Surface EPR as a Palace-source/upstream capability rather
   than a Python replay in the public PDK.
 

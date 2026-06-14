@@ -51,6 +51,9 @@ Local prototype status:
 - eighth `gsim` results slice composes Eigenmode final modes, AMR history,
   pass summaries, optional EPR report tables, index-map provenance, and source
   bookkeeping into one public report bundle.
+- ninth `gsim` results slice loads configured dielectric interface
+  postprocessing rows from `config.json` and joins them to the same
+  `palace_index_map.json` physical-name provenance used by surface-Q reports.
 
 Verified local changes:
 
@@ -86,6 +89,10 @@ Verified local changes:
   `load_eigenmode_report()` so notebooks can load final modal rows, AMR
   history, pass summaries, indexed EPR tables, index-map rows, and source
   bookkeeping through one public `gsim.palace` entrypoint;
+- `gsim` commit `bbd74fe`: adds
+  `load_dielectric_interface_summary()` and
+  `EigenmodeReport.dielectric_interfaces`, proving configured dielectric
+  interface rows can use the same index-map physical-name provenance;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -159,13 +166,19 @@ Verified local changes:
   `Domains.Materials` rows can be joined from `config.json` attributes to
   domain physical names through `gsim.palace.load_domain_material_summary()`
   and `palace_index_map.json`.
+- validation after the dielectric interface summary slice: generated
+  `Boundaries.Postprocessing.Dielectric` rows can be joined from `config.json`
+  to interface physical names through
+  `gsim.palace.load_dielectric_interface_summary()` and
+  `palace_index_map.json`.
 
 Remaining implementation slices:
 
 - expose these opt-in solver smokes in publication-safe notebook/example form
   without making normal docs builds depend on local Palace;
 - extend report summaries toward material-loss/T1/gamma on top of the explicit
-  ownership split between `gsim` result schemas and PDK material overlays.
+  ownership split between `gsim` result schemas, PDK material overlays, and
+  configured dielectric interface summaries.
 
 Acceptance checks:
 

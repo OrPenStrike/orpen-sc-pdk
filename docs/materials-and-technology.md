@@ -38,6 +38,10 @@ The current public bridge is intentionally small:
 - local `gsim` report loading can read those effective `Domains.Materials`
   rows back from generated artifacts and join them to domain physical names
   through `palace_index_map.json`.
+- local `gsim` report loading can also read configured
+  `Boundaries.Postprocessing.Dielectric` rows, including `Thickness`,
+  `Permittivity`, and `LossTan`, and join them to interface physical names
+  through `palace_index_map.json`.
 
 Finite public dielectric records are exported as constant material models.
 Conductor-like records currently represented by
@@ -63,6 +67,8 @@ should be:
 3. Pass the overlay into `gsim` Palace config generation, keeping
    Palace-specific material evaluation in `gsim`, not in the PDK core.
 4. Upstream reusable adapter support into `gsim` when it is not PDK-specific.
+5. Add a validated public interface-preset schema before making MA/MS/SA-style
+   loss-interface defaults part of the PDK material contract.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the

@@ -27,6 +27,18 @@ Acceptance direction:
 - private consumers can add layout-specific labels without changing public role
   names.
 
+Current public baseline:
+
+- local `gsim` commit `bbd74fe` adds
+  `load_dielectric_interface_summary()`, which joins
+  `Boundaries.Postprocessing.Dielectric` config rows back to
+  `palace_index_map.json` physical names;
+- composed Eigenmode reports expose those configured interface rows through
+  `EigenmodeReport.dielectric_interfaces`;
+- this proves configured MA/MS/SA-style interface parameters can round trip
+  through public artifacts, but it does not yet derive loss, T1, gamma, or
+  automatic interface presets.
+
 Related issue:
 
 - {doc}`../issues/cad-mesh-identity-provenance`
