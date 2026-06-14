@@ -39,6 +39,9 @@ Local prototype status:
 - third `gsim` CAD identity slice cliff-cuts generated interface and exterior
   physical names to meshwell-style `___` and `___None` labels while preserving
   legacy parser support for older generated meshes.
+- fourth `gsim` results slice lets Palace indexed CSV loaders consume
+  `palace_index_map.json` so report columns can be annotated without re-reading
+  private mesh physical-name helpers.
 
 Verified local changes:
 
@@ -56,6 +59,9 @@ Verified local changes:
 - `gsim` commit `3541ace`: generated interface and exterior physical names now
   use meshwell-style `___` and `___None` delimiters; mesh manifest and group
   consumers still parse legacy `__` labels for old artifacts;
+- `gsim` commit `5caa2db`: adds public result loaders that read
+  `palace_index_map.json` and annotate indexed Palace CSV columns such as
+  `domain-E.csv` and `surface-Q.csv` with physical-name provenance;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -79,11 +85,17 @@ Verified local changes:
   curved-meshing tests passed; public driven/eigenmode/electrostatic fixtures
   passed through editable `gsim`; Ruff check/format passed; targeted Pyright
   passed for the changed mesh/group parsing surface.
+- validation for `5caa2db`: `gsim` result, manifest, and workflow tests
+  passed; public driven/eigenmode/electrostatic fixtures passed through
+  editable `gsim`; Ruff check/format passed; targeted Pyright passed for the
+  changed results public surface.
 
 Remaining implementation slices:
 
-- run optional local Palace coarse-solve smoke checks and connect solver report
-  parsing back through the generated manifest/index-map artifacts.
+- run optional local Palace coarse-solve smoke checks when a Palace binary is
+  available on the local machine;
+- add electrostatic capacitance matrix loaders and higher-level EPR/surface-Q
+  summary frames on top of the indexed CSV loader.
 
 Acceptance checks:
 
