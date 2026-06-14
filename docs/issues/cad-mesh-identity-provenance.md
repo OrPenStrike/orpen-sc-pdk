@@ -31,13 +31,26 @@ Local prototype status:
 - tests cover role classification, physical-name provenance, interface/exterior
   parsing for both current `gsim` and meshwell-style delimiters, config
   postprocessing merges, index-map lookup, and JSON serialization.
+- second `gsim` slice wires the typed postprocessing config through
+  `PalaceSimMixin.write_config()`: high-level simulations can merge Palace
+  domain/boundary postprocessing fragments into `config.json`, persist
+  `mesh_manifest.json`, persist `palace_index_map.json`, and reuse the last
+  explicit postprocessing config when upload/run code regenerates the config.
+
+Verified local changes:
+
+- `gsim` commit `2ab16d7`: added role-aware mesh manifest, Palace
+  postprocessing index map, config merge points, and unit coverage;
+- `gsim` commit `cb052db`: added high-level `write_config(postprocessing=...)`
+  wiring and artifact persistence;
+- validation for `cb052db`: manifest/workflow/curved-meshing tests passed,
+  mesh integration tests passed, Ruff check/format passed, and targeted Pyright
+  reported no errors.
 
 Remaining implementation slices:
 
 - decide whether to cliff-cut `gsim` interface labels from `__` to meshwell's
   `___` delimiter;
-- wire postprocessing config and index-map artifact writing through the
-  high-level `PalaceSimMixin.write_config()` workflow;
 - add public problem-type fixtures that prove the manifest/index map with
   generated meshes instead of hand-built group dictionaries.
 
