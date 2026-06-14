@@ -23,6 +23,24 @@ Proposed path:
 - keep `orpen-sc-pdk` responsible only for public layer/material labels that
   appear in those maps.
 
+Local prototype status:
+
+- first `gsim` slice is implemented on the local Palace postprocessing roles
+  branch: role-aware mesh manifest, Palace postprocessing index map, JSON
+  artifact writers, and config merge points;
+- tests cover role classification, physical-name provenance, interface/exterior
+  parsing for both current `gsim` and meshwell-style delimiters, config
+  postprocessing merges, index-map lookup, and JSON serialization.
+
+Remaining implementation slices:
+
+- decide whether to cliff-cut `gsim` interface labels from `__` to meshwell's
+  `___` delimiter;
+- wire postprocessing config and index-map artifact writing through the
+  high-level `PalaceSimMixin.write_config()` workflow;
+- add public problem-type fixtures that prove the manifest/index map with
+  generated meshes instead of hand-built group dictionaries.
+
 Acceptance checks:
 
 - every Palace-relevant physical group has a stable role, name, entity tags,

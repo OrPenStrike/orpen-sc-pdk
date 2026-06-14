@@ -27,6 +27,15 @@ GDSFactory ecosystem mapping:
 - private consumers may add layout-specific names, but those names must not be
   required by the public contract.
 
+Current prototype baseline:
+
+- `gsim.palace.mesh` exposes a `MeshManifest` built from mesh physical groups;
+- manifest entries preserve role, physical names, entity tags, inferred
+  dimension, source, and parsed interface/exterior identity;
+- `gsim.palace.mesh` exposes a `PostprocessingIndexMap` that can resolve Palace
+  postprocessing section/index values back to physical names and attributes;
+- both the mesh manifest and Palace index map can be written as JSON artifacts.
+
 Acceptance direction:
 
 - every Palace-relevant mesh physical group has a stable public role, name,
