@@ -5,7 +5,10 @@ import os
 from pathlib import Path
 
 import pytest
-from material_overlay_assertions import assert_public_si_overlay_material
+from material_overlay_assertions import (
+    assert_public_si_effective_material,
+    assert_public_si_overlay_material,
+)
 
 import orpen_sc_pdk
 from orpen_sc_pdk.cells import martinis2022_differential_ribbon_capacitor
@@ -83,6 +86,11 @@ def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
     assert config["Problem"]["Type"] == "Electrostatic"
     assert "Electrostatic" in config["Solver"]
     assert_public_si_overlay_material(config, manifest)
+    assert_public_si_effective_material(
+        config_path,
+        output_dir / "palace_index_map.json",
+        manifest,
+    )
 
     terminals = config["Boundaries"]["Terminal"]
     assert [terminal["Index"] for terminal in terminals] == [1, 2]

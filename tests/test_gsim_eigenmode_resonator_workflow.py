@@ -5,7 +5,10 @@ import os
 from pathlib import Path
 
 import pytest
-from material_overlay_assertions import assert_public_si_overlay_material
+from material_overlay_assertions import (
+    assert_public_si_effective_material,
+    assert_public_si_overlay_material,
+)
 
 import orpen_sc_pdk
 from orpen_sc_pdk.cells import resonator
@@ -94,6 +97,11 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
     assert (output_dir / "palace.msh").stat().st_size > 0
     assert config["Problem"]["Type"] == "Eigenmode"
     assert_public_si_overlay_material(config, manifest)
+    assert_public_si_effective_material(
+        config_path,
+        output_dir / "palace_index_map.json",
+        manifest,
+    )
     assert config["Domains"]["Postprocessing"]["Energy"]
     surface_flux = config["Boundaries"]["Postprocessing"]["SurfaceFlux"]
     assert len(surface_flux) == 1

@@ -19,8 +19,9 @@ Proposed path:
 - keep public material records and aliases in `orpen-sc-pdk`;
 - make those records exportable in the `gsim` overlay schema;
 - keep frequency evaluation and Palace config material blocks in `gsim`;
-- add material-loss/T1/gamma report interpretation only after raw Palace
-  reports can be joined to effective config material fields.
+- keep effective config material report joins in `gsim`;
+- add material-loss/T1/gamma report interpretation on top of raw Palace
+  reports joined to effective config material fields.
 
 Verified local changes:
 
@@ -38,9 +39,15 @@ Verified local changes:
   generation, keeps overlay resolution out of `LayerStack` mutation, and maps
   PDK aliases such as `Si` onto existing `gsim` material names such as
   `silicon`;
+- `gsim` commit `0197b64`: adds `load_domain_material_summary()` and
+  `EigenmodeReport.domain_materials`, joining effective `Domains.Materials`
+  rows from `config.json` back to domain physical names through
+  `palace_index_map.json`;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
-  Driven, Eigenmode, and Electrostatic `gsim` config generation and verify the
-  generated substrate material block uses the public `Si` permittivity;
+  Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
+  generated substrate material block uses the public `Si` permittivity, and
+  verify the effective substrate material row is loadable through the reusable
+  `gsim` report/index-map API;
 - the exported overlay keeps finite dielectric records as constant material
   models and keeps conductor-like `inf` records out of solver permittivity.
 
@@ -51,8 +58,8 @@ Remaining slices:
   London-depth, or surface/interface presets;
 - add explicit material validity ranges and provenance fields to remove
   ambiguity from effective config/report material interpretation;
-- add effective material/loss report joins on top of raw `EigenmodeReport` and
-  electrostatic report frames before deriving T1/gamma tables.
+- extend material/loss report joins toward surface/interface material policies
+  and electrostatic frames before deriving T1/gamma tables.
 
 Related feature:
 

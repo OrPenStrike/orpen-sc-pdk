@@ -34,7 +34,10 @@ The current public bridge is intentionally small:
   mapping as strict JSON for tools that consume overlay files;
 - local `gsim` Palace config generation accepts the overlay through
   `material_overlay=` and applies public material values to effective
-  `Domains.Materials` without mutating the source layer stack.
+  `Domains.Materials` without mutating the source layer stack;
+- local `gsim` report loading can read those effective `Domains.Materials`
+  rows back from generated artifacts and join them to domain physical names
+  through `palace_index_map.json`.
 
 Finite public dielectric records are exported as constant material models.
 Conductor-like records currently represented by

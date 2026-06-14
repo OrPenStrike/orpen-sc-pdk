@@ -5,7 +5,10 @@ import os
 from pathlib import Path
 
 import pytest
-from material_overlay_assertions import assert_public_si_overlay_material
+from material_overlay_assertions import (
+    assert_public_si_effective_material,
+    assert_public_si_overlay_material,
+)
 
 import orpen_sc_pdk
 from orpen_sc_pdk.cells import cpw_straight
@@ -91,6 +94,11 @@ def test_public_cpw_driven_gsim_port_postprocessing_artifacts(
     assert (output_dir / "palace.msh").stat().st_size > 0
     assert config["Problem"]["Type"] == "Driven"
     assert_public_si_overlay_material(config, manifest)
+    assert_public_si_effective_material(
+        config_path,
+        output_dir / "palace_index_map.json",
+        manifest,
+    )
 
     lumped_ports = config["Boundaries"]["LumpedPort"]
     assert [port["Index"] for port in lumped_ports] == [1, 2]

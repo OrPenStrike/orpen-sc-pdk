@@ -79,12 +79,20 @@ Verified local changes:
 - optional local Eigenmode Palace validation passed after the report-bundle
   wiring with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`, a direct local Palace binary,
   and `gsim.palace.load_eigenmode_report()`.
+- `gsim` commit `0197b64`: adds `load_domain_material_summary()` and
+  `EigenmodeReport.domain_materials`, so effective Palace `Domains.Materials`
+  rows can be loaded from `config.json` and joined to domain physical names
+  through `palace_index_map.json`.
+- `orpen-sc-pdk` public material-overlay fixtures now verify the generated
+  public `Si` substrate material row can be read back through this reusable
+  `gsim` report/index-map surface for Driven, Eigenmode, and Electrostatic
+  artifact handoffs.
 
 Remaining slices:
 
 - extend the reusable report layer toward material-loss/T1/gamma summaries
-  only after the public ownership split between raw `gsim` report schemas and
-  PDK-owned material overlays is explicit;
+  on top of the now-explicit ownership split between raw `gsim` report schemas
+  and PDK-owned material overlays;
 - keep native masked Surface EPR as a Palace-source/upstream capability rather
   than a Python replay in the public PDK.
 

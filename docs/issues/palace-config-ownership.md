@@ -55,10 +55,18 @@ Verified local changes:
 - public `orpen-sc-pdk` Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into `gsim` config generation and verify that
   public `Si` material data reaches the generated Palace domain material block.
+- `gsim` commit `0197b64` exposes the generated effective domain material rows
+  through `load_domain_material_summary()`, so config material attributes can
+  be joined back to generated domain physical names without PDK-owned report
+  parsing.
+- public `orpen-sc-pdk` material-overlay tests now verify that the generated
+  `Si` substrate material row can be loaded back through this `gsim` API for
+  Driven, Eigenmode, and Electrostatic artifacts.
 
 Remaining slices:
 
-- record material-overlay provenance in generated config/report artifacts;
+- record richer material-overlay provenance in generated config/report
+  artifacts;
 - convert executable fixtures into publication-safe notebooks or examples;
 - keep normal docs and CI paths independent from local Palace while exposing
   opt-in solver validation commands for local development.

@@ -79,6 +79,7 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.common.stack import LayerStack
     from gsim.palace.mesh.config_generator import generate_palace_config
+    from gsim.palace.results import load_domain_material_summary
 
     groups = {
         "volumes": {
@@ -91,16 +92,17 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
         "boundary_surfaces": {},
     }
 
+    stack = LayerStack(
+        materials={
+            "silicon": {"permittivity": 11.9, "conductivity": 2.0},
+            "air": {"permittivity": 1.0, "loss_tangent": 0.0},
+        },
+    )
     config_path = generate_palace_config(
         groups=groups,
         ports=[],
         port_info=[],
-        stack=LayerStack(
-            materials={
-                "silicon": {"permittivity": 11.9, "conductivity": 2.0},
-                "air": {"permittivity": 1.0, "loss_tangent": 0.0},
-            },
-        ),
+        stack=stack,
         output_path=tmp_path,
         model_name="palace",
         fmax=10e9,
@@ -114,3 +116,35 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     assert by_attr[(1,)]["Permittivity"] == pytest.approx(11.45)
     assert by_attr[(1,)]["Conductivity"] == pytest.approx(2.0)
     assert by_attr[(2,)]["Permittivity"] == pytest.approx(1.0)
+    assert stack.materials["silicon"]["permittivity"] == pytest.approx(11.9)
+
+    index_map_path = tmp_path / "palace_index_map.json"
+    index_map_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "entries": [
+                    {
+                        "section": "Domains.Postprocessing.Energy",
+                        "index": 1,
+                        "entry_name": "silicon",
+                        "role": "dielectric_volume",
+                        "attributes": [1],
+                        "physical_names": ["D1_SUBSTRATE"],
+                        "dimension": 3,
+                        "metadata": {"material": "Si"},
+                    }
+                ],
+            }
+        )
+    )
+    material_summary = load_domain_material_summary(
+        {
+            "config.json": config_path,
+            "palace_index_map.json": index_map_path,
+        }
+    )
+    si_row = material_summary.set_index("material_attribute").loc[1]
+    assert si_row["source_name"] == "D1_SUBSTRATE"
+    assert si_row["physical_name"] == "D1_SUBSTRATE"
+    assert si_row["permittivity"] == pytest.approx(11.45)

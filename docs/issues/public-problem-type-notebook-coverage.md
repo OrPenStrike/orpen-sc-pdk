@@ -31,7 +31,8 @@ Verified local changes:
   `palace_index_map.json`, and verifies CPW port-surface Power `SurfaceFlux`
   indices map back to `P1`/`P2` port metadata; it also passes
   `get_gsim_material_overlay()` into `gsim` config generation and verifies the
-  generated substrate material block uses the public `Si` permittivity;
+  generated substrate material block uses the public `Si` permittivity and can
+  be loaded back through `gsim.palace.load_domain_material_summary()`;
 - the same driven fixture now includes an optional local Palace coarse-solve
   smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies that
   `run_local()` returns public `gsim.palace.SParams`, resolves `o1`/`o2` port
@@ -43,7 +44,8 @@ Verified local changes:
   `palace_index_map.json`, and verifies the absorbing boundary maps to a Palace
   Power `SurfaceFlux` postprocessing index; it also passes
   `get_gsim_material_overlay()` into `gsim` config generation and verifies the
-  generated substrate material block uses the public `Si` permittivity;
+  generated substrate material block uses the public `Si` permittivity and can
+  be loaded back through `gsim.palace.load_domain_material_summary()`;
 - the same eigenmode fixture now includes an optional local Palace coarse-solve
   smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies non-empty
   `eig.csv` and `domain-E.csv` outputs, then loads two positive eigenfrequency
@@ -57,7 +59,8 @@ Verified local changes:
   `palace_index_map.json`, and verifies the positive/negative terminal indices
   map back to separate `D0_TOP_M1` physical names; it also passes
   `get_gsim_material_overlay()` into `gsim` config generation and verifies the
-  generated substrate material block uses the public `Si` permittivity;
+  generated substrate material block uses the public `Si` permittivity and can
+  be loaded back through `gsim.palace.load_domain_material_summary()`;
 - the same electrostatic fixture now includes an optional local Palace
   coarse-solve smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it can
   run through a local Palace wrapper or direct solver binary and verifies that
@@ -91,9 +94,9 @@ Remaining slices:
 
 - expose the opt-in solver smoke paths in publication-safe notebook/example
   form without making normal docs builds depend on local Palace;
-- extend reusable Eigenmode reporting beyond raw Palace tables only after
-  material-loss/T1/gamma ownership is split between `gsim` report schemas and
-  PDK material overlays.
+- extend reusable reporting beyond raw Palace tables and effective material
+  joins toward material-loss/T1/gamma ownership between `gsim` report schemas
+  and PDK material overlays.
 
 Acceptance checks:
 

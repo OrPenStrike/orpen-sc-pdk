@@ -32,6 +32,11 @@ Current public baseline:
 - indexed Palace EPR reports can be reshaped into summary frames through
   `load_domain_energy_summary()`, `load_surface_q_summary()`,
   `summarize_surface_q_by_interface()`, and `load_port_epr_summary()`;
+- effective Palace domain material rows can be loaded through
+  `load_domain_material_summary()` and joined from `config.json` material
+  attributes to `palace_index_map.json` domain physical names;
+- composed Eigenmode reports expose those rows through
+  `EigenmodeReport.domain_materials`;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

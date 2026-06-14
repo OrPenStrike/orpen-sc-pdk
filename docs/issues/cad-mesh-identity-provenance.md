@@ -155,14 +155,17 @@ Verified local changes:
 - validation after the Eigenmode report bundle slice: `gsim` result, manifest,
   and workflow tests passed; Ruff check/format passed; targeted Pyright passed
   for the changed results public surface.
+- validation after the effective material summary slice: generated
+  `Domains.Materials` rows can be joined from `config.json` attributes to
+  domain physical names through `gsim.palace.load_domain_material_summary()`
+  and `palace_index_map.json`.
 
 Remaining implementation slices:
 
 - expose these opt-in solver smokes in publication-safe notebook/example form
   without making normal docs builds depend on local Palace;
-- extend report summaries toward material-loss/T1/gamma only after the public
-  ownership split between `gsim` result schemas and PDK material overlays is
-  explicit.
+- extend report summaries toward material-loss/T1/gamma on top of the explicit
+  ownership split between `gsim` result schemas and PDK material overlays.
 
 Acceptance checks:
 

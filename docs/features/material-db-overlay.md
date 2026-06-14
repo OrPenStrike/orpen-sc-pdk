@@ -33,9 +33,15 @@ Current public baseline:
 - `gsim` commit `49be250` adds `material_overlay=` to Palace config generation
   and high-level `write_config()`, so public PDK overlays can affect effective
   Palace `Domains.Materials` without mutating `LayerStack.materials`;
+- `gsim` commit `0197b64` adds `load_domain_material_summary()` and wires
+  `EigenmodeReport.domain_materials`, so effective Palace material rows can be
+  loaded from `config.json` and joined to domain physical names through
+  `palace_index_map.json`;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
-  `get_gsim_material_overlay()` into local `gsim` config generation and verify
-  that the public `Si` record reaches the generated substrate material block;
+  `get_gsim_material_overlay()` into local `gsim` config generation, verify
+  that the public `Si` record reaches the generated substrate material block,
+  and load that effective substrate material row back through the `gsim`
+  report/index-map API;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
@@ -46,8 +52,9 @@ Remaining slices:
   material contract grows beyond the current minimal records;
 - add explicit material validity/provenance fields so generated configs and
   reports can explain which PDK overlay values were applied;
-- derive material-loss/T1/gamma report tables only after raw report rows and
-  effective Palace config material fields are joined in a public `gsim` layer.
+- derive material-loss/T1/gamma report tables on top of the effective material
+  join once material validity, provenance, and surface/interface material
+  policies are explicit.
 
 Related issue:
 
