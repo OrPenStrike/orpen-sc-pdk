@@ -12,9 +12,9 @@
 # # Public PDK quickstart
 #
 # This notebook demonstrates the open PDK surface that is safe to publish:
-# process semantics, public demo components, and the static private-mount
-# boundary. Private chip layouts and GDS inputs from private designs are
-# intentionally outside this repository.
+# process semantics, public demo components, and the private-project boundary.
+# Private chip layouts and GDS inputs from private designs are intentionally
+# outside this repository.
 
 # %%
 from IPython.display import display
@@ -50,20 +50,22 @@ display(
 # %% [markdown]
 # ## Public PDK registry
 #
-# The public PDK registry contains publication-safe cells. Private cells appear
-# here only when an ignored local private mount is present during import.
+# The public PDK registry contains only publication-safe OrPen cells. Private
+# cells belong to a private GF+ project that uses this package as its Base PDK.
 
 # %%
 display(
     {
-        "public_cells": sorted(name for name in PDK.cells if not name.startswith("as_")),
-        "private_mount_present": "as_resonator" in PDK.cells,
+        "public_cells": sorted(PDK.cells),
+        "generic_cell_leakage": sorted(
+            {"add_frame", "align_wafer", "awg", "bend_euler", "rounded_rectangle"} & set(PDK.cells)
+        ),
     }
 )
 
 # %% [markdown]
 # ## Private layout boundary
 #
-# Private designs should be packaged separately. For GF+ preview, the public PDK
-# may re-export an ignored local clone under `orpen_sc_pdk/cells/privates/`.
-# This notebook does not import or name any private layout package.
+# Private designs should be packaged separately. For GF+ preview, open the
+# private repository as the active project and install `orpen-sc-pdk` as its
+# Base PDK. This notebook does not import or name any private layout package.

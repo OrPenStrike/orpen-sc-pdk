@@ -16,8 +16,5 @@ API
 .. automodule:: orpen_sc_pdk.models
     :members:
 
-.. automodule:: orpen_sc_pdk.samples
-    :members:
-
 .. automodule:: orpen_sc_pdk.tech
     :members:

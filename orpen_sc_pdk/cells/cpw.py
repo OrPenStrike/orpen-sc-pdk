@@ -58,7 +58,7 @@ def cpw_straight(
 
 
 @gf.cell(tags=["AS", "elements"])
-def as_launcher(
+def launcher(
     pad_width: float = 150.0,
     pad_length: float = 150.0,
     taper_length: float = 150.0,

@@ -20,6 +20,7 @@ keywords = [
 dependencies = [
   "doroutes>=0.2.0",
   "gdsfactory~=9.43.0",
+  "pydantic>=2",
   "typing-extensions>=4.12.0",
 ]
 
@@ -52,6 +53,14 @@ docs = [
   "sphinxcontrib-mermaid",
   "sphinxcontrib-svgbob",
 ]
+ecosystem-dev = [
+  "gplugins",
+  "gsim",
+]
+
+[tool.uv.sources]
+gplugins = { path = "../GDSFactory_Community_Workbench/gplugins", editable = true, group = "ecosystem-dev" }
+gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
 
 [tool.ruff]
 line-length = 100
@@ -75,9 +84,22 @@ name = "orpen_sc_pdk"
 [tool.gdsfactoryplus.pdk]
 name = "orpen_sc_pdk"
 cells_no_model_expected = [
-  "as_interdigital_capacitor",
-  "as_launcher",
+  "indium_bump",
+  "indium_ground",
+  "resonator",
+  "resonator_hanger",
+  "resonator_meander",
+  "taper",
+  "bend_circular",
+  "bend_euler",
   "cpw_straight",
+  "dicing_edge",
   "interdigital_capacitor",
-  "quarter_wave_resonator",
+  "launcher",
+  "manhattan_style_junction",
+  "single_trace_flip_chip_xs_chip",
+  "single_trace_xs_chip",
+  "straight",
+  "two_trace_flip_chip_xs_chip",
+  "two_trace_xs_chip",
 ]

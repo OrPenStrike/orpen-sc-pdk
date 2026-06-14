@@ -70,21 +70,8 @@ cost, and cloud/HPC spend without exposing private geometry or private runs.
 
 **Status:** prototype
 
-Keep the PDK in a flat package layout with public `cells/`, `samples/`,
-reserved `models/`, and GDSFactory+ metadata so VSCode preview works on the
-active repo.
-:::
-
-:::{grid-item-card} FEAT-006 Static private layout mount
-:link: features/private-static-mount
-:link-type: doc
-
-**Target:** `orpen-sc-pdk`
-
-**Status:** prototype
-
-Expose ignored repo-local private layout packages to GF+ static discovery
-without tracking private source in the public PDK.
+Keep the PDK in a flat package layout with public `cells/`, reserved `models/`,
+and GDSFactory+ metadata so VSCode preview works on the active repo.
 :::
 
 ::::
@@ -97,5 +84,4 @@ features/surface-q-index-mapping
 features/material-db-overlay
 features/benchmark-cost-analysis
 features/gdsfactoryplus-discovery
-features/private-static-mount
 ```

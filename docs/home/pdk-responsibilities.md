@@ -11,8 +11,7 @@ The PDK-owned surface includes:
 - public CPW cross-sections;
 - public reusable layout helpers such as `ETCH = GROUND_MASK - DRAW` and A*
   route strategy wiring;
-- public cells and samples, including launcher and interdigital capacitor;
-- optional ignored-mount import mechanics for local GF+ preview;
+- public cells including launcher and interdigital capacitor;
 - docs and notebooks that expose workflow shape without private layout/IP.
 
 Reusable solver workflow can live here first when it is needed to keep the
@@ -24,8 +23,8 @@ private project usable, then move upstream when the boundary is stable:
   extensions, and runtime behavior that cannot be implemented cleanly in
   `gsim`.
 - `gplugins`: generic GDSFactory plugin integration.
-- `Quantum-RF-PDK`: reference and possible contribution target when a feature
-  belongs to the public quantum/RF PDK scope.
+- Separate public PDK repos: reference material when a feature belongs outside
+  the OrPen/NCUAS workflow.
 
 Private layout/IP belongs in a separate private layout repo. The private repo
 may export GF cells and chip assemblies, but the public PDK remains the owner of

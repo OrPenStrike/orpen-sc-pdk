@@ -43,36 +43,11 @@ Generic GDSFactory plugin helpers should not be duplicated in the PDK. Move
 only reusable plugin integration into `gplugins`.
 :::
 
-:::{grid-item-card} ISSUE-004 Quantum RF reference parity
-:link: issues/quantum-rf-reference-parity
-:link-type: doc
-
-**Repo:** `Quantum-RF-PDK`
-
-**Related features:** FEAT-005
-
-The SCQ PDK should keep package discovery, docs publishing, public samples, and
-GDSFactory+ metadata aligned with the ecosystem reference shape without copying
-branding or solver scope.
-:::
-
-:::{grid-item-card} ISSUE-005 Private static mount tests
-:link: issues/private-static-mount-tests
-:link-type: doc
-
-**Repo:** `orpen-sc-pdk`
-
-**Related features:** FEAT-006
-
-Public tests should verify no-mount behavior and static mount re-export without
-tracking private layout source.
-:::
-
-:::{grid-item-card} ISSUE-006 Integration branch hygiene
+:::{grid-item-card} ISSUE-004 Integration branch hygiene
 :link: issues/integration-branch-hygiene
 :link-type: doc
 
-**Repo:** `gsim`, `gplugins`, `Quantum-RF-PDK`
+**Repo:** `gsim`, `gplugins`
 
 **Related features:** all upstream-facing features
 
@@ -88,7 +63,5 @@ from upstream `main` and contain only one human-reviewable feature slice.
 issues/palace-report-ownership
 issues/material-schema-boundary
 issues/gplugins-boundary
-issues/quantum-rf-reference-parity
-issues/private-static-mount-tests
 issues/integration-branch-hygiene
 ```

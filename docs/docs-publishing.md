@@ -9,7 +9,7 @@ locally and published through GitHub Pages for `OrPenStrike/orpen-sc-pdk`.
 
 ## Tooling
 
-The docs stack follows the Quantum-RF-PDK publication pattern:
+The docs stack follows a public PDK publication pattern:
 
 - Sphinx for documentation builds.
 - MyST-NB for notebook pages.

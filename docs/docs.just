@@ -1,4 +1,4 @@
-# Documentation helper targets, following the Quantum-RF-PDK docs workflow style.
+# Documentation helper targets for the public OrPen PDK docs workflow.
 
 docs_source := "docs"
 docs_build := "docs/_build"
