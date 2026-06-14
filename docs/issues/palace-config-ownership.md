@@ -43,12 +43,15 @@ Verified local changes:
 - the public driven CPW fixture now has an opt-in local Palace coarse solve that
   verifies generated Driven config and CPW lumped-port metadata can produce
   parsed `SParams` output through local `gsim`.
+- the public eigenmode resonator fixture now has an opt-in local Palace coarse
+  solve that verifies generated Eigenmode config can produce non-empty
+  `eig.csv` and `domain-E.csv` outputs through local `gsim`.
 
 Remaining slices:
 
 - convert executable fixtures into publication-safe notebooks or examples;
-- add an optional local Palace coarse-solve smoke check for the Eigenmode
-  fixture when available.
+- keep normal docs and CI paths independent from local Palace while exposing
+  opt-in solver validation commands for local development.
 
 Related features:
 

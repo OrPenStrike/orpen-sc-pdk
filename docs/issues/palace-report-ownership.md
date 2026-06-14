@@ -58,11 +58,15 @@ Verified local changes:
 - `orpen-sc-pdk` now validates the public Driven CPW fixture against a real
   optional local Palace coarse solve, proving `port-S.csv` loads through
   `gsim.palace.SParams` with `o1`/`o2` port labels.
+- `orpen-sc-pdk` now validates the public Eigenmode resonator fixture against a
+  real optional local Palace coarse solve, proving `eig.csv` and `domain-E.csv`
+  are produced for a public resonator; Eigenmode still lacks a dedicated public
+  eigenvalue report loader.
 
 Remaining slices:
 
-- run a real Palace coarse-solve smoke check for the Eigenmode fixture when a
-  Palace binary is available on the local machine;
+- add a reusable `gsim` eigenvalue report loader if Eigenmode reports need
+  notebook-facing schema support beyond raw `eig.csv`;
 - extend the reusable report layer toward material-loss/T1/gamma summaries only
   where that information belongs in public `gsim` schemas or PDK-owned material
   overlays;

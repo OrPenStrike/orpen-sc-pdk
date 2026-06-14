@@ -38,6 +38,10 @@ Current executable smoke coverage:
   by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
 - the Driven smoke verifies `gsim.palace.SParams` parsing, `o1`/`o2` port
   labels, and non-empty `port-S.csv` output;
+- the public Eigenmode resonator fixture has an opt-in local Palace coarse
+  solve guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
+- the Eigenmode smoke verifies non-empty `eig.csv` and `domain-E.csv` outputs
+  and reads positive eigenfrequency rows from the public resonator solve;
 - the public Electrostatic capacitor fixture has an opt-in local Palace coarse
   solve guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
 - the smoke path accepts either a Palace SIF (`PALACE_SIF`) or a direct local
@@ -46,7 +50,8 @@ Current executable smoke coverage:
 - the Electrostatic smoke verifies both non-empty solver matrix outputs and the
   `gsim.palace.load_terminal_matrix()` report-loader round trip through
   `palace_index_map.json`;
-- Eigenmode still needs an equivalent opt-in solver smoke.
+- Eigenmode still needs a reusable public report loader if notebooks require
+  more than raw `eig.csv` inspection.
 
 Acceptance direction:
 

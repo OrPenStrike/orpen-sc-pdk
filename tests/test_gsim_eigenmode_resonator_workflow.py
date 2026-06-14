@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -9,19 +11,11 @@ import orpen_sc_pdk
 from orpen_sc_pdk.cells import resonator
 
 
-def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
-    tmp_path: Path,
-) -> None:
-    """Public resonator eigenmode fixture exercises the gsim Palace handoff."""
-
+def _public_resonator_eigenmode_sim(output_dir: Path):
     pytest.importorskip("gmsh")
     pytest.importorskip("gsim")
 
     from gsim.palace import EigenmodeSim
-    from gsim.palace.mesh import (
-        SurfaceFluxSpec,
-        build_postprocessing_config_from_manifest,
-    )
 
     orpen_sc_pdk.activate()
     component = resonator(
@@ -33,7 +27,6 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
         bend_npoints=8,
     )
 
-    output_dir = tmp_path / "palace-sim"
     sim = EigenmodeSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
@@ -57,7 +50,16 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
     )
     mesh_result = sim._last_mesh_result
 
-    postprocessing = build_postprocessing_config_from_manifest(
+    return sim, mesh_result
+
+
+def _eigenmode_postprocessing(mesh_result):
+    from gsim.palace.mesh import (
+        SurfaceFluxSpec,
+        build_postprocessing_config_from_manifest,
+    )
+
+    return build_postprocessing_config_from_manifest(
         mesh_result.manifest,
         surface_flux=(
             SurfaceFluxSpec(
@@ -68,6 +70,17 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
             ),
         ),
     )
+
+
+def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
+    tmp_path: Path,
+) -> None:
+    """Public resonator eigenmode fixture exercises the gsim Palace handoff."""
+
+    output_dir = tmp_path / "palace-sim"
+    sim, mesh_result = _public_resonator_eigenmode_sim(output_dir)
+
+    postprocessing = _eigenmode_postprocessing(mesh_result)
     config_path = sim.write_config(postprocessing=postprocessing)
 
     config = json.loads(Path(config_path).read_text())
@@ -99,3 +112,60 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
     assert len(absorbing_rows) == 1
     assert absorbing_rows[0]["index"] == surface_flux[0]["Index"]
     assert absorbing_rows[0]["attributes"] == surface_flux[0]["Attributes"]
+
+
+def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
+    tmp_path: Path,
+) -> None:
+    """Optional local Palace smoke proves the public Eigenmode fixture solves."""
+
+    if os.environ.get("ORPEN_RUN_LOCAL_PALACE_SMOKE") != "1":
+        pytest.skip("set ORPEN_RUN_LOCAL_PALACE_SMOKE=1 to run local Palace smoke")
+
+    palace_sif = os.environ.get("PALACE_SIF")
+    palace_executable = os.environ.get("PALACE_EXECUTABLE")
+    if not palace_sif and not palace_executable:
+        pytest.skip("set PALACE_SIF or PALACE_EXECUTABLE for local Palace smoke")
+
+    executable_mode = os.environ.get("PALACE_EXECUTABLE_MODE", "wrapper")
+    if executable_mode not in {"wrapper", "binary"}:
+        msg = "PALACE_EXECUTABLE_MODE must be 'wrapper' or 'binary'"
+        raise ValueError(msg)
+
+    output_dir = tmp_path / "palace-smoke"
+    sim, mesh_result = _public_resonator_eigenmode_sim(output_dir)
+    sim.write_config(
+        postprocessing=_eigenmode_postprocessing(mesh_result),
+        validate_mesh=False,
+    )
+
+    use_apptainer = palace_sif is not None
+    run_kwargs = {
+        "use_apptainer": use_apptainer,
+        "num_processes": int(os.environ.get("PALACE_NP", "1")),
+        "num_threads": int(os.environ.get("PALACE_NT", "1")),
+        "verbose": False,
+    }
+    if use_apptainer:
+        run_kwargs["palace_sif_path"] = palace_sif
+    else:
+        run_kwargs["palace_executable"] = palace_executable
+        run_kwargs["executable_mode"] = executable_mode
+        run_kwargs["serial"] = os.environ.get("PALACE_SERIAL") == "1"
+
+    results = sim.run_local(**run_kwargs)
+
+    eig_path = results.get("eig.csv")
+    assert eig_path is not None
+    assert eig_path.stat().st_size > 0
+    assert results["domain-E.csv"].stat().st_size > 0
+
+    with eig_path.open(newline="") as handle:
+        reader = csv.reader(handle)
+        header = [column.strip() for column in next(reader)]
+        rows = list(reader)
+
+    assert "Re{f} (GHz)" in header
+    assert "Q" in header
+    assert len(rows) == 2
+    assert all(float(row[1]) > 0 for row in rows)

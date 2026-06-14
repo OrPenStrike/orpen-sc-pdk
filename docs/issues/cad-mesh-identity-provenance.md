@@ -90,6 +90,9 @@ Verified local changes:
 - `orpen-sc-pdk` local test `tests/test_gsim_eigenmode_resonator_workflow.py`:
   proves the manifest/index-map artifacts on a generated public resonator
   eigenmode mesh instead of hand-built physical group dictionaries;
+- the same eigenmode fixture now has an opt-in local Palace coarse-solve smoke
+  path that confirms the generated mesh/config can produce non-empty `eig.csv`
+  and `domain-E.csv` outputs for a public resonator;
 - `orpen-sc-pdk` local test
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: proves electrostatic
   terminal index-map artifacts on a generated public same-layer Martinis
@@ -137,11 +140,14 @@ Verified local changes:
 - validation after the Driven smoke extension: the public driven CPW fixture
   passed both the default skip path and the opt-in local Palace solve,
   including S-parameter parsing through `gsim.palace.SParams`.
+- validation after the Eigenmode smoke extension: the public resonator
+  eigenmode fixture passed both the default skip path and the opt-in local
+  Palace solve, including positive eigenfrequency rows from `eig.csv`.
 
 Remaining implementation slices:
 
-- run an optional local Palace coarse-solve smoke check for the Eigenmode public
-  fixture when a Palace binary is available on the local machine;
+- expose these opt-in solver smokes in publication-safe notebook/example form
+  without making normal docs builds depend on local Palace;
 - extend report summaries toward material-loss/T1/gamma only after the public
   ownership split between `gsim` result schemas and PDK material overlays is
   explicit.

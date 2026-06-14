@@ -40,6 +40,10 @@ Verified local changes:
   Eigenmode `config.json`, persists `mesh_manifest.json`, persists
   `palace_index_map.json`, and verifies the absorbing boundary maps to a Palace
   Power `SurfaceFlux` postprocessing index;
+- the same eigenmode fixture now includes an optional local Palace coarse-solve
+  smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies non-empty
+  `eig.csv` and `domain-E.csv` outputs and reads two positive eigenfrequency
+  rows from the public resonator solve;
 - electrostatic now has an executable public fixture in
   `tests/test_gsim_electrostatic_capacitor_workflow.py`: it builds the public
   same-layer Martinis differential ribbon capacitor fixture, uses local `gsim`
@@ -65,6 +69,8 @@ Verified local changes:
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - optional local Driven Palace validation passed with
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py -q`;
+- optional local Eigenmode Palace validation passed with
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_eigenmode_resonator_workflow.py -q`;
 - direct macOS development binaries may also require local dynamic-library
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
@@ -74,8 +80,10 @@ Verified local changes:
 
 Remaining slices:
 
-- add an optional local Palace coarse-solve smoke check for the public
-  Eigenmode fixture.
+- expose the opt-in solver smoke paths in publication-safe notebook/example
+  form without making normal docs builds depend on local Palace;
+- add a reusable `gsim` eigenvalue report loader if Eigenmode reports need the
+  same public schema treatment as S-parameters and terminal matrices.
 
 Acceptance checks:
 
