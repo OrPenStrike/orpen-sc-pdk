@@ -1,6 +1,6 @@
 # Surface-Q Index Mapping
 
-**Target:** `gsim` with `ili-scq-pdk` metadata
+**Target:** `gsim` with `orpen-sc-pdk` metadata
 
 **Status:** candidate
 

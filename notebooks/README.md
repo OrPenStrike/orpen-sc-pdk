@@ -1,6 +1,6 @@
 # Notebooks
 
-This folder contains public Jupyter notebooks for `ili-scq-pdk`.
+This folder contains public Jupyter notebooks for `orpen-sc-pdk`.
 
 ## Contributors
 

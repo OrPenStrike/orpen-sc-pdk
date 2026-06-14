@@ -1,20 +1,26 @@
 # Home
 
-`ili-scq-pdk` is the public superconducting quantum/RF PDK for contributors who
+`orpen-sc-pdk` is the public superconducting quantum/RF PDK for contributors who
 need to keep a Primary Layout in a private repository while still improving
 shared GDSFactory ecosystem infrastructure.
 
 The public PDK does not migrate private layout/IP into a public repo. It owns
 the public process contract: layer names, layer views, the layer stack, material
-semantics, public demo cells, provider discovery, and publication-safe
-documentation. Private layout repositories keep real chip geometry, private
+semantics, public CPW cross-sections, reusable layout helpers, public cells,
+static GF+ import mechanics, and
+publication-safe documentation. Private layout repositories keep real chip geometry, private
 parameters, private notebooks, GDS inputs from private designs, and private
 run evidence.
 
-The intended workflow is local and reviewable: install the public PDK,
-ecosystem forks, and an optional private layout provider into the same Python
-environment; use private layouts to validate public infrastructure; then slice
-accepted public work into clean upstream PR branches.
+The intended workflow is local and reviewable: open the private layout repo as
+the GF+ project, install `orpen-sc-pdk` as its base PDK, use private layouts to
+validate public infrastructure, then slice accepted public work into clean
+upstream PR branches.
+
+Palace source development is a separate solver-source lane. Most reusable
+Palace workflow work should go through `gsim`; direct Palace fork work is for
+solver-side outputs, postprocessing internals, or behavior that cannot be
+implemented reliably from the Python workflow layer.
 
 ## Start By Task
 
@@ -25,16 +31,15 @@ accepted public work into clean upstream PR branches.
 :link: home/pdk-responsibilities
 :link-type: doc
 
-Understand what `ili-scq-pdk` owns: public process semantics, public cells,
-materials direction, provider contracts, and docs.
+Understand what `orpen-sc-pdk` owns: public process semantics, public cells,
+materials direction, static GF+ import mechanics, and docs.
 :::
 
 :::{grid-item-card} Connect A Private Layout Repo
 :link: home/ecosystem-workspace
 :link-type: doc
 
-Register a private provider in the same local environment without publishing
-private layout/IP.
+Set up the private GF+ project without publishing private layout/IP.
 :::
 
 :::{grid-item-card} Develop Ecosystem Features
@@ -42,6 +47,7 @@ private layout/IP.
 :link-type: doc
 
 Track reusable capability that may belong in `gsim`, `gplugins`, or this PDK.
+Use a Palace fork only when a feature must change solver-side behavior.
 :::
 
 :::{grid-item-card} Prepare Upstream PRs

@@ -1,6 +1,6 @@
-"""Sphinx configuration for ili-scq-pdk documentation."""
+"""Sphinx configuration for orpen-sc-pdk documentation."""
 
-project = "ili-scq-pdk"
+project = "orpen-sc-pdk"
 author = "I-Li Chiu"
 copyright = "I-Li Chiu"  # noqa: A001
 root_doc = "index"
@@ -71,16 +71,16 @@ bibtex_bibfiles = ["references.bib"]
 
 html_theme = "pydata_sphinx_theme"
 html_show_copyright = False
-html_title = "ili-scq-pdk"
+html_title = "orpen-sc-pdk"
 html_theme_options = {
-    "github_url": "https://github.com/arfiligol/ili-scq-pdk",
+    "github_url": "https://github.com/OrPenStrike/orpen-sc-pdk",
     "navigation_with_keys": True,
     "show_toc_level": 2,
     "use_edit_page_button": True,
 }
 html_context = {
-    "github_user": "arfiligol",
-    "github_repo": "ili-scq-pdk",
+    "github_user": "OrPenStrike",
+    "github_repo": "orpen-sc-pdk",
     "github_version": "main",
     "doc_path": "docs",
 }
@@ -91,8 +91,8 @@ latex_use_xindy = False
 latex_documents = [
     (
         root_doc,
-        "ili-scq-pdk.tex",
-        "ili-scq-pdk Documentation",
+        "orpen-sc-pdk.tex",
+        "orpen-sc-pdk Documentation",
         author,
         "manual",
     )

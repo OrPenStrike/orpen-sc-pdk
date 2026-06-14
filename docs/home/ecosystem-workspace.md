@@ -1,10 +1,10 @@
 # Ecosystem Workspace And Contribution Loop
 
-`ili-scq-pdk` is designed for contributors who need private Primary Layout
-repositories but still want to validate and upstream reusable public
-infrastructure. The private repo proves that the workflow works on real layouts.
-The public repos carry the reusable process, provider, simulation, and plugin
-contracts that can be reviewed without private layout/IP.
+`orpen-sc-pdk` is the public base PDK for superconducting quantum/RF layout
+work. It owns public process semantics, layer views, layer stack, public cells,
+and public docs. Private layout projects use it as their base PDK while keeping
+Primary Layout, private cells, chip assemblies, notebooks, GDS dependencies,
+and run evidence private.
 
 ## Workspace Shape
 
@@ -13,126 +13,132 @@ Use sibling checkouts so each repo keeps its own ownership boundary:
 ```text
 SCQ_Design/
   GDSFactory_Community_Workbench/
-    ili-scq-pdk/
-    gsim/
-    gplugins/
-    quantum-rf-pdk/
+    repos/
+      orpen-sc-pdk/
+        orpen_sc_pdk/
+          cells/
+            privates/
+              ncuas-sc-qubit-design/   # optional ignored local mount
+      gsim/
+      gplugins/
+      quantum-rf-pdk/
   NCUAS_SC_Qubit_Design/
-    i-li-chiu-scq-layouts-private/
+    ncuas-sc-qubit-design/
+    palace/        # optional fork of awslabs/palace for solver-source work
 ```
 
 | Repo or folder | Responsibility |
 | --- | --- |
-| `ili-scq-pdk` | Public SCQ PDK: layer/process/material semantics, `LAYER_STACK`, public cells, provider contract, public examples, docs. |
-| private layout repo | Primary Layout, private cells, private parameters, GDS inputs from private designs, private notebooks, private run evidence. |
-| `gsim` | Reusable solver workflow, Palace/EPR/reporting capability, benchmark surfaces, material workflow adapters. |
-| `gplugins` | Generic GDSFactory plugin capability and helper surfaces that should not be PDK-specific. |
-| `quantum-rf-pdk` | Public reference and possible contribution target; it is not the upstream of `ili-scq-pdk`. |
+| `orpen-sc-pdk` | Public base PDK: `LAYER`, `LAYER_STACK`, `LAYER_VIEWS`, process/material semantics, public CPW cross-sections, public cells, public layout helpers, docs, and optional ignored-mount import hook. |
+| `ncuas-sc-qubit-design` | Private GF+ project: Primary Layout, private cells, chip assemblies, private parameters, GDS dependencies from private designs, private notebooks, and private run evidence. |
+| `gsim` | Reusable solver workflow, Palace/EPR/reporting capability, benchmark surfaces, and material workflow adapters. |
+| `gplugins` | Generic GDSFactory plugin capability that should not be PDK-specific. |
+| `quantum-rf-pdk` | Optional adjacent public PDK contribution target; it is not upstream of `orpen-sc-pdk` and not part of the normal NCUAS private layout flow. |
+| Palace source fork | Optional solver-source lane for Palace-side output, postprocessing, or runtime behavior that cannot be handled cleanly in `gsim`. |
 
-## Create The Workspace
+## Private GF+ Project Route
 
-Clone public forks under the public workbench:
-
-```bash
-mkdir -p SCQ_Design/GDSFactory_Community_Workbench
-cd SCQ_Design/GDSFactory_Community_Workbench
-git clone <your-ili-scq-pdk-fork-url> ili-scq-pdk
-git clone <your-gsim-fork-url> gsim
-git clone <your-gplugins-fork-url> gplugins
-git clone <your-quantum-rf-pdk-fork-url> quantum-rf-pdk
-```
-
-Keep private layout packs in a sibling private workspace:
-
-```bash
-mkdir -p ../NCUAS_SC_Qubit_Design
-cd ../NCUAS_SC_Qubit_Design
-git clone <your-private-layout-repo-url> i-li-chiu-scq-layouts-private
-```
-
-The private checkout may also be a private submodule, a local symlink, or an
-ignored local folder if a lab wants that source-location pattern. Those are
-optional local workspace choices. The public PDK contract is still provider
-discovery in the same Python environment, not ownership of private source code.
-
-## Sync The Python Environment
-
-For a reproducible local ecosystem environment, document path dependencies in a
-local `pyproject.toml` edit instead of running ad hoc editable installs:
+Open `ncuas-sc-qubit-design` as the active VSCode/GF+ project. Its
+`pyproject.toml` should identify the private project and public base PDK:
 
 ```toml
-[dependency-groups]
-ecosystem = [
-  "gsim",
-  "gplugins",
-  "qpdk",
-]
-private-layout = [
-  "i-li-chiu-scq-layouts-private",
-]
+[tool.gdsfactoryplus]
+name = "ncuas_designs"
 
-[tool.uv.sources]
-gsim = { path = "../gsim", editable = true }
-gplugins = { path = "../gplugins", editable = true }
-qpdk = { path = "../quantum-rf-pdk", editable = true }
-i-li-chiu-scq-layouts-private = { path = "../../NCUAS_SC_Qubit_Design/i-li-chiu-scq-layouts-private", editable = true }
+[tool.gdsfactoryplus.pdk]
+name = "orpen_sc_pdk"
 ```
 
-The checkout folder is `quantum-rf-pdk`, but the Python distribution name is
-`qpdk`; `uv` requires the dependency name to match the package metadata.
+With this shape, private cells are GF+ Project cells and `orpen-sc-pdk` is the
+base PDK. The private repo should import public process semantics from
+`orpen_sc_pdk`; it should not define its own public `LAYER_STACK`,
+`LAYER_VIEWS`, layer map, CPW cross-sections, launcher, or interdigital
+capacitor implementation.
 
-Then sync one environment from `ili-scq-pdk`:
+## Environment Routes
+
+### 1. GF+ Layout Previewable Only
+
+Use this when the private repo only needs GF+ to list and build private layouts:
 
 ```bash
-cd SCQ_Design/GDSFactory_Community_Workbench/ili-scq-pdk
-uv sync -p 3.12 --group docs --extra dev --extra gdsfactoryplus --group ecosystem --group private-layout
+cd SCQ_Design/NCUAS_SC_Qubit_Design/ncuas-sc-qubit-design
+uv sync -p 3.12 --extra gdsfactoryplus
 ```
 
-The `private-layout` group is a local/private workspace setup. Public CI and
-public docs builds must not require it.
+This installs the private project, editable `orpen-sc-pdk`, and GDSFactory+.
 
-For GDSFactory+ preview in VSCode, open `ili-scq-pdk` as the active folder and
-select this interpreter:
+### 2. GF+ Preview With Package-Manager `gsim` / `gplugins`
 
-```text
-ili-scq-pdk/.venv/bin/python3
+Use this when simulation/plugin packages should come from released packages,
+Git sources, or a private index:
+
+```bash
+uv sync -p 3.12 --extra gdsfactoryplus --extra ecosystem --no-sources
 ```
 
-## Provider Abstraction Boundary
+This is the package-manager route. It requires `orpen-sc-pdk`, `gsim`, and
+`gplugins` to be resolvable without local editable source overrides.
 
-The provider contract lets public code load a private layout pack when that pack
-is installed locally, while keeping process semantics in the public PDK.
+### 3. GF+ Preview With Editable `gsim` / `gplugins`
 
-Ownership is split deliberately:
+Use this only for contribution or cross-repo development:
 
-- private provider owns the `Component`, `layout_id`, and public-safe metadata;
-- `ili-scq-pdk` owns `LAYER`, `LAYER_VIEWS`, `LAYER_STACK`,
-  material/process semantics, and provider discovery;
-- `gsim` consumes the component, public PDK layer stack, and public-safe
-  metadata at its solver workflow boundary.
-
-Do not model the private provider as the owner of the process stack. The layer
-stack is part of the public process contract unless a future public PDK
-extension explicitly changes it. A private provider may pass through the public
-PDK `LAYER_STACK`; it should not define a separate private process stack.
-
-A private package registers itself through the existing entry point group:
-
-```toml
-[project.entry-points."ili_scq_pdk.layout_providers"]
-"private.reference_design" = "my_lab_layouts.provider:get_provider"
+```bash
+uv sync -p 3.12 --extra gdsfactoryplus --group ecosystem-dev
 ```
 
-The public PDK can then discover it by id:
+Editable `gsim` and `gplugins` are contribution tools, not part of the minimal
+layout preview environment.
 
-```python
-from ili_scq_pdk.layouts import load_layout_provider
+### 4. Optional Adjacent PDK Development
 
-provider = load_layout_provider("private.reference_design")
+Use `quantum-rf-pdk` only when explicitly contributing to or comparing with that
+PDK:
+
+```bash
+uv sync -p 3.12 --extra gdsfactoryplus --group ecosystem-dev --group adjacent-pdk-dev
 ```
 
-Without the private package installed in the active environment, the provider is
-not importable and the private layout remains unavailable.
+The checkout folder is `quantum-rf-pdk`, but the Python package metadata name is
+`qpdk`.
+
+## Optional Public-PDK Mount
+
+The primary GF+ preview route is the private project route above. A local
+ignored mount under the public PDK can still be used for experiments that need
+private source below the active public PDK checkout:
+
+```bash
+cd SCQ_Design/GDSFactory_Community_Workbench/repos/orpen-sc-pdk
+mkdir -p orpen_sc_pdk/cells/privates
+git clone git@github.com:OrPenStrike/NCUAS_SC_Qubit_Design.git \
+  orpen_sc_pdk/cells/privates/ncuas-sc-qubit-design
+
+export ORPEN_SC_PDK_PRIVATE_LAYOUT_REPO=ncuas-sc-qubit-design
+export ORPEN_SC_PDK_PRIVATE_LAYOUT_CELLS=ncuas_designs.cells
+export ORPEN_SC_PDK_PRIVATE_LAYOUT_XSECTIONS=ncuas_designs.cells.xsections
+```
+
+`orpen_sc_pdk/cells/privates/*` is ignored. This mount is not a submodule, not a
+public dependency contract, and not required for public CI. Public docs and CI
+must remain valid without access to private source.
+
+## Ownership Boundary
+
+- `orpen-sc-pdk` owns public `LAYER`, `LAYER_VIEWS`, `LAYER_STACK`,
+  material/process semantics, public CPW cross-sections, public reusable layout
+  helpers, public cells, public docs, and public samples.
+- `ncuas-sc-qubit-design` owns private GF cells, chip assemblies, private
+  parameters, private-only cross-sections, GDS dependencies from private
+  designs, notebooks, and private run evidence.
+- `gsim` consumes components, public PDK layer stack, and public-safe metadata
+  at its solver workflow boundary.
+- `gplugins` owns generic plugin capability that is not specific to this PDK.
+- `quantum-rf-pdk` remains an optional adjacent PDK lane.
+
+Do not move private layout/IP into `orpen-sc-pdk`. Do not move public process
+semantics back into the private repo.
 
 ## Personal Branches And PR Branches
 
@@ -172,7 +178,7 @@ Public docs, tests, and examples may include:
 
 - public process and layer semantics;
 - public material records and aliases;
-- provider interfaces and public demo providers;
+- optional ignored-mount import mechanics;
 - public cells, public samples, and publication-safe notebooks;
 - upstream contribution instructions and public benchmark methodology.
 
@@ -190,10 +196,12 @@ They must not include:
 
 | Change | Destination |
 | --- | --- |
-| Layer names, layer views, layer stack, process semantics | `ili-scq-pdk` |
-| Public SCQ material records and provider contract | `ili-scq-pdk` |
-| Private cells, Primary Layout factories, GDS inputs from private designs | private layout repo |
+| Layer names, layer views, layer stack, process semantics | `orpen-sc-pdk` |
+| Public SCQ material records, CPW cross-sections, layout helpers, and static import hook | `orpen-sc-pdk` |
+| Private cells, Primary Layout factories, GDS dependencies from private designs | `ncuas-sc-qubit-design` |
+| Private GF+ project setup | `ncuas-sc-qubit-design` |
 | Reusable Palace/EPR/reporting workflow | `gsim` |
 | Reusable benchmark and solver cost workflow | `gsim` |
+| Palace-side output, postprocessing, CSV/report internals, solver runtime behavior | Palace source fork, then `awslabs/palace` when upstreamable |
 | Generic GDSFactory plugin integration | `gplugins` |
-| Quantum/RF public reference method matching that project scope | `quantum-rf-pdk`, when appropriate |
+| Adjacent public PDK comparison/contribution | `quantum-rf-pdk`, when explicitly needed |

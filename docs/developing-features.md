@@ -23,14 +23,14 @@ Feature status labels:
 **Status:** candidate
 
 Define reusable electrostatic and EPR report surfaces that can consume public
-PDK layer/material/provider metadata without depending on private layout repos.
+PDK layer/material metadata without depending on private layout repos.
 :::
 
 :::{grid-item-card} FEAT-002 Surface-Q index mapping
 :link: features/surface-q-index-mapping
 :link-type: doc
 
-**Target:** `gsim` with `ili-scq-pdk` metadata
+**Target:** `gsim` with `orpen-sc-pdk` metadata
 
 **Status:** candidate
 
@@ -42,7 +42,7 @@ participation, loss, and surface-Q contributors in a publication-safe way.
 :link: features/material-db-overlay
 :link-type: doc
 
-**Target:** `ili-scq-pdk` and `gsim`
+**Target:** `orpen-sc-pdk` and `gsim`
 
 **Status:** candidate
 
@@ -66,7 +66,7 @@ cost, and cloud/HPC spend without exposing private geometry or private runs.
 :link: features/gdsfactoryplus-discovery
 :link-type: doc
 
-**Target:** `ili-scq-pdk`
+**Target:** `orpen-sc-pdk`
 
 **Status:** prototype
 
@@ -75,16 +75,16 @@ reserved `models/`, and GDSFactory+ metadata so VSCode preview works on the
 active repo.
 :::
 
-:::{grid-item-card} FEAT-006 Provider-safe notebook surface
-:link: features/provider-safe-notebooks
+:::{grid-item-card} FEAT-006 Static private layout mount
+:link: features/private-static-mount
 :link-type: doc
 
-**Target:** `ili-scq-pdk`
+**Target:** `orpen-sc-pdk`
 
-**Status:** candidate
+**Status:** prototype
 
-Provide public notebooks that exercise the same provider contract private
-layout repos use, without publishing private resonator or qubit layout IP.
+Expose ignored repo-local private layout packages to GF+ static discovery
+without tracking private source in the public PDK.
 :::
 
 ::::
@@ -97,5 +97,5 @@ features/surface-q-index-mapping
 features/material-db-overlay
 features/benchmark-cost-analysis
 features/gdsfactoryplus-discovery
-features/provider-safe-notebooks
+features/private-static-mount
 ```

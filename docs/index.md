@@ -1,7 +1,15 @@
-# ili-scq-pdk
+# orpen-sc-pdk
 
-Public superconducting quantum/RF PDK documentation for private-layout teams
-that want to participate in the GDSFactory ecosystem.
+```{raw} html
+<script>
+  window.location.replace("home.html");
+</script>
+<noscript>
+  <p><a href="home.html">Continue to Home</a></p>
+</noscript>
+```
+
+Redirecting to {doc}`home`.
 
 ```{toctree}
 :hidden:

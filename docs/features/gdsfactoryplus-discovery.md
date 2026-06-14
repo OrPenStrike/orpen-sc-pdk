@@ -1,6 +1,6 @@
 # GDSFactory+ PDK Discovery
 
-**Target:** `ili-scq-pdk`
+**Target:** `orpen-sc-pdk`
 
 **Status:** prototype
 
@@ -10,7 +10,7 @@ the GDSFactory+ extension.
 Required shape:
 
 - flat package layout;
-- public `ili_scq_pdk.cells` registry;
-- public `ili_scq_pdk.samples`;
-- reserved `ili_scq_pdk.models`;
+- public `orpen_sc_pdk.cells` registry;
+- public `orpen_sc_pdk.samples`;
+- reserved `orpen_sc_pdk.models`;
 - `[tool.gdsfactoryplus]` metadata in `pyproject.toml`.

@@ -5,7 +5,7 @@ orphan: true
 # Docs Publishing
 
 The public documentation is part of the PDK contract. It should be buildable
-locally and published through GitHub Pages for `arfiligol/ili-scq-pdk`.
+locally and published through GitHub Pages for `OrPenStrike/orpen-sc-pdk`.
 
 ## Tooling
 
@@ -17,7 +17,7 @@ The docs stack follows the Quantum-RF-PDK publication pattern:
 - `docs/docs.just` for docs helper commands.
 - GitHub Actions for pull request validation and Pages deployment.
 
-The docs intentionally use `ili-scq-pdk` branding and content. Static assets
+The docs intentionally use `orpen-sc-pdk` branding and content. Static assets
 should be added only when they are needed for this PDK.
 
 ## Local Build
@@ -60,7 +60,7 @@ render without requiring private layout repositories.
 Before publishing an architecture change, verify:
 
 ```bash
-rg -n "/Users/|private[ ]GDS|private[ ]benchmark|run[ ]folders|NCUAS_SC_Qubit_Design" docs README.md
+rg -n "/[U]sers/|private[ ]GDS|private[ ]benchmark|run[ ]folders|NCUAS_SC_Qubit_Design" docs README.md
 ```
 
 Any matches should be intentional. `NCUAS_SC_Qubit_Design` may appear only as

@@ -12,22 +12,18 @@
 # # Public PDK quickstart
 #
 # This notebook demonstrates the open PDK surface that is safe to publish:
-# process semantics, public demo components, and the layout-provider extension
-# point. Private chip layouts and private GDS inputs are intentionally outside
-# this repository.
+# process semantics, public demo components, and the static private-mount
+# boundary. Private chip layouts and GDS inputs from private designs are
+# intentionally outside this repository.
 
 # %%
 from IPython.display import display
 
-import ili_scq_pdk
-from ili_scq_pdk.cells import cpw_straight, interdigital_capacitor
-from ili_scq_pdk.layouts import (
-    LayoutRequest,
-    available_public_layout_providers,
-    load_layout_provider,
-)
+import orpen_sc_pdk
+from orpen_sc_pdk import PDK
+from orpen_sc_pdk.cells import cpw_straight, interdigital_capacitor
 
-ili_scq_pdk.activate()
+orpen_sc_pdk.activate()
 
 
 def port_names(component):
@@ -52,32 +48,22 @@ display(
 )
 
 # %% [markdown]
-# ## Public layout provider
+# ## Public PDK registry
 #
-# Workflows consume layouts through provider IDs. The built-in public provider
-# exposes demo layouts for documentation and smoke tests.
+# The public PDK registry contains publication-safe cells. Private cells appear
+# here only when an ignored local private mount is present during import.
 
 # %%
-public_providers = available_public_layout_providers()
-display(public_providers)
-
-# %%
-provider = load_layout_provider("public.ili_cpw_demo")
-case = provider.build_layout(LayoutRequest(layout_id="quarter_wave_resonator"))
-
 display(
     {
-        "provider": case.provider.provider_id,
-        "visibility": case.provider.visibility,
-        "layout_id": case.layout_id,
-        "component": case.component.name,
-        "ports": sorted(case.ports),
+        "public_cells": sorted(name for name in PDK.cells if not name.startswith("as_")),
+        "private_mount_present": "as_resonator" in PDK.cells,
     }
 )
 
 # %% [markdown]
 # ## Private layout boundary
 #
-# Private designs should be packaged separately and registered through the same
-# provider entry-point group. This notebook does not import or name any private
-# layout package.
+# Private designs should be packaged separately. For GF+ preview, the public PDK
+# may re-export an ignored local clone under `orpen_sc_pdk/cells/privates/`.
+# This notebook does not import or name any private layout package.

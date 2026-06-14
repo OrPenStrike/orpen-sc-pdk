@@ -1,6 +1,6 @@
 # Material Schema Boundary
 
-**Repo:** `gsim`, `ili-scq-pdk`
+**Repo:** `gsim`, `orpen-sc-pdk`
 
 The PDK should own SCQ material records and aliases. `gsim` should own reusable
 material resolution and Palace-specific evaluation.

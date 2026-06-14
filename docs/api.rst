@@ -4,23 +4,20 @@
 API
 ###
 
-.. automodule:: ili_scq_pdk
+.. automodule:: orpen_sc_pdk
     :members:
 
-.. automodule:: ili_scq_pdk.cells
+.. automodule:: orpen_sc_pdk.cells
     :members:
 
-.. automodule:: ili_scq_pdk.config
+.. automodule:: orpen_sc_pdk.config
     :members:
 
-.. automodule:: ili_scq_pdk.layouts
+.. automodule:: orpen_sc_pdk.models
     :members:
 
-.. automodule:: ili_scq_pdk.models
+.. automodule:: orpen_sc_pdk.samples
     :members:
 
-.. automodule:: ili_scq_pdk.samples
-    :members:
-
-.. automodule:: ili_scq_pdk.tech
+.. automodule:: orpen_sc_pdk.tech
     :members:

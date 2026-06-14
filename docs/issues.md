@@ -1,6 +1,6 @@
 # Issues
 
-This page tracks ecosystem issues that matter to the `ili-scq-pdk` workflow.
+This page tracks ecosystem issues that matter to the `orpen-sc-pdk` workflow.
 Items may later become upstream GitHub issues or PRs. Do not add private layout
 details, benchmark values from private layouts, or private run directories here.
 
@@ -23,7 +23,7 @@ layout repo or inside the PDK core.
 :link: issues/material-schema-boundary
 :link-type: doc
 
-**Repo:** `gsim`, `ili-scq-pdk`
+**Repo:** `gsim`, `orpen-sc-pdk`
 
 **Related features:** FEAT-003
 
@@ -56,16 +56,16 @@ GDSFactory+ metadata aligned with the ecosystem reference shape without copying
 branding or solver scope.
 :::
 
-:::{grid-item-card} ISSUE-005 Private provider acceptance tests
-:link: issues/provider-acceptance-tests
+:::{grid-item-card} ISSUE-005 Private static mount tests
+:link: issues/private-static-mount-tests
 :link-type: doc
 
-**Repo:** `ili-scq-pdk`
+**Repo:** `orpen-sc-pdk`
 
 **Related features:** FEAT-006
 
-Public tests should verify the provider contract and entry-point loading
-without importing the private layout repo.
+Public tests should verify no-mount behavior and static mount re-export without
+tracking private layout source.
 :::
 
 :::{grid-item-card} ISSUE-006 Integration branch hygiene
@@ -89,6 +89,6 @@ issues/palace-report-ownership
 issues/material-schema-boundary
 issues/gplugins-boundary
 issues/quantum-rf-reference-parity
-issues/provider-acceptance-tests
+issues/private-static-mount-tests
 issues/integration-branch-hygiene
 ```

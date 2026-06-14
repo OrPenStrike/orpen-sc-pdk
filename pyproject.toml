@@ -3,12 +3,12 @@ requires = ["uv_build>=0.10.8,<0.12.0"]
 build-backend = "uv_build"
 
 [project]
-name = "ili-scq-pdk"
+name = "orpen-sc-pdk"
 version = "0.1.0"
-description = "I-Li Chiu superconducting quantum/RF open PDK for GDSFactory"
+description = "OrPen superconducting quantum/RF public PDK for GDSFactory"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
-authors = [{ name = "I-Li Chiu" }]
+authors = [{ name = "OrPenStrike" }]
 keywords = [
   "gdsfactory",
   "layout",
@@ -18,13 +18,14 @@ keywords = [
   "superconducting",
 ]
 dependencies = [
+  "doroutes>=0.2.0",
   "gdsfactory~=9.43.0",
   "typing-extensions>=4.12.0",
 ]
 
 [project.urls]
-documentation = "https://arfiligol.github.io/ili-scq-pdk/"
-repository = "https://github.com/arfiligol/ili-scq-pdk/"
+documentation = "https://orpenstrike.github.io/orpen-sc-pdk/"
+repository = "https://github.com/OrPenStrike/orpen-sc-pdk/"
 
 [project.optional-dependencies]
 dev = [
@@ -52,9 +53,6 @@ docs = [
   "sphinxcontrib-svgbob",
 ]
 
-[project.entry-points."ili_scq_pdk.layout_providers"]
-"public.ili_cpw_demo" = "ili_scq_pdk.demo.provider:get_provider"
-
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -63,7 +61,7 @@ target-version = "py312"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["ili_scq_pdk"]
+known-first-party = ["orpen_sc_pdk"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -72,11 +70,13 @@ testpaths = ["tests"]
 module-root = ""
 
 [tool.gdsfactoryplus]
-name = "ili_scq_pdk"
+name = "orpen_sc_pdk"
 
 [tool.gdsfactoryplus.pdk]
-name = "ili_scq_pdk"
+name = "orpen_sc_pdk"
 cells_no_model_expected = [
+  "as_interdigital_capacitor",
+  "as_launcher",
   "cpw_straight",
   "interdigital_capacitor",
   "quarter_wave_resonator",

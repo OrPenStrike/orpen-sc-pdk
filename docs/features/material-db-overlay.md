@@ -1,6 +1,6 @@
 # Material Database Overlay
 
-**Target:** `ili-scq-pdk` and `gsim`
+**Target:** `orpen-sc-pdk` and `gsim`
 
 **Status:** candidate
 

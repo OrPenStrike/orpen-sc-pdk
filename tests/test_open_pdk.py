@@ -1,21 +1,23 @@
 from pathlib import Path
 
-import ili_scq_pdk
-from ili_scq_pdk.cells import cpw_straight, interdigital_capacitor
-from ili_scq_pdk.tech import LAYER_STACK
+import orpen_sc_pdk
+from orpen_sc_pdk.cells import as_interdigital_capacitor, as_launcher, cpw_straight
+from orpen_sc_pdk.tech import LAYER, LAYER_STACK
 
 
 def test_pdk_activates_and_builds_public_cells() -> None:
-    pdk = ili_scq_pdk.activate()
+    pdk = orpen_sc_pdk.activate()
 
-    assert pdk.name == "ili_scq_pdk"
+    assert pdk.name == "orpen_sc_pdk"
     assert "D0_TOP_M1" in LAYER_STACK.layers
+    assert (LAYER.D1_D2_INDIUM_BUMP.layer, LAYER.D1_D2_INDIUM_BUMP.datatype) == (41, 0)
     assert cpw_straight().ports
-    assert interdigital_capacitor().ports
+    assert as_launcher().ports
+    assert as_interdigital_capacitor().ports
 
 
 def test_public_pdk_has_no_private_imports_or_gds() -> None:
-    package_root = Path(__file__).resolve().parents[1] / "ili_scq_pdk"
+    package_root = Path(__file__).resolve().parents[1] / "orpen_sc_pdk"
     source_text = "\n".join(path.read_text() for path in package_root.rglob("*.py"))
 
     assert "ncuas_designs" not in source_text

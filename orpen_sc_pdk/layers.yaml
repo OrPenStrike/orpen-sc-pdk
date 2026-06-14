@@ -1,0 +1,304 @@
+LayerViews:
+  Metal:
+    group_members:
+      D0_BOTTOM_M1_DRAW:
+        layer: [3, 0]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: solid
+        color: "#BDB3FF"
+      D0_BOTTOM_M1_ETCH:
+        layer: [3, 1]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: dotted
+        color: "#6A5EDB"
+      D0_TOP_M1_DRAW:
+        layer: [1, 0]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: solid
+        color: "#88E6DA"
+      D0_TOP_M1_ETCH:
+        layer: [1, 1]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: dotted
+        color: "#1FAF9A"
+      D1_BOTTOM_M1_DRAW:
+        layer: [2, 0]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: solid
+        color: "#FFB29F"
+      D1_BOTTOM_M1_ETCH:
+        layer: [2, 1]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: dotted
+        color: "#E46D5D"
+      D1_TOP_M1_DRAW:
+        layer: [4, 0]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: solid
+        color: "#FFD36F"
+      D1_TOP_M1_ETCH:
+        layer: [4, 1]
+        layer_in_name: true
+        width: 1
+        hatch_pattern: dotted
+        color: "#D69A1C"
+
+  Airbridge:
+    hatch_pattern: lightly right-hatched
+    group_members:
+      D0_BOTTOM_AB_DRAW:
+        layer: [12, 0]
+        layer_in_name: true
+        transparent: true
+        width: 1
+        color: "#8E9CFF"
+      D0_BOTTOM_AB_VIA:
+        layer: [12, 1]
+        layer_in_name: true
+        color: "#C2C9FF"
+      D0_TOP_AB_DRAW:
+        layer: [10, 0]
+        layer_in_name: true
+        transparent: true
+        width: 1
+        color: "#FFB44D"
+      D0_TOP_AB_VIA:
+        layer: [10, 1]
+        layer_in_name: true
+        color: "#FFD18E"
+      D1_BOTTOM_AB_DRAW:
+        layer: [11, 0]
+        layer_in_name: true
+        transparent: true
+        width: 1
+        color: "#FF8A65"
+      D1_BOTTOM_AB_VIA:
+        layer: [11, 1]
+        layer_in_name: true
+        color: "#FFB49A"
+      D1_TOP_AB_DRAW:
+        layer: [13, 0]
+        layer_in_name: true
+        transparent: true
+        width: 1
+        color: "#FFC857"
+      D1_TOP_AB_VIA:
+        layer: [13, 1]
+        layer_in_name: true
+        color: "#FFE39F"
+
+  Junction:
+    hatch_pattern: lightly right-hatched
+    group_members:
+      D0_BOTTOM_JJ_DRAW:
+        layer: [20, 0]
+        layer_in_name: true
+        color: "#8FA8FF"
+      D0_TOP_JJ_DRAW:
+        layer: [21, 0]
+        layer_in_name: true
+        color: "#9B72D8"
+      D1_BOTTOM_JJ_DRAW:
+        layer: [22, 0]
+        layer_in_name: true
+        color: "#E66AA5"
+      D1_TOP_JJ_DRAW:
+        layer: [23, 0]
+        layer_in_name: true
+        color: "#F5A742"
+
+  DesignIntent:
+    group_members:
+      D0_BOTTOM_GROUND_MASK:
+        layer: [111, 0]
+        layer_in_name: true
+        hatch_pattern: strongly cross-hatched sparse
+        color: "#716A96"
+      D0_TOP_GROUND_MASK:
+        layer: [110, 0]
+        layer_in_name: true
+        hatch_pattern: strongly cross-hatched sparse
+        color: "#5F748B"
+      D1_BOTTOM_GROUND_MASK:
+        layer: [110, 1]
+        layer_in_name: true
+        hatch_pattern: strongly cross-hatched sparse
+        color: "#8F6D75"
+      D1_TOP_GROUND_MASK:
+        layer: [111, 1]
+        layer_in_name: true
+        hatch_pattern: strongly cross-hatched sparse
+        color: "#97815B"
+
+  Integration:
+    group_members:
+      D0_TOP_IND:
+        layer: [30, 0]
+        layer_in_name: true
+        color: "#88E6DA"
+        hatch_pattern: lightly right-hatched
+      D1_BOTTOM_IND:
+        layer: [30, 1]
+        layer_in_name: true
+        color: "#FFB29F"
+        hatch_pattern: lightly left-hatched
+      D0_TOP_TSV:
+        layer: [31, 0]
+        layer_in_name: true
+        color: "#E052CF"
+        hatch_pattern: dotted
+      D1_BOTTOM_TSV:
+        layer: [31, 1]
+        layer_in_name: true
+        color: "#C218A8"
+        hatch_pattern: dotted
+      D0_D1_INDIUM_BUMP:
+        layer: [40, 0]
+        layer_in_name: true
+        color: "#88E6DA"
+        hatch_pattern: lightly right-hatched
+      D0_D1_UNDER_BUMP:
+        layer: [40, 1]
+        layer_in_name: true
+        color: "#88E6DA"
+        hatch_pattern: lightly left-hatched
+      D1_D2_INDIUM_BUMP:
+        layer: [41, 0]
+        layer_in_name: true
+        color: "#FFD36F"
+        hatch_pattern: lightly right-hatched
+      D1_D2_UNDER_BUMP:
+        layer: [41, 1]
+        layer_in_name: true
+        color: "#D69A1C"
+        hatch_pattern: lightly left-hatched
+
+  Alignment:
+    group_members:
+      D0_BOTTOM_ALN:
+        layer: [81, 0]
+        layer_in_name: true
+        color: "#E66BD0"
+        hatch_pattern: coarsely dotted
+      D0_TOP_ALN:
+        layer: [80, 0]
+        layer_in_name: true
+        color: "#F7E733"
+        hatch_pattern: coarsely dotted
+      D1_BOTTOM_ALN:
+        layer: [83, 0]
+        layer_in_name: true
+        color: "#4FD1E0"
+        hatch_pattern: coarsely dotted
+      D1_TOP_ALN:
+        layer: [82, 0]
+        layer_in_name: true
+        color: "#FFB347"
+        hatch_pattern: coarsely dotted
+
+  Admin:
+    group_members:
+      DICE:
+        layer: [70, 0]
+        layer_in_name: true
+        color: "#FF4D4D"
+        hatch_pattern: coarsely dotted
+      TEXT:
+        layer: [90, 0]
+        layer_in_name: true
+        color: "#111111"
+        hatch_pattern: checkerboard 2px
+      ERROR_PATH:
+        layer: [1000, 0]
+        layer_in_name: true
+        color: "#FF006E"
+        hatch_pattern: strongly left-hatched dense
+
+  gdsfactory:
+    group_members:
+      LABEL_SETTINGS:
+        layer: [100, 0]
+        layer_in_name: true
+        color: "#4FD1E0"
+        hatch_pattern: hollow
+      LABEL_INSTANCE:
+        layer: [101, 0]
+        layer_in_name: true
+        color: "#4FD1E0"
+        hatch_pattern: hollow
+      WG:
+        layer: [102, 0]
+        layer_in_name: true
+        color: "#535353"
+        visible: false
+        hatch_pattern: 22.5 degree down
+
+  Simulation:
+    group_members:
+      D0_BOTTOM_M1_DOMAIN:
+        layer: [200, 0]
+        layer_in_name: true
+        color: "#5C5AA8"
+        hatch_pattern: hollow bubbles
+      D0_TOP_M1_DOMAIN:
+        layer: [200, 1]
+        layer_in_name: true
+        color: "#4C8E89"
+        hatch_pattern: hollow bubbles
+      D1_BOTTOM_M1_DOMAIN:
+        layer: [200, 2]
+        layer_in_name: true
+        color: "#A96B63"
+        hatch_pattern: hollow bubbles
+      D1_TOP_M1_DOMAIN:
+        layer: [200, 3]
+        layer_in_name: true
+        color: "#A98839"
+        hatch_pattern: hollow bubbles
+      D0_SUBSTRATE_AREA:
+        layer: [201, 0]
+        layer_in_name: true
+        color: "#7CB342"
+        hatch_pattern: hollow bubbles
+      D0_TO_D1_GAP_AREA:
+        layer: [201, 1]
+        layer_in_name: true
+        color: "#67C7C0"
+        hatch_pattern: hollow bubbles
+      D1_SUBSTRATE_AREA:
+        layer: [201, 2]
+        layer_in_name: true
+        color: "#5E9B2E"
+        hatch_pattern: hollow bubbles
+      OUTER_VACUUM_AREA:
+        layer: [201, 3]
+        layer_in_name: true
+        color: "#8FD3FF"
+        hatch_pattern: hollow bubbles
+      D0_BOTTOM_SIM_BOUNDARY:
+        layer: [202, 0]
+        layer_in_name: true
+        color: "#8A56D8"
+        hatch_pattern: lightly left-hatched
+      D0_TOP_SIM_BOUNDARY:
+        layer: [202, 1]
+        layer_in_name: true
+        color: "#D44D9D"
+        hatch_pattern: lightly left-hatched
+      D1_BOTTOM_SIM_BOUNDARY:
+        layer: [202, 2]
+        layer_in_name: true
+        color: "#C03A7D"
+        hatch_pattern: lightly left-hatched
+      D1_TOP_SIM_BOUNDARY:
+        layer: [202, 3]
+        layer_in_name: true
+        color: "#E07A2B"
+        hatch_pattern: lightly left-hatched

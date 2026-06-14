@@ -4,12 +4,12 @@ orphan: true
 
 # Models Namespace
 
-`ili_scq_pdk.models` is reserved for future public model contracts. It is not
+`orpen_sc_pdk.models` is reserved for future public model contracts. It is not
 an active analytical-model or solver API surface in this milestone.
 
 The public PDK owns material records, technology/layer stack semantics, public
-cells, samples, and provider contracts. Reusable solver implementations remain
-upstream-oriented:
+cells, samples, and static GF+ import mechanics. Reusable solver
+implementations remain upstream-oriented:
 
 - Palace electrostatic/EPR/reporting workflow belongs in `gsim` when it is
   reusable beyond this PDK.

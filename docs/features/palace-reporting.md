@@ -5,12 +5,12 @@
 **Status:** candidate
 
 Reusable Palace electrostatic and EPR report generation should live in `gsim`.
-The PDK should provide layer, material, and provider metadata that these reports
-can consume without depending on private layout repositories.
+The PDK should provide layer and material metadata that these reports can
+consume without depending on private layout repositories.
 
 Acceptance direction:
 
-- report APIs work with public provider cases;
-- private providers can validate the same workflow without publishing layout;
+- report APIs work with public cells and mounted private components;
+- private layouts can validate the same workflow without publishing layout;
 - generated reports avoid private paths and benchmark data from private layouts
   by default.

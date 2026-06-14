@@ -4,7 +4,7 @@ docs_source := "docs"
 docs_build := "docs/_build"
 docs_notebooks := "docs/notebooks"
 notebook_source := "notebooks/src"
-latex_main := "ili-scq-pdk.tex"
+latex_main := "orpen-sc-pdk.tex"
 
 # Write a generated command reference for docs pages.
 [group('docs')]
