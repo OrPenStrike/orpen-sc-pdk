@@ -27,6 +27,8 @@ Current public baseline:
   without reading private mesh files or notebook-local physical-name maps;
 - electrostatic terminal matrices can be loaded through `load_terminal_matrix()`
   with terminal labels resolved from `Boundaries.Terminal` index-map rows;
+- electrostatic terminal matrix AMR histories can be summarized through
+  `load_terminal_matrix_history()` and `summarize_terminal_matrix_history()`;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

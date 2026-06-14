@@ -40,14 +40,17 @@ Verified local changes:
   `terminal-Cinv.csv`, label rows/columns from `Boundaries.Terminal` rows in
   `palace_index_map.json`, preserve SI values, expose display-scaled matrices,
   and emit long-form terminal-pair rows for report tables.
+- `gsim` commit `3c0dad9`: adds `load_terminal_matrix_history()` and
+  `summarize_terminal_matrix_history()` so electrostatic AMR pass matrices can
+  be loaded, final-pass duplicates can be dropped, and convergence deltas can be
+  summarized without notebook-local parsing.
 
 Remaining slices:
 
 - run real Palace coarse-solve smoke checks when a Palace binary is available
   on the local machine;
-- build higher-level EPR/surface-Q and electrostatic convergence summary frames
-  on top of the reusable indexed CSV and terminal matrix loaders instead of
-  copying private report code.
+- build higher-level EPR/surface-Q summary frames on top of the reusable indexed
+  CSV loader instead of copying private report code.
 
 Related features:
 
