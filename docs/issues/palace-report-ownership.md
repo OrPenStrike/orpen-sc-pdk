@@ -51,11 +51,15 @@ Verified local changes:
   `domain-E.csv`, `surface-Q.csv`, and `port-EPR.csv` into public-safe report
   frames with index-map provenance, interface totals, and port participation
   fractions.
+- `orpen-sc-pdk` now validates `load_terminal_matrix()` against a real optional
+  local Palace Electrostatic coarse solve, so the public fixture proves
+  generated terminal matrix CSVs can be loaded back with `positive`/`negative`
+  labels from `palace_index_map.json`.
 
 Remaining slices:
 
-- run real Palace coarse-solve smoke checks when a Palace binary is available
-  on the local machine;
+- run real Palace coarse-solve smoke checks for Driven and Eigenmode fixtures
+  when a Palace binary is available on the local machine;
 - extend the reusable report layer toward material-loss/T1/gamma summaries only
   where that information belongs in public `gsim` schemas or PDK-owned material
   overlays;

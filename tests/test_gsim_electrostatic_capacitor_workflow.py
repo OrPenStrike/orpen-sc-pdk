@@ -120,6 +120,7 @@ def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
     output_dir = tmp_path / "palace-smoke"
     sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
 
+    from gsim.palace import load_terminal_matrix
     from gsim.palace.mesh import build_postprocessing_config_from_manifest
 
     postprocessing = build_postprocessing_config_from_manifest(mesh_result.manifest)
@@ -145,3 +146,15 @@ def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
         path = results.get(filename)
         assert path is not None
         assert Path(path).stat().st_size > 0
+
+    for matrix_kind in ("C", "Cm", "Cinv"):
+        matrix = load_terminal_matrix(results, matrix_kind)
+        assert matrix.terminal_names == ("positive", "negative")
+        assert matrix.dataframe.shape == (2, 2)
+        assert matrix.dataframe.notna().all().all()
+        assert matrix.dataframe.abs().max().max() > 0
+
+        long_frame = matrix.to_long_dataframe()
+        assert len(long_frame) == 4
+        assert set(long_frame["row_terminal"]) == {"positive", "negative"}
+        assert set(long_frame["column_terminal"]) == {"positive", "negative"}

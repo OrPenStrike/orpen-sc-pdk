@@ -48,6 +48,10 @@ Verified local changes:
   run through a local Palace wrapper or direct solver binary and verifies that
   public outputs include non-empty `terminal-C.csv`, `terminal-Cm.csv`, and
   `terminal-Cinv.csv`;
+- the optional electrostatic smoke now loads `terminal-C.csv`,
+  `terminal-Cm.csv`, and `terminal-Cinv.csv` through public
+  `gsim.palace.load_terminal_matrix()` and verifies that terminal labels resolve
+  to `positive`/`negative` through `palace_index_map.json`;
 - `notebooks/src/public_simulation_workflows.py` is a publication-safe Jupytext
   notebook source that runs public Driven, Eigenmode, and Electrostatic
   mesh/config/artifact handoffs and displays scrubbed summaries only;
@@ -65,9 +69,7 @@ Verified local changes:
 Remaining slices:
 
 - add optional local Palace coarse-solve smoke checks for the public Driven and
-  Eigenmode fixtures;
-- load electrostatic terminal matrices through the public indexed report
-  helpers in the optional smoke path, not only by checking output files.
+  Eigenmode fixtures.
 
 Acceptance checks:
 

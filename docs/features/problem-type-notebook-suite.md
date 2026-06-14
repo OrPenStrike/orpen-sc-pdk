@@ -39,6 +39,9 @@ Current executable smoke coverage:
 - the smoke path accepts either a Palace SIF (`PALACE_SIF`) or a direct local
   executable (`PALACE_EXECUTABLE`), with `PALACE_EXECUTABLE_MODE=binary` for
   development binaries that do not accept wrapper launcher flags;
+- the Electrostatic smoke verifies both non-empty solver matrix outputs and the
+  `gsim.palace.load_terminal_matrix()` report-loader round trip through
+  `palace_index_map.json`;
 - Driven and Eigenmode still need equivalent opt-in solver smokes.
 
 Acceptance direction:

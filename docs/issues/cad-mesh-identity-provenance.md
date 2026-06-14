@@ -93,6 +93,9 @@ Verified local changes:
 - the same electrostatic fixture now has an opt-in local Palace coarse-solve
   smoke path that confirms the generated mesh/config can produce non-empty
   terminal capacitance matrices through public `gsim` execution;
+- the optional Electrostatic smoke also reloads those matrices through
+  `gsim.palace.load_terminal_matrix()`, proving the solver indices map back to
+  `positive`/`negative` terminal names from the generated index map;
 - validation for `cb052db`: manifest/workflow/curved-meshing tests passed,
   mesh integration tests passed, Ruff check/format passed, and targeted Pyright
   reported no errors.
@@ -124,6 +127,9 @@ Verified local changes:
   Ruff check/format passed; targeted Pyright passed for the changed local
   execution surface; the public electrostatic fixture passed an opt-in local
   Palace coarse solve against a direct development binary.
+- validation after the report-loader smoke extension: the public electrostatic
+  fixture passed both the default skip path and the opt-in local Palace solve,
+  including terminal matrix loading through `palace_index_map.json`.
 
 Remaining implementation slices:
 
