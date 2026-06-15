@@ -135,6 +135,11 @@ Verified local changes:
   those examples should not wire `get_gsim_material_kind_map()` into automatic
   interface postprocessing until source-backed public presets and a public
   default-selection policy exist;
+- public evidence and notebook outputs now load generated domain material
+  provenance through `gsim.palace.load_domain_material_summary()`, verifying
+  public Driven, Eigenmode, and Electrostatic configs expose stack material,
+  matched material, model source, validity, frequency, permittivity, loss, and
+  conductivity without PDK-owned material report parsing;
 - read-only NCUAS audit confirms the private repo already has MA/MS/SA
   classification, thin-film MA+MS duplicate-spec behavior, preset lookup,
   `materials.json` numeric interface-loss values, notebook-local override

@@ -63,6 +63,10 @@ Current public notebook:
   through `gsim.palace.load_postprocessing_index_map()`, so public Driven,
   Eigenmode, interface, and Electrostatic cells show how generated Palace
   section/index rows map back to physical names and reverse lookup indices.
+- the same notebook now displays generated domain-material provenance tables
+  loaded through `gsim.palace.load_domain_material_summary()`, so public problem
+  cells show how `get_gsim_material_overlay()` becomes Palace material attributes
+  and material-resolution rows.
 
 Current executable smoke coverage:
 
@@ -122,6 +126,10 @@ Current executable smoke coverage:
   `gsim.palace.load_postprocessing_index_map()`, proving each public problem
   fixture can query `section/index -> physical name`, reverse physical-name
   indices, and attribute ownership from the generated `palace_index_map.json`.
+- the same evidence runner now records `config_generation` rows from generated
+  configs and `gsim.palace.load_domain_material_summary()`, proving each public
+  problem fixture carries solver block, postprocessing count, boundary count, and
+  material provenance evidence.
 - the same evidence script uses `gsim.palace.write_palace_sweep_points()` to
   write a public `points.json` table for those three fixtures, then consumes
   `gsim.palace.load_palace_sweep_summary()` so sweep identity starts from

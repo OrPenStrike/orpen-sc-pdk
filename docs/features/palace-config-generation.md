@@ -42,6 +42,10 @@ Acceptance direction:
 - generated material-resolution sidecars can record which stack material,
   matched public material record, model source, validity status, and frequency
   produced each Palace material attribute;
+- public evidence can reload generated configs and material sidecars through
+  `gsim` report helpers, proving the config writer emitted the expected solver
+  block, boundary/postprocessing counts, domain material rows, and material
+  provenance for each problem type;
 - private consumers can mount their own layouts without changing the public
   config generation contract;
 - Palace remains an external executable, not a Python package dependency of the

@@ -28,6 +28,37 @@ def _assert_index_map_lookup_round_trip(problem: dict) -> list[dict]:
     return rows
 
 
+def _assert_config_generation_material_provenance(problem: dict) -> list[dict]:
+    config_generation = problem["config_generation"]
+    rows = config_generation["domain_materials"]
+
+    assert config_generation["problem_type"] == problem["problem_type"]
+    assert config_generation["solver_device"] == "CPU"
+    assert config_generation["solver_has_linear"] is True
+    assert config_generation["solver_problem_block"] == problem["problem_type"]
+    assert config_generation["domain_material_count"] == 2
+    assert config_generation["material_resolution"] == {
+        "schema_version": 1,
+        "material_count": 2,
+        "interface_count": 0,
+    }
+    assert len(rows) == config_generation["domain_material_count"]
+
+    by_stack_material = {row["stack_material_name"]: row for row in rows}
+    silicon = by_stack_material["silicon"]
+    assert silicon["matched_material_name"] == "silicon"
+    assert silicon["material_model_source"] == "orpen-sc-pdk tech.material_properties"
+    assert silicon["material_within_validity"] is True
+    assert silicon["permittivity"] == pytest.approx(11.45)
+    assert silicon["conductivity"] == pytest.approx(2.0)
+
+    air = by_stack_material["air"]
+    assert air["matched_material_name"] == "air"
+    assert air["permittivity"] == pytest.approx(1.0)
+    assert air["loss_tangent"] == pytest.approx(0.0)
+    return rows
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -375,8 +406,13 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
 
     driven = evidence["problems"]["driven_cpw"]
     driven_summary = driven["run_summary"]
+    driven_config = driven["config_generation"]
+    _assert_config_generation_material_provenance(driven)
     driven_lookup = _assert_index_map_lookup_round_trip(driven)
     assert driven_summary["config"]["lumped_port_count"] == 2
+    assert driven_config["lumped_port_count"] == 2
+    assert driven_config["surface_flux_count"] == 4
+    assert driven_config["terminal_count"] == 0
     assert "Boundaries.Postprocessing.SurfaceFlux" in driven_summary["index_map"]["sections"]
     assert driven_summary["index_map"]["port_names"] == ["P1", "P2"]
     assert sorted(
@@ -389,8 +425,13 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
 
     eigenmode = evidence["problems"]["eigenmode_resonator"]
     eigenmode_summary = eigenmode["run_summary"]
+    eigenmode_config = eigenmode["config_generation"]
+    _assert_config_generation_material_provenance(eigenmode)
     eigenmode_lookup = _assert_index_map_lookup_round_trip(eigenmode)
     assert eigenmode_summary["config"]["problem_type"] == "Eigenmode"
+    assert eigenmode_config["domain_postprocessing_energy_count"] == 2
+    assert eigenmode_config["surface_flux_count"] == 1
+    assert eigenmode_config["terminal_count"] == 0
     assert "Boundaries.Postprocessing.SurfaceFlux" in eigenmode_summary["index_map"]["sections"]
     assert any(
         row["physical_name"] == "absorbing"
@@ -400,8 +441,13 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
 
     electrostatic = evidence["problems"]["electrostatic_same_layer_capacitor"]
     electrostatic_summary = electrostatic["run_summary"]
+    electrostatic_config = electrostatic["config_generation"]
+    _assert_config_generation_material_provenance(electrostatic)
     electrostatic_lookup = _assert_index_map_lookup_round_trip(electrostatic)
     assert electrostatic_summary["config"]["terminal_count"] == 2
+    assert electrostatic_config["domain_postprocessing_energy_count"] == 2
+    assert electrostatic_config["surface_flux_count"] == 0
+    assert electrostatic_config["terminal_count"] == 2
     assert electrostatic_summary["index_map"]["terminal_names"] == [
         "negative",
         "positive",

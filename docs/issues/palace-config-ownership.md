@@ -108,6 +108,15 @@ Verified local changes:
 - `gsim` commit `f2dbe7f` adds opt-in report-derived metrics to those sweep
   records, reusing `gsim` Driven/Eigenmode/Electrostatic report loaders instead
   of adding problem-type report parsing to `orpen-sc-pdk`.
+- current OrPen local evidence records a `config_generation` section for each
+  public problem fixture, proving generated `config.json` files contain the
+  expected solver problem block, `Solver.Device` hint, linear-solver block,
+  boundary/postprocessing counts, domain material counts, and material-resolution
+  sidecar summary without moving config assembly into the PDK package.
+- the public simulation workflow notebook now displays the same generated
+  config/material provenance as table output through
+  `gsim.palace.load_domain_material_summary()`, so notebook review can inspect
+  how PDK material overlay values enter Palace `Domains.Materials`.
 
 Remaining slices:
 

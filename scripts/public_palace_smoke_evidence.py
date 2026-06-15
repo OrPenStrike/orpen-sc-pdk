@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
@@ -118,6 +119,97 @@ def _source_summary(rows: Any) -> list[dict[str, Any]]:
             }
         )
     return summary
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if hasattr(value, "item"):
+        return _json_safe(value.item())
+    return value
+
+
+def _frame_records(rows: Any, columns: Sequence[str]) -> list[dict[str, Any]]:
+    if rows is None or getattr(rows, "empty", True):
+        return []
+    selected_columns = [column for column in columns if column in rows.columns]
+    frame = rows.loc[:, selected_columns]
+    return [
+        {key: _json_safe(value) for key, value in row.items()} for row in frame.to_dict("records")
+    ]
+
+
+def _config_generation_evidence(source: Path) -> dict[str, Any]:
+    from gsim.palace import load_domain_material_summary
+
+    config = json.loads((source / "config.json").read_text())
+    material_resolution_path = source / "palace_material_resolution.json"
+    material_resolution = (
+        json.loads(material_resolution_path.read_text())
+        if material_resolution_path.exists()
+        else {}
+    )
+    boundaries = config.get("Boundaries", {})
+    postprocessing = boundaries.get("Postprocessing", {})
+    domains = config.get("Domains", {})
+    solver = config.get("Solver", {})
+    domain_materials = load_domain_material_summary(source)
+    problem_block = next(
+        (
+            name
+            for name in (
+                "Driven",
+                "Eigenmode",
+                "Electrostatic",
+                "Magnetostatic",
+                "Transient",
+            )
+            if name in solver
+        ),
+        None,
+    )
+    return {
+        "problem_type": config.get("Problem", {}).get("Type"),
+        "solver_device": solver.get("Device"),
+        "solver_has_linear": bool(solver.get("Linear")),
+        "solver_problem_block": problem_block,
+        "domain_material_count": len(domains.get("Materials", ())),
+        "domain_postprocessing_energy_count": len(
+            domains.get("Postprocessing", {}).get("Energy", ())
+        ),
+        "lumped_port_count": len(boundaries.get("LumpedPort", ())),
+        "terminal_count": len(boundaries.get("Terminal", ())),
+        "wave_port_count": len(boundaries.get("WavePort", ())),
+        "surface_flux_count": len(postprocessing.get("SurfaceFlux", ())),
+        "dielectric_postprocessing_count": len(postprocessing.get("Dielectric", ())),
+        "boundary_sections": sorted(boundaries.keys()),
+        "material_resolution": {
+            "schema_version": material_resolution.get("schema_version"),
+            "material_count": len(material_resolution.get("materials", ())),
+            "interface_count": len(material_resolution.get("interfaces", ())),
+        },
+        "domain_materials": _frame_records(
+            domain_materials,
+            (
+                "domain_index",
+                "physical_name",
+                "stack_material_name",
+                "matched_material_name",
+                "material_model_source",
+                "material_within_validity",
+                "material_frequency_ghz",
+                "permittivity",
+                "loss_tangent",
+                "conductivity",
+            ),
+        ),
+    }
 
 
 def _index_map_lookup_evidence(source: Path) -> dict[str, Any]:
@@ -537,6 +629,7 @@ def _build_problem_evidence(
         "fixture": fixture_name,
         "output_dir": _relative_path(output_dir, output_root),
         "run_summary": run_summary,
+        "config_generation": _config_generation_evidence(output_dir),
         "index_map_lookup": _index_map_lookup_evidence(output_dir),
         "solver_report": solver_report,
     }

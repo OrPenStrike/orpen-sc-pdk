@@ -39,6 +39,7 @@ from gsim.palace import (
     ElectrostaticSim,
     PalaceSlurmSbatchSpec,
     load_dielectric_interface_summary,
+    load_domain_material_summary,
     load_driven_report,
     load_eigenmode_report,
     load_electrostatic_report,
@@ -187,6 +188,62 @@ def _index_map_lookup_table(
             }
         )
     return pd.DataFrame(rows)
+
+
+def _solver_problem_block(config: dict) -> str | None:
+    solver = config.get("Solver", {})
+    for name in ("Driven", "Eigenmode", "Electrostatic", "Magnetostatic", "Transient"):
+        if name in solver:
+            return name
+    return None
+
+
+def _domain_material_table(output_dir: Path) -> pd.DataFrame:
+    frame = load_domain_material_summary(output_dir)
+    columns = [
+        "domain_index",
+        "physical_name",
+        "stack_material_name",
+        "matched_material_name",
+        "material_model_source",
+        "material_within_validity",
+        "material_frequency_ghz",
+        "permittivity",
+        "loss_tangent",
+        "conductivity",
+    ]
+    selected_columns = [column for column in columns if column in frame.columns]
+    return frame.loc[:, selected_columns].copy()
+
+
+def _config_generation_summary(
+    config: dict,
+    output_dir: Path,
+    domain_materials: pd.DataFrame,
+) -> dict:
+    material_resolution = _load_json(output_dir / "palace_material_resolution.json")
+    boundaries = config.get("Boundaries", {})
+    postprocessing = boundaries.get("Postprocessing", {})
+    domains = config.get("Domains", {})
+    solver = config.get("Solver", {})
+    return {
+        "problem_type": config["Problem"]["Type"],
+        "solver_device": solver.get("Device"),
+        "solver_problem_block": _solver_problem_block(config),
+        "solver_has_linear": bool(solver.get("Linear")),
+        "domain_material_count": len(domains.get("Materials", ())),
+        "material_resolution_material_count": len(material_resolution.get("materials", ())),
+        "material_resolution_interface_count": len(material_resolution.get("interfaces", ())),
+        "domain_material_rows": len(domain_materials),
+        "domain_postprocessing_energy_count": len(
+            domains.get("Postprocessing", {}).get("Energy", ())
+        ),
+        "surface_flux_count": len(postprocessing.get("SurfaceFlux", ())),
+        "dielectric_postprocessing_count": len(postprocessing.get("Dielectric", ())),
+        "lumped_port_count": len(boundaries.get("LumpedPort", ())),
+        "terminal_count": len(boundaries.get("Terminal", ())),
+        "boundary_sections": sorted(boundaries),
+    }
 
 
 def _public_driven_cpw_sim(output_dir: Path):
@@ -883,11 +940,17 @@ with tempfile.TemporaryDirectory() as temp_dir:
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
+    driven_domain_materials = _domain_material_table(output_dir)
     driven_index_lookup = _index_map_lookup_table(output_dir)
     driven_summary = {
         "problem_type": config["Problem"]["Type"],
         "profile_config_hints": config_hints,
         "solver_device": config["Solver"].get("Device"),
+        "config_generation": _config_generation_summary(
+            config,
+            output_dir,
+            driven_domain_materials,
+        ),
         "artifacts": _artifact_status(output_dir),
         "lumped_port_count": len(config["Boundaries"]["LumpedPort"]),
         "surface_flux_rows": len(config["Boundaries"]["Postprocessing"]["SurfaceFlux"]),
@@ -902,6 +965,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
 display(driven_summary)
+display(driven_domain_materials)
 display(driven_index_lookup)
 
 # %% [markdown]
@@ -924,11 +988,17 @@ with tempfile.TemporaryDirectory() as temp_dir:
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
+    eigenmode_domain_materials = _domain_material_table(output_dir)
     eigenmode_index_lookup = _index_map_lookup_table(output_dir)
     eigenmode_summary = {
         "problem_type": config["Problem"]["Type"],
         "profile_config_hints": config_hints,
         "solver_device": config["Solver"].get("Device"),
+        "config_generation": _config_generation_summary(
+            config,
+            output_dir,
+            eigenmode_domain_materials,
+        ),
         "artifacts": _artifact_status(output_dir),
         "energy_rows": len(config["Domains"]["Postprocessing"]["Energy"]),
         "index_lookup_rows": len(eigenmode_index_lookup),
@@ -942,6 +1012,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
 display(eigenmode_summary)
+display(eigenmode_domain_materials)
 display(eigenmode_index_lookup)
 
 # %% [markdown]
@@ -966,6 +1037,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
         hints=config_hints,
     )
     config = _load_json(config_path)
+    interface_domain_materials = _domain_material_table(output_dir)
     interface_summary = load_dielectric_interface_summary(
         {
             "config.json": config_path,
@@ -995,12 +1067,18 @@ with tempfile.TemporaryDirectory() as temp_dir:
         "problem_type": config["Problem"]["Type"],
         "profile_config_hints": config_hints,
         "solver_device": config["Solver"].get("Device"),
+        "config_generation": _config_generation_summary(
+            config,
+            output_dir,
+            interface_domain_materials,
+        ),
         "dielectric_interface_rows": len(config["Boundaries"]["Postprocessing"]["Dielectric"]),
         "index_lookup_rows": len(interface_index_lookup),
         "classified_interfaces": interface_preview.to_dict(orient="records"),
     }
 
 display(generated_interface_summary)
+display(interface_domain_materials)
 display(interface_index_lookup)
 
 # %% [markdown]
@@ -1024,11 +1102,17 @@ with tempfile.TemporaryDirectory() as temp_dir:
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
+    electrostatic_domain_materials = _domain_material_table(output_dir)
     electrostatic_index_lookup = _index_map_lookup_table(output_dir)
     electrostatic_summary = {
         "problem_type": config["Problem"]["Type"],
         "profile_config_hints": config_hints,
         "solver_device": config["Solver"].get("Device"),
+        "config_generation": _config_generation_summary(
+            config,
+            output_dir,
+            electrostatic_domain_materials,
+        ),
         "artifacts": _artifact_status(output_dir),
         "terminal_count": len(config["Boundaries"]["Terminal"]),
         "index_lookup_rows": len(electrostatic_index_lookup),
@@ -1049,6 +1133,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
 display(electrostatic_summary)
+display(electrostatic_domain_materials)
 display(electrostatic_index_lookup)
 
 # %% [markdown]

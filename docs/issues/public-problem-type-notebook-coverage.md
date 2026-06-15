@@ -116,10 +116,18 @@ Verified local changes:
   `gsim.palace.load_postprocessing_index_map()` lookup evidence for each public
   problem fixture, including forward `section/index -> physical name`, reverse
   `physical name -> indices`, and attribute-to-entry checks;
+- the same evidence runner now records generated config/material provenance for
+  each public problem fixture, including solver problem block, solver-device
+  hint, linear-solver presence, boundary/postprocessing counts, material sidecar
+  counts, and domain-material rows loaded through
+  `gsim.palace.load_domain_material_summary()`;
 - the public simulation workflow notebook now displays those same lookup
   concepts as table outputs for Driven CPW, Eigenmode resonator, caller-supplied
   Eigenmode interface classification, and Electrostatic same-layer capacitor
   cells;
+- the public simulation workflow notebook now also displays generated
+  domain-material provenance tables for those public problem cells, making the
+  material overlay usage visible in docs-safe outputs;
 - `gsim` commit `652fcec` adds
   `gsim.palace.load_palace_sweep_summary()`, and the public evidence runner now
   writes `points.json` for the three problem fixtures and records a

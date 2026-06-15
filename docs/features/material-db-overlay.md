@@ -106,6 +106,12 @@ Current public baseline:
   metadata through `palace_index_map.json`, dielectric-interface summaries, and
   surface-loss summaries; `orpen-sc-pdk` passes its validated preset source
   strings into that path without adding non-Palace fields to `config.json`;
+- public evidence and notebook cells now load generated domain material rows
+  through `gsim.palace.load_domain_material_summary()`, proving
+  `palace_material_resolution.json` can explain stack material name, matched
+  material record, model source, validity status, resolution frequency,
+  permittivity, loss, and conductivity for Driven, Eigenmode, and Electrostatic
+  public configs;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
