@@ -100,6 +100,48 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert sweep_summary["runtime_present_count"] == 0
     assert sweep_summary["resource_present_count"] == 3
     assert set(sweep_summary["problem_types"]) == {"Driven", "Eigenmode", "Electrostatic"}
+
+    sweep_resource_index = evidence["sweep_resource_index"]
+    assert sweep_resource_index == {
+        "benchmark_jsonl_path": "metadata/records/sweep_benchmark_index.jsonl",
+        "point_count": 3,
+        "point_records_csv_path": "metadata/records/sweep_point_records.csv",
+        "resource_present_count": 3,
+        "resource_records_csv_path": "metadata/records/sweep_resource_records.csv",
+        "summary_path": "metadata/records/sweep_resource_index.json",
+    }
+    for path in (
+        sweep_resource_index["summary_path"],
+        sweep_resource_index["point_records_csv_path"],
+        sweep_resource_index["resource_records_csv_path"],
+        sweep_resource_index["benchmark_jsonl_path"],
+    ):
+        assert (tmp_path / path).is_file()
+    index_payload = json.loads((tmp_path / sweep_resource_index["summary_path"]).read_text())
+    assert index_payload["sweep_id"] == "public_palace_problem_type_smoke"
+    assert index_payload["point_count"] == 3
+    assert index_payload["resource_present_count"] == 3
+    assert index_payload["records"] == {
+        "benchmark_jsonl": "metadata/records/sweep_benchmark_index.jsonl",
+        "point_records_csv": "metadata/records/sweep_point_records.csv",
+        "resource_records_csv": "metadata/records/sweep_resource_records.csv",
+    }
+    point_records_csv = (tmp_path / sweep_resource_index["point_records_csv_path"]).read_text()
+    resource_records_csv = (
+        tmp_path / sweep_resource_index["resource_records_csv_path"]
+    ).read_text()
+    assert "resource_scheduler_job_id" in point_records_csv
+    assert "eigenmode_resonator" in resource_records_csv
+    benchmark_jsonl_rows = (
+        (tmp_path / sweep_resource_index["benchmark_jsonl_path"]).read_text().splitlines()
+    )
+    assert len(benchmark_jsonl_rows) == 3
+    assert {json.loads(row)["point_slug"] for row in benchmark_jsonl_rows} == {
+        "driven_cpw",
+        "eigenmode_resonator",
+        "electrostatic_same_layer_capacitor",
+    }
+
     assert [point["point_slug"] for point in sweep_summary["points"]] == [
         "driven_cpw",
         "eigenmode_resonator",

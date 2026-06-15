@@ -24,7 +24,7 @@ Problem:
   Slurm/Sbatch dry-run handoff sidecars, archive manifests, resource-record
   sidecars, sanitized Palace log-derived resource tables, and sanitized Slurm
   scheduler/allocation parsing, but it does not yet resolve real site/profile
-  catalogs or build sweep-level resource record indexes;
+  catalogs or model full benchmark campaign costs;
 - `gplugins` still has older direct Palace helpers, but extending those into
   cluster handoff would create a second public Palace runtime.
 
@@ -95,12 +95,18 @@ Current local evidence:
   parser keeps sanitized Slurm job state, partition, time, allocation, and
   requested-memory fields while omitting raw scheduler text, account, user,
   node, job-name, command, stdout/stderr, and work-dir values;
+- local `gsim` commit `bfcc45a` adds
+  `write_palace_sweep_resource_index()`, generating sweep-level
+  point-record CSV, resource-record CSV, benchmark JSONL, and compact index
+  JSON files from explicit `points.json` metadata and the existing
+  `load_palace_sweep_summary()` surface;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
   plus generated archive manifests and synthetic public log-derived
   resource-record sidecars plus sanitized synthetic Slurm snapshot sidecars
   through the `gsim` renderers, then reads them back through the normal
-  run/sweep summary surfaces;
+  run/sweep summary surfaces and writes reusable sweep-level
+  resource/benchmark index files;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
   renderers, generated archive manifests, and a generic post-run resource
   sidecar, but no cluster campaign submission or archive packaging;
@@ -117,8 +123,8 @@ Remaining slices:
 
 - resolve real site/profile resources outside public fixture code, then feed
   the resolved resources into the generic `gsim` Slurm handoff API;
-- add sweep-level resource record builders and benchmark indexes without
-  committing private archives or private benchmark values;
+- add richer benchmark campaign and cost-modeling helpers without committing
+  private archives or private benchmark values;
 - only after dry-run schemas are stable, add local private-layout validation on
   NCUAS personal branches against real Slurm/HPC runs.
 

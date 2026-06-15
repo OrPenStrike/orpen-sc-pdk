@@ -143,6 +143,13 @@ Verified local changes:
   snapshot per problem type to exercise scheduler/allocation fields without
   exposing account, user, node, job-name, command, stdout/stderr, or work-dir
   values in the reusable resource summary;
+- `gsim` commit `bfcc45a` adds sweep-level resource/benchmark index writing,
+  and the public evidence runner now emits
+  `metadata/records/sweep_point_records.csv`,
+  `metadata/records/sweep_resource_records.csv`,
+  `metadata/records/sweep_benchmark_index.jsonl`, and
+  `metadata/records/sweep_resource_index.json` from the same three public
+  problem fixtures;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
@@ -200,8 +207,8 @@ Remaining slices:
   problem types that have active Driven/Eigenmode/Electrostatic notebooks;
 - keep full sweep orchestration and broader cost modeling as later `gsim`
   workflow slices; this issue now proves explicit point-table artifact,
-  runtime, provenance, and report-metric status records over the public problem
-  fixtures;
+  runtime, provenance, resource, scheduler, benchmark-index, and report-metric
+  status records over the public problem fixtures;
 - keep native masked Surface EPR in the Palace-source/upstream `gsim` lane
   instead of replaying it inside `orpen-sc-pdk`;
 - future extensions should stay public-fixture based and keep normal docs

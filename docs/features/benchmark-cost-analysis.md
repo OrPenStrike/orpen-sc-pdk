@@ -75,12 +75,20 @@ Current public baseline:
   sanitized Slurm scheduler/allocation evidence into the same resource record
   without retaining raw account, user, node, job-name, command, stdout/stderr,
   or work-dir fields;
+- local `gsim` commit `bfcc45a` adds
+  `write_palace_sweep_resource_index()`, which writes
+  `metadata/records/sweep_point_records.csv`,
+  `metadata/records/sweep_resource_records.csv`,
+  `metadata/records/sweep_benchmark_index.jsonl`, and
+  `metadata/records/sweep_resource_index.json` from the same explicit
+  `points.json` sweep summary;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
   generated handoff archive manifest status, synthetic public log-derived
   resource-record status, sanitized synthetic Slurm scheduler fields, table
-  sidecars, and a public problem-type sweep-summary smoke in the ignored local
-  evidence bundle.
+  sidecars, a public problem-type sweep-summary smoke, and generated
+  sweep-level resource/benchmark index files in the ignored local evidence
+  bundle.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output
@@ -98,7 +106,7 @@ Acceptance direction:
 - sweep summaries start from reusable explicit point metadata writing/loading
   with identity validation, per-point run summaries, table-ready point records,
   and reusable report-derived metrics before adding broader handoff,
-  orchestration, resource parsing, and cost modeling;
+  orchestration and cost modeling;
 - public fixtures provide normalized records for docs and regression tests;
 - private consumers can compare local records against the same schema without
   publishing raw values;

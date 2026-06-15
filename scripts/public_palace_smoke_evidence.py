@@ -28,6 +28,13 @@ def _relative_path(path: Path, root: Path) -> str:
         return path.as_posix()
 
 
+def _relative_result_paths(payload: dict[str, Any], output_root: Path) -> dict[str, Any]:
+    for key, value in list(payload.items()):
+        if key.endswith("_path") and isinstance(value, str):
+            payload[key] = _relative_path(Path(value), output_root)
+    return payload
+
+
 def _relative_run_summary(summary: dict[str, Any], output_root: Path) -> dict[str, Any]:
     for group_name in ("artifacts", "results"):
         group = summary.get(group_name, {})
@@ -475,6 +482,7 @@ def _build_sweep_evidence(
         write_palace_slurm_sweep_array_handoff,
         write_palace_sweep_handoff_archive_manifest,
         write_palace_sweep_points,
+        write_palace_sweep_resource_index,
     )
 
     points = [
@@ -528,7 +536,7 @@ def _build_sweep_evidence(
             "point_count": len(points),
         },
     )
-    return _relative_sweep_summary(
+    sweep_summary = _relative_sweep_summary(
         load_palace_sweep_summary(
             output_root,
             include_hashes=True,
@@ -536,6 +544,15 @@ def _build_sweep_evidence(
         ).to_dict(),
         output_root,
     )
+    resource_index = write_palace_sweep_resource_index(
+        output_root,
+        include_hashes=True,
+        include_report_metrics=True,
+    )
+    return {
+        "summary": sweep_summary,
+        "resource_index": _relative_result_paths(resource_index.to_dict(), output_root),
+    }
 
 
 def _write_public_resource_record(
@@ -785,7 +802,7 @@ def build_public_palace_smoke_evidence(
         )
         for spec in problem_specs
     }
-    sweep_summary = _build_sweep_evidence(output_root, problems)
+    sweep_evidence = _build_sweep_evidence(output_root, problems)
 
     evidence = {
         "schema_version": 1,
@@ -794,7 +811,8 @@ def build_public_palace_smoke_evidence(
         "repo": "orpen-sc-pdk",
         "solver": solver,
         "problems": problems,
-        "sweep_summary": sweep_summary,
+        "sweep_summary": sweep_evidence["summary"],
+        "sweep_resource_index": sweep_evidence["resource_index"],
     }
 
     evidence_path = output_root / EVIDENCE_FILENAME

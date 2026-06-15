@@ -133,6 +133,10 @@ Current executable smoke coverage:
   snapshot for each problem fixture and passes it to the `gsim` resource-record
   writer, proving sanitized scheduler/allocation fields without retaining raw
   account, user, node, job-name, command, or work-dir values.
+- the same evidence path now calls
+  `gsim.palace.write_palace_sweep_resource_index()` to emit sweep-level point
+  records, resource records, and benchmark JSONL indexes under
+  `metadata/records/`.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
   turns the same script into an opt-in local Palace smoke replay, including
