@@ -26,10 +26,6 @@ from orpen_sc_pdk.cells import cpw_straight, interdigital_capacitor
 orpen_sc_pdk.activate()
 
 
-def port_names(component):
-    return sorted(port.name for port in component.ports)
-
-
 # %% [markdown]
 # ## Public PDK cells
 #
@@ -42,8 +38,11 @@ capacitor = interdigital_capacitor(fingers=6)
 
 display(
     {
-        "cpw": {"name": cpw.name, "ports": port_names(cpw)},
-        "capacitor": {"name": capacitor.name, "ports": port_names(capacitor)},
+        "cpw": {"name": cpw.name, "ports": sorted(port.name for port in cpw.ports)},
+        "capacitor": {
+            "name": capacitor.name,
+            "ports": sorted(port.name for port in capacitor.ports),
+        },
     }
 )
 

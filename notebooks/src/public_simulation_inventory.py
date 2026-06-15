@@ -1,0 +1,74 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.3
+# ---
+
+# %% [markdown]
+# # Public Simulation Inventory
+#
+# This notebook displays the publication-safe simulation inventory used to
+# compare private NCUAS Palace/AEDT notebooks with public OrPen and `gsim`
+# workflow surfaces. It keeps private layouts, private run artifacts, and
+# notebook-local helper implementations out of the public notebook.
+
+# %%
+from IPython.display import display
+
+from scripts.public_palace_smoke_evidence import (
+    load_public_problem_notebook_crosscheck,
+    load_public_simulation_helper_node_inventory,
+    public_problem_notebook_crosscheck_table,
+    public_simulation_helper_node_inventory_table,
+)
+
+# %% [markdown]
+# ## Helper-node inventory
+#
+# Helper nodes describe why a reusable simulation function exists, where it
+# should live in the GDSFactory ecosystem, and which public issue tracks the
+# remaining evidence.
+
+# %%
+helper_node_inventory = public_simulation_helper_node_inventory_table()
+
+display(helper_node_inventory)
+
+# %% [markdown]
+# ## Representative notebook cross-check
+#
+# The cross-check keeps one private representative notebook per primary
+# problem type visible without copying private cells, private paths, or saved
+# outputs into public examples.
+
+# %%
+problem_notebook_crosscheck = public_problem_notebook_crosscheck_table()
+
+display(problem_notebook_crosscheck)
+
+# %% [markdown]
+# ## Coverage summary
+#
+# The summary groups the public inventory by current coverage status, intended
+# ecosystem home, and owning issue.
+
+# %%
+display(
+    {
+        "helper_node_count": len(load_public_simulation_helper_node_inventory()),
+        "crosscheck_row_count": len(load_public_problem_notebook_crosscheck()),
+        "coverage_status_counts": problem_notebook_crosscheck[
+            "coverage_status"
+        ].value_counts(sort=False).to_dict(),
+        "ecosystem_home_counts": helper_node_inventory["gdsfactory_home"]
+        .value_counts(sort=False)
+        .to_dict(),
+        "issue_counts": helper_node_inventory["next_issue"]
+        .value_counts(sort=False)
+        .to_dict(),
+    }
+)

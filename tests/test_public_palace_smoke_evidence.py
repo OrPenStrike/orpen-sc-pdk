@@ -10,6 +10,7 @@ from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
     build_public_palace_smoke_evidence,
+    load_public_problem_notebook_crosscheck,
     load_public_simulation_helper_node_inventory,
 )
 
@@ -105,6 +106,39 @@ def _assert_helper_node_inventory(evidence: dict) -> None:
         assert row["next_issue"]
 
 
+def _assert_problem_notebook_crosscheck(evidence: dict) -> None:
+    rows = evidence["problem_notebook_crosscheck"]
+    assert rows == load_public_problem_notebook_crosscheck()
+
+    by_type = {row["problem_type"]: row for row in rows}
+    assert {"Driven", "Eigenmode", "Electrostatic"} <= set(by_type)
+
+    expected_notebooks = {
+        "Driven": Path("notebooks/src/public_driven_workflow.py"),
+        "Eigenmode": Path("notebooks/src/public_eigenmode_workflow.py"),
+        "Electrostatic": Path("notebooks/src/public_electrostatic_workflow.py"),
+    }
+    for problem_type, notebook in expected_notebooks.items():
+        row = by_type[problem_type]
+        assert Path(row["public_notebook"]) == notebook
+        assert notebook.exists()
+        assert row["private_representative_notebook"].endswith(".ipynb")
+        assert row["public_helper_node"]
+        assert row["owner_decision"]
+        assert row["gsim_api_or_artifact"]
+        assert row["notebook_support_wrapper"]
+        assert row["coverage_status"].startswith("covered_public_fixture")
+        assert row["next_issue"]
+
+    q2d = by_type["AEDT/Q2D"]
+    assert q2d["coverage_status"] == "deferred_owner_pending"
+    assert q2d["gdsfactory_home"] == "owner_pending"
+    assert q2d["public_notebook"] == ""
+    assert "Palace notebook suite" in q2d["gsim_api_or_artifact"]
+    assert q2d["notebook_support_wrapper"] == ""
+    assert "Deferred owner decision" in q2d["owner_decision"]
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -117,6 +151,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert evidence["solver"]["enabled"] is False
     assert "ORPEN_RUN_LOCAL_PALACE_SMOKE=1" in evidence["solver"]["skip_reason"]
     _assert_helper_node_inventory(evidence)
+    _assert_problem_notebook_crosscheck(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",
         "eigenmode_resonator",

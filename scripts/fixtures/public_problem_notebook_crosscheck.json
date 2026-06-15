@@ -1,0 +1,58 @@
+[
+  {
+    "problem_type": "Driven",
+    "private_representative_notebook": "NCUAS_SC_Qubit_Design/notebooks/PalaceSimulation/Components/Global Purcell Filter Demo Chip Driven Terminal Thin Film.ipynb",
+    "private_capability_anchor": "DrivenTerminal sweep controls, AFFS/full-order solver settings, lumped-port overrides, runtime stage generation, sbatch handoff, and report review.",
+    "public_notebook": "notebooks/src/public_driven_workflow.py",
+    "public_helper_node": "Driven problem fixture",
+    "gdsfactory_home": "gsim",
+    "owner_decision": "gsim owns the reusable Driven Palace surface; OrPen owns the publication-safe example fixture and notebook support wrappers.",
+    "gsim_api_or_artifact": "DrivenSim; load_driven_report(); load_postprocessing_index_map(); load_domain_material_summary(); config.json; palace_index_map.json",
+    "notebook_support_wrapper": "build_public_driven_cpw_sim(); build_public_driven_postprocessing()",
+    "coverage_status": "covered_public_fixture",
+    "missing_evidence": "Private chip layout, private terminal sweep variants, and private benchmark outputs remain in NCUAS.",
+    "next_issue": "public-problem-type-notebook-coverage"
+  },
+  {
+    "problem_type": "Eigenmode",
+    "private_representative_notebook": "NCUAS_SC_Qubit_Design/notebooks/PalaceSimulation/Components/Resonator Eigenmode Single Die Thin Film.ipynb",
+    "private_capability_anchor": "Resonator Eigenmode/EPR setup, interface-loss presets, junction inductance, PalaceEigenmode solver spec, domain postprocessing, physics/performance analysis.",
+    "public_notebook": "notebooks/src/public_eigenmode_workflow.py",
+    "public_helper_node": "Eigenmode problem fixture",
+    "gdsfactory_home": "gsim",
+    "owner_decision": "gsim owns the reusable Eigenmode Palace surface; OrPen owns the publication-safe resonator example and notebook support wrappers.",
+    "gsim_api_or_artifact": "EigenmodeSim; load_eigenmode_report(); load_dielectric_interface_summary(); load_postprocessing_index_map(); load_domain_material_summary(); config.json; palace_index_map.json",
+    "notebook_support_wrapper": "build_public_eigenmode_resonator_sim(); build_public_eigenmode_postprocessing(); build_public_eigenmode_interface_postprocessing()",
+    "coverage_status": "covered_public_fixture_with_source_policy_gap",
+    "missing_evidence": "Source-backed public MA/MS/SA default interface preset policy remains pending; private qubit EPR comparison notebooks remain in NCUAS.",
+    "next_issue": "source-backed-interface-presets"
+  },
+  {
+    "problem_type": "Electrostatic",
+    "private_representative_notebook": "NCUAS_SC_Qubit_Design/notebooks/PalaceSimulation/Components/AS Reference Qubit Electrostatic Single Die Thin Film.ipynb",
+    "private_capability_anchor": "Private qubit terminal plan, source index, PalaceElectrostatic solver spec, MA/MS/SA controls, masked surface EPR review, physics/performance analysis.",
+    "public_notebook": "notebooks/src/public_electrostatic_workflow.py",
+    "public_helper_node": "Electrostatic problem fixture",
+    "gdsfactory_home": "gsim",
+    "owner_decision": "gsim owns the reusable Electrostatic Palace surface; OrPen owns the publication-safe capacitor example and notebook support wrappers.",
+    "gsim_api_or_artifact": "ElectrostaticSim; load_terminal_matrix(); load_electrostatic_report(); load_postprocessing_index_map(); load_domain_material_summary(); config.json; palace_index_map.json",
+    "notebook_support_wrapper": "build_public_electrostatic_capacitor_sim(); build_public_electrostatic_postprocessing()",
+    "coverage_status": "covered_public_fixture",
+    "missing_evidence": "Private qubit layout, private terminal plans, masked Surface EPR execution, and private report-builder comparisons remain in NCUAS.",
+    "next_issue": "public-problem-type-notebook-coverage"
+  },
+  {
+    "problem_type": "AEDT/Q2D",
+    "private_representative_notebook": "NCUAS_SC_Qubit_Design/notebooks/AEDTSimulation/Components/CPW Cross Section Q2D Extraction.ipynb",
+    "private_capability_anchor": "AEDT-native Q2D cross-section extraction, RLGC sweep analysis, and circuit handoff notebooks/tests.",
+    "public_notebook": "",
+    "public_helper_node": "No Palace helper node yet",
+    "gdsfactory_home": "owner_pending",
+    "owner_decision": "Deferred owner decision; likely gplugins for AEDT-native execution and only gsim for reusable solver/report contracts if accepted.",
+    "gsim_api_or_artifact": "None in the current Palace notebook suite.",
+    "notebook_support_wrapper": "",
+    "coverage_status": "deferred_owner_pending",
+    "missing_evidence": "Public Q2D/AEDT workflow boundary, dependency strategy, fixture shape, and report artifact contract.",
+    "next_issue": "public-problem-type-notebook-coverage"
+  }
+]

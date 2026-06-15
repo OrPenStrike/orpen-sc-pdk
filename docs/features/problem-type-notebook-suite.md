@@ -49,12 +49,18 @@ Current public notebooks:
   provenance, and displays synthetic public capacitance, domain-loss,
   surface-loss, and loss-budget tables through
   `gsim.palace.load_electrostatic_report()`;
+- {doc}`../notebooks/public_simulation_inventory` displays the
+  publication-safe helper-node matrix and NCUAS representative notebook
+  cross-check from JSON fixtures, keeping inventory/reportability out of
+  notebook-local private helpers;
 - all three problem-type notebooks load generated domain-material provenance
   through `gsim.palace.load_domain_material_summary()` and generated
   section/index provenance through `gsim.palace.load_postprocessing_index_map()`;
 - all three problem-type notebooks keep workflow code out of notebook-local
   private helpers by importing notebook-facing public wrappers from
   `scripts/public_palace_smoke_evidence.py`;
+- all public notebooks are guarded by style tests that reject notebook-local
+  function definitions and calls to private `_...()` helpers;
 - all three problem-type notebooks expose an opt-in local Palace smoke cell;
   normal docs builds display a skip reason unless
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or executable path is

@@ -53,14 +53,22 @@ Notebook Items
         Palace mesh/config artifacts, terminal provenance, synthetic report
         displays, and an opt-in local solver smoke.
 
-    .. grid-item-card:: NB-005 Reference Qubit Workflow
+    .. grid-item-card:: NB-005 Public Simulation Inventory
+
+        :doc:`notebooks/public_simulation_inventory`
+
+        Displays the public/private simulation notebook cross-check,
+        helper-node inventory, ecosystem home, and issue ownership without
+        embedding private workflow code.
+
+    .. grid-item-card:: NB-006 Reference Qubit Workflow
 
         Status: private source pending.
 
         The public version should document the workflow shape while keeping the
         private qubit layout in the private layout repo.
 
-    .. grid-item-card:: NB-006 Circular Qubit V3 Workflow
+    .. grid-item-card:: NB-007 Circular Qubit V3 Workflow
 
         Status: private source pending.
 
@@ -75,3 +83,4 @@ Notebook Items
     notebooks/public_driven_workflow
     notebooks/public_eigenmode_workflow
     notebooks/public_electrostatic_workflow
+    notebooks/public_simulation_inventory

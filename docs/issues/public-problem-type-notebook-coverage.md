@@ -111,6 +111,23 @@ Verified local changes:
   `notebooks/public_electrostatic_workflow` directly as publication-safe
   Driven/Eigenmode/Electrostatic workflow notebooks instead of routing all
   problem types through one combined notebook;
+- `notebooks/src/public_simulation_inventory.py` is a publication-safe
+  inventory notebook that displays the helper-node matrix and representative
+  NCUAS notebook cross-check through public wrapper functions instead of
+  notebook-local helper definitions;
+- `scripts/fixtures/public_problem_notebook_crosscheck.json` records the
+  Driven, Eigenmode, and Electrostatic representative private notebooks, their
+  public OrPen notebook counterparts, the owner decision, separated reusable
+  `gsim` API/artifact surface, notebook support wrappers, and remaining
+  evidence gaps; AEDT/Q2D is recorded as owner-pending rather than being folded
+  into the Palace notebook suite;
+- `scripts/public_palace_smoke_evidence.py` now embeds that cross-check as
+  `problem_notebook_crosscheck` in the local evidence bundle so docs, notebook
+  output, and JSON evidence use the same inventory source;
+- `tests/test_public_problem_notebook_style.py` now checks every public
+  Jupytext notebook source for notebook-local function definitions and private
+  `_...()` helper calls, and rejects links to the old combined simulation
+  workflow notebook;
 - the public problem-type notebooks write synthetic public Driven, Eigenmode,
   and Electrostatic report artifacts, load them through reusable `gsim` report
   bundles, and display curated S-parameter, port-EPR, capacitance, domain-loss,
