@@ -358,7 +358,9 @@ def build_public_meshwell_handoff_contract_gate_evidence(
                 "meshwell cad_gmsh documents derived interface and exterior "
                 "physical groups while preserving mesh_order ownership"
             ),
-            remaining_gap="formal public physical-name/interface-tag contract text",
+            remaining_gap=(
+                "connect this source contract row to gsim through a cross-repo consumer fixture"
+            ),
         ),
         _source_contract_row(
             contract_item="meshwell cad_gmsh delimiter defaults",
@@ -370,7 +372,10 @@ def build_public_meshwell_handoff_contract_gate_evidence(
                 'boundary_delimiter: str = "None"',
             ),
             current_signal="cad_gmsh defaults match meshwell-style interface and exterior labels",
-            remaining_gap="pin defaults in a documented meshwell physical-name contract",
+            remaining_gap=(
+                "verify these documented defaults from a meshwell-exported "
+                "artifact consumed by gsim"
+            ),
         ),
         _source_contract_row(
             contract_item="meshwell mesh delimiter defaults",
@@ -382,7 +387,9 @@ def build_public_meshwell_handoff_contract_gate_evidence(
                 'boundary_delimiter: str = "None"',
             ),
             current_signal="mesh() and in-place model meshing use the same delimiter defaults",
-            remaining_gap="pin defaults across both XAO and in-place CAD routes",
+            remaining_gap=(
+                "verify both documented CAD routes through a meshwell-to-gsim consumer fixture"
+            ),
         ),
         _source_contract_row(
             contract_item="meshwell OCC XAO writer physical-group serializer",
@@ -401,7 +408,10 @@ def build_public_meshwell_handoff_contract_gate_evidence(
                 "meshwell's XAO writer serializes entity, interface, and "
                 "exterior physical groups with the same meshwell-style names"
             ),
-            remaining_gap="publish those XAO naming semantics as the formal contract",
+            remaining_gap=(
+                "verify these documented XAO naming semantics through a "
+                "meshwell-to-gsim consumer fixture"
+            ),
         ),
         _source_contract_row(
             contract_item="meshwell multiple physical-name equivalence tests",
@@ -417,7 +427,7 @@ def build_public_meshwell_handoff_contract_gate_evidence(
                 "meshwell tests show tuple physical names produce equivalent "
                 "volume/interface/exterior physical groups"
             ),
-            remaining_gap="carry this equivalence into a formal handoff fixture for gsim consumers",
+            remaining_gap=("carry this equivalence into a meshwell-to-gsim consumer fixture"),
         ),
         _source_contract_row(
             contract_item="meshwell interface sharing and exterior refinement tests",
@@ -426,7 +436,10 @@ def build_public_meshwell_handoff_contract_gate_evidence(
             relative_path="tests/test_resolution.py",
             required_signals=("outer___None", "outer___A", "outer___B"),
             current_signal="meshwell resolution tests exercise interface and exterior group names",
-            remaining_gap=("carry these refinement semantics into the formal public contract"),
+            remaining_gap=(
+                "carry these documented refinement semantics into a "
+                "meshwell-to-gsim consumer fixture"
+            ),
         ),
         _source_contract_row(
             contract_item="meshwell CAD backend physical-group equivalence tests",
@@ -521,7 +534,7 @@ def build_public_meshwell_handoff_contract_gate_evidence(
                 "legacy artifact parsing"
             ),
             remaining_gap=(
-                "add cross-repo fixture once meshwell publishes a formal handoff contract"
+                "add a cross-repo fixture that consumes the documented meshwell handoff contract"
             ),
             evidence_status="covered_gsim_consumer_parser",
         ),
@@ -578,29 +591,35 @@ def build_public_meshwell_handoff_contract_gate_evidence(
             remaining_gap=("add a cross-repo fixture whose input is exported by meshwell"),
             evidence_status="covered_gsim_consumer_parser",
         ),
-        {
-            "contract_item": "formal meshwell physical-name/interface-tag contract text",
-            "owner_repo": "meshwell + gsim",
-            "source_path": None,
-            "relative_path": None,
-            "evidence_status": "pending_cross_repo_contract",
-            "required_signals": [
-                "solver-agnostic physical-name/interface-tag grammar",
-                "interface delimiter and exterior sentinel rules",
-                "XAO and in-place CAD route responsibilities",
-            ],
-            "missing_signals": [
-                "formal meshwell physical-name/interface-tag contract text",
-            ],
-            "current_signal": (
-                "meshwell source/tests and gsim consumers are locally aligned, "
-                "but the reusable contract is still implicit"
+        _source_contract_row(
+            contract_item="formal meshwell physical-name/interface-tag contract text",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="docs/physical_name_contract.md",
+            required_signals=(
+                "GMSH physical groups",
+                "The contract is solver-agnostic.",
+                "<left><interface_delimiter><right>",
+                "`interface_delimiter` is `___`",
+                "<physical_name><interface_delimiter><boundary_delimiter>",
+                "`boundary_delimiter` is `None`",
+                "`mesh_bool=False`",
+                "`keep=False`",
+                "cad_occ(...)",
+                "cad_gmsh(...)",
+                "physical group tags only as artifact-local numeric attributes",
             ),
-            "remaining_gap": (
-                "publish the grammar and ownership boundary in meshwell/gsim "
-                "docs or API docs before treating it as an upstream contract"
+            current_signal=(
+                "meshwell now documents the solver-agnostic physical-name "
+                "contract for GMSH physical groups, interface/exterior "
+                "grammar, helper behavior, CAD route equivalence, and "
+                "downstream numeric tag handling"
             ),
-        },
+            remaining_gap=(
+                "connect this documented meshwell contract to gsim through "
+                "a cross-repo consumer fixture"
+            ),
+        ),
         {
             "contract_item": "meshwell-to-gsim cross-repo consumer fixture/gate",
             "owner_repo": "meshwell + gsim",
@@ -635,6 +654,13 @@ def build_public_meshwell_handoff_contract_gate_evidence(
     pending_rows = [
         row for row in gate_rows if str(row["evidence_status"]) == "pending_cross_repo_contract"
     ]
+    if missing_source_count:
+        contract_status = "source_alignment_incomplete"
+    elif pending_rows:
+        contract_status = "formal_contract_aligned_pending_cross_repo_fixture"
+    else:
+        contract_status = "formal_contract_and_cross_repo_gate_aligned"
+
     evidence_path = output_dir / MESHWELL_HANDOFF_CONTRACT_GATE_FILENAME
     evidence = {
         "schema_version": 1,
@@ -642,11 +668,7 @@ def build_public_meshwell_handoff_contract_gate_evidence(
         "repo": "orpen-sc-pdk",
         "meshwell_repo": meshwell_path.as_posix(),
         "gsim_repo": gsim_path.as_posix(),
-        "contract_status": (
-            "source_and_backend_aligned_pending_cross_repo_contract"
-            if missing_source_count == 0
-            else "source_alignment_incomplete"
-        ),
+        "contract_status": contract_status,
         "evidence_status_counts": status_counts,
         "covered_source_count": status_counts.get("covered_source", 0),
         "covered_meshwell_backend_equivalence_count": status_counts.get(
@@ -659,10 +681,7 @@ def build_public_meshwell_handoff_contract_gate_evidence(
         ),
         "covered_count": sum(status_counts.get(status, 0) for status in covered_statuses),
         "pending_count": len(pending_rows),
-        "blocking_gaps": [
-            "formal meshwell physical-name/interface-tag contract text",
-            "meshwell-to-gsim cross-repo consumer fixture/gate",
-        ],
+        "blocking_gaps": [str(row["contract_item"]) for row in pending_rows],
         "owner_boundaries": {
             "meshwell": (
                 "solver-agnostic physical names, interface/exterior tag grammar, "

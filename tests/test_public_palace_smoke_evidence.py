@@ -300,20 +300,19 @@ def _assert_meshwell_handoff_contract_gate(evidence: dict) -> None:
         "meshwell-handoff-contract-gate/public_meshwell_handoff_contract_gate_evidence.json"
     )
     assert set(gate["owner_boundaries"]) == {"meshwell", "gsim", "orpen-sc-pdk"}
-    assert gate["contract_status"] == "source_and_backend_aligned_pending_cross_repo_contract"
+    assert gate["contract_status"] == "formal_contract_aligned_pending_cross_repo_fixture"
     assert gate["evidence_status_counts"] == {
         "covered_gsim_consumer_parser": 5,
         "covered_meshwell_backend_equivalence": 3,
-        "covered_source": 6,
-        "pending_cross_repo_contract": 2,
+        "covered_source": 7,
+        "pending_cross_repo_contract": 1,
     }
-    assert gate["covered_source_count"] == 6
+    assert gate["covered_source_count"] == 7
     assert gate["covered_meshwell_backend_equivalence_count"] == 3
     assert gate["covered_gsim_consumer_parser_count"] == 5
-    assert gate["covered_count"] == 14
-    assert gate["pending_count"] == 2
+    assert gate["covered_count"] == 15
+    assert gate["pending_count"] == 1
     assert gate["blocking_gaps"] == [
-        "formal meshwell physical-name/interface-tag contract text",
         "meshwell-to-gsim cross-repo consumer fixture/gate",
     ]
 
@@ -371,8 +370,10 @@ def _assert_meshwell_handoff_contract_gate(evidence: dict) -> None:
     )
 
     contract_text = by_item["formal meshwell physical-name/interface-tag contract text"]
-    assert contract_text["evidence_status"] == "pending_cross_repo_contract"
-    assert any("formal meshwell" in signal for signal in contract_text["missing_signals"])
+    assert contract_text["evidence_status"] == "covered_source"
+    assert contract_text["relative_path"] == "docs/physical_name_contract.md"
+    assert contract_text["missing_signals"] == []
+    assert "cross-repo consumer fixture" in contract_text["remaining_gap"]
 
     cross_repo_gate = by_item["meshwell-to-gsim cross-repo consumer fixture/gate"]
     assert cross_repo_gate["evidence_status"] == "pending_cross_repo_contract"
@@ -663,13 +664,12 @@ def test_public_meshwell_handoff_contract_gate_evidence_runs_standalone(
     assert (
         tmp_path / "meshwell-gate" / "public_meshwell_handoff_contract_gate_evidence.json"
     ).is_file()
-    assert gate["contract_status"] == "source_and_backend_aligned_pending_cross_repo_contract"
-    assert gate["covered_source_count"] == 6
+    assert gate["contract_status"] == "formal_contract_aligned_pending_cross_repo_fixture"
+    assert gate["covered_source_count"] == 7
     assert gate["covered_meshwell_backend_equivalence_count"] == 3
     assert gate["covered_gsim_consumer_parser_count"] == 5
-    assert gate["pending_count"] == 2
+    assert gate["pending_count"] == 1
     assert gate["blocking_gaps"] == [
-        "formal meshwell physical-name/interface-tag contract text",
         "meshwell-to-gsim cross-repo consumer fixture/gate",
     ]
 

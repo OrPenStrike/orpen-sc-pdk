@@ -53,13 +53,12 @@ Current prototype baseline:
 - `public_meshwell_handoff_contract_gate_evidence.json` now records the
   upstream handoff gate separately from OrPen consumer evidence: local meshwell
   source/tests expose `___` interface names, `___None` exterior names, multiple
-  physical-name equivalence, interface/exterior refinement behavior, and
-  backend equivalence across CAD/XAO routes, while local `gsim` manifest,
-  index-map, result-loader, and integration tests consume those names as
-  interface/exterior rows. The gate remains pending until meshwell/`gsim`
-  publish formal physical-name/interface-tag contract text and a cross-repo
-  consumer fixture that starts from meshwell output and ends in `gsim`
-  manifest/index-map assertions.
+  physical-name equivalence, interface/exterior refinement behavior, formal
+  physical-name contract text, and backend equivalence across CAD/XAO routes,
+  while local `gsim` manifest, index-map, result-loader, and integration tests
+  consume those names as interface/exterior rows. The gate remains pending only
+  on the cross-repo consumer fixture that starts from meshwell output and ends
+  in `gsim` manifest/index-map assertions.
 - generated public example meshes now prove domain, conductor, port, terminal,
   absorbing-boundary, refinement, and non-exterior interface identities through
   the same manifest path; interface-loss classification remains a separate

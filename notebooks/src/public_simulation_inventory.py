@@ -126,10 +126,10 @@ display(gsim_boundary_review_coverage_table)
 # ## Meshwell handoff contract gate
 #
 # This gate records where the local meshwell and `gsim` sources already agree
-# on meshwell-style interface and exterior physical names, and which upstream
-# contract work is still pending before CAD/XAO provenance is complete. OrPen
-# remains a consumer: it does not own the physical-name grammar or backend
-# equivalence tests.
+# on meshwell-style interface and exterior physical names. The remaining
+# upstream work is the meshwell-to-`gsim` cross-repo consumer fixture/gate;
+# OrPen remains a consumer and does not own the physical-name grammar or
+# backend equivalence tests.
 
 # %%
 meshwell_handoff_contract_gate = build_public_meshwell_handoff_contract_gate_evidence()
