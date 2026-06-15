@@ -289,8 +289,8 @@ Verified local changes:
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - optional local Palace validation passed on the public fixtures with the Spack
-  Palace wrapper using
-  `spack load palace` plus
+  Palace wrapper. The 2026-06-15 replay loaded Spack shell support, ran
+  `spack load palace`, confirmed Palace version `869ee5c`, and used
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=$(command -v palace) PALACE_EXECUTABLE_MODE=wrapper PALACE_NP=1 PALACE_NT=1 uv run python -m pytest <workflow-test> -q`;
 - direct macOS development binaries remain a supported local route using
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=<palace-build>/bin/palace-arm64.bin PALACE_EXECUTABLE_MODE=binary PALACE_NP=1 PALACE_NT=1 DYLD_LIBRARY_PATH=<palace-build>/lib:<palace-build>/lib64 uv run --group ecosystem-dev python -m pytest <workflow-test> -q`;
@@ -303,7 +303,7 @@ Verified local changes:
   `tests/test_gsim_eigenmode_resonator_workflow.py::test_public_resonator_eigenmode_optional_local_palace_coarse_smoke`,
   and
   `tests/test_gsim_electrostatic_capacitor_workflow.py::test_public_same_layer_capacitor_optional_local_palace_coarse_smoke`
-  in 68.33 seconds (`3 passed`, public material validity-range warnings only);
+  in 67.91 seconds (`3 passed`, public material validity-range warnings only);
 - current Spack-wrapper unified evidence replay also passed with
   `scripts/public_palace_smoke_evidence.py --output-dir build/public-palace-smoke-evidence-local-review`;
   the ignored evidence JSON reports loaded Driven, Eigenmode, and

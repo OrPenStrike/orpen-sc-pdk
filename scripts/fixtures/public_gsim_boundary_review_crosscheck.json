@@ -678,5 +678,15 @@
     "owner_surface": "gsim.palace.__init__ and gsim.palace.results",
     "evidence_anchor": "docs/issues/palace-api-responsibility-boundary.md",
     "boundary_note": "Report bundle classes stay in the results owner module; root exposes the loaders used by notebooks."
+  },
+  {
+    "commit": "76f7dc0",
+    "summary": "test(palace): add meshwell handoff fixture gate",
+    "boundary_group": "meshwell-gsim-handoff-contract-gate",
+    "review_status": "reviewed_explicit",
+    "ecosystem_home": "gsim",
+    "owner_surface": "gsim tests/palace fixture coverage",
+    "evidence_anchor": "docs/issues/palace-api-responsibility-boundary.md; docs/issues/cad-mesh-identity-provenance.md",
+    "boundary_note": "Test-only MSH fixture gate consumes meshwell-style physical names through gsim manifest/index-map loaders without adding a meshwell dependency or widening public API."
   }
 ]

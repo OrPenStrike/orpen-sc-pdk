@@ -30,7 +30,7 @@
   {
     "objective_requirement": "Verify local Palace coarse smoke for the public Driven, Eigenmode, and Electrostatic fixtures.",
     "current_status": "covered_current",
-    "current_evidence": "current Spack-wrapper local replay passed for tests/test_gsim_driven_cpw_workflow.py::test_public_cpw_driven_optional_local_palace_coarse_smoke, tests/test_gsim_eigenmode_resonator_workflow.py::test_public_resonator_eigenmode_optional_local_palace_coarse_smoke, tests/test_gsim_electrostatic_capacitor_workflow.py::test_public_same_layer_capacitor_optional_local_palace_coarse_smoke, and scripts/public_palace_smoke_evidence.py unified evidence generation",
+    "current_evidence": "2026-06-15 Spack-wrapper local replay passed with Palace version 869ee5c for tests/test_gsim_driven_cpw_workflow.py::test_public_cpw_driven_optional_local_palace_coarse_smoke, tests/test_gsim_eigenmode_resonator_workflow.py::test_public_resonator_eigenmode_optional_local_palace_coarse_smoke, tests/test_gsim_electrostatic_capacitor_workflow.py::test_public_same_layer_capacitor_optional_local_palace_coarse_smoke, and scripts/public_palace_smoke_evidence.py opt-in local solver evidence generation",
     "remaining_gap": "none for the current local replay; future replays still require ORPEN_RUN_LOCAL_PALACE_SMOKE=1 plus PALACE_SIF or PALACE_EXECUTABLE in the local shell",
     "next_issue": "public-problem-type-notebook-coverage"
   },

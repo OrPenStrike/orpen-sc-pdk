@@ -207,7 +207,7 @@ def _assert_gsim_boundary_review_crosscheck(evidence: dict) -> None:
     commits = [row["commit"] for row in rows]
     assert len(commits) == len(set(commits))
     assert commits[0] == "2ab16d7"
-    assert commits[-1] == "e80eb28"
+    assert commits[-1] == "76f7dc0"
 
     by_commit = {row["commit"]: row for row in rows}
     assert by_commit["00b2777"]["ecosystem_home"] == "gsim"
@@ -216,6 +216,7 @@ def _assert_gsim_boundary_review_crosscheck(evidence: dict) -> None:
     assert by_commit["9b3574a"]["boundary_group"] == "api-surface-and-owner-module-cleanup"
     assert by_commit["883fb78"]["review_status"] == "reviewed_explicit_with_fix"
     assert by_commit["bc78ad4"]["review_status"] == "reviewed_explicit_fix"
+    assert by_commit["76f7dc0"]["boundary_group"] == "meshwell-gsim-handoff-contract-gate"
 
     groups = {row["boundary_group"] for row in rows}
     assert {
