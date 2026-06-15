@@ -145,6 +145,11 @@ Verified local changes:
   queue from `scripts/fixtures/public_interface_preset_review_queue.json`,
   keeping candidate values notebook-visible as promotion-gate evidence without
   adding automatic public defaults or private preset names;
+- the same inventory notebook now displays public thin-film sheet proxy
+  evidence from `scripts/public_palace_smoke_evidence.py`: public material-kind
+  data and `gsim` postprocessing builders emit separate caller-supplied `MA`
+  and `MS` dielectric-interface rows for public `Al___air` and `Al___silicon`
+  interface names without notebook-local default policy;
 - `tests/test_public_problem_notebook_style.py` now checks every public
   Jupytext notebook source for notebook-local function definitions and private
   `_...()` helper calls, and rejects links to the old combined simulation

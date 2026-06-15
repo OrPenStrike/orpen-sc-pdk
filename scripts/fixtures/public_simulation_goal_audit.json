@@ -51,7 +51,7 @@
   {
     "objective_requirement": "Keep MA/MS/SA dielectric-interface preset promotion source-backed and notebook-visible without publishing defaults prematurely.",
     "current_status": "covered_current",
-    "current_evidence": "scripts/fixtures/public_interface_preset_review_queue.json records public sources, candidate rows, owner repo, gsim handoff, and promotion gates; notebooks/src/public_simulation_inventory.py displays source and candidate review tables",
+    "current_evidence": "scripts/fixtures/public_interface_preset_review_queue.json records public sources, candidate rows, owner repo, gsim handoff, and promotion gates; scripts/public_palace_smoke_evidence.py builds public thin-film sheet proxy MA/MS evidence; notebooks/src/public_simulation_inventory.py displays source, candidate, and proxy review tables",
     "remaining_gap": "accepted public preset IDs, OrPen process scope, and default-selection rules are still required before tech.interface_preset_records can be populated",
     "next_issue": "source-backed-interface-presets"
   },

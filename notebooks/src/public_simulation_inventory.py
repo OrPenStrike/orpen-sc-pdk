@@ -31,6 +31,7 @@ from scripts.public_palace_smoke_evidence import (
     public_problem_notebook_crosscheck_table,
     public_simulation_goal_audit_table,
     public_simulation_helper_node_inventory_table,
+    public_thin_film_sheet_proxy_interface_table,
 )
 
 # %% [markdown]
@@ -99,6 +100,19 @@ display(interface_preset_sources)
 display(interface_preset_candidates)
 
 # %% [markdown]
+# ## Thin-film sheet proxy evidence
+#
+# The source-backed preset gate also needs evidence for conductor-sheet
+# interfaces that produce separate caller-supplied MA and MS proxy rows. This
+# table uses public material-kind data and `gsim` postprocessing builders; it is
+# still fixture-only evidence, not automatic public defaults.
+
+# %%
+thin_film_proxy_interfaces = public_thin_film_sheet_proxy_interface_table()
+
+display(thin_film_proxy_interfaces)
+
+# %% [markdown]
 # ## Coverage summary
 #
 # The summary groups the public inventory by coverage status, intended
@@ -117,6 +131,7 @@ display(
         "interface_preset_candidate_count": len(
             interface_preset_queue["candidate_records"]
         ),
+        "thin_film_proxy_interface_count": len(thin_film_proxy_interfaces),
         "coverage_status_counts": problem_notebook_crosscheck[
             "coverage_status"
         ].value_counts(sort=False).to_dict(),

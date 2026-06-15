@@ -71,16 +71,17 @@ Verified local changes:
   candidate review tables, so MA/MS/SA promotion status is notebook-visible
   alongside the helper-node, representative-notebook, goal-audit, and `gsim`
   boundary-review evidence.
+- `scripts/public_palace_smoke_evidence.py` now builds public thin-film
+  conductor-sheet proxy evidence: public `Al` sheet interfaces adjacent to
+  public `air` and `silicon` material names generate separate caller-supplied
+  `MA` and `MS` dielectric-interface specs through `gsim` material-kind
+  classification, config generation, index-map writing, and
+  `load_dielectric_interface_summary()` without adding public defaults.
 
 Remaining slices:
 
 - add accepted-candidate tests after the candidate IDs and process scope are
   approved for `tech.interface_preset_records`;
-- add public thin-film conductor-sheet proxy acceptance evidence: a conductive
-  sheet adjacent to vacuum and dielectric material regions must be able to
-  request separate caller-supplied `MA` and `MS` dielectric-interface specs
-  without copying private preset values, private physical names, or
-  notebook-local default policy;
 - decide whether any candidate should become a public PDK default or stay
   caller-selected only;
 - add a public default-selection map only after candidate records are accepted;

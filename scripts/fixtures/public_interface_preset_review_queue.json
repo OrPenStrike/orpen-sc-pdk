@@ -150,7 +150,6 @@
   "open_decisions": [
     "Decide whether Woods2019 CPW Si interface candidates are public PDK defaults for any OrPen process scope or remain caller-selected presets.",
     "Decide whether Wenner2011 assumed/scaled rows remain documentation-only scaling checks.",
-    "Prove public thin-film conductor-sheet proxy interfaces can request separate caller-supplied MA and MS specs without private preset values or physical names.",
     "Add tests only after accepted candidate IDs and material/process scope are finalized."
   ]
 }

@@ -68,7 +68,7 @@
     "public_api_or_artifact": "get_gsim_material_kind_map(); build_dielectric_interface_specs_from_material_kinds(); load_dielectric_interface_summary()",
     "public_status": "implemented_with_caller_supplied_test_preset_pending_source_policy",
     "promotion_gate": "source_backed_public_default_policy_required",
-    "missing_evidence": "accepted public MA/MS/SA preset records, process scope, default-selection rules, and public thin-film sheet proxy acceptance evidence",
+    "missing_evidence": "accepted public MA/MS/SA preset records, process scope, and default-selection rules",
     "next_issue": "source-backed-interface-presets"
   },
   {

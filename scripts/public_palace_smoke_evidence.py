@@ -1199,6 +1199,174 @@ def public_interface_preset_candidate_review_table() -> Any:
     return pd.DataFrame(queue["candidate_records"]).loc[:, columns]
 
 
+def build_public_thin_film_sheet_proxy_interface_evidence(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "thin-film-sheet-proxy-interface",
+    *,
+    relative_to: str | Path | None = None,
+) -> dict[str, Any]:
+    """Build public evidence for caller-supplied thin-film MA/MS proxy specs."""
+
+    from gsim.common.stack import LayerStack
+    from gsim.palace import load_dielectric_interface_summary
+    from gsim.palace.mesh import (
+        build_dielectric_interface_specs_from_material_kinds,
+        build_postprocessing_config_from_manifest,
+    )
+    from gsim.palace.mesh.config_generator import generate_palace_config
+    from gsim.palace.mesh.manifest import build_mesh_manifest
+
+    from orpen_sc_pdk.materials import (
+        get_gsim_material_kind_alias_map,
+        get_gsim_material_kind_map,
+        get_interface_preset_records,
+        validate_interface_preset_records,
+    )
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    relative_root = Path(relative_to) if relative_to is not None else None
+    groups = {
+        "volumes": {
+            "silicon": {"phys_group": 1},
+            "air": {"phys_group": 2},
+        },
+        "conductor_surfaces": {},
+        "pec_surfaces": {},
+        "port_surfaces": {},
+        "boundary_surfaces": {
+            "Al___air": {"phys_group": 71, "tags": [701], "dim": 2},
+            "Al___silicon": {"phys_group": 72, "tags": [702], "dim": 2},
+        },
+    }
+    caller_records = {
+        "public_ma_sheet_proxy_example": {
+            "interface_type": "MA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public thin-film sheet proxy fixture only",
+        },
+        "public_ms_sheet_proxy_example": {
+            "interface_type": "MS",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public thin-film sheet proxy fixture only",
+        },
+    }
+    manifest = build_mesh_manifest(groups)
+    dielectric_interfaces = build_dielectric_interface_specs_from_material_kinds(
+        manifest,
+        material_kind_by_name=get_gsim_material_kind_map(),
+        material_name_aliases=get_gsim_material_kind_alias_map(),
+        presets=validate_interface_preset_records(caller_records),
+        preset_by_interface_type={
+            "MA": "public_ma_sheet_proxy_example",
+            "MS": "public_ms_sheet_proxy_example",
+        },
+    )
+    postprocessing = build_postprocessing_config_from_manifest(
+        manifest,
+        dielectric_interfaces=dielectric_interfaces,
+    )
+    config_path = generate_palace_config(
+        groups=groups,
+        ports=[],
+        port_info=[],
+        stack=LayerStack(
+            materials={
+                "silicon": {"permittivity": 11.9},
+                "air": {"permittivity": 1.0},
+            }
+        ),
+        output_path=output_dir,
+        model_name="palace",
+        fmax=5e9,
+        absorbing_boundary=False,
+        boundary_postprocessing_config=postprocessing.boundaries,
+        material_overlay=get_gsim_material_overlay(),
+    )
+    index_map_path = output_dir / "palace_index_map.json"
+    postprocessing.index_map.write_json(index_map_path)
+
+    summary = load_dielectric_interface_summary(
+        {
+            "config.json": config_path,
+            "palace_index_map.json": index_map_path,
+        }
+    )
+    config = json.loads(Path(config_path).read_text())
+    return {
+        "schema_version": 1,
+        "workflow": "public-thin-film-sheet-proxy-interface",
+        "public_default_status": "not_public_default",
+        "caller_record_source": "public thin-film sheet proxy fixture only",
+        "pdk_interface_preset_record_count": len(get_interface_preset_records()),
+        "output_dir": (
+            _relative_path(output_dir, relative_root)
+            if relative_root is not None
+            else output_dir.as_posix()
+        ),
+        "config_path": (
+            _relative_path(Path(config_path), relative_root)
+            if relative_root is not None
+            else Path(config_path).as_posix()
+        ),
+        "index_map_path": (
+            _relative_path(index_map_path, relative_root)
+            if relative_root is not None
+            else index_map_path.as_posix()
+        ),
+        "specs": [
+            {
+                "interface_type": spec.interface_type,
+                "entry_names": list(spec.entry_names),
+                "preset_name": spec.preset_name,
+                "preset_source": spec.preset_source,
+                "material_name": spec.material_name,
+                "role": spec.role,
+            }
+            for spec in dielectric_interfaces
+        ],
+        "config_rows": config["Boundaries"]["Postprocessing"]["Dielectric"],
+        "summary_rows": _frame_records(
+            summary,
+            (
+                "surface_index",
+                "source_name",
+                "interface_type",
+                "preset_name",
+                "preset_source",
+                "interface_material_name",
+                "matched_material_name",
+                "material_model_source",
+                "thickness",
+                "permittivity",
+                "loss_tangent",
+            ),
+        ),
+    }
+
+
+def public_thin_film_sheet_proxy_interface_table(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "thin-film-sheet-proxy-interface",
+) -> Any:
+    """Return public thin-film MA/MS proxy evidence as a notebook table."""
+
+    import pandas as pd
+
+    evidence = build_public_thin_film_sheet_proxy_interface_evidence(output_dir)
+    columns = [
+        "surface_index",
+        "source_name",
+        "interface_type",
+        "preset_name",
+        "preset_source",
+        "interface_material_name",
+        "matched_material_name",
+        "material_model_source",
+    ]
+    return pd.DataFrame(evidence["summary_rows"]).loc[:, columns]
+
+
 def public_domain_material_table(output_dir: str | Path) -> Any:
     """Load the public domain-material provenance table for a generated config."""
 
@@ -1985,6 +2153,10 @@ def build_public_palace_smoke_evidence(
         for spec in problem_specs
     }
     sweep_evidence = _build_sweep_evidence(output_root, problems)
+    thin_film_proxy_evidence = build_public_thin_film_sheet_proxy_interface_evidence(
+        output_root / "thin-film-sheet-proxy-interface",
+        relative_to=output_root,
+    )
 
     evidence = {
         "schema_version": 1,
@@ -1997,6 +2169,7 @@ def build_public_palace_smoke_evidence(
         "goal_audit": load_public_simulation_goal_audit(),
         "gsim_boundary_review_crosscheck": load_public_gsim_boundary_review_crosscheck(),
         "interface_preset_review_queue": load_public_interface_preset_review_queue(),
+        "thin_film_sheet_proxy_interface": thin_film_proxy_evidence,
         "problems": problems,
         "sweep_summary": sweep_evidence["summary"],
         "sweep_resource_index": sweep_evidence["resource_index"],

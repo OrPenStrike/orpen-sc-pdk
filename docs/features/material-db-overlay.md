@@ -115,6 +115,11 @@ Current public baseline:
   `scripts/fixtures/public_interface_preset_review_queue.json` and displayed
   from the public simulation inventory notebook, making MA/MS/SA promotion
   gates reviewable without widening the PDK or `gsim` public runtime APIs;
+- public thin-film conductor-sheet proxy evidence now uses OrPen material-kind
+  maps and generated-name aliases with `gsim` material-kind classification to
+  emit separate caller-supplied `MA` and `MS` dielectric-interface rows for
+  public `Al___air` and `Al___silicon` interface names, then reloads the
+  generated rows through `gsim.palace.load_dielectric_interface_summary()`;
 - local `gsim` now carries caller-supplied interface preset name/source
   metadata through `palace_index_map.json`, dielectric-interface summaries, and
   surface-loss summaries; `orpen-sc-pdk` passes its validated preset source
@@ -141,10 +146,8 @@ Remaining slices:
   current minimal electromagnetic records;
 - populate public interface preset records only after source-backed public
   MA/MS/SA values and automatic-selection rules are accepted into the PDK
-  contract, including thin-film sheet proxy acceptance for separate
-  caller-supplied `MA` and `MS` specs; until then, keep selection
-  caller-supplied and explicitly sourced through the `gsim`
-  assignment/classification helpers.
+  contract; until then, keep selection caller-supplied and explicitly sourced
+  through the `gsim` assignment/classification helpers.
 
 Related issue:
 

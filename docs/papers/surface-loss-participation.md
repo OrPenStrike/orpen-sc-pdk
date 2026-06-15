@@ -57,15 +57,21 @@ into PDK data.
 | `Woods2019_CPW_Si_MA_candidate` | `MA` | 0.002 | 10.0 | 3.3e-3 | Main text uses 2 nm and relative permittivity 10.0 for the MA defect layer when converting fitted loss factors into loss tangents. | Primary CPW extraction candidate; caller-selected until accepted. |
 | `Woods2019_CPW_Si_bulk_candidate` | bulk substrate | n/a | silicon | 2.6e-7 | Main text reports a silicon substrate loss tangent with the same fitted CPW loss model. | Bulk-material review candidate, not an interface preset. |
 
+Thin-film proxy evidence:
+
+- `scripts/public_palace_smoke_evidence.py` builds a public fixture where `Al`
+  sheet interfaces adjacent to public `air` and `silicon` material names
+  request separate caller-supplied `MA` and `MS` specs through `gsim`
+  material-kind classification. This proves the public handoff shape without
+  copying private preset values, private physical names, or notebook-local
+  default policy.
+
 Open review decisions:
 
 - decide whether `Woods2019_CPW_Si_*_candidate` rows are public PDK defaults
   for any OrPen process scope or remain caller-selected presets;
 - decide whether `Wenner2011_CPW_assumed_*_candidate` rows should stay
   documentation-only scaling checks rather than accepted PDK records;
-- prove public thin-film conductor-sheet proxy interfaces can request separate
-  caller-supplied `MA` and `MS` specs without private preset values, private
-  physical names, or notebook-local default policy;
 - add tests only after the accepted candidate IDs and material/process scope are
   finalized.
 

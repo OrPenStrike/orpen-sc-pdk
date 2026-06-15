@@ -11,6 +11,7 @@ from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
     build_public_palace_smoke_evidence,
+    build_public_thin_film_sheet_proxy_interface_evidence,
     load_public_gsim_boundary_review_crosscheck,
     load_public_interface_preset_review_queue,
     load_public_problem_notebook_crosscheck,
@@ -95,7 +96,6 @@ def _assert_helper_node_inventory(evidence: dict) -> None:
     interface = by_node["Dielectric interface MA/MS/SA classification"]
     assert interface["promotion_gate"] == "source_backed_public_default_policy_required"
     assert "accepted public MA/MS/SA preset records" in interface["missing_evidence"]
-    assert "thin-film sheet proxy" in interface["missing_evidence"]
     assert "thin-film conductor-sheet MA/MS proxy" in interface["private_capability"]
 
     for row in rows:
@@ -179,6 +179,7 @@ def _assert_goal_audit(evidence: dict) -> None:
     ]
     assert interface_gate["current_status"] == "covered_current"
     assert "public_interface_preset_review_queue.json" in interface_gate["current_evidence"]
+    assert "thin-film sheet proxy MA/MS evidence" in interface_gate["current_evidence"]
     assert "tech.interface_preset_records" in interface_gate["remaining_gap"]
 
     statuses = {row["current_status"] for row in rows}
@@ -256,16 +257,80 @@ def _assert_interface_preset_review_queue(evidence: dict) -> None:
     assert all(row["promotion_gate"] for row in candidates)
     assert all(row["source_id"] in source_ids for row in candidates)
     assert any(row["promotion_status"] == "not_interface_preset" for row in candidates)
-    assert any(
-        "thin-film conductor-sheet proxy" in decision
-        for decision in queue["open_decisions"]
-    )
 
     by_candidate = {row["candidate_record"]: row for row in candidates}
     woods_ms = by_candidate["Woods2019_CPW_Si_MS_candidate"]
     assert woods_ms["role"] == "MS"
     assert woods_ms["public_default_status"] == "not_public_default"
     assert "gsim material-kind/exact assignment helpers" in woods_ms["gsim_handoff"]
+
+
+def _assert_thin_film_sheet_proxy_interface_evidence(evidence: dict) -> None:
+    proxy = evidence["thin_film_sheet_proxy_interface"]
+    assert proxy["schema_version"] == 1
+    assert proxy["workflow"] == "public-thin-film-sheet-proxy-interface"
+    assert proxy["public_default_status"] == "not_public_default"
+    assert proxy["caller_record_source"] == "public thin-film sheet proxy fixture only"
+    assert proxy["pdk_interface_preset_record_count"] == 0
+    assert proxy["output_dir"] == "thin-film-sheet-proxy-interface"
+    assert proxy["config_path"] == "thin-film-sheet-proxy-interface/config.json"
+    assert proxy["index_map_path"] == (
+        "thin-film-sheet-proxy-interface/palace_index_map.json"
+    )
+
+    assert [row["interface_type"] for row in proxy["specs"]] == ["MA", "MS"]
+    assert [row["entry_names"] for row in proxy["specs"]] == [
+        ["Al___air"],
+        ["Al___silicon"],
+    ]
+    assert {row["preset_source"] for row in proxy["specs"]} == {
+        "public thin-film sheet proxy fixture only"
+    }
+    assert {row["material_name"] for row in proxy["specs"]} == {
+        "AlOx_native_generic"
+    }
+
+    assert [row["Type"] for row in proxy["config_rows"]] == ["MA", "MS"]
+    assert all("_MaterialName" not in row for row in proxy["config_rows"])
+    assert all(row["Permittivity"] == pytest.approx(10.0) for row in proxy["config_rows"])
+    assert all(row["Thickness"] == pytest.approx(0.003) for row in proxy["config_rows"])
+    assert all(row["LossTan"] == pytest.approx(0.0) for row in proxy["config_rows"])
+
+    by_source = {row["source_name"]: row for row in proxy["summary_rows"]}
+    assert set(by_source) == {"Al___air", "Al___silicon"}
+    ma = by_source["Al___air"]
+    assert ma["interface_type"] == "MA"
+    assert ma["preset_name"] == "public_ma_sheet_proxy_example"
+    assert ma["preset_source"] == "public thin-film sheet proxy fixture only"
+    assert ma["interface_material_name"] == "AlOx_native_generic"
+    assert ma["material_model_source"] == "orpen-sc-pdk tech.material_properties"
+
+    ms = by_source["Al___silicon"]
+    assert ms["interface_type"] == "MS"
+    assert ms["preset_name"] == "public_ms_sheet_proxy_example"
+    assert ms["preset_source"] == "public thin-film sheet proxy fixture only"
+    assert ms["interface_material_name"] == "AlOx_native_generic"
+    assert ms["material_model_source"] == "orpen-sc-pdk tech.material_properties"
+
+
+def test_public_thin_film_sheet_proxy_interface_evidence_runs_standalone(
+    tmp_path: Path,
+) -> None:
+    proxy = build_public_thin_film_sheet_proxy_interface_evidence(
+        tmp_path / "proxy",
+        relative_to=tmp_path,
+    )
+
+    assert proxy["output_dir"] == "proxy"
+    assert proxy["config_path"] == "proxy/config.json"
+    assert proxy["index_map_path"] == "proxy/palace_index_map.json"
+    assert (tmp_path / "proxy" / "config.json").is_file()
+    assert (tmp_path / "proxy" / "palace_index_map.json").is_file()
+    assert [row["interface_type"] for row in proxy["summary_rows"]] == ["MA", "MS"]
+    assert [row["source_name"] for row in proxy["summary_rows"]] == [
+        "Al___air",
+        "Al___silicon",
+    ]
 
 
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
@@ -284,6 +349,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     _assert_goal_audit(evidence)
     _assert_gsim_boundary_review_crosscheck(evidence)
     _assert_interface_preset_review_queue(evidence)
+    _assert_thin_film_sheet_proxy_interface_evidence(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",
         "eigenmode_resonator",

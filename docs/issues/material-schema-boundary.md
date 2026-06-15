@@ -164,6 +164,11 @@ Verified local changes:
   `materials.json` numeric interface-loss values, notebook-local override
   maps, and masked Surface EPR; this public slice preserves the schema/adapter
   boundary without copying private values or private layer names;
+- public thin-film sheet proxy evidence now covers the non-private capability
+  shape: public `Al___air` and `Al___silicon` interfaces produce separate
+  caller-supplied `MA` and `MS` specs through `gsim` material-kind
+  classification and reload through the reusable dielectric-interface summary
+  path, while `tech.interface_preset_records` stays empty by default;
 - read-only NCUAS material audit also confirms private `materials.json` and
   Palace material models include `LondonDepth`, default permeability, and
   boundary material fields, but public `gsim` currently has no London-depth
