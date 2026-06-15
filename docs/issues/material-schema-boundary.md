@@ -128,9 +128,9 @@ Verified local changes:
   aliases, resolves `AlOx_native_generic` through the public material overlay,
   and loads interface material provenance through the reusable report/index-map
   path;
-- the public simulation workflow notebook now shows that generated-interface
-  classification path with a notebook-local caller-supplied preset, keeping
-  public preset defaults source-gated while making the handoff visible in docs;
+- `notebooks/src/public_eigenmode_workflow.py` shows that generated-interface
+  classification path with a caller-supplied preset, keeping public preset
+  defaults source-gated while making the handoff visible in docs;
 - the public surface-loss paper board now lists candidate sources and extracted
   review rows for `MA`/`MS`/`SA` taxonomy, source-backed interface-loss
   extraction, transmon validation targets, and uncertainty-aware CPW

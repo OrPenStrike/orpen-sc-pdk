@@ -29,22 +29,38 @@ Notebook Items
         Activates the open PDK, builds public demo components, and inspects the
         public PDK registry.
 
-    .. grid-item-card:: NB-002 Public Simulation Workflows
+    .. grid-item-card:: NB-002 Public Driven Workflow
 
-        :doc:`notebooks/public_simulation_workflows`
+        :doc:`notebooks/public_driven_workflow`
 
-        Exercises publication-safe Driven, Eigenmode, and Electrostatic
-        workflows with public cells, generated Palace mesh/config artifacts,
-        report displays, and opt-in local solver smoke execution.
+        Builds the public CPW Driven fixture, generated Palace mesh/config
+        artifacts, material/index provenance tables, synthetic report displays,
+        and an opt-in local solver smoke.
 
-    .. grid-item-card:: NB-003 Reference Qubit Workflow
+    .. grid-item-card:: NB-003 Public Eigenmode Workflow
+
+        :doc:`notebooks/public_eigenmode_workflow`
+
+        Builds the public resonator Eigenmode fixture, generated Palace
+        mesh/config artifacts, caller-supplied interface classification,
+        synthetic report displays, and an opt-in local solver smoke.
+
+    .. grid-item-card:: NB-004 Public Electrostatic Workflow
+
+        :doc:`notebooks/public_electrostatic_workflow`
+
+        Builds the public same-layer capacitor Electrostatic fixture, generated
+        Palace mesh/config artifacts, terminal provenance, synthetic report
+        displays, and an opt-in local solver smoke.
+
+    .. grid-item-card:: NB-005 Reference Qubit Workflow
 
         Status: private source pending.
 
         The public version should document the workflow shape while keeping the
         private qubit layout in the private layout repo.
 
-    .. grid-item-card:: NB-004 Circular Qubit V3 Workflow
+    .. grid-item-card:: NB-006 Circular Qubit V3 Workflow
 
         Status: private source pending.
 
@@ -56,4 +72,6 @@ Notebook Items
     :hidden:
 
     notebooks/public_pdk_quickstart
-    notebooks/public_simulation_workflows
+    notebooks/public_driven_workflow
+    notebooks/public_eigenmode_workflow
+    notebooks/public_electrostatic_workflow

@@ -76,11 +76,22 @@ Verified local changes:
 - the optional electrostatic smoke now also loads the same real solver
   matrices through public `gsim.palace.load_electrostatic_report()`, keeping the
   composed report path aligned with the primitive matrix loader;
-- `notebooks/src/public_simulation_workflows.py` is a publication-safe Jupytext
-  notebook source that runs public Driven, Eigenmode, Electrostatic, and
-  Magnetostatic mesh/config/artifact handoffs and displays scrubbed summaries
-  only;
-- the public workflow notebook and fixtures intentionally do not add
+- `notebooks/src/public_driven_workflow.py` is a publication-safe Jupytext
+  notebook source that runs the public Driven CPW mesh/config/artifact handoff,
+  displays material and index provenance, loads synthetic public S-parameter
+  and port-EPR report rows, and keeps the optional local Palace smoke path
+  solver-gated;
+- `notebooks/src/public_eigenmode_workflow.py` is a publication-safe Jupytext
+  notebook source that runs the public Eigenmode resonator
+  mesh/config/artifact handoff, displays material and index provenance, loads
+  synthetic public loss-budget report rows, and keeps the optional local Palace
+  smoke path solver-gated;
+- `notebooks/src/public_electrostatic_workflow.py` is a publication-safe
+  Jupytext notebook source that runs the public Electrostatic same-layer
+  capacitor mesh/config/artifact handoff, displays terminal/material/index
+  provenance, loads synthetic public capacitance and loss-budget report rows,
+  and keeps the optional local Palace smoke path solver-gated;
+- the public problem-type notebooks and fixtures intentionally do not add
   material-kind-driven MA/MS/SA interface postprocessing yet; generated public
   mesh fixtures now expose classifiable interface identities, and the public
   alias map covers generated `air`/`silicon` material names; the public PDK
@@ -90,24 +101,25 @@ Verified local changes:
   `air___silicon` interface can be classified with OrPen's public material-kind
   and alias helpers plus a caller-supplied test preset, then joined back through
   `gsim.palace.load_dielectric_interface_summary()`;
-- the public simulation workflow notebook now displays that generated
+- `notebooks/src/public_eigenmode_workflow.py` displays that generated
   interface-classification path from a public resonator mesh/config artifact,
-  using a notebook-local caller-supplied preset and reusable `gsim` provenance
-  loading rather than private notebook parsing or automatic public defaults;
+  using a caller-supplied preset and reusable `gsim` provenance loading rather
+  than private notebook parsing or automatic public defaults;
 - the public notebook index now links
-  `notebooks/public_simulation_workflows` directly as a publication-safe
-  Driven/Eigenmode/Electrostatic/Magnetostatic workflow notebook instead of
-  leaving the resonator workflow slot marked private-source pending;
-- the public simulation workflow notebook now also writes synthetic public
-  Driven, Eigenmode, and Electrostatic report artifacts, loads them through
-  reusable `gsim` report bundles, and displays curated S-parameter, port-EPR,
-  domain-loss, surface-loss, and loss-budget tables through a notebook-local
-  presentation helper;
-- the same public simulation workflow notebook now exposes an opt-in local
-  Palace smoke cell for Driven, Eigenmode, and Electrostatic public fixtures;
-  the default docs path reports a skip reason, while local users can enable the
-  coarse solves with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or
-  `PALACE_EXECUTABLE`;
+  `notebooks/public_driven_workflow`,
+  `notebooks/public_eigenmode_workflow`, and
+  `notebooks/public_electrostatic_workflow` directly as publication-safe
+  Driven/Eigenmode/Electrostatic workflow notebooks instead of routing all
+  problem types through one combined notebook;
+- the public problem-type notebooks write synthetic public Driven, Eigenmode,
+  and Electrostatic report artifacts, load them through reusable `gsim` report
+  bundles, and display curated S-parameter, port-EPR, capacitance, domain-loss,
+  surface-loss, and loss-budget tables through notebook-facing public wrapper
+  helpers in `scripts/public_palace_smoke_evidence.py`;
+- the public problem-type notebooks expose opt-in local Palace smoke cells for
+  Driven, Eigenmode, and Electrostatic public fixtures; the default docs path
+  reports a skip reason, while local users can enable the coarse solves with
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`;
 - `gsim` commit `c72f0d3` adds first-class Magnetostatic config-surface support:
   public `MagnetostaticSim.add_current_source(...)` source intent,
   `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
@@ -119,11 +131,11 @@ Verified local changes:
   `signal` source and a multielement `return` source so the notebook and JSON
   evidence can review generated element-count, direction, and coordinate-system
   lookup rows without owning Palace attribute mapping in OrPen;
-- the public simulation workflow notebook now displays a Magnetostatic CPW
-  config fixture with vector-direction `signal` and multielement `return`
-  current sources, generated `SurfaceCurrent`/magnetic `SurfaceFlux` rows,
-  `PMC` attributes, domain material provenance, and source-name/index-map
-  lookup rows;
+- Magnetostatic remains in the public JSON evidence/config fixture with
+  vector-direction `signal` and multielement `return` current sources,
+  generated `SurfaceCurrent`/magnetic `SurfaceFlux` rows, `PMC` attributes,
+  domain material provenance, and source-name/index-map lookup rows; it is not
+  part of the report-backed notebook suite in this slice;
 - `scripts/public_palace_smoke_evidence.py` now regenerates four public
   problem fixtures under `build/public-palace-smoke-evidence/` and writes
   `public_palace_smoke_evidence.json`; the default dry-run path consumes
@@ -140,17 +152,16 @@ Verified local changes:
   hint, linear-solver presence, boundary/postprocessing counts, material sidecar
   counts, and domain-material rows loaded through
   `gsim.palace.load_domain_material_summary()`;
-- the public simulation workflow notebook now displays those same lookup
-  concepts as table outputs for Driven CPW, Eigenmode resonator, caller-supplied
-  Eigenmode interface classification, and Electrostatic same-layer capacitor
-  cells;
-- the public simulation workflow notebook now also displays generated
-  domain-material provenance tables for those public problem cells, making the
-  material overlay usage visible in docs-safe outputs;
-- the public simulation workflow notebook now displays a helper-node coverage
-  matrix from `scripts/fixtures/public_simulation_helper_nodes.json`, tying
-  private helper capability shapes and private anchors to their intended
-  ecosystem home, current public `gsim`/OrPen API or artifact, and owning issue;
+- the public problem-type notebooks display those same lookup concepts as table
+  outputs for Driven CPW, Eigenmode resonator, caller-supplied Eigenmode
+  interface classification, and Electrostatic same-layer capacitor cells;
+- the public problem-type notebooks display generated domain-material
+  provenance tables for those public problem cells, making the material overlay
+  usage visible in docs-safe outputs;
+- the helper-node coverage matrix remains in
+  `scripts/fixtures/public_simulation_helper_nodes.json`, tying private helper
+  capability shapes and private anchors to their intended ecosystem home,
+  current public `gsim`/OrPen API or artifact, and owning issue;
 - the public evidence runner now embeds the same helper-node inventory as
   `helper_node_inventory`, so local JSON evidence and notebook output agree on
   implemented public fixtures, shared material/interface/index/runtime nodes,
@@ -213,10 +224,10 @@ Verified local changes:
   high-level `sim.write_config(hints=...)`, and the public evidence runner now
   verifies generated Driven, Eigenmode, Electrostatic, and Magnetostatic
   `config.json` files carry the resolved public profile `Solver.Device`;
-- the public simulation workflow notebook now displays the same catalog
-  loading, profile resolution, launcher/solver metadata, generated `Solver`
-  config hints, and generated `run_palace.sbatch` preview through executable
-  cells before the problem-type workflow cells;
+- the public problem-type notebooks use the public dry-run profile helper to
+  pass generated `Solver` config hints into each `sim.write_config(...)` call;
+  Slurm script previews and sweep-array handoff evidence remain in the public
+  JSON evidence runner;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
@@ -259,15 +270,14 @@ Verified local changes:
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
 - Ruff check and format-check passed for the executable fixtures.
-- direct notebook-source execution passed and confirmed the default local
-  Palace smoke cell skip path without requiring a local solver.
-- local executed-notebook review output was generated under the ignored path
-  `build/notebook-review/public_simulation_workflows_executed.ipynb` with
-  `uv run --group docs python -m jupyter nbconvert --execute --to notebook --output-dir build/notebook-review --output public_simulation_workflows_executed.ipynb notebooks/public_simulation_workflows.ipynb`;
-  the artifact has 25 cells, 12 output-bearing cells, 38 output objects, and
-  includes the helper-node matrix plus Magnetostatic source/index-map output
-  from the current public `gsim` API surface.
-- `just docs` converts and executes the public simulation workflow notebook as
+- direct notebook execution passed for the split Driven, Eigenmode, and
+  Electrostatic notebooks and confirmed the default local Palace smoke skip
+  path without requiring a local solver.
+- local executed-notebook review output is generated under the ignored path
+  `build/notebook-review/` for `notebooks/public_driven_workflow.ipynb`,
+  `notebooks/public_eigenmode_workflow.ipynb`, and
+  `notebooks/public_electrostatic_workflow.ipynb`.
+- `just docs` converts and executes the split public problem-type notebooks as
   part of the docs build.
 
 Remaining slices:

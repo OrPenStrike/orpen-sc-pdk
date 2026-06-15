@@ -33,61 +33,38 @@ Public fixture direction:
   multielement return current sources plus generated config/index-map evidence
   while report loading waits for a confirmed Palace output contract.
 
-Current public notebook:
+Current public notebooks:
 
-- {doc}`../notebooks/public_simulation_workflows` runs public Driven,
-  Eigenmode, Electrostatic, and Magnetostatic mesh/config/artifact handoffs
-  with local `gsim` and public `orpen-sc-pdk` cells only;
-- the same notebook now displays a helper-node coverage matrix loaded from
-  `scripts/fixtures/public_simulation_helper_nodes.json`, showing why each
-  private helper node exists, which private notebook/helper anchors motivated
-  the row, which GDSFactory ecosystem repo should own the public equivalent,
-  which `gsim`/OrPen API or artifact currently covers it, and which issue owns
-  the next slice; rows now also show the promotion gate and missing evidence
-  that must be resolved before a pending helper becomes a public default or
-  report-backed workflow;
-- the same notebook loads synthetic public Driven, Eigenmode, and Electrostatic
-  Palace report bundles through `gsim.palace.load_driven_report()`,
-  `gsim.palace.load_eigenmode_report()`, and
-  `gsim.palace.load_electrostatic_report()`, then displays curated S-parameter,
-  port-EPR, domain-loss, surface-loss, and loss-budget tables through a
-  notebook-local presentation helper instead of raw report displays;
-- the notebook does not add automatic MA/MS/SA interface postprocessing yet:
-  generated interface identities and material-kind classification are available
-  as manifest-level helpers, and generated `air`/`silicon` material names can
-  classify through the public alias map; public problem-type examples still
-  wait for source-backed public preset records and default-selection policy;
-- the public resonator Eigenmode fixture now proves the generated
-  `air___silicon` interface can be classified with OrPen's public
-  material-kind and alias helpers when the caller supplies an explicit test
-  preset;
-- the same notebook now displays the generated `air___silicon`
-  interface-classification path and reloads the configured interface
-  provenance through `gsim`, keeping automatic public defaults out of the
-  notebook;
-- the same notebook exposes an opt-in local Palace smoke cell for Driven,
-  Eigenmode, and Electrostatic public fixtures; normal docs builds display a
-  skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or
-  executable path is configured.
-- the same notebook displays a Magnetostatic CPW config fixture with a
-  vector-direction `signal` source and a multielement `return` source,
-  generated `SurfaceCurrent`, `PMC`, and magnetic `SurfaceFlux` boundary
-  sections, plus source-name, coordinate-system, and element-count lookup rows
-  from `palace_index_map.json`; report parsing remains intentionally pending.
-- the same notebook displays the public Slurm profile catalog, resolved
-  resource overrides, generic launcher/solver hints, generated Palace
-  `Solver` config hints, and a generated dry-run `run_palace.sbatch` preview
-  loaded back through
-  `gsim.palace.results.load_palace_run_summary()`.
-- the same notebook now displays `PostprocessingIndexMap` lookup tables loaded
-  through `gsim.palace.load_postprocessing_index_map()`, so public Driven,
-  Eigenmode, interface, and Electrostatic cells show how generated Palace
-  section/index rows map back to physical names and reverse lookup indices.
-- the same notebook now displays generated domain-material provenance tables
-  loaded through `gsim.palace.load_domain_material_summary()`, so public problem
-  cells show how `get_gsim_material_overlay()` becomes Palace material attributes
-  and material-resolution rows, including public material permeability where the
-  overlay supplies it.
+- {doc}`../notebooks/public_driven_workflow` runs the public Driven CPW
+  mesh/config/artifact handoff with local `gsim` and public `orpen-sc-pdk`
+  cells only, then displays synthetic public S-parameter and port-EPR report
+  tables through `gsim.palace.load_driven_report()`;
+- {doc}`../notebooks/public_eigenmode_workflow` runs the public resonator
+  Eigenmode mesh/config/artifact handoff, proves the generated `air___silicon`
+  interface can be classified with caller-supplied public preset values, and
+  displays synthetic public domain-loss, surface-loss, and loss-budget tables
+  through `gsim.palace.load_eigenmode_report()`;
+- {doc}`../notebooks/public_electrostatic_workflow` runs the public same-layer
+  capacitor Electrostatic mesh/config/artifact handoff, shows terminal
+  provenance, and displays synthetic public capacitance, domain-loss,
+  surface-loss, and loss-budget tables through
+  `gsim.palace.load_electrostatic_report()`;
+- all three problem-type notebooks load generated domain-material provenance
+  through `gsim.palace.load_domain_material_summary()` and generated
+  section/index provenance through `gsim.palace.load_postprocessing_index_map()`;
+- all three problem-type notebooks keep workflow code out of notebook-local
+  private helpers by importing notebook-facing public wrappers from
+  `scripts/public_palace_smoke_evidence.py`;
+- all three problem-type notebooks expose an opt-in local Palace smoke cell;
+  normal docs builds display a skip reason unless
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or executable path is
+  configured;
+- the helper-node coverage matrix remains in
+  `scripts/fixtures/public_simulation_helper_nodes.json` and the JSON evidence
+  bundle rather than being embedded as notebook-local helper logic;
+- Magnetostatic remains a public config/index-map evidence fixture in
+  `scripts/public_palace_smoke_evidence.py`; it is intentionally outside the
+  report-backed notebook suite until a public Palace report contract is needed.
 
 Current executable smoke coverage:
 

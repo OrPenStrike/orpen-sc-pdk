@@ -17,7 +17,7 @@
     "private_anchor": "notebooks/PalaceSimulation/Components/Resonator Eigenmode Single Die Thin Film.ipynb; notebooks/PalaceSimulation/Researches/AS Reference Qubit Workflow Experiment.ipynb",
     "why_helper_exists": "Make resonator/qubit modal workflows reproducible from mesh physical names and reusable postprocessing requests.",
     "gdsfactory_home": "gsim",
-    "public_api_or_artifact": "EigenmodeSim; build_postprocessing_config_from_manifest(); load_eigenmode_report(); summarize_loss_budget()",
+    "public_api_or_artifact": "EigenmodeSim; build_postprocessing_config_from_manifest(); load_eigenmode_report().loss_budget",
     "public_status": "implemented_public_fixture",
     "promotion_gate": "none",
     "missing_evidence": "none",

@@ -114,8 +114,8 @@ Verified local changes:
   expected solver problem block, `Solver.Device` hint, linear-solver block,
   boundary/postprocessing counts, domain material counts, and material-resolution
   sidecar summary without moving config assembly into the PDK package.
-- the public simulation workflow notebook now displays the same generated
-  config/material provenance as table output through
+- the public problem-type notebooks display the same generated config/material
+  provenance as table output through
   `gsim.palace.load_domain_material_summary()`, so notebook review can inspect
   how PDK material overlay values enter Palace `Domains.Materials`.
 - public OrPen material records now expose unit permeability for nonmagnetic

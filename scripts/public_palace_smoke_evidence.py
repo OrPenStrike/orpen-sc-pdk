@@ -560,6 +560,750 @@ def _electrostatic_report_summary(output_dir: Path) -> dict[str, Any]:
     }
 
 
+def _write_public_report_json(path: Path, data: Mapping[str, Any]) -> Path:
+    path.write_text(json.dumps(dict(data), indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def _public_report_material_resolution() -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "materials": [
+            {
+                "material_row_index": 1,
+                "material_attribute": 10,
+                "material_attributes": [10],
+                "volume_name": "substrate",
+                "stack_material_name": "Si",
+                "matched_material_name": "Si",
+                "evaluation_frequency_hz": 5.0e9,
+                "evaluation_frequency_ghz": 5.0,
+                "model_type": "constant",
+                "model_source": "orpen-sc-pdk tech.material_properties",
+                "within_validity": True,
+                "validity_note": None,
+                "effective_material": {
+                    "permittivity": 11.45,
+                    "loss_tangent": 2.0e-6,
+                },
+                "palace_material": {
+                    "Attributes": [10],
+                    "Name": "Si",
+                    "Permittivity": 11.45,
+                    "LossTan": 2.0e-6,
+                },
+            }
+        ],
+        "interfaces": [
+            {
+                "interface_row_index": 1,
+                "surface_index": 2,
+                "surface_attributes": [20],
+                "interface_type": "SA",
+                "interface_material_name": "AlOx_native_generic",
+                "matched_material_name": "AlOx_native_generic",
+                "evaluation_frequency_hz": 5.0e9,
+                "evaluation_frequency_ghz": 5.0,
+                "model_type": "constant",
+                "model_source": "orpen-sc-pdk tech.material_properties",
+                "within_validity": True,
+                "validity_note": None,
+                "effective_material": {
+                    "permittivity": 10.0,
+                    "loss_tangent": 0.0017,
+                },
+                "palace_interface": {
+                    "Index": 2,
+                    "Attributes": [20],
+                    "Type": "SA",
+                    "Thickness": 0.003,
+                    "Permittivity": 10.0,
+                    "LossTan": 0.0017,
+                },
+            }
+        ],
+    }
+
+
+def _write_public_driven_report_fixture(output_dir: Path) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    port_info_path = _write_public_report_json(
+        output_dir / "port_information.json",
+        {
+            "ports": [
+                {"portnumber": 1, "name": "o1", "Z0": 50.0, "type": "cpw"},
+                {"portnumber": 2, "name": "o2", "Z0": 50.0, "type": "cpw"},
+            ],
+            "unit": 1e-6,
+            "name": "palace",
+        },
+    )
+    port_s_path = output_dir / "port-S.csv"
+    port_s_path.write_text(
+        "f (GHz), |S[1][1]| (dB), arg(S[1][1]) (deg.), "
+        "|S[2][1]| (dB), arg(S[2][1]) (deg.)\n"
+        "4.0, -18.0, -45.0, -3.0, -90.0\n"
+        "6.0, -12.0, -50.0, -2.0, -95.0\n"
+        "8.0, -16.0, -55.0, -4.0, -100.0\n"
+    )
+    port_epr_path = output_dir / "port-EPR.csv"
+    port_epr_path.write_text("m, p[3], p[4]\n1, 0.60, 0.40\n")
+    config_path = _write_public_report_json(
+        output_dir / "config.json",
+        {
+            "Domains": {
+                "Materials": [
+                    {
+                        "Attributes": [10],
+                        "Name": "Si",
+                        "Permittivity": 11.45,
+                        "LossTan": 2.0e-6,
+                    }
+                ]
+            }
+        },
+    )
+    index_map_path = _write_public_report_json(
+        output_dir / "palace_index_map.json",
+        {
+            "schema_version": 1,
+            "entries": [
+                {
+                    "section": "Domains.Postprocessing.Energy",
+                    "index": 1,
+                    "entry_name": "substrate",
+                    "role": "dielectric_volume",
+                    "attributes": [10],
+                    "physical_names": ["D1_SUBSTRATE"],
+                    "dimension": 3,
+                },
+                {
+                    "section": "Boundaries.Postprocessing.SurfaceFlux",
+                    "index": 3,
+                    "entry_name": "o1_port_surface",
+                    "role": "port_surface",
+                    "attributes": [31],
+                    "physical_names": ["P1_E0"],
+                    "dimension": 2,
+                    "Type": "Power",
+                    "metadata": {"port": "P1", "port_type": "cpw"},
+                },
+                {
+                    "section": "Boundaries.Postprocessing.SurfaceFlux",
+                    "index": 4,
+                    "entry_name": "o2_port_surface",
+                    "role": "port_surface",
+                    "attributes": [41],
+                    "physical_names": ["P2_E0"],
+                    "dimension": 2,
+                    "Type": "Power",
+                    "metadata": {"port": "P2", "port_type": "cpw"},
+                },
+            ],
+        },
+    )
+    material_resolution_path = _write_public_report_json(
+        output_dir / "palace_material_resolution.json",
+        _public_report_material_resolution(),
+    )
+    return {
+        "port-S.csv": port_s_path,
+        "port-EPR.csv": port_epr_path,
+        "port_information.json": port_info_path,
+        "config.json": config_path,
+        "palace_index_map.json": index_map_path,
+        "palace_material_resolution.json": material_resolution_path,
+    }
+
+
+def _write_public_eigenmode_report_fixture(output_dir: Path) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    eig_path = output_dir / "eig.csv"
+    eig_path.write_text(
+        "m, Re{f} (GHz), Im{f} (GHz), Q, Error (Bkwd.), Error (Abs.)\n"
+        "1, 5.0, 0.0, 2.0e6, 0.0, 0.0\n"
+    )
+    domain_e_path = output_dir / "domain-E.csv"
+    domain_e_path.write_text("m, E_elec[1] (J), p_elec[1]\n1, 1.0, 0.25\n")
+    surface_q_path = output_dir / "surface-Q.csv"
+    surface_q_path.write_text("m, p_surf[2], Q_surf[2]\n1, 0.125, 1.0e6\n")
+    config_path = _write_public_report_json(
+        output_dir / "config.json",
+        {
+            "Domains": {
+                "Materials": [
+                    {
+                        "Attributes": [10],
+                        "Name": "Si",
+                        "Permittivity": 11.45,
+                        "LossTan": 2.0e-6,
+                    }
+                ]
+            },
+            "Boundaries": {
+                "Postprocessing": {
+                    "Dielectric": [
+                        {
+                            "Index": 2,
+                            "Attributes": [20],
+                            "Type": "SA",
+                            "Thickness": 0.003,
+                            "Permittivity": 10.0,
+                            "LossTan": 0.0017,
+                        }
+                    ]
+                }
+            },
+        },
+    )
+    index_map_path = _write_public_report_json(
+        output_dir / "palace_index_map.json",
+        {
+            "schema_version": 1,
+            "entries": [
+                {
+                    "section": "Domains.Postprocessing.Energy",
+                    "index": 1,
+                    "entry_name": "substrate",
+                    "role": "dielectric_volume",
+                    "attributes": [10],
+                    "physical_names": ["D1_SUBSTRATE"],
+                    "dimension": 3,
+                },
+                {
+                    "section": "Boundaries.Postprocessing.Dielectric",
+                    "index": 2,
+                    "entry_name": "sa_interface",
+                    "role": "boundary_surface",
+                    "attributes": [20],
+                    "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                    "dimension": 2,
+                    "Type": "SA",
+                },
+            ],
+        },
+    )
+    material_resolution_path = _write_public_report_json(
+        output_dir / "palace_material_resolution.json",
+        _public_report_material_resolution(),
+    )
+    return {
+        "eig.csv": eig_path,
+        "domain-E.csv": domain_e_path,
+        "surface-Q.csv": surface_q_path,
+        "config.json": config_path,
+        "palace_index_map.json": index_map_path,
+        "palace_material_resolution.json": material_resolution_path,
+    }
+
+
+def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    terminal_c_path = output_dir / "terminal-C.csv"
+    terminal_c_path.write_text(
+        "i, C[i][1] (F), C[i][2] (F)\n"
+        "1.00e+00, 1.0e-15, -2.0e-15\n"
+        "2.00e+00, -2.0e-15, 4.0e-15\n"
+    )
+    domain_e_path = output_dir / "domain-E.csv"
+    domain_e_path.write_text("i, E_elec[1] (J), p_elec[1]\n1, 1.0, 0.25\n2, 1.0, 0.125\n")
+    surface_q_path = output_dir / "surface-Q.csv"
+    surface_q_path.write_text("i, p_surf[2], Q_surf[2]\n1, 0.125, 1.0e6\n2, 0.25, 2.0e6\n")
+    config_path = _write_public_report_json(
+        output_dir / "config.json",
+        {
+            "Domains": {
+                "Materials": [
+                    {
+                        "Attributes": [10],
+                        "Name": "Si",
+                        "Permittivity": 11.45,
+                        "LossTan": 2.0e-6,
+                    }
+                ]
+            },
+            "Boundaries": {
+                "Postprocessing": {
+                    "Dielectric": [
+                        {
+                            "Index": 2,
+                            "Attributes": [20],
+                            "Type": "SA",
+                            "Thickness": 0.003,
+                            "Permittivity": 10.0,
+                            "LossTan": 0.0017,
+                        }
+                    ]
+                }
+            },
+        },
+    )
+    index_map_path = _write_public_report_json(
+        output_dir / "palace_index_map.json",
+        {
+            "schema_version": 1,
+            "entries": [
+                {
+                    "section": "Boundaries.Terminal",
+                    "index": 1,
+                    "entry_name": "positive_electrode",
+                    "role": "pec_surface",
+                    "attributes": [11],
+                    "physical_names": ["D0_TOP_M1@positive"],
+                    "dimension": 2,
+                    "terminal_name": "positive",
+                },
+                {
+                    "section": "Boundaries.Terminal",
+                    "index": 2,
+                    "entry_name": "negative_electrode",
+                    "role": "pec_surface",
+                    "attributes": [12],
+                    "physical_names": ["D0_TOP_M1@negative"],
+                    "dimension": 2,
+                    "terminal_name": "negative",
+                },
+                {
+                    "section": "Domains.Postprocessing.Energy",
+                    "index": 1,
+                    "entry_name": "substrate",
+                    "role": "dielectric_volume",
+                    "attributes": [10],
+                    "physical_names": ["D1_SUBSTRATE"],
+                    "dimension": 3,
+                },
+                {
+                    "section": "Boundaries.Postprocessing.Dielectric",
+                    "index": 2,
+                    "entry_name": "sa_interface",
+                    "role": "boundary_surface",
+                    "attributes": [20],
+                    "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                    "dimension": 2,
+                    "Type": "SA",
+                },
+            ],
+        },
+    )
+    material_resolution_path = _write_public_report_json(
+        output_dir / "palace_material_resolution.json",
+        _public_report_material_resolution(),
+    )
+    return {
+        "terminal-C.csv": terminal_c_path,
+        "domain-E.csv": domain_e_path,
+        "surface-Q.csv": surface_q_path,
+        "config.json": config_path,
+        "palace_index_map.json": index_map_path,
+        "palace_material_resolution.json": material_resolution_path,
+    }
+
+
+def build_public_driven_cpw_sim(output_dir: str | Path) -> tuple[Any, Any]:
+    """Build the public Driven CPW fixture and return the sim plus mesh result."""
+
+    return _public_driven_cpw_sim(Path(output_dir))
+
+
+def build_public_driven_postprocessing(mesh_result: Any) -> dict[str, Any]:
+    """Build Driven postprocessing from the generated mesh manifest."""
+
+    return _driven_postprocessing(mesh_result)
+
+
+def build_public_eigenmode_resonator_sim(output_dir: str | Path) -> tuple[Any, Any]:
+    """Build the public Eigenmode resonator fixture and return the sim plus mesh result."""
+
+    return _public_eigenmode_resonator_sim(Path(output_dir))
+
+
+def build_public_eigenmode_postprocessing(mesh_result: Any) -> dict[str, Any]:
+    """Build Eigenmode postprocessing from the generated mesh manifest."""
+
+    return _eigenmode_postprocessing(mesh_result)
+
+
+def build_public_eigenmode_interface_postprocessing(mesh_result: Any) -> dict[str, Any]:
+    """Build caller-supplied Eigenmode dielectric-interface postprocessing."""
+
+    from gsim.palace.mesh import (
+        build_dielectric_interface_specs_from_material_kinds,
+        build_postprocessing_config_from_manifest,
+    )
+
+    from orpen_sc_pdk.materials import (
+        get_gsim_material_kind_alias_map,
+        get_gsim_material_kind_map,
+        validate_interface_preset_records,
+    )
+
+    interface_records = {
+        "public_sa_example": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public notebook fixture only",
+        }
+    }
+    dielectric_interfaces = build_dielectric_interface_specs_from_material_kinds(
+        mesh_result.manifest,
+        material_kind_by_name=get_gsim_material_kind_map(),
+        material_name_aliases=get_gsim_material_kind_alias_map(),
+        presets=validate_interface_preset_records(interface_records),
+        preset_by_interface_type={"SA": "public_sa_example"},
+    )
+    return build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        dielectric_interfaces=dielectric_interfaces,
+    )
+
+
+def build_public_electrostatic_capacitor_sim(output_dir: str | Path) -> tuple[Any, Any]:
+    """Build the public Electrostatic capacitor fixture and return the sim plus mesh result."""
+
+    return _public_same_layer_capacitor_electrostatic_sim(Path(output_dir))
+
+
+def build_public_electrostatic_postprocessing(mesh_result: Any) -> dict[str, Any]:
+    """Build Electrostatic postprocessing from the generated mesh manifest."""
+
+    return _electrostatic_postprocessing(mesh_result)
+
+
+def load_public_json(path: str | Path) -> dict[str, Any]:
+    """Load a JSON artifact produced by a public simulation workflow."""
+
+    return json.loads(Path(path).read_text())
+
+
+def write_public_json(path: str | Path, data: Mapping[str, Any]) -> Path:
+    """Write a small public JSON fixture used by notebook examples."""
+
+    path = Path(path)
+    path.write_text(json.dumps(dict(data), indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def public_artifact_status(output_dir: str | Path) -> dict[str, bool]:
+    """Report whether the standard public mesh/config artifacts exist."""
+
+    output_dir = Path(output_dir)
+    return {
+        name: (output_dir / name).exists()
+        for name in (
+            "palace.msh",
+            "config.json",
+            "mesh_manifest.json",
+            "palace_index_map.json",
+        )
+    }
+
+
+def resolve_public_slurm_profile(
+    profile_name: str,
+    *,
+    num_processes: int = 1,
+    num_threads: int = 1,
+) -> Any:
+    """Resolve a docs-safe public Slurm profile through the `gsim` handoff API."""
+
+    from gsim.palace.handoff import (
+        load_palace_slurm_profile_catalog,
+        resolve_palace_slurm_profile,
+    )
+
+    resource_overrides = _public_slurm_resource_overrides(
+        num_processes=num_processes,
+        num_threads=num_threads,
+    )
+    profiles = load_palace_slurm_profile_catalog(PUBLIC_SLURM_PROFILE_CATALOG)
+    return resolve_palace_slurm_profile(
+        profiles,
+        profile_name,
+        resource_overrides=resource_overrides,
+    )
+
+
+def public_solver_config_hints() -> dict[str, Any]:
+    """Return public dry-run solver hints for Palace config generation."""
+
+    return resolve_public_slurm_profile("public-slurm-dry-run").to_palace_config_hints()
+
+
+def preview_public_slurm_script(script_path: str | Path) -> list[str]:
+    """Return the scheduler-relevant lines from a generated public Slurm script."""
+
+    return [
+        line
+        for line in Path(script_path).read_text().splitlines()
+        if line.startswith("#SBATCH") or line.startswith("srun")
+    ]
+
+
+def public_simulation_helper_node_inventory_table() -> Any:
+    """Return the public helper-node inventory as a notebook table."""
+
+    import pandas as pd
+
+    columns = [
+        "node",
+        "private_capability",
+        "private_anchor",
+        "why_helper_exists",
+        "gdsfactory_home",
+        "public_api_or_artifact",
+        "public_status",
+        "promotion_gate",
+        "missing_evidence",
+        "next_issue",
+    ]
+    return pd.DataFrame(load_public_simulation_helper_node_inventory()).loc[:, columns]
+
+
+def public_domain_material_table(output_dir: str | Path) -> Any:
+    """Load the public domain-material provenance table for a generated config."""
+
+    from gsim.palace import load_domain_material_summary
+
+    frame = load_domain_material_summary(Path(output_dir))
+    columns = [
+        "domain_index",
+        "physical_name",
+        "stack_material_name",
+        "matched_material_name",
+        "material_model_source",
+        "material_within_validity",
+        "material_frequency_ghz",
+        "permittivity",
+        "loss_tangent",
+        "conductivity",
+        "permeability",
+    ]
+    selected_columns = [column for column in columns if column in frame.columns]
+    return frame.loc[:, selected_columns].copy()
+
+
+def public_index_map_lookup_table(
+    output_dir: str | Path,
+    *,
+    sections: tuple[str, ...] | None = None,
+) -> Any:
+    """Load section/index lookup rows from the public Palace index map."""
+
+    import pandas as pd
+    from gsim.palace import load_postprocessing_index_map
+
+    index_map = load_postprocessing_index_map(Path(output_dir))
+    rows: list[dict[str, Any]] = []
+    for entry in sorted(
+        index_map.entries,
+        key=lambda row: (row.section, row.index, row.entry_name),
+    ):
+        if sections is not None and entry.section not in sections:
+            continue
+        physical_name = index_map.physical_name_for_index(entry.section, entry.index)
+        reverse_indices = (
+            index_map.indices_for_physical_name(physical_name, section=entry.section)
+            if physical_name is not None
+            else ()
+        )
+        attribute = entry.attributes[0] if entry.attributes else None
+        attribute_entry_names = (
+            [
+                matched.entry_name
+                for matched in index_map.entries_for_attribute(
+                    attribute,
+                    section=entry.section,
+                )
+            ]
+            if attribute is not None
+            else []
+        )
+        rows.append(
+            {
+                "section": entry.section,
+                "index": entry.index,
+                "physical_name": physical_name,
+                "reverse_indices_for_physical_name": list(reverse_indices),
+                "attribute": attribute,
+                "entry_names_for_attribute": attribute_entry_names,
+                "entry_name": entry.entry_name,
+                "role": entry.role,
+                "port": entry.metadata.get("port"),
+                "terminal_name": entry.extra.get("terminal_name"),
+                "current_source_name": entry.extra.get("current_source_name"),
+                "current_source_element_index": entry.extra.get(
+                    "current_source_element_index"
+                ),
+                "current_source_element_count": entry.extra.get(
+                    "current_source_element_count"
+                ),
+                "direction": entry.extra.get("Direction"),
+                "coordinate_system": entry.extra.get("CoordinateSystem"),
+                "type": entry.extra.get("Type"),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def public_config_generation_summary(output_dir: str | Path) -> dict[str, Any]:
+    """Return notebook-sized config/material/index summary fields."""
+
+    output_dir = Path(output_dir)
+    config = load_public_json(output_dir / "config.json")
+    evidence = _config_generation_evidence(output_dir)
+    return {
+        "problem_type": evidence["problem_type"],
+        "solver_device": evidence["solver_device"],
+        "solver_problem_block": evidence["solver_problem_block"],
+        "solver_has_linear": evidence["solver_has_linear"],
+        "domain_material_count": evidence["domain_material_count"],
+        "domain_material_rows": len(evidence["domain_materials"]),
+        "domain_postprocessing_energy_count": evidence[
+            "domain_postprocessing_energy_count"
+        ],
+        "surface_flux_count": evidence["surface_flux_count"],
+        "dielectric_postprocessing_count": evidence["dielectric_postprocessing_count"],
+        "lumped_port_count": evidence["lumped_port_count"],
+        "terminal_count": evidence["terminal_count"],
+        "boundary_sections": evidence["boundary_sections"],
+        "config_problem_type": config["Problem"]["Type"],
+    }
+
+
+def select_public_report_table(
+    frame: Any,
+    columns: Sequence[str],
+    *,
+    max_rows: int = 8,
+) -> dict[str, Any]:
+    """Select a compact report table preview for notebook display."""
+
+    selected_columns = [column for column in columns if column in frame.columns]
+    table = frame.loc[:, selected_columns].head(max_rows).copy()
+    return {
+        "summary": {
+            "rows": int(len(frame)),
+            "shown_columns": selected_columns,
+        },
+        "table": table,
+    }
+
+
+def write_public_driven_report_fixture(output_dir: str | Path) -> dict[str, Path]:
+    """Write docs-safe synthetic Driven report artifacts."""
+
+    return _write_public_driven_report_fixture(Path(output_dir))
+
+
+def write_public_eigenmode_report_fixture(output_dir: str | Path) -> dict[str, Path]:
+    """Write docs-safe synthetic Eigenmode report artifacts."""
+
+    return _write_public_eigenmode_report_fixture(Path(output_dir))
+
+
+def write_public_electrostatic_report_fixture(output_dir: str | Path) -> dict[str, Path]:
+    """Write docs-safe synthetic Electrostatic report artifacts."""
+
+    return _write_public_electrostatic_report_fixture(Path(output_dir))
+
+
+def local_palace_run_settings(
+    environ: Mapping[str, str] | None = None,
+) -> tuple[dict[str, Any], str | None]:
+    """Return optional local Palace run kwargs or a docs-safe skip reason."""
+
+    run_kwargs, solver = _solver_env(os.environ if environ is None else environ)
+    return run_kwargs, solver["skip_reason"]
+
+
+def run_public_driven_local_smoke(
+    output_dir: str | Path,
+    run_kwargs: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Run the public Driven fixture through a configured local Palace executable."""
+
+    from gsim.palace import load_driven_report
+
+    output_dir = Path(output_dir)
+    sim, mesh_result = build_public_driven_cpw_sim(output_dir)
+    sim.write_config(
+        postprocessing=build_public_driven_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+        hints=public_solver_config_hints(),
+    )
+    results = sim.run_local(**dict(run_kwargs))
+    report = load_driven_report(output_dir)
+    return {
+        "problem_type": "Driven",
+        "port_names": list(report.sparams.port_names),
+        "frequency_points": int(len(report.sparams.freq)),
+        "port_epr_rows": int(len(report.port_epr)),
+        "source_rows": int(len(report.sources)),
+        "has_port_s": "port-S.csv" in results.files,
+        "port_s_bytes": int(results.files["port-S.csv"].stat().st_size),
+    }
+
+
+def run_public_eigenmode_local_smoke(
+    output_dir: str | Path,
+    run_kwargs: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Run the public Eigenmode fixture through a configured local Palace executable."""
+
+    from gsim.palace import load_eigenmode_report
+
+    output_dir = Path(output_dir)
+    sim, mesh_result = build_public_eigenmode_resonator_sim(output_dir)
+    sim.write_config(
+        postprocessing=build_public_eigenmode_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+        hints=public_solver_config_hints(),
+    )
+    results = sim.run_local(**dict(run_kwargs))
+    report = load_eigenmode_report(results)
+    return {
+        "problem_type": "Eigenmode",
+        "mode_count": int(report.eigenmodes.n_modes),
+        "min_frequency_ghz": float(report.eigenmodes.freq_real_ghz.min()),
+        "domain_energy_rows": int(len(report.domain_energy)),
+        "eig_bytes": int(results["eig.csv"].stat().st_size),
+    }
+
+
+def run_public_electrostatic_local_smoke(
+    output_dir: str | Path,
+    run_kwargs: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Run the public Electrostatic fixture through a configured local Palace executable."""
+
+    from gsim.palace import load_electrostatic_report
+
+    output_dir = Path(output_dir)
+    sim, mesh_result = build_public_electrostatic_capacitor_sim(output_dir)
+    sim.write_config(
+        postprocessing=build_public_electrostatic_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+        hints=public_solver_config_hints(),
+    )
+    results = sim.run_local(**dict(run_kwargs))
+    report = load_electrostatic_report(results)
+    return {
+        "problem_type": "Electrostatic",
+        "terminal_names": list(report.capacitance.terminal_names),
+        "matrix_shape": list(report.capacitance.dataframe.shape),
+        "has_mutual_matrix": report.mutual_capacitance is not None,
+        "has_inverse_matrix": report.inverse_capacitance is not None,
+        "terminal_c_bytes": int(results["terminal-C.csv"].stat().st_size),
+    }
+
+
 def _public_magnetostatic_cpw_sim(output_dir: Path):
     from gsim.palace import MagnetostaticSim
 
