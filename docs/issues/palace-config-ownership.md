@@ -98,6 +98,9 @@ Verified local changes:
 - `gsim` commit `1d9390f` adds `PalaceSweepPointSpec` and
   `write_palace_sweep_points()`, so the explicit sweep metadata schema is
   written and read by `gsim` instead of hand-assembled by `orpen-sc-pdk`.
+- `gsim` commit `ac62a4a` keeps point identity validation in `gsim` by
+  rejecting duplicate generated point slugs and exposing duplicate slug and
+  parse-warning summaries when existing `points.json` files are loaded.
 - `gsim` commit `f5eb728` extends those sweep summaries with table-ready
   point records/data frames, keeping sweep-level artifact, runtime, result, and
   provenance aggregation reusable in `gsim` while `orpen-sc-pdk` remains only a

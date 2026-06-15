@@ -109,6 +109,9 @@ Current executable smoke coverage:
   write a public `points.json` table for those three fixtures, then consumes
   `gsim.palace.load_palace_sweep_summary()` so sweep identity starts from
   explicit point metadata rather than folder scans or PDK-local JSON assembly.
+- the public evidence test now checks `gsim` sweep identity validation output:
+  the three public problem fixtures have unique point slugs and no sweep
+  metadata parse warnings.
 - the same sweep summary now exposes table-ready `point_records`, giving each
   public problem fixture a normalized row with point parameters, generated
   artifact status, runtime sidecar status, result-file counts, and compact

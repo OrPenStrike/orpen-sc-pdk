@@ -120,6 +120,9 @@ Verified local changes:
   evidence runner now delegates `points.json` generation to that reusable
   `gsim` writer instead of hand-assembling the sweep metadata schema in
   `orpen-sc-pdk`;
+- `gsim` commit `ac62a4a` adds sweep point identity validation, and the public
+  evidence test now verifies the three public problem fixtures have unique
+  point slugs and no sweep metadata parse warnings;
 - `gsim` commit `f5eb728` extends that reusable sweep summary with
   `point_records`/`to_point_records()`/`to_dataframe()`, and the public evidence
   test now verifies table-ready rows for the three public Driven, Eigenmode, and

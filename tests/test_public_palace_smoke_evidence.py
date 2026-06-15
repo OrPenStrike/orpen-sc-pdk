@@ -29,6 +29,13 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert sweep_summary["sweep_id"] == "public_palace_problem_type_smoke"
     assert sweep_summary["source_path"] == "points.json"
     assert sweep_summary["point_count"] == 3
+    assert sweep_summary["point_slugs"] == [
+        "driven_cpw",
+        "eigenmode_resonator",
+        "electrostatic_same_layer_capacitor",
+    ]
+    assert sweep_summary["duplicate_point_slugs"] == []
+    assert sweep_summary["parse_warnings"] == []
     assert sweep_summary["complete_point_count"] == 3
     assert sweep_summary["runtime_present_count"] == 0
     assert set(sweep_summary["problem_types"]) == {"Driven", "Eigenmode", "Electrostatic"}

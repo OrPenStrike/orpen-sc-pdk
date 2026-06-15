@@ -27,6 +27,9 @@ Current public baseline:
 - local `gsim` commit `1d9390f` adds `PalaceSweepPointSpec` and
   `write_palace_sweep_points()`, making `gsim` the writer as well as the
   reader for explicit sweep point metadata;
+- local `gsim` commit `ac62a4a` validates sweep point identity by rejecting
+  duplicate point slugs in generated metadata and surfacing duplicate slugs plus
+  parse warnings when loading existing `points.json` files;
 - local `gsim` commit `f5eb728` extends those sweep summaries with
   `to_point_records()` and `to_dataframe()`, producing flat records that carry
   sweep/point identity, public point parameters, artifact counts/bytes,
@@ -44,9 +47,10 @@ Acceptance direction:
 
 - benchmark records distinguish physics outputs from runtime, mesh, memory, and
   execution-cost metadata;
-- sweep summaries start from reusable explicit point metadata writing/loading,
-  per-point run summaries, table-ready point records, and reusable
-  report-derived metrics before adding broader orchestration and cost modeling;
+- sweep summaries start from reusable explicit point metadata writing/loading
+  with identity validation, per-point run summaries, table-ready point records,
+  and reusable report-derived metrics before adding broader orchestration and
+  cost modeling;
 - public fixtures provide normalized records for docs and regression tests;
 - private consumers can compare local records against the same schema without
   publishing raw values;
