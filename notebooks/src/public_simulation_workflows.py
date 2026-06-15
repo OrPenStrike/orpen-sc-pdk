@@ -136,6 +136,10 @@ def _slurm_script_preview(script_path: Path) -> list[str]:
     ]
 
 
+def _public_solver_config_hints() -> dict:
+    return _resolve_public_slurm_profile("public-slurm-dry-run").to_palace_config_hints()
+
+
 def _public_driven_cpw_sim(output_dir: Path):
     component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
 
@@ -762,6 +766,7 @@ profile_catalog_summary = {
     "resolved_resources": resolved_profile.resources.to_dict(),
     "launcher_kwargs": resolved_profile.launcher.to_sbatch_kwargs(),
     "solver_hints": dict(resolved_profile.solver),
+    "config_hints": resolved_profile.to_palace_config_hints(),
     "profile_metadata": dict(resolved_profile.profile),
 }
 
@@ -820,15 +825,19 @@ display(handoff_preview)
 with tempfile.TemporaryDirectory() as temp_dir:
     output_dir = Path(temp_dir) / "driven-cpw"
     sim, mesh_result = _public_driven_cpw_sim(output_dir)
+    config_hints = _public_solver_config_hints()
     config_path = sim.write_config(
         postprocessing=_driven_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
+        hints=config_hints,
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
     driven_summary = {
         "problem_type": config["Problem"]["Type"],
+        "profile_config_hints": config_hints,
+        "solver_device": config["Solver"].get("Device"),
         "artifacts": _artifact_status(output_dir),
         "lumped_port_count": len(config["Boundaries"]["LumpedPort"]),
         "surface_flux_rows": len(config["Boundaries"]["Postprocessing"]["SurfaceFlux"]),
@@ -854,15 +863,19 @@ display(driven_summary)
 with tempfile.TemporaryDirectory() as temp_dir:
     output_dir = Path(temp_dir) / "eigenmode-resonator"
     sim, mesh_result = _public_eigenmode_resonator_sim(output_dir)
+    config_hints = _public_solver_config_hints()
     config_path = sim.write_config(
         postprocessing=_eigenmode_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
+        hints=config_hints,
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
     eigenmode_summary = {
         "problem_type": config["Problem"]["Type"],
+        "profile_config_hints": config_hints,
+        "solver_device": config["Solver"].get("Device"),
         "artifacts": _artifact_status(output_dir),
         "energy_rows": len(config["Domains"]["Postprocessing"]["Energy"]),
         "surface_flux_names": sorted(
@@ -890,10 +903,12 @@ display(eigenmode_summary)
 with tempfile.TemporaryDirectory() as temp_dir:
     output_dir = Path(temp_dir) / "eigenmode-interface"
     sim, mesh_result = _public_eigenmode_resonator_sim(output_dir)
+    config_hints = _public_solver_config_hints()
     config_path = sim.write_config(
         postprocessing=_eigenmode_interface_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
+        hints=config_hints,
     )
     config = _load_json(config_path)
     interface_summary = load_dielectric_interface_summary(
@@ -919,6 +934,8 @@ with tempfile.TemporaryDirectory() as temp_dir:
     ]
     generated_interface_summary = {
         "problem_type": config["Problem"]["Type"],
+        "profile_config_hints": config_hints,
+        "solver_device": config["Solver"].get("Device"),
         "dielectric_interface_rows": len(config["Boundaries"]["Postprocessing"]["Dielectric"]),
         "classified_interfaces": interface_preview.to_dict(orient="records"),
     }
@@ -937,15 +954,19 @@ display(generated_interface_summary)
 with tempfile.TemporaryDirectory() as temp_dir:
     output_dir = Path(temp_dir) / "electrostatic-capacitor"
     sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
+    config_hints = _public_solver_config_hints()
     config_path = sim.write_config(
         postprocessing=_electrostatic_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
+        hints=config_hints,
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
     electrostatic_summary = {
         "problem_type": config["Problem"]["Type"],
+        "profile_config_hints": config_hints,
+        "solver_device": config["Solver"].get("Device"),
         "artifacts": _artifact_status(output_dir),
         "terminal_count": len(config["Boundaries"]["Terminal"]),
         "terminal_names": sorted(

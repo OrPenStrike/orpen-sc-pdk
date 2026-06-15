@@ -55,8 +55,9 @@ Current public notebook:
   skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or
   executable path is configured.
 - the same notebook displays the public Slurm profile catalog, resolved
-  resource overrides, generic launcher/solver hints, and a generated dry-run
-  `run_palace.sbatch` preview loaded back through
+  resource overrides, generic launcher/solver hints, generated Palace
+  `Solver` config hints, and a generated dry-run `run_palace.sbatch` preview
+  loaded back through
   `gsim.palace.load_palace_run_summary()`.
 
 Current executable smoke coverage:
@@ -151,6 +152,10 @@ Current executable smoke coverage:
   (`command_style`, PETSc options, and `srun_args`) plus solver hints, and the
   generated dry-run scripts prove those hints flow into both single-run and
   sweep-array Slurm handoff output.
+- the same evidence path now passes
+  `slurm_profile.to_palace_config_hints()` into public problem-type
+  `sim.write_config(...)` calls and verifies generated `config.json` files keep
+  `Solver.Device` aligned with the resolved public profile.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
   turns the same script into an opt-in local Palace smoke replay, including

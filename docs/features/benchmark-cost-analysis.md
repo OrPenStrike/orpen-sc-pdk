@@ -95,13 +95,17 @@ Current public baseline:
   PETSc options, and `srun` arguments) plus solver hints (`device` and
   `backend`), so NCUAS-style profile controls can flow into public dry-run
   scripts without publishing private site catalogs;
+- local `gsim` commit `0f401c5` maps those profile solver hints into Palace
+  config hints, and `sim.write_config(hints=...)` deep-merges them into
+  generated `Solver.Device` and optional `Solver.Backend` without replacing the
+  generated `Solver.Linear` or problem-type solver block;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
   generated handoff archive manifest status, synthetic public log-derived
   resource-record status, sanitized synthetic Slurm scheduler fields, table
   sidecars, resolved public Slurm dry-run profiles loaded from
   `scripts/fixtures/public_slurm_profiles.json` including launcher/solver
-  hints, a public problem-type
+  hints and generated `Solver.Device` checks, a public problem-type
   sweep-summary smoke, and generated sweep-level resource/benchmark index files
   in the ignored local evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary

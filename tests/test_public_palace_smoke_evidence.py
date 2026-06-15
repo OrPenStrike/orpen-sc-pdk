@@ -199,6 +199,9 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
 
         assert problem["solver_report"]["status"] == "skipped"
         assert output_dir.is_dir()
+        config = json.loads((output_dir / "config.json").read_text())
+        assert config["Solver"]["Device"] == "CPU"
+        assert config["Solver"]["Linear"]
         assert (output_dir / "palace_handoff_metadata.json").is_file()
         assert (output_dir / "palace_handoff_archive_manifest.json").is_file()
         assert (output_dir / "metadata" / "records" / "palace_resource_record.json").is_file()

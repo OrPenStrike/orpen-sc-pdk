@@ -115,6 +115,11 @@ Current local evidence:
   options, and `srun` arguments) plus solver hints (`device` and `backend`).
   This captures the reusable NCUAS-style runtime controls while keeping real
   site catalogs, private setup commands, and submission policy caller-owned;
+- local `gsim` commit `0f401c5` adds
+  `PalaceSlurmProfileResolution.to_palace_config_hints()` and deep-merged
+  high-level `sim.write_config(hints=...)`, so profile solver hints can update
+  generated Palace `Solver.Device` and optional `Solver.Backend` without
+  dropping generated `Solver.Linear` or problem-type solver settings;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
   plus generated archive manifests and synthetic public log-derived
@@ -122,8 +127,9 @@ Current local evidence:
   through the `gsim` renderers, loads
   `scripts/fixtures/public_slurm_profiles.json`, resolves named public dry-run
   profiles through the `gsim` profile resolver, forwards launcher hints into
-  generated single-run and sweep-array scripts, then reads the sidecars back
-  through the normal run/sweep summary surfaces and writes reusable sweep-level
+  generated single-run and sweep-array scripts, forwards solver hints into
+  generated `config.json` files, then reads the sidecars back through the
+  normal run/sweep summary surfaces and writes reusable sweep-level
   resource/benchmark index files;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
   renderers, generated archive manifests, and a generic post-run resource

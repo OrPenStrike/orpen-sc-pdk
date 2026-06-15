@@ -401,12 +401,6 @@ def _build_problem_evidence(
     )
 
     output_dir = output_root / problem_key
-    sim, mesh_result = build_sim(output_dir)
-    sim.write_config(
-        postprocessing=build_postprocessing(mesh_result),
-        validate_mesh=False,
-        material_overlay=get_gsim_material_overlay(),
-    )
     num_processes = int(run_kwargs.get("num_processes", 1) or 1)
     num_threads = int(run_kwargs.get("num_threads", 1) or 1)
     slurm_profiles = load_palace_slurm_profile_catalog(PUBLIC_SLURM_PROFILE_CATALOG)
@@ -417,6 +411,13 @@ def _build_problem_evidence(
             num_processes=num_processes,
             num_threads=num_threads,
         ),
+    )
+    sim, mesh_result = build_sim(output_dir)
+    sim.write_config(
+        postprocessing=build_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+        hints=slurm_profile.to_palace_config_hints(),
     )
     write_palace_slurm_sbatch_handoff(
         output_dir,

@@ -161,10 +161,14 @@ Verified local changes:
   and the public evidence runner now carries public dry-run `srun_args`,
   command style, PETSc option, and solver-device metadata from the catalog into
   generated single-run and sweep-array scripts;
+- `gsim` commit `0f401c5` adds profile-to-config solver hints and
+  high-level `sim.write_config(hints=...)`, and the public evidence runner now
+  verifies generated Driven, Eigenmode, and Electrostatic `config.json` files
+  carry the resolved public profile `Solver.Device`;
 - the public simulation workflow notebook now displays the same catalog
-  loading, profile resolution, launcher/solver metadata, and generated
-  `run_palace.sbatch` preview through executable cells before the
-  Driven/Eigenmode/Electrostatic workflow cells;
+  loading, profile resolution, launcher/solver metadata, generated `Solver`
+  config hints, and generated `run_palace.sbatch` preview through executable
+  cells before the Driven/Eigenmode/Electrostatic workflow cells;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
