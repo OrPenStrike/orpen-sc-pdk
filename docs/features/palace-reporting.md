@@ -76,6 +76,10 @@ Current public baseline:
   `gsim.palace.load_palace_run_summary()` and solver skip reasons; successful
   local solver runs also surface sanitized `gsim` runtime metadata through the
   same summary API;
+- local `gsim` commit `f2dbe7f` lets reusable sweep summaries optionally add
+  compact report-derived metrics from those same Driven/Eigenmode/Electrostatic
+  loaders, so sweep rows can expose physics/report status without moving parser
+  ownership into downstream PDK examples;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

@@ -397,7 +397,11 @@ def _build_sweep_evidence(
         + "\n"
     )
     return _relative_sweep_summary(
-        load_palace_sweep_summary(output_root, include_hashes=True).to_dict(),
+        load_palace_sweep_summary(
+            output_root,
+            include_hashes=True,
+            include_report_metrics=True,
+        ).to_dict(),
         output_root,
     )
 

@@ -99,6 +99,9 @@ Verified local changes:
   point records/data frames, keeping sweep-level artifact, runtime, result, and
   provenance aggregation reusable in `gsim` while `orpen-sc-pdk` remains only a
   public fixture/evidence consumer.
+- `gsim` commit `f2dbe7f` adds opt-in report-derived metrics to those sweep
+  records, reusing `gsim` Driven/Eigenmode/Electrostatic report loaders instead
+  of adding problem-type report parsing to `orpen-sc-pdk`.
 
 Remaining slices:
 

@@ -29,6 +29,10 @@ Current public baseline:
   sweep/point identity, public point parameters, artifact counts/bytes,
   runtime sidecar status, result-file counts, and compact config,
   mesh-manifest, index-map, and material-resolution counts;
+- local `gsim` commit `f2dbe7f` adds opt-in report-derived sweep point metrics,
+  reusing the existing Driven, Eigenmode, and Electrostatic report loaders to
+  add compact physics/report rows when solver result artifacts are present,
+  while recording missing report status for dry-run or partial sweeps;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime summary fields, and a
   public problem-type sweep-summary smoke in the ignored local evidence bundle.
@@ -38,8 +42,8 @@ Acceptance direction:
 - benchmark records distinguish physics outputs from runtime, mesh, memory, and
   execution-cost metadata;
 - sweep summaries start from explicit point metadata, per-point reusable run
-  summaries, and table-ready point records before adding richer
-  physics/performance aggregation;
+  summaries, table-ready point records, and reusable report-derived metrics
+  before adding broader orchestration and cost modeling;
 - public fixtures provide normalized records for docs and regression tests;
 - private consumers can compare local records against the same schema without
   publishing raw values;

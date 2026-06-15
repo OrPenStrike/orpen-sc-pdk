@@ -50,6 +50,9 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert record["core_artifact_count"] == 5
         assert record["core_artifact_bytes"] > 0
         assert record["runtime_present"] is False
+        assert record["report_status"] == "missing"
+        assert record["report_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
+        assert record["report_message"]
         assert record["parameter_fixture"]
         assert record["parameter_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
 
