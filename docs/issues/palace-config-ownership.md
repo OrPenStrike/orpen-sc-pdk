@@ -86,6 +86,11 @@ Verified local changes:
   process/thread resources, elapsed seconds, redacted command shape, and output
   file byte counts; the same `load_palace_run_summary()` API exposes the
   sidecar as `runtime`.
+- `gsim` commit `00b2777` extends cloud result downloads and legacy
+  `run_simulation()` with solver-specific runtime sidecars such as
+  `palace_run_metadata.json`, preserving the same
+  `load_palace_run_summary().runtime` surface for Palace local and cloud
+  execution evidence.
 
 Remaining slices:
 
