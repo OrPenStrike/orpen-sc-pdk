@@ -93,8 +93,8 @@ Current public baseline:
   `get_gsim_dielectric_interface_preset_kwargs()` so caller-supplied
   source-backed MA/MS/SA records can be validated, rejected when missing
   explicit source/provenance, and handed to
-  `gsim.palace.mesh.DielectricInterfaceSpec` without making private defaults
-  public;
+  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` without making
+  private defaults public;
 - `orpen-sc-pdk` now has a public surface-loss source-review queue and a
   source-backed interface preset issue, so future MA/MS/SA records have a
   documented path from public papers to PDK data instead of being copied from

@@ -512,12 +512,12 @@ def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
     from gsim.common.stack import LayerStack
     from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
-        DielectricInterfaceSpec,
         MeshManifest,
         build_postprocessing_config_from_manifest,
     )
     from gsim.palace.mesh.config_generator import generate_palace_config
     from gsim.palace.mesh.manifest import MeshPhysicalGroup
+    from gsim.palace.mesh.postprocessing import DielectricInterfaceSpec
 
     records = {
         "public_sa_example": {

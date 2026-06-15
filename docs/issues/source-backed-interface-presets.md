@@ -43,8 +43,8 @@ Verified local changes:
 - `validate_interface_preset_records()` rejects caller-supplied records without
   explicit source/provenance strings;
 - `get_gsim_dielectric_interface_preset_kwargs()` adapts validated records into
-  `gsim.palace.mesh.DielectricInterfaceSpec` keyword arguments without importing
-  `gsim` into the base PDK package;
+  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` keyword arguments
+  without importing `gsim` into the base PDK package;
 - public tests prove caller-supplied source-backed records can flow through
   exact assignment, material-kind classification, Palace config generation,
   material-overlay resolution, and dielectric-interface report loading;
@@ -53,8 +53,8 @@ Verified local changes:
   `load_dielectric_interface_summary()` and surface-loss summaries without
   writing non-Palace fields into final `config.json`;
 - `orpen-sc-pdk` now passes validated preset name/source metadata into
-  `gsim.palace.mesh.DielectricInterfaceSpec` kwargs and verifies the metadata
-  can be loaded back from public interface report rows;
+  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` kwargs and
+  verifies the metadata can be loaded back from public interface report rows;
 - the surface-loss paper board now lists candidate public sources and extracted
   review rows for CPW `MA`/`MS`/`SA` taxonomy, assumed/scaled Wenner-style
   records, fitted Woods-style interface-loss candidates, transmon validation

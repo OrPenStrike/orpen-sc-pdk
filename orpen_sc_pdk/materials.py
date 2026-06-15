@@ -121,7 +121,7 @@ def get_gsim_dielectric_interface_preset_kwargs(
     role: str = "boundary_surface",
     entry_names: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """Return kwargs accepted by `gsim.palace.mesh.DielectricInterfaceSpec`."""
+    """Return kwargs accepted by the gsim dielectric-interface spec model."""
 
     presets = validate_interface_preset_records(records)
     if name not in presets:

@@ -50,8 +50,8 @@ The current public bridge is intentionally small:
   thickness, and either a public material name or explicit permittivity;
 - `orpen_sc_pdk.materials.get_gsim_dielectric_interface_preset_kwargs()` adapts
   a validated record into keyword arguments accepted by
-  `gsim.palace.mesh.DielectricInterfaceSpec` without importing `gsim` into the
-  base PDK package;
+  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` without importing
+  `gsim` into the base PDK package;
 - local `gsim` Palace config generation accepts the overlay through
   `material_overlay=` and applies public material values to effective
   `Domains.Materials` without mutating the source layer stack;
@@ -63,9 +63,9 @@ The current public bridge is intentionally small:
   `Permittivity`, and `LossTan`, and join them to interface physical names
   through `palace_index_map.json`.
 - local `gsim` can build ordered
-  `gsim.palace.mesh.DielectricInterfaceSpec` tuples from caller-supplied preset
-  maps and exact manifest entry names, physical group names, or parsed
-  interface pairs without hard-coding private process values.
+  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` tuples from
+  caller-supplied preset maps and exact manifest entry names, physical group
+  names, or parsed interface pairs without hard-coding private process values.
 - local `gsim` can also classify parsed manifest interfaces from caller-supplied
   material-kind maps and material-name aliases into generic `MA`, `MS`, and
   `SA` specs while skipping exterior boundaries and non-loss material-kind

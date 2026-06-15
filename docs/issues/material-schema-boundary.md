@@ -99,8 +99,9 @@ Verified local changes:
   `tech.interface_preset_records` table, validates caller-supplied
   MA/MS/SA-style records through `validate_interface_preset_records()`,
   rejects records without explicit source/provenance strings, and adapts
-  validated records into `gsim.palace.mesh.DielectricInterfaceSpec` keyword
-  arguments through `get_gsim_dielectric_interface_preset_kwargs()`;
+  validated records into
+  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` keyword arguments
+  through `get_gsim_dielectric_interface_preset_kwargs()`;
 - public tests now prove a caller-supplied source-backed interface preset can
   feed `gsim` dielectric postprocessing, resolve `AlOx_native_generic` through
   the public material overlay, strip non-Palace handoff keys from
