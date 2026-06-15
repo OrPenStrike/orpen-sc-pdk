@@ -46,7 +46,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     }
     assert sweep_summary["handoff"]["profile"] == {
         "name": "public-slurm-sweep-dry-run",
-        "source": "caller-supplied public fixture",
+        "source": "caller-supplied public fixture catalog",
     }
     assert sweep_summary["handoff"]["resources"]["array"] == {
         "point_count": 3,
@@ -215,7 +215,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         }
         assert run_summary["handoff"]["profile"] == {
             "name": "public-slurm-dry-run",
-            "source": "caller-supplied public fixture",
+            "source": "caller-supplied public fixture catalog",
         }
         assert run_summary["handoff"]["resources"]["requested"] == {
             "account": "public_alloc",

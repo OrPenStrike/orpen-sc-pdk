@@ -105,14 +105,19 @@ Current local evidence:
   profiles into `PalaceSlurmResourceSpec` plus handoff-ready profile metadata.
   Resource overrides are validated against the public resource spec; private
   site catalogs and submission remain caller-owned;
+- local `gsim` commit `ba04d9d` adds
+  `load_palace_slurm_profile_catalog()`, which loads caller-owned JSON catalog
+  files with `schema_version: 1` plus a `profiles` mapping, or a direct profile
+  mapping, and returns normalized `PalaceSlurmProfileSpec` objects;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
   plus generated archive manifests and synthetic public log-derived
   resource-record sidecars plus sanitized synthetic Slurm snapshot sidecars
-  through the `gsim` renderers, resolves named public dry-run profiles through
-  the `gsim` profile resolver, then reads the sidecars back through the normal
-  run/sweep summary surfaces and writes reusable sweep-level resource/benchmark
-  index files;
+  through the `gsim` renderers, loads
+  `scripts/fixtures/public_slurm_profiles.json`, resolves named public dry-run
+  profiles through the `gsim` profile resolver, then reads the sidecars back
+  through the normal run/sweep summary surfaces and writes reusable sweep-level
+  resource/benchmark index files;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
   renderers, generated archive manifests, and a generic post-run resource
   sidecar, but no cluster campaign submission or archive packaging;
@@ -127,8 +132,8 @@ Current local evidence:
 
 Remaining slices:
 
-- mount real site/profile catalogs from private consumers, then validate those
-  profiles against the generic `gsim` Slurm handoff API;
+- add private site catalog content in private consumers and validate those
+  profiles against the generic `gsim` Slurm handoff API on real Slurm/HPC runs;
 - add richer benchmark campaign and cost-modeling helpers without committing
   private archives or private benchmark values;
 - only after dry-run schemas are stable, add local private-layout validation on

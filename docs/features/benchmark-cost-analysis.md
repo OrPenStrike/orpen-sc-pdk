@@ -87,11 +87,15 @@ Current public baseline:
   caller-supplied named Slurm profiles into `PalaceSlurmResourceSpec` with
   validated resource overrides while keeping bundled private site catalogs and
   submission out of `gsim`;
+- local `gsim` commit `ba04d9d` adds
+  `load_palace_slurm_profile_catalog()`, loading caller-owned JSON Slurm
+  profile catalogs before feeding the same resolver and handoff sidecar path;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
   generated handoff archive manifest status, synthetic public log-derived
   resource-record status, sanitized synthetic Slurm scheduler fields, table
-  sidecars, resolved public Slurm dry-run profiles, a public problem-type
+  sidecars, resolved public Slurm dry-run profiles loaded from
+  `scripts/fixtures/public_slurm_profiles.json`, a public problem-type
   sweep-summary smoke, and generated sweep-level resource/benchmark index files
   in the ignored local evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary

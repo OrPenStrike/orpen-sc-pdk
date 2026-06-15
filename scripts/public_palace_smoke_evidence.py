@@ -19,6 +19,9 @@ from orpen_sc_pdk.materials import get_gsim_material_overlay
 
 DEFAULT_OUTPUT_DIR = Path("build/public-palace-smoke-evidence")
 EVIDENCE_FILENAME = "public_palace_smoke_evidence.json"
+PUBLIC_SLURM_PROFILE_CATALOG = (
+    Path(__file__).resolve().parent / "fixtures" / "public_slurm_profiles.json"
+)
 
 
 def _relative_path(path: Path, root: Path) -> str:
@@ -163,22 +166,6 @@ def _solver_env(environ: Mapping[str, str]) -> tuple[dict[str, Any], dict[str, A
         "num_processes": run_kwargs["num_processes"],
         "num_threads": run_kwargs["num_threads"],
         "launcher": launcher,
-    }
-
-
-def _public_slurm_profile_catalog(profile_name: str) -> dict[str, dict[str, Any]]:
-    return {
-        profile_name: {
-            "source": "caller-supplied public fixture",
-            "resources": {
-                "account": "public_alloc",
-                "partition": "public_cpu",
-                "wall_time": "00:10:00",
-                "nodes": 1,
-                "ntasks_per_node": 1,
-                "cpus_per_task": 1,
-            },
-        }
     }
 
 
@@ -405,6 +392,7 @@ def _build_problem_evidence(
     from gsim.palace import (
         PalaceSlurmSbatchSpec,
         load_palace_run_summary,
+        load_palace_slurm_profile_catalog,
         resolve_palace_slurm_profile,
         write_palace_resource_record,
         write_palace_resource_record_from_log,
@@ -421,8 +409,9 @@ def _build_problem_evidence(
     )
     num_processes = int(run_kwargs.get("num_processes", 1) or 1)
     num_threads = int(run_kwargs.get("num_threads", 1) or 1)
+    slurm_profiles = load_palace_slurm_profile_catalog(PUBLIC_SLURM_PROFILE_CATALOG)
     slurm_profile = resolve_palace_slurm_profile(
-        _public_slurm_profile_catalog("public-slurm-dry-run"),
+        slurm_profiles,
         "public-slurm-dry-run",
         resource_overrides=_public_slurm_resource_overrides(
             num_processes=num_processes,
@@ -504,6 +493,7 @@ def _build_sweep_evidence(
     from gsim.palace import (
         PalaceSlurmSweepArraySpec,
         PalaceSweepPointSpec,
+        load_palace_slurm_profile_catalog,
         load_palace_sweep_summary,
         resolve_palace_slurm_profile,
         write_palace_slurm_sweep_array_handoff,
@@ -532,8 +522,9 @@ def _build_sweep_evidence(
         points,
         sweep_id="public_palace_problem_type_smoke",
     )
+    slurm_profiles = load_palace_slurm_profile_catalog(PUBLIC_SLURM_PROFILE_CATALOG)
     slurm_profile = resolve_palace_slurm_profile(
-        _public_slurm_profile_catalog("public-slurm-sweep-dry-run"),
+        slurm_profiles,
         "public-slurm-sweep-dry-run",
     )
     write_palace_slurm_sweep_array_handoff(
