@@ -19,6 +19,18 @@ Problem:
   useful;
 - `gplugins` compatibility wrappers should not become a second Palace runtime.
 
+Observed `gsim` convention:
+
+- the official/local `docs/api/palace.md` page is manually curated around
+  notebook-facing simulation classes, selected workflow methods, mesh
+  generation, mesh artifacts/reportability, and reusable report loaders;
+- `mkdocstrings` filters private names by default, but package `__init__`
+  exports are still a review surface, not automatic proof that a symbol belongs
+  in the public API;
+- new root-level exports should either appear in the curated API reference or
+  have a clear direct notebook/downstream caller; otherwise callers should use
+  the deep owning module or a higher-level helper.
+
 Responsibility checklist:
 
 | Change type | Expected home |
@@ -33,6 +45,8 @@ Responsibility checklist:
 
 Public API gate:
 
+- treat the curated `gsim` API reference as the public contract to justify new
+  root imports, not merely the existence of a symbol in a package `__all__`;
 - expose a symbol from `gsim.palace` only when users should import it directly
   in notebooks, public fixtures, or downstream packages;
 - keep helper-only dataclasses, lowering helpers, and JSON assembly internals
@@ -58,9 +72,28 @@ Current review ledger:
 | OrPen material-permeability provenance slice | Reviewed, API-clean | The slice adds public unit permeability values to material records and displays the generated provenance column through `get_gsim_material_overlay()`, `palace_material_resolution.json`, and `gsim.palace.load_domain_material_summary()`. It does not widen top-level imports, change `MeshConfig`, or move material lowering/report parsing into OrPen. |
 | Manifest postprocessing API cleanup slice (`gsim` commit `a736193`) | Reviewed, API-clean | `gsim.palace.mesh.build_postprocessing_config_from_manifest()` now owns omission of empty Palace postprocessing sections, so public OrPen notebook/evidence code avoids importing and reconstructing `PostprocessingConfig` only to preserve Magnetostatic solver-owned `SurfaceFlux` rows. Independent boundary review found no blockers: this remains a mesh artifact/reportability helper, does not widen top-level `gsim.palace`, and does not add `MeshConfig` knobs. |
 | Mesh package-root API cleanup slice (`gsim` commit `fa71c4b`) | Reviewed, API-clean | `gsim.palace.mesh.__init__` now stops importing/re-exporting lowering-only symbols: `PostprocessingConfig`, `PostprocessingIndexEntry`, `PostprocessingIndexMap`, terminal/current-source index-map builders, `GeometryData`, and low-level `write_config` remain reachable from their defining deep modules but are no longer `mesh.__all__` exports. `gmsh_utils` is likewise no longer imported or listed by `mesh.__init__`, while Python can still load it as the deep submodule `gsim.palace.mesh.gmsh_utils`. Independent review found no blockers after that Python submodule caveat was documented. The retained package-root surface is the notebook/downstream helper path plus manifest symbols already used by docs and fixture tests. |
+| Public API convention capture (`gsim` API doc update) | Reviewed, follow-ups recorded | `gsim` Palace API docs now state that the documented API reference is curated around notebook/downstream-facing entry points. The same page documents `MagnetostaticSim`, `SurfaceFluxSpec`, `SParams`, `load_sparams()`, `load_postprocessing_index_map()`, and `load_terminal_matrix()` because public OrPen fixtures/notebooks use those paths directly. This does not by itself bless every broad `gsim.palace.__all__` export; root-level handoff, sweep, resource-record, broad common/stack/viz/cloud convenience exports, raw config models, port-lowering helpers, low-level result helpers, and advanced manifest builder exports still need a follow-up audit against direct notebook/downstream usage. |
 
 Open API-surface follow-ups:
 
+- finish the root `gsim.palace` export review for handoff/sweep/resource
+  symbols (`PalaceSlurm*`, `PalaceSweep*`,
+  `write_palace_*resource*`, `parse_*`) and decide which are true notebook
+  imports versus deep `gsim.palace.handoff` / `gsim.palace.results` helpers;
+- demote or explicitly document broad root `gsim.palace` convenience exports
+  from `gsim.common`, `gsim.common.stack`, `gsim.viz`, and `gsim.gcloud`
+  (`MATERIALS_DB`, `Stack`, `StackLayer`, stack extraction/printing helpers,
+  `plot_*`, `print_job_summary`, `run_simulation`) before treating them as
+  part of the Palace public API;
+- demote raw config/model exports (`DrivenConfig`, `EigenmodeConfig`,
+  `ElectrostaticConfig`, `MagnetostaticConfig`, `GeometryConfig`,
+  `MaterialConfig`, `NumericalConfig`, `PECBlockConfig`, `PortConfig`,
+  `TerminalConfig`, `TransientConfig`, `WavePortConfig`, `SimulationResult`,
+  `ValidationResult`) unless notebook users directly construct them rather
+  than using the problem-specific `set_*()` helpers;
+- demote port-lowering exports (`PalacePort`, `PortGeometry`, `PortType`,
+  `configure_*_port()`, `extract_ports()`) to `gsim.palace.ports` unless the
+  public docs add an explicit port-authoring workflow for them;
 - finish the remaining `gsim.palace.mesh` surface review for advanced manifest
   fixture symbols (`MeshPhysicalGroup`, `MeshRole`, `build_mesh_manifest`) and
   type aliases that may belong only in `mesh.manifest` / `mesh.postprocessing`;
