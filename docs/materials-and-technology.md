@@ -76,8 +76,10 @@ The current public bridge is intentionally small:
 
 Finite public dielectric records are exported as constant material models.
 The generic `material_kind` labels are separate classifier inputs and are not
-written into the `gsim` material overlay. Public material-name aliases are also
-classifier inputs, not duplicate material records or overlay entries.
+written into the `gsim` material overlay. Public material-name aliases are
+exported as `material_aliases` overlay metadata for `gsim` to expand during
+material overlay loading; they are not duplicate material records in
+`tech.material_properties`.
 Conductor-like records currently represented by `relative_permittivity = inf`
 are preserved as material-role metadata until explicit conductivity, surface
 impedance, or London-depth values are part of the public material record.
@@ -113,7 +115,10 @@ should be:
    material-kind classification, passing the public material-name alias map
    when generated names such as `air` and `silicon` need to resolve to public
    `vacuum` and `Si` records.
-9. Keep default public MA/MS/SA preset values out of the PDK until those
+9. Pass the same aliases in `get_gsim_material_overlay()` so generated domain
+   material names can resolve through public PDK overlay records during Palace
+   material resolution.
+10. Keep default public MA/MS/SA preset values out of the PDK until those
    records are source-backed.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it

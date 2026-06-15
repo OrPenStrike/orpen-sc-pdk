@@ -56,8 +56,10 @@ def _assert_config_generation_material_provenance(problem: dict) -> list[dict]:
 
     air = by_stack_material["air"]
     assert air["matched_material_name"] == "air"
+    assert air["material_model_source"] == "orpen-sc-pdk tech.material_properties"
     assert air["permittivity"] == pytest.approx(1.0)
     assert air["loss_tangent"] == pytest.approx(0.0)
+    assert air["permeability"] == pytest.approx(1.0)
     return rows
 
 

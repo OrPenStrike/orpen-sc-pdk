@@ -83,6 +83,17 @@ Verified local changes:
   `get_gsim_material_kind_alias_map()`, so generated `air`/`silicon` names can
   classify through public `vacuum`/`Si` records without becoming duplicate
   material records or overlay entries;
+- `gsim` commit `2b2d1bc`: extends reusable
+  `gsim.common.stack.overlays.load_overlay_data()` with optional
+  `material_aliases` expansion, keeps alias validation in the shared overlay
+  loader rather than Palace-specific code, and lets generated `air` use
+  resolved overlay material properties during Palace config generation instead
+  of hard-coded built-in `gsim` vacuum fields;
+- `orpen-sc-pdk` now exports `tech.material_alias_records` through
+  `get_gsim_material_overlay()["material_aliases"]`, so generated `air` and
+  `silicon` domains can resolve through public `vacuum` and `Si` overlay
+  records while `tech.material_properties` remains the only public material
+  record table;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
@@ -171,10 +182,6 @@ Remaining slices:
 - add public London-depth only with an explicit source-bearing schema, units and
   process validity fields, `gsim` overlay aliases, Palace config emission, and
   report/provenance columns;
-- decide whether generated material names such as `air` should resolve through
-  PDK material aliases during material overlay resolution, or remain matched to
-  built-in `gsim` material records unless the stack names the public PDK record
-  directly;
 - populate public interface preset records only after MA/MS/SA thickness, loss
   tangent, material-kind data, and automatic-selection values have selected
   source-backed public records that satisfy the explicit source/provenance

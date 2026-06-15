@@ -74,6 +74,15 @@ Current public baseline:
   `get_gsim_material_kind_alias_map()` so generated material names such as
   `air` and `silicon` can be classified through public `vacuum` and `Si`
   records without becoming duplicate material records or overlay entries;
+- local `gsim` commit `2b2d1bc` extends reusable material overlay loading with
+  optional `material_aliases`, so generated material names such as `air` and
+  `silicon` can resolve through public PDK `vacuum` and `Si` overlay records
+  during Palace material resolution without making OrPen duplicate material
+  records;
+- `orpen-sc-pdk` now includes `material_aliases` in
+  `get_gsim_material_overlay()` and written overlay JSON, while keeping those
+  aliases as metadata for `gsim` expansion rather than entries in
+  `tech.material_properties`;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -114,10 +123,9 @@ Current public baseline:
   and Electrostatic public configs;
 - public nonmagnetic dielectric/vacuum material records now carry unit
   permeability through the same OrPen material overlay and `gsim` Palace
-  material-resolution path; the current public fixtures verify the generated
-  `silicon` domain through the public `Si` record, while generated `air`
-  remains matched to built-in `gsim` material data until material-overlay alias
-  resolution is designed separately;
+  material-resolution path; the current public fixtures verify generated
+  `silicon` and `air` domains through the public `Si` and `vacuum` records via
+  `gsim` overlay alias expansion;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
@@ -127,8 +135,6 @@ Remaining slices:
 - add a broader validated material-record schema once the public material
   contract grows beyond explicit material kinds, generated-name aliases, and
   current minimal electromagnetic records;
-- decide whether generated names such as `air` should use PDK material aliases
-  in material overlay resolution or only in interface classification;
 - populate public interface preset records only after source-backed public
   MA/MS/SA values and automatic-selection rules are accepted into the PDK
   contract; until then, keep selection caller-supplied and explicitly sourced

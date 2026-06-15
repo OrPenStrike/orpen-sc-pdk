@@ -145,18 +145,20 @@ def get_gsim_dielectric_interface_preset_kwargs(
     return kwargs
 
 
-def get_gsim_material_overlay() -> dict[str, dict[str, dict[str, Any]]]:
+def get_gsim_material_overlay() -> dict[str, Any]:
     """Return public material records in the gsim material-overlay schema.
 
     The PDK remains the owner of material names and public process records.
     Solver-specific frequency evaluation remains in gsim. Infinite relative
     permittivity values mark conductor-like public records and are preserved as
-    metadata instead of being exported as Palace permittivity values.
+    metadata instead of being exported as Palace permittivity values. Public
+    generated-name aliases are exported as overlay metadata for gsim to expand
+    during reusable material-overlay loading.
     """
     materials: dict[str, dict[str, Any]] = {}
     for name, record in get_material_records().items():
         materials[name] = _to_gsim_material_entry(record)
-    return {"materials": materials}
+    return {"materials": materials, "material_aliases": get_material_alias_records()}
 
 
 def write_gsim_material_overlay(path: str | Path) -> Path:
