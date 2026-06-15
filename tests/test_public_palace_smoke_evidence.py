@@ -37,6 +37,21 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         "eigenmode_resonator",
         "electrostatic_same_layer_capacitor",
     ]
+    point_records = sweep_summary["point_records"]
+    assert [record["point_slug"] for record in point_records] == [
+        "driven_cpw",
+        "eigenmode_resonator",
+        "electrostatic_same_layer_capacitor",
+    ]
+    for record in point_records:
+        assert record["sweep_id"] == "public_palace_problem_type_smoke"
+        assert record["complete"] is True
+        assert record["missing_artifact_count"] == 0
+        assert record["core_artifact_count"] == 5
+        assert record["core_artifact_bytes"] > 0
+        assert record["runtime_present"] is False
+        assert record["parameter_fixture"]
+        assert record["parameter_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
 
     for problem in evidence["problems"].values():
         output_dir = tmp_path / problem["output_dir"]

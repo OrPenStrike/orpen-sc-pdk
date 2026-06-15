@@ -116,6 +116,11 @@ Verified local changes:
   `gsim.palace.load_palace_sweep_summary()`, and the public evidence runner now
   writes `points.json` for the three problem fixtures and records a
   `sweep_summary` built from that reusable API;
+- `gsim` commit `f5eb728` extends that reusable sweep summary with
+  `point_records`/`to_point_records()`/`to_dataframe()`, and the public evidence
+  test now verifies table-ready rows for the three public Driven, Eigenmode, and
+  Electrostatic fixtures, including point parameters, artifact counts, runtime
+  sidecar status, and compact config/mesh/index/material-resolution counts;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
@@ -156,9 +161,10 @@ Remaining slices:
 - add a public Magnetostatic fixture only after a public use case is selected;
   current public notebook coverage intentionally proves the private consumer
   problem types that have active Driven/Eigenmode/Electrostatic notebooks;
-- keep full sweep orchestration and sweep-level physics/performance aggregation
-  as later `gsim` workflow slices; this issue now only proves explicit
-  point-table aggregation over the public problem fixtures;
+- keep full sweep orchestration and richer sweep-level physics/performance
+  aggregation as later `gsim` workflow slices; this issue now only proves
+  explicit point-table artifact, runtime, and provenance records over the public
+  problem fixtures;
 - keep native masked Surface EPR in the Palace-source/upstream `gsim` lane
   instead of replaying it inside `orpen-sc-pdk`;
 - future extensions should stay public-fixture based and keep normal docs

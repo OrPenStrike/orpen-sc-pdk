@@ -24,6 +24,11 @@ Current public baseline:
   `gsim.palace.load_palace_sweep_summary()` for explicit `points.json`
   point-local Palace sweep folders, reusing the same per-point run summaries
   without inferring point identity from folder names;
+- local `gsim` commit `f5eb728` extends those sweep summaries with
+  `to_point_records()` and `to_dataframe()`, producing flat records that carry
+  sweep/point identity, public point parameters, artifact counts/bytes,
+  runtime sidecar status, result-file counts, and compact config,
+  mesh-manifest, index-map, and material-resolution counts;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime summary fields, and a
   public problem-type sweep-summary smoke in the ignored local evidence bundle.
@@ -32,8 +37,9 @@ Acceptance direction:
 
 - benchmark records distinguish physics outputs from runtime, mesh, memory, and
   execution-cost metadata;
-- sweep summaries start from explicit point metadata and per-point reusable run
-  summaries before adding richer physics/performance aggregation;
+- sweep summaries start from explicit point metadata, per-point reusable run
+  summaries, and table-ready point records before adding richer
+  physics/performance aggregation;
 - public fixtures provide normalized records for docs and regression tests;
 - private consumers can compare local records against the same schema without
   publishing raw values;
