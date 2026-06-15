@@ -25,17 +25,17 @@ Current implemented baseline:
   generated `palace_index_map.json` artifacts used directly by public notebooks
   and smoke evidence.
 - Lower-level indexed CSV, eigenmode pass-history, terminal matrix history,
-  port-EPR, and interface aggregation helpers live in
+  port-EPR, interface aggregation, and loss-summary helpers live in
   `gsim.palace.results`, for example `load_indexed_csv()`,
   `load_eigenmodes()`, `load_eigenmode_history()`,
   `load_terminal_matrix_history()`, `load_port_epr_summary()`, and
-  `summarize_surface_q_by_interface()`.
+  `summarize_surface_q_by_interface()`, `summarize_domain_loss()`,
+  `summarize_surface_loss()`, and `summarize_loss_budget()`.
 - Root `gsim.palace` keeps notebook-facing report and provenance loaders:
   `load_driven_report()`, `load_eigenmode_report()`,
   `load_electrostatic_report()`, `load_terminal_matrix()`,
   `load_domain_material_summary()`,
-  `load_dielectric_interface_summary()`, and the loss-summary helpers used by
-  public fixtures.
+  and `load_dielectric_interface_summary()`.
 - Driven reports compose required `port-S.csv`, optional `port-EPR.csv`,
   index-map provenance, config material/interface provenance, and source
   bookkeeping.

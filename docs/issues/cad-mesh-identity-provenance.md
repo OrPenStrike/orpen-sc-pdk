@@ -107,18 +107,21 @@ Verified local changes:
 - `gsim` commit `a584079`: adds a direct-binary mode for local Palace execution
   so development builds can run the same public fixtures without wrapper-only
   launcher assumptions;
-- `gsim` commit `ca471b4`: adds public `EigenmodeReport` and
-  `load_eigenmode_report()` so notebooks can load final modal rows, AMR
-  history, pass summaries, indexed EPR tables, index-map rows, and source
-  bookkeeping through one public `gsim.palace` entrypoint;
+- `gsim` commit `ca471b4`: adds the public root
+  `load_eigenmode_report()` entrypoint and the
+  `gsim.palace.results.EigenmodeReport` return model, so notebooks can load
+  final modal rows, AMR history, pass summaries, indexed EPR tables, index-map
+  rows, and source bookkeeping through one public loader while keeping the
+  report bundle class in the result owner module;
 - `gsim` commit `bbd74fe`: adds
   `load_dielectric_interface_summary()` and
   `EigenmodeReport.dielectric_interfaces`, proving configured dielectric
   interface rows can use the same index-map physical-name provenance;
 - `gsim` commit `f12312c`: adds
-  `summarize_domain_loss()`, `summarize_surface_loss()`, and
-  `summarize_loss_budget()`, proving derived loss rows reuse the same domain
-  and interface physical-name provenance;
+  `gsim.palace.results.summarize_domain_loss()`,
+  `gsim.palace.results.summarize_surface_loss()`, and
+  `gsim.palace.results.summarize_loss_budget()`, proving derived loss rows
+  reuse the same domain and interface physical-name provenance;
 - `gsim` commit `61d7d66`: adds generated material-resolution sidecars and
   domain material provenance columns, proving the material/attribute side of
   the config/report chain can be audited without embedding non-Palace keys in

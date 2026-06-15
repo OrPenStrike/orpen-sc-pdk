@@ -159,11 +159,12 @@ def test_public_cpw_driven_optional_local_palace_coarse_smoke(
     output_dir = tmp_path / "palace-smoke"
     sim, mesh_result = _public_cpw_driven_sim(output_dir)
 
-    from gsim.palace import DrivenReport, SParams, load_driven_report
+    from gsim.palace import SParams, load_driven_report
     from gsim.palace.mesh import (
         SurfaceFluxSpec,
         build_postprocessing_config_from_manifest,
     )
+    from gsim.palace.results import DrivenReport
 
     postprocessing = build_postprocessing_config_from_manifest(
         mesh_result.manifest,
