@@ -43,6 +43,9 @@ Current public baseline:
   `load_electrostatic_report()`, preserving Electrostatic source-index samples
   and deriving gamma/T1 columns only from an explicit caller-provided
   `frequency_ghz`;
+- local `gsim` commit `1da6783` adds material-overlay resolution provenance for
+  dielectric interface rows, so surface-loss reports can show whether the
+  interface permittivity/loss fields came from a public PDK material record;
 - automatic public interface presets are still not part of the PDK material
   contract.
 

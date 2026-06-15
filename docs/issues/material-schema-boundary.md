@@ -57,11 +57,19 @@ Verified local changes:
   writes `palace_material_resolution.json` beside generated Palace configs,
   and extends `load_domain_material_summary()` with stack material, matched
   material, model source, validity, and frequency provenance columns;
+- `gsim` commit `1da6783`: extends the same material-resolution path to
+  dielectric postprocessing interfaces, so a typed interface can reference a
+  public material overlay entry and reports can show interface material name,
+  matched material, model source, validity, and resolution frequency;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
   verify the effective substrate material row and material-resolution
   provenance are loadable through the reusable `gsim` report/index-map API;
+- public `orpen-sc-pdk` tests now verify the public
+  `AlOx_native_generic` material can be resolved into
+  `Boundaries.Postprocessing.Dielectric` without writing non-Palace handoff
+  keys into `config.json`;
 - public `orpen-sc-pdk` tests now also verify a synthetic Eigenmode artifact
   bundle can load through `gsim.palace.load_eigenmode_report()` and expose
   public domain/surface loss budget rows;
@@ -74,7 +82,7 @@ Remaining slices:
   grows to include aliases, provenance, conditions, loss, conductivity,
   London-depth, or surface/interface presets;
 - introduce a validated public interface-preset schema for MA/MS/SA-style
-  thickness, permittivity, and loss tangent records.
+  thickness, loss tangent, and automatic preset selection records.
 
 Related feature:
 

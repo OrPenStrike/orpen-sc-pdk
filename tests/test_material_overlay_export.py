@@ -225,6 +225,80 @@ def test_gsim_dielectric_interface_summary_loads_public_interface_config(
     assert row["loss_tangent"] == pytest.approx(0.0017)
 
 
+def test_gsim_resolves_public_interface_material_overlay(tmp_path) -> None:
+    pytest.importorskip("gsim")
+    from gsim.common.stack import LayerStack
+    from gsim.palace import load_dielectric_interface_summary
+    from gsim.palace.mesh.config_generator import generate_palace_config
+
+    groups = {
+        "volumes": {"Si": {"phys_group": 1}},
+        "conductor_surfaces": {},
+        "pec_surfaces": {},
+        "port_surfaces": {},
+        "boundary_surfaces": {"sa_interface": {"phys_group": 70}},
+    }
+    stack = LayerStack(materials={"Si": {"permittivity": 11.45}})
+    config_path = generate_palace_config(
+        groups=groups,
+        ports=[],
+        port_info=[],
+        stack=stack,
+        output_path=tmp_path,
+        model_name="palace",
+        fmax=5e9,
+        absorbing_boundary=False,
+        boundary_postprocessing_config={
+            "Dielectric": [
+                {
+                    "Index": 7,
+                    "Attributes": [70],
+                    "Type": "SA",
+                    "Thickness": 0.003,
+                    "_MaterialName": "AlOx_native_generic",
+                }
+            ]
+        },
+        material_overlay=get_gsim_material_overlay(),
+    )
+    index_map_path = tmp_path / "palace_index_map.json"
+    index_map_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "entries": [
+                    {
+                        "section": "Boundaries.Postprocessing.Dielectric",
+                        "index": 7,
+                        "entry_name": "sa_interface",
+                        "role": "boundary_surface",
+                        "attributes": [70],
+                        "physical_names": ["SA:substrate___vacuum"],
+                        "dimension": 2,
+                        "Type": "SA",
+                    }
+                ],
+            }
+        )
+    )
+
+    interface = json.loads(config_path.read_text())["Boundaries"]["Postprocessing"]["Dielectric"][0]
+    assert "_MaterialName" not in interface
+    assert interface["Permittivity"] == pytest.approx(10.0)
+    assert interface["LossTan"] == pytest.approx(0.0)
+
+    summary = load_dielectric_interface_summary(
+        {"config.json": config_path, "palace_index_map.json": index_map_path}
+    )
+    row = summary.set_index("surface_index").loc[7]
+    assert row["source_name"] == "SA:substrate___vacuum"
+    assert row["interface_material_name"] == "AlOx_native_generic"
+    assert row["matched_material_name"] == "AlOx_native_generic"
+    assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
+    assert row["permittivity"] == pytest.approx(10.0)
+    assert row["loss_tangent"] == pytest.approx(0.0)
+
+
 def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.palace import load_eigenmode_report
@@ -339,22 +413,12 @@ def test_gsim_electrostatic_report_derives_public_loss_budget(tmp_path) -> None:
 
     terminal_c_path = tmp_path / "terminal-C.csv"
     terminal_c_path.write_text(
-        "i, C[i][1] (F), C[i][2] (F)\n"
-        "1.00e+00, 1.0e-15, -2.0e-15\n"
-        "2.00e+00, -2.0e-15, 4.0e-15\n"
+        "i, C[i][1] (F), C[i][2] (F)\n1.00e+00, 1.0e-15, -2.0e-15\n2.00e+00, -2.0e-15, 4.0e-15\n"
     )
     domain_e_path = tmp_path / "domain-E.csv"
-    domain_e_path.write_text(
-        "i, E_elec[1] (J), p_elec[1]\n"
-        "1, 1.0, 0.25\n"
-        "2, 1.0, 0.125\n"
-    )
+    domain_e_path.write_text("i, E_elec[1] (J), p_elec[1]\n1, 1.0, 0.25\n2, 1.0, 0.125\n")
     surface_q_path = tmp_path / "surface-Q.csv"
-    surface_q_path.write_text(
-        "i, p_surf[2], Q_surf[2]\n"
-        "1, 0.125, 1.0e6\n"
-        "2, 0.25, 2.0e6\n"
-    )
+    surface_q_path.write_text("i, p_surf[2], Q_surf[2]\n1, 0.125, 1.0e6\n2, 0.25, 2.0e6\n")
     config_path = tmp_path / "config.json"
     config_path.write_text(
         json.dumps(
@@ -475,10 +539,7 @@ def test_gsim_electrostatic_report_derives_public_loss_budget(tmp_path) -> None:
     assert report.inverse_capacitance is None
     material_row = report.domain_materials.set_index("material_attribute").loc[10]
     assert material_row["source_name"] == "D1_SUBSTRATE"
-    assert (
-        material_row["material_model_source"]
-        == "orpen-sc-pdk tech.material_properties"
-    )
+    assert material_row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
     assert "t1_us" not in report.loss_budget.columns
 
     budget = report.loss_budget.set_index("source_index")
@@ -490,6 +551,4 @@ def test_gsim_electrostatic_report_derives_public_loss_budget(tmp_path) -> None:
     report_with_t1 = load_electrostatic_report(source, frequency_ghz=5.0)
     budget_with_t1 = report_with_t1.loss_budget.set_index("source_index")
     assert budget_with_t1.loc[1, "gamma_hz"] == pytest.approx(5.0e9 * 1.5e-6)
-    assert budget_with_t1.loc[1, "t1_us"] == pytest.approx(
-        1.0e6 / (2.0 * math.pi * 5.0e9 * 1.5e-6)
-    )
+    assert budget_with_t1.loc[1, "t1_us"] == pytest.approx(1.0e6 / (2.0 * math.pi * 5.0e9 * 1.5e-6))

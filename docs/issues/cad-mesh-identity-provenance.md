@@ -198,6 +198,12 @@ Verified local changes:
   interface provenance through `gsim.palace.load_electrostatic_report()`, and
   source-indexed loss budgets remain separated instead of being collapsed into
   one mode-like row.
+- validation after the dielectric-interface material provenance slice:
+  `gsim.palace` resolves interface material references through public material
+  overlays, strips transient handoff keys from Palace `config.json`, records
+  interface material source/validity/frequency in
+  `palace_material_resolution.json`, and loads that provenance back through
+  `load_dielectric_interface_summary()`.
 
 Remaining implementation slices:
 

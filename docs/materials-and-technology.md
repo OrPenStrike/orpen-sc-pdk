@@ -70,8 +70,11 @@ should be:
 3. Pass the overlay into `gsim` Palace config generation, keeping
    Palace-specific material evaluation in `gsim`, not in the PDK core.
 4. Upstream reusable adapter support into `gsim` when it is not PDK-specific.
-5. Add a validated public interface-preset schema before making MA/MS/SA-style
-   loss-interface defaults part of the PDK material contract.
+5. Use `gsim` interface material references when a Palace dielectric interface
+   should draw permittivity/loss fields from a public material record.
+6. Add a validated public interface-preset schema before making MA/MS/SA-style
+   thickness or automatic loss-interface defaults part of the PDK material
+   contract.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the

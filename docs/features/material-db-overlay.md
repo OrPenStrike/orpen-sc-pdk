@@ -49,11 +49,19 @@ Current public baseline:
   reports can show the stack material name, matched material record, model
   source, validity status, and resolution frequency used for each Palace
   material attribute;
+- `gsim` commit `1da6783` lets dielectric postprocessing interfaces reference a
+  material overlay entry, resolves that reference before writing Palace
+  `config.json`, strips the non-Palace handoff key, records interface material
+  provenance in `palace_material_resolution.json`, and exposes that provenance
+  through `load_dielectric_interface_summary()`;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
   and load that effective substrate material row back through the `gsim`
   report/index-map API;
+- public material-overlay tests now verify `AlOx_native_generic` can be used as
+  a dielectric-interface material reference while interface thickness and
+  MA/MS/SA default selection remain explicit caller choices;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
@@ -63,7 +71,8 @@ Remaining slices:
 - add a validated material-record schema and aliases table once the public
   material contract grows beyond the current minimal records;
 - add a validated public interface-preset schema before treating MA/MS/SA
-  thickness, permittivity, and loss tangent values as PDK-owned defaults.
+  thickness, loss tangent, and automatic preset selection as PDK-owned
+  defaults.
 
 Related issue:
 

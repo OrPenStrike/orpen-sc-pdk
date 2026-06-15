@@ -118,11 +118,19 @@ Verified local changes:
 - The optional public Electrostatic local-Palace smoke now also reloads real
   solver terminal matrices through `gsim.palace.load_electrostatic_report()`
   instead of only the primitive terminal-matrix loader.
+- `gsim` commit `1da6783`: adds dielectric-interface material-reference
+  resolution and report provenance, so `Boundaries.Postprocessing.Dielectric`
+  rows can be populated from a public material overlay and loaded back with
+  material source, validity, and frequency metadata.
+- `orpen-sc-pdk` public material-overlay fixtures now verify
+  `AlOx_native_generic` can reach a Palace dielectric interface row through the
+  reusable `gsim` interface material path without making MA/MS/SA defaults part
+  of the PDK contract.
 
 Remaining slices:
 
-- add richer dielectric-interface provenance and public preset validation
-  before treating MA/MS/SA defaults as part of the PDK contract;
+- add a public preset schema before treating MA/MS/SA thickness, loss tangent,
+  or automatic interface selection as part of the PDK contract;
 - keep native masked Surface EPR as a Palace-source/upstream capability rather
   than a Python replay in the public PDK.
 

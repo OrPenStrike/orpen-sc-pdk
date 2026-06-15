@@ -39,6 +39,9 @@ Current public baseline:
   `palace_material_resolution.json` sidecars and extends domain material
   summaries with stack material, matched material record, model source,
   validity, and resolution-frequency provenance;
+- local `gsim` commit `1da6783` extends material-resolution provenance to
+  dielectric interface rows, so Palace reports can explain which public
+  material overlay entry supplied interface permittivity/loss fields;
 - configured dielectric interface postprocessing rows can be loaded through
   `load_dielectric_interface_summary()` and joined from
   `Boundaries.Postprocessing.Dielectric` config rows to index-map physical
