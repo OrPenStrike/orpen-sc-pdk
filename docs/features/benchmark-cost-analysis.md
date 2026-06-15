@@ -20,14 +20,20 @@ Current public baseline:
   sidecars for GDSFactory+ cloud result downloads, including Palace
   `palace_run_metadata.json`, so local and cloud executions can share the same
   summary surface;
+- local `gsim` commit `652fcec` adds
+  `gsim.palace.load_palace_sweep_summary()` for explicit `points.json`
+  point-local Palace sweep folders, reusing the same per-point run summaries
+  without inferring point identity from folder names;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
-  public fixture artifact status and solver skip/runtime summary fields in the
-  ignored local smoke-evidence bundle.
+  public fixture artifact status, solver skip/runtime summary fields, and a
+  public problem-type sweep-summary smoke in the ignored local evidence bundle.
 
 Acceptance direction:
 
 - benchmark records distinguish physics outputs from runtime, mesh, memory, and
   execution-cost metadata;
+- sweep summaries start from explicit point metadata and per-point reusable run
+  summaries before adding richer physics/performance aggregation;
 - public fixtures provide normalized records for docs and regression tests;
 - private consumers can compare local records against the same schema without
   publishing raw values;

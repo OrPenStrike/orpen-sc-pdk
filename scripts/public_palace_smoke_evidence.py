@@ -39,6 +39,29 @@ def _relative_run_summary(summary: dict[str, Any], output_root: Path) -> dict[st
     return summary
 
 
+def _relative_sweep_summary(
+    summary: dict[str, Any],
+    output_root: Path,
+) -> dict[str, Any]:
+    source_path = summary.get("source_path")
+    if source_path is not None:
+        summary["source_path"] = _relative_path(Path(source_path), output_root)
+    for point in summary.get("points", []):
+        if not isinstance(point, dict):
+            continue
+        source = point.get("source")
+        if isinstance(source, dict):
+            point["source"] = {
+                name: _relative_path(Path(path), output_root) for name, path in source.items()
+            }
+        elif source is not None:
+            point["source"] = _relative_path(Path(source), output_root)
+        run_summary = point.get("run_summary")
+        if isinstance(run_summary, dict):
+            point["run_summary"] = _relative_run_summary(run_summary, output_root)
+    return summary
+
+
 def _source_summary(rows: Any) -> list[dict[str, Any]]:
     if rows is None or getattr(rows, "empty", True):
         return []
@@ -343,6 +366,42 @@ def _build_problem_evidence(
     }
 
 
+def _build_sweep_evidence(
+    output_root: Path,
+    problems: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    from gsim.palace import load_palace_sweep_summary
+
+    points = [
+        {
+            "point_slug": problem_key,
+            "parameters": {
+                "problem_type": problem["problem_type"],
+                "fixture": problem["fixture"],
+            },
+            "run_dir": problem["output_dir"],
+        }
+        for problem_key, problem in sorted(problems.items())
+    ]
+    points_path = output_root / "points.json"
+    points_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "sweep_id": "public_palace_problem_type_smoke",
+                "points": points,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    return _relative_sweep_summary(
+        load_palace_sweep_summary(output_root, include_hashes=True).to_dict(),
+        output_root,
+    )
+
+
 def build_public_palace_smoke_evidence(
     output_root: str | Path = DEFAULT_OUTPUT_DIR,
     *,
@@ -397,6 +456,7 @@ def build_public_palace_smoke_evidence(
         )
         for spec in problem_specs
     }
+    sweep_summary = _build_sweep_evidence(output_root, problems)
 
     evidence = {
         "schema_version": 1,
@@ -405,6 +465,7 @@ def build_public_palace_smoke_evidence(
         "repo": "orpen-sc-pdk",
         "solver": solver,
         "problems": problems,
+        "sweep_summary": sweep_summary,
     }
 
     evidence_path = output_root / EVIDENCE_FILENAME

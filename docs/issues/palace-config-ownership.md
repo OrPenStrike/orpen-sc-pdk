@@ -91,6 +91,10 @@ Verified local changes:
   `palace_run_metadata.json`, preserving the same
   `load_palace_run_summary().runtime` surface for Palace local and cloud
   execution evidence.
+- `gsim` commit `652fcec` adds
+  `load_palace_sweep_summary()` for point-local sweep folders with explicit
+  `points.json`, keeping sweep identity and per-point artifact summaries in
+  `gsim` instead of moving them into `orpen-sc-pdk`.
 
 Remaining slices:
 

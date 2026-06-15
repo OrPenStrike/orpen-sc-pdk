@@ -105,6 +105,9 @@ Current executable smoke coverage:
   mesh-manifest summaries, Palace index-map summaries, material-resolution
   sidecar presence, and either solver skip reasons or parsed `gsim` report
   summaries.
+- the same evidence script writes a public `points.json` table for those three
+  fixtures and consumes `gsim.palace.load_palace_sweep_summary()` so sweep
+  identity starts from explicit point metadata rather than folder scans.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
   turns the same script into an opt-in local Palace smoke replay, including
@@ -114,9 +117,9 @@ Known gaps and non-goals:
 
 - Magnetostatic is acknowledged as a private helper/test surface, but it has no
   public OrPen fixture or notebook equivalent yet.
-- Sweep orchestration and sweep-level performance/physics summaries remain a
-  later reusable `gsim` workflow slice, separate from single-run public
-  problem-type coverage.
+- Full sweep orchestration and sweep-level physics/performance aggregation
+  remain later reusable `gsim` workflow slices; the current public baseline is
+  only explicit point metadata plus per-point run-summary aggregation.
 - Native masked Surface EPR remains a Palace-source or upstream `gsim` lane,
   not a Python replay inside the public PDK notebook suite.
 
