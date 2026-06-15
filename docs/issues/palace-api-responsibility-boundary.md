@@ -80,17 +80,14 @@ Current review ledger:
 | Port helper root API demotion (`gsim` commit `cf4204d`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports port config/lowering symbols: `CPWPortConfig`, `PortConfig`, `TerminalConfig`, `WavePortConfig`, `PalacePort`, `PortGeometry`, `PortType`, `configure_*_port()`, and `extract_ports()`. Notebook-facing workflows should continue through simulation-class methods such as `add_port()`, `add_cpw_port()`, `add_wave_port()`, and `add_terminal()`. Advanced port authoring remains documented from `gsim.palace.ports` and `gsim.palace.models`, matching the responsibility boundary for port geometry/extraction behavior. Local downstream search found no OrPen/NCUAS direct root-import dependency for these symbols. |
 | Mesh artifact root API demotion (`gsim` commit `c52fb00`) | Reviewed, API-clean | `gsim.palace.__init__` now keeps root mesh-generation controls (`MeshConfig`, `generate_mesh`) but no longer imports or re-exports mesh artifact/reportability details: `MeshResult`, `DielectricInterfaceSelector`, `DielectricInterfaceSpec`, `DielectricInterfaceType`, `DielectricMaterialKind`, and the material-kind interface spec builders. Those symbols remain available from `gsim.palace.mesh`, which is the owner module already used by OrPen notebooks, evidence scripts, and tests. This preserves the boundary that manifest/reportability visibility belongs to mesh artifacts, not to broader root Palace API or `MeshConfig` knobs. |
 | Config model root API demotion (`gsim` commit `05b362a`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports raw config/lowering models: `DrivenConfig`, `EigenmodeConfig`, `ElectrostaticConfig`, `MagnetostaticConfig`, `GeometryConfig`, `MaterialConfig`, `NumericalConfig`, `PECBlockConfig`, and `TransientConfig`. These remain public from `gsim.palace.models`, which is the owner module for problem/numerical/material config contracts. Root `gsim.palace` keeps notebook-facing problem classes and the `MeshConfig` mesh-generation control, plus `SimulationResult`/`ValidationResult` for now because public methods return them. Local search found no OrPen/NCUAS direct root-import dependency for the demoted models. |
+| Common convenience root API demotion (`gsim` commit `144959e`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports broad common/stack/material/viz/cloud convenience symbols: `MATERIALS_DB`, `Geometry`, `Stack`, `StackLayer`, `MaterialProperties`, stack extraction/loading/printing helpers, `plot_cross_section()`, `plot_mesh()`, `plot_stack()`, `print_job_summary()`, `run_simulation()`, and `resolve_palace_materials_at_frequency()`. These remain available from their owner modules: `gsim.common`, `gsim.common.stack`, `gsim.common.stack.materials`, `gsim.viz`, `gsim.gcloud`, and `gsim.palace.materials`. Stale examples in `gsim.viz` and `gsim.gcloud` were updated to use owner-module imports, and independent boundary review found no OrPen/NCUAS direct root dependency. Root `gsim.palace` still keeps documented `Layer`, `LayerStack`, and `resolve_palace_materials_with_report()` pending a separate docs-contract decision. |
 
 Open API-surface follow-ups:
 
-- demote or explicitly document broad root `gsim.palace` convenience exports
-  from `gsim.common`, `gsim.common.stack`, `gsim.viz`, and `gsim.gcloud`
-  (`MATERIALS_DB`, `Stack`, `StackLayer`, stack extraction/printing helpers,
-  `plot_*`, `print_job_summary`, `run_simulation`) before treating them as
-  part of the Palace public API;
-- decide whether `SimulationResult` and `ValidationResult` should remain root
-  because public simulation methods return them, or move them to
-  `gsim.palace.models` after a separate return-type/public-typing review;
+- decide whether retained documented or return-type-facing root exports
+  (`Layer`, `LayerStack`, `resolve_palace_materials_with_report()`,
+  `SimulationResult`, and `ValidationResult`) should remain root, or move to
+  owner modules after a separate docs-contract/public-typing review;
 - finish the remaining `gsim.palace.mesh` package-root review for advanced
   manifest fixture symbols (`MeshPhysicalGroup`, `MeshRole`,
   `build_mesh_manifest`) and type aliases that may belong only in
