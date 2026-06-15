@@ -13,6 +13,7 @@ from scripts.public_palace_smoke_evidence import (
     build_public_cad_mesh_identity_handoff_evidence,
     build_public_gsim_boundary_review_coverage_evidence,
     build_public_interface_preset_promotion_gate_evidence,
+    build_public_meshwell_handoff_contract_gate_evidence,
     build_public_palace_smoke_evidence,
     build_public_thin_film_sheet_proxy_interface_evidence,
     load_public_gsim_boundary_review_crosscheck,
@@ -288,6 +289,96 @@ def _assert_gsim_boundary_review_coverage(evidence: dict) -> None:
     assert all(row["evidence_anchor"] for row in rows)
 
 
+def _assert_meshwell_handoff_contract_gate(evidence: dict) -> None:
+    gate = evidence["meshwell_handoff_contract_gate"]
+
+    assert gate["schema_version"] == 1
+    assert gate["workflow"] == "public-meshwell-handoff-contract-gate"
+    assert gate["repo"] == "orpen-sc-pdk"
+    assert gate["output_dir"] == "meshwell-handoff-contract-gate"
+    assert gate["evidence_path"] == (
+        "meshwell-handoff-contract-gate/public_meshwell_handoff_contract_gate_evidence.json"
+    )
+    assert set(gate["owner_boundaries"]) == {"meshwell", "gsim", "orpen-sc-pdk"}
+    assert gate["contract_status"] == "source_and_backend_aligned_pending_cross_repo_contract"
+    assert gate["evidence_status_counts"] == {
+        "covered_gsim_consumer_parser": 5,
+        "covered_meshwell_backend_equivalence": 3,
+        "covered_source": 6,
+        "pending_cross_repo_contract": 2,
+    }
+    assert gate["covered_source_count"] == 6
+    assert gate["covered_meshwell_backend_equivalence_count"] == 3
+    assert gate["covered_gsim_consumer_parser_count"] == 5
+    assert gate["covered_count"] == 14
+    assert gate["pending_count"] == 2
+    assert gate["blocking_gaps"] == [
+        "formal meshwell physical-name/interface-tag contract text",
+        "meshwell-to-gsim cross-repo consumer fixture/gate",
+    ]
+
+    rows = gate["gate_rows"]
+    by_item = {row["contract_item"]: row for row in rows}
+    assert (
+        by_item["meshwell cad_gmsh interface/exterior naming docstring"]["evidence_status"]
+        == "covered_source"
+    )
+    assert by_item["meshwell cad_gmsh delimiter defaults"]["evidence_status"] == ("covered_source")
+    assert by_item["meshwell mesh delimiter defaults"]["evidence_status"] == ("covered_source")
+    assert (
+        by_item["meshwell OCC XAO writer physical-group serializer"]["evidence_status"]
+        == "covered_source"
+    )
+    assert (
+        by_item["meshwell multiple physical-name equivalence tests"]["evidence_status"]
+        == "covered_source"
+    )
+    assert (
+        by_item["meshwell interface sharing and exterior refinement tests"]["evidence_status"]
+        == "covered_source"
+    )
+    assert (
+        by_item["meshwell CAD backend physical-group equivalence tests"]["evidence_status"]
+        == "covered_meshwell_backend_equivalence"
+    )
+    assert (
+        by_item["meshwell loaded CAD state backend equivalence tests"]["evidence_status"]
+        == "covered_meshwell_backend_equivalence"
+    )
+    assert (
+        by_item["meshwell mesh-level backend cross-compare tests"]["evidence_status"]
+        == "covered_meshwell_backend_equivalence"
+    )
+    assert (
+        by_item["gsim manifest parser supports meshwell-style names"]["evidence_status"]
+        == "covered_gsim_consumer_parser"
+    )
+    assert (
+        by_item["gsim manifest tests cover interface/exterior parsing"]["evidence_status"]
+        == "covered_gsim_consumer_parser"
+    )
+    assert (
+        by_item["gsim postprocessing index-map lookup helpers"]["evidence_status"]
+        == "covered_gsim_consumer_parser"
+    )
+    assert (
+        by_item["gsim public postprocessing index-map result loader"]["evidence_status"]
+        == "covered_gsim_consumer_parser"
+    )
+    assert (
+        by_item["gsim generated mesh integration tests preserve identities"]["evidence_status"]
+        == "covered_gsim_consumer_parser"
+    )
+
+    contract_text = by_item["formal meshwell physical-name/interface-tag contract text"]
+    assert contract_text["evidence_status"] == "pending_cross_repo_contract"
+    assert any("formal meshwell" in signal for signal in contract_text["missing_signals"])
+
+    cross_repo_gate = by_item["meshwell-to-gsim cross-repo consumer fixture/gate"]
+    assert cross_repo_gate["evidence_status"] == "pending_cross_repo_contract"
+    assert "meshwell-to-gsim" in cross_repo_gate["remaining_gap"]
+
+
 def _assert_interface_preset_review_queue(evidence: dict) -> None:
     queue = evidence["interface_preset_review_queue"]
     assert queue == load_public_interface_preset_review_queue()
@@ -557,6 +648,32 @@ def test_public_gsim_boundary_review_coverage_evidence_runs_standalone(
     assert coverage["git_log_commit_count"] == len(review_rows)
 
 
+def test_public_meshwell_handoff_contract_gate_evidence_runs_standalone(
+    tmp_path: Path,
+) -> None:
+    gate = build_public_meshwell_handoff_contract_gate_evidence(
+        tmp_path / "meshwell-gate",
+        relative_to=tmp_path,
+    )
+
+    assert gate["output_dir"] == "meshwell-gate"
+    assert gate["evidence_path"] == (
+        "meshwell-gate/public_meshwell_handoff_contract_gate_evidence.json"
+    )
+    assert (
+        tmp_path / "meshwell-gate" / "public_meshwell_handoff_contract_gate_evidence.json"
+    ).is_file()
+    assert gate["contract_status"] == "source_and_backend_aligned_pending_cross_repo_contract"
+    assert gate["covered_source_count"] == 6
+    assert gate["covered_meshwell_backend_equivalence_count"] == 3
+    assert gate["covered_gsim_consumer_parser_count"] == 5
+    assert gate["pending_count"] == 2
+    assert gate["blocking_gaps"] == [
+        "formal meshwell physical-name/interface-tag contract text",
+        "meshwell-to-gsim cross-repo consumer fixture/gate",
+    ]
+
+
 def test_public_interface_preset_promotion_gate_evidence_runs_standalone(
     tmp_path: Path,
 ) -> None:
@@ -589,6 +706,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     _assert_goal_audit(evidence)
     _assert_gsim_boundary_review_crosscheck(evidence)
     _assert_gsim_boundary_review_coverage(evidence)
+    _assert_meshwell_handoff_contract_gate(evidence)
     _assert_interface_preset_review_queue(evidence)
     _assert_cad_mesh_identity_handoff_evidence(evidence)
     _assert_interface_preset_promotion_gate_evidence(evidence)

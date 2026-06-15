@@ -89,10 +89,10 @@
     "private_anchor": "ncuas_designs/simulations/scene/xao_build; tests/meshing/gmsh_native/test_xao_artifacts.py",
     "why_helper_exists": "Config generation and report review both fail if the mesh artifact loses physical-name ownership.",
     "gdsfactory_home": "meshwell + gsim",
-    "public_api_or_artifact": "mesh_manifest.json; palace_index_map.json; public_cad_mesh_identity_handoff_evidence.json; load_palace_run_summary()",
-    "public_status": "implemented_public_fixture_without_replicating_private_meshing_strategy",
+    "public_api_or_artifact": "mesh_manifest.json; palace_index_map.json; public_cad_mesh_identity_handoff_evidence.json; public_meshwell_handoff_contract_gate_evidence.json; load_palace_run_summary()",
+    "public_status": "implemented_public_fixture_with_source_aligned_contract_gate",
     "promotion_gate": "meshwell_physical_name_contract_alignment",
-    "missing_evidence": "upstream meshwell physical-name/interface-tag contract and backend equivalence tests",
+    "missing_evidence": "formal upstream meshwell physical-name/interface-tag contract text and meshwell-to-gsim cross-repo consumer fixture/gate",
     "next_issue": "cad-mesh-identity-provenance"
   },
   {

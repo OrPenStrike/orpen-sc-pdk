@@ -21,6 +21,7 @@ from IPython.display import display
 
 from scripts.public_palace_smoke_evidence import (
     build_public_gsim_boundary_review_coverage_evidence,
+    build_public_meshwell_handoff_contract_gate_evidence,
     load_public_gsim_boundary_review_crosscheck,
     load_public_interface_preset_review_queue,
     load_public_problem_notebook_crosscheck,
@@ -32,6 +33,7 @@ from scripts.public_palace_smoke_evidence import (
     public_interface_preset_candidate_review_table,
     public_interface_preset_promotion_gate_table,
     public_interface_preset_source_review_table,
+    public_meshwell_handoff_contract_gate_table,
     public_problem_notebook_crosscheck_table,
     public_simulation_goal_audit_table,
     public_simulation_helper_node_inventory_table,
@@ -121,6 +123,36 @@ display(
 display(gsim_boundary_review_coverage_table)
 
 # %% [markdown]
+# ## Meshwell handoff contract gate
+#
+# This gate records where the local meshwell and `gsim` sources already agree
+# on meshwell-style interface and exterior physical names, and which upstream
+# contract work is still pending before CAD/XAO provenance is complete. OrPen
+# remains a consumer: it does not own the physical-name grammar or backend
+# equivalence tests.
+
+# %%
+meshwell_handoff_contract_gate = build_public_meshwell_handoff_contract_gate_evidence()
+meshwell_handoff_contract_gate_table = public_meshwell_handoff_contract_gate_table()
+
+display(
+    {
+        "contract_status": meshwell_handoff_contract_gate["contract_status"],
+        "evidence_status_counts": meshwell_handoff_contract_gate["evidence_status_counts"],
+        "covered_source_count": meshwell_handoff_contract_gate["covered_source_count"],
+        "covered_meshwell_backend_equivalence_count": meshwell_handoff_contract_gate[
+            "covered_meshwell_backend_equivalence_count"
+        ],
+        "covered_gsim_consumer_parser_count": meshwell_handoff_contract_gate[
+            "covered_gsim_consumer_parser_count"
+        ],
+        "pending_count": meshwell_handoff_contract_gate["pending_count"],
+        "blocking_gaps": meshwell_handoff_contract_gate["blocking_gaps"],
+    }
+)
+display(meshwell_handoff_contract_gate_table)
+
+# %% [markdown]
 # ## CAD/mesh identity handoff
 #
 # CAD/mesh identity evidence stays notebook-visible as consumer evidence. The
@@ -188,6 +220,7 @@ display(
         "goal_audit_row_count": len(load_public_simulation_goal_audit()),
         "gsim_boundary_review_row_count": len(load_public_gsim_boundary_review_crosscheck()),
         "gsim_boundary_review_coverage_status": gsim_boundary_review_coverage["coverage_status"],
+        "meshwell_handoff_contract_status": meshwell_handoff_contract_gate["contract_status"],
         "cad_mesh_identity_problem_count": len(cad_mesh_identity_handoff),
         "interface_preset_source_count": len(interface_preset_queue["sources"]),
         "interface_preset_candidate_count": len(interface_preset_queue["candidate_records"]),

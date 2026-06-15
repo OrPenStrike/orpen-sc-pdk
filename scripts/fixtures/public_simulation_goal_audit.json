@@ -37,8 +37,8 @@
   {
     "objective_requirement": "Adopt gsim meshing while preserving CAD/XAO physical names and index-to-physical-name reportability.",
     "current_status": "covered_current",
-    "current_evidence": "public notebooks and evidence runner load mesh_manifest.json, palace_index_map.json, and config.json; public_cad_mesh_identity_handoff_evidence.json audits Driven, Eigenmode, and Electrostatic manifest roles, physical names, index lookups, port/terminal metadata, and config material joins",
-    "remaining_gap": "upstream meshwell physical-name/interface-tag contract alignment remains a future boundary slice",
+    "current_evidence": "public notebooks and evidence runner load mesh_manifest.json, palace_index_map.json, and config.json; public_cad_mesh_identity_handoff_evidence.json audits Driven, Eigenmode, and Electrostatic manifest roles, physical names, index lookups, port/terminal metadata, and config material joins; public_meshwell_handoff_contract_gate_evidence.json records local meshwell source/test alignment, existing meshwell backend-equivalence evidence, and gsim manifest/index-map consumer coverage",
+    "remaining_gap": "formal upstream meshwell physical-name/interface-tag contract text and a meshwell-to-gsim cross-repo consumer fixture/gate remain future boundary slices",
     "next_issue": "cad-mesh-identity-provenance"
   },
   {

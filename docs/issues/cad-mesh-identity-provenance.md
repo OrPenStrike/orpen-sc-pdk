@@ -80,6 +80,13 @@ Local prototype status:
   index-map sections, port metadata, terminal metadata, and config material
   joins while keeping physical-name grammar and backend equivalence in
   `meshwell`.
+- current OrPen local evidence/notebook slice also writes
+  `public_meshwell_handoff_contract_gate_evidence.json`, a source-alignment
+  gate for the upstream contract: meshwell `cad_gmsh`, `mesh`, and XAO writer
+  source, meshwell multiple-physical-name/interface/exterior and backend
+  equivalence tests, and `gsim` manifest/index-map consumer code/tests all
+  expose meshwell-style `___` and `___None` names, while formal contract text
+  and a meshwell-to-`gsim` cross-repo consumer fixture/gate remain pending.
 
 Verified local changes:
 
@@ -263,6 +270,14 @@ Verified local changes:
   identity, index-map forward/reverse/attribute lookups, Driven port metadata,
   Electrostatic terminal metadata, and config material joins through public
   `gsim` artifacts.
+- validation after the meshwell handoff contract-gate slice: the public
+  inventory notebook displays `public_meshwell_handoff_contract_gate_table()`,
+  and the smoke evidence bundle embeds source-alignment rows for meshwell
+  `cad_gmsh` naming docs, delimiter defaults, XAO writer source,
+  multiple-physical-name equivalence tests, interface/exterior refinement
+  tests, meshwell backend-equivalence tests, and `gsim` manifest/index-map
+  consumer coverage, while still marking formal contract text and the
+  meshwell-to-`gsim` cross-repo consumer fixture/gate as pending.
 
 Remaining implementation slices:
 
@@ -274,9 +289,11 @@ Remaining implementation slices:
   tested with caller-supplied presets;
 - add richer dielectric-interface provenance and source-backed preset
   validation before making MA/MS/SA defaults part of public PDK material data.
-- promote a formal meshwell physical-name/interface-tag grammar and
-  meshwell-to-gsim handoff contract with backend equivalence tests before
-  treating CAD/XAO provenance as upstream-complete.
+- promote a formal meshwell physical-name/interface-tag grammar and a
+  meshwell-to-gsim handoff contract fixture that connects existing meshwell
+  backend-equivalence evidence to `gsim` manifest/index-map consumers before
+  treating CAD/XAO provenance as upstream-complete; the current OrPen gate
+  proves local source alignment only.
 
 Acceptance checks:
 

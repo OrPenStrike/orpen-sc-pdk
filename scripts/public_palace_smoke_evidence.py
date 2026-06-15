@@ -42,6 +42,7 @@ PUBLIC_INTERFACE_PRESET_REVIEW_QUEUE = (
 )
 INTERFACE_PRESET_PROMOTION_GATE_FILENAME = "public_interface_preset_promotion_gate_evidence.json"
 CAD_MESH_IDENTITY_HANDOFF_FILENAME = "public_cad_mesh_identity_handoff_evidence.json"
+MESHWELL_HANDOFF_CONTRACT_GATE_FILENAME = "public_meshwell_handoff_contract_gate_evidence.json"
 PUBLIC_CAD_MESH_IDENTITY_PROBLEM_KEYS = (
     "driven_cpw",
     "eigenmode_resonator",
@@ -52,6 +53,10 @@ INTERFACE_PRESET_ROLES = ("MA", "MS", "SA")
 
 def _default_gsim_repo_path() -> Path:
     return Path(__file__).resolve().parents[2] / "GDSFactory_Community_Workbench" / "gsim"
+
+
+def _default_meshwell_repo_path() -> Path:
+    return Path(__file__).resolve().parents[2] / "GDSFactory_Community_Workbench" / "meshwell"
 
 
 def load_public_simulation_helper_node_inventory() -> list[dict[str, Any]]:
@@ -285,6 +290,423 @@ def public_gsim_boundary_review_coverage_table(
         "evidence_anchor",
     ]
     return pd.DataFrame(evidence["coverage_rows"]).loc[:, columns]
+
+
+def _source_contract_row(
+    *,
+    contract_item: str,
+    owner_repo: str,
+    repo_path: Path,
+    relative_path: str,
+    required_signals: Sequence[str],
+    current_signal: str,
+    remaining_gap: str,
+    evidence_status: str = "covered_source",
+) -> dict[str, Any]:
+    source_path = repo_path / relative_path
+    text = source_path.read_text() if source_path.is_file() else ""
+    missing_signals = [signal for signal in required_signals if signal not in text]
+    resolved_status = (
+        evidence_status
+        if source_path.is_file() and not missing_signals
+        else "missing_source_signal"
+    )
+    return {
+        "contract_item": contract_item,
+        "owner_repo": owner_repo,
+        "source_path": source_path.as_posix(),
+        "relative_path": relative_path,
+        "evidence_status": resolved_status,
+        "required_signals": list(required_signals),
+        "missing_signals": missing_signals,
+        "current_signal": current_signal,
+        "remaining_gap": remaining_gap,
+    }
+
+
+def _evidence_status_counts(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    statuses = sorted({str(row["evidence_status"]) for row in rows})
+    return {
+        status: sum(str(row["evidence_status"]) == status for row in rows) for status in statuses
+    }
+
+
+def build_public_meshwell_handoff_contract_gate_evidence(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "meshwell-handoff-contract-gate",
+    *,
+    meshwell_repo: str | Path | None = None,
+    gsim_repo: str | Path | None = None,
+    relative_to: str | Path | None = None,
+) -> dict[str, Any]:
+    """Build meshwell-to-gsim physical-name handoff contract gate evidence."""
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    relative_root = Path(relative_to) if relative_to is not None else None
+    meshwell_path = (
+        Path(meshwell_repo) if meshwell_repo is not None else _default_meshwell_repo_path()
+    )
+    gsim_path = Path(gsim_repo) if gsim_repo is not None else _default_gsim_repo_path()
+    gate_rows = [
+        _source_contract_row(
+            contract_item="meshwell cad_gmsh interface/exterior naming docstring",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="meshwell/cad_gmsh.py",
+            required_signals=("A___B", "A___None", "mesh_order"),
+            current_signal=(
+                "meshwell cad_gmsh documents derived interface and exterior "
+                "physical groups while preserving mesh_order ownership"
+            ),
+            remaining_gap="formal public physical-name/interface-tag contract text",
+        ),
+        _source_contract_row(
+            contract_item="meshwell cad_gmsh delimiter defaults",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="meshwell/cad_gmsh.py",
+            required_signals=(
+                'interface_delimiter: str = "___"',
+                'boundary_delimiter: str = "None"',
+            ),
+            current_signal="cad_gmsh defaults match meshwell-style interface and exterior labels",
+            remaining_gap="pin defaults in a documented meshwell physical-name contract",
+        ),
+        _source_contract_row(
+            contract_item="meshwell mesh delimiter defaults",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="meshwell/mesh.py",
+            required_signals=(
+                'interface_delimiter: str = "___"',
+                'boundary_delimiter: str = "None"',
+            ),
+            current_signal="mesh() and in-place model meshing use the same delimiter defaults",
+            remaining_gap="pin defaults across both XAO and in-place CAD routes",
+        ),
+        _source_contract_row(
+            contract_item="meshwell OCC XAO writer physical-group serializer",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="meshwell/occ_xao_writer.py",
+            required_signals=(
+                "entities, inter-entity interfaces, exterior",
+                "A___B",
+                "B___None",
+                "keep=False",
+                'interface_delimiter: str = "___"',
+                'boundary_delimiter: str = "None"',
+            ),
+            current_signal=(
+                "meshwell's XAO writer serializes entity, interface, and "
+                "exterior physical groups with the same meshwell-style names"
+            ),
+            remaining_gap="publish those XAO naming semantics as the formal contract",
+        ),
+        _source_contract_row(
+            contract_item="meshwell multiple physical-name equivalence tests",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="tests/test_multiple_physicals.py",
+            required_signals=(
+                "domain___center",
+                "big_prism___None",
+                "center___small_prism",
+            ),
+            current_signal=(
+                "meshwell tests show tuple physical names produce equivalent "
+                "volume/interface/exterior physical groups"
+            ),
+            remaining_gap="carry this equivalence into a formal handoff fixture for gsim consumers",
+        ),
+        _source_contract_row(
+            contract_item="meshwell interface sharing and exterior refinement tests",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="tests/test_resolution.py",
+            required_signals=("outer___None", "outer___A", "outer___B"),
+            current_signal="meshwell resolution tests exercise interface and exterior group names",
+            remaining_gap=("carry these refinement semantics into the formal public contract"),
+        ),
+        _source_contract_row(
+            contract_item="meshwell CAD backend physical-group equivalence tests",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="tests/test_backend_equivalence.py",
+            required_signals=(
+                "cad_occ",
+                "cad_gmsh",
+                "A___helper",
+                "test_backends_mesh_adjacent_3d_equivalently",
+                "test_backends_mesh_keep_false_equivalently",
+            ),
+            current_signal=(
+                "meshwell compares cad_occ/XAO and cad_gmsh physical group "
+                "names, masses, duplicate entities, and keep=False behavior"
+            ),
+            remaining_gap=("reuse this upstream evidence from a meshwell-to-gsim consumer fixture"),
+            evidence_status="covered_meshwell_backend_equivalence",
+        ),
+        _source_contract_row(
+            contract_item="meshwell loaded CAD state backend equivalence tests",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="tests/test_backend_loaded_equivalence.py",
+            required_signals=(
+                "physical group names",
+                "InterfaceTag",
+                "keep=False",
+                "multi_physical_names",
+                "test_loaded_state_matches",
+            ),
+            current_signal=(
+                "meshwell compares pre-mesh loaded CAD state across backends "
+                "for topology-heavy scenes, InterfaceTag, keep=False, and "
+                "multiple physical names"
+            ),
+            remaining_gap=("promote a documented public fixture that downstream gsim can load"),
+            evidence_status="covered_meshwell_backend_equivalence",
+        ),
+        _source_contract_row(
+            contract_item="meshwell mesh-level backend cross-compare tests",
+            owner_repo="meshwell",
+            repo_path=meshwell_path,
+            relative_path="tests/test_backend_cross_compare.py",
+            required_signals=(
+                "physical groups and per-group geometric mass",
+                "InterfaceTag",
+                "A___None",
+                "test_three_abutting_prisms_match",
+                "test_keep_false_helper_match",
+            ),
+            current_signal=(
+                "meshwell compares meshed outputs across backends using "
+                "physical group names and per-group mass invariants"
+            ),
+            remaining_gap=(
+                "connect an exported meshwell fixture directly to gsim manifest parsing"
+            ),
+            evidence_status="covered_meshwell_backend_equivalence",
+        ),
+        _source_contract_row(
+            contract_item="gsim manifest parser supports meshwell-style names",
+            owner_repo="gsim",
+            repo_path=gsim_path,
+            relative_path="src/gsim/palace/mesh/manifest.py",
+            required_signals=(
+                '_INTERFACE_DELIMITERS = ("___", "__")',
+                '_EXTERIOR_SIDE_NAMES = {"none", "boundary"}',
+            ),
+            current_signal=(
+                "gsim parses meshwell-style interface/exterior labels while "
+                "retaining legacy double-underscore compatibility"
+            ),
+            remaining_gap=(
+                "replace legacy compatibility with a single upstream contract only when safe"
+            ),
+            evidence_status="covered_gsim_consumer_parser",
+        ),
+        _source_contract_row(
+            contract_item="gsim manifest tests cover interface/exterior parsing",
+            owner_repo="gsim",
+            repo_path=gsim_path,
+            relative_path="tests/palace/test_mesh_manifest.py",
+            required_signals=(
+                "metal___substrate",
+                "metal___None",
+                "legacy__substrate",
+            ),
+            current_signal=(
+                "gsim tests pin meshwell-style interface/exterior parsing and "
+                "legacy artifact parsing"
+            ),
+            remaining_gap=(
+                "add cross-repo fixture once meshwell publishes a formal handoff contract"
+            ),
+            evidence_status="covered_gsim_consumer_parser",
+        ),
+        _source_contract_row(
+            contract_item="gsim postprocessing index-map lookup helpers",
+            owner_repo="gsim",
+            repo_path=gsim_path,
+            relative_path="src/gsim/palace/mesh/postprocessing.py",
+            required_signals=(
+                "class PostprocessingIndexMap",
+                "physical_name_for_index",
+                "entries_for_physical_name",
+                "entries_for_attribute",
+            ),
+            current_signal=(
+                "gsim owns section/index-to-physical-name and attribute-to-entry lookup semantics"
+            ),
+            remaining_gap=("exercise those lookups against a meshwell-produced cross-repo fixture"),
+            evidence_status="covered_gsim_consumer_parser",
+        ),
+        _source_contract_row(
+            contract_item="gsim public postprocessing index-map result loader",
+            owner_repo="gsim",
+            repo_path=gsim_path,
+            relative_path="src/gsim/palace/results.py",
+            required_signals=(
+                "def load_postprocessing_index_map",
+                "palace_index_map.json",
+                "PostprocessingIndexMap",
+                "_optional_str_pair",
+            ),
+            current_signal=(
+                "gsim exposes a notebook-facing loader for generated "
+                "palace_index_map.json artifacts"
+            ),
+            remaining_gap=("load a meshwell-produced fixture through this public gsim helper"),
+            evidence_status="covered_gsim_consumer_parser",
+        ),
+        _source_contract_row(
+            contract_item="gsim generated mesh integration tests preserve identities",
+            owner_repo="gsim",
+            repo_path=gsim_path,
+            relative_path="tests/palace/test_mesh_integration.py",
+            required_signals=(
+                "test_generated_interface_names_use_meshwell_delimiter",
+                "test_manifest_preserves_generated_interface_identities",
+                "___None",
+                "interface_of",
+            ),
+            current_signal=(
+                "gsim integration tests verify generated meshwell-style "
+                "interface names and manifest interface identities"
+            ),
+            remaining_gap=("add a cross-repo fixture whose input is exported by meshwell"),
+            evidence_status="covered_gsim_consumer_parser",
+        ),
+        {
+            "contract_item": "formal meshwell physical-name/interface-tag contract text",
+            "owner_repo": "meshwell + gsim",
+            "source_path": None,
+            "relative_path": None,
+            "evidence_status": "pending_cross_repo_contract",
+            "required_signals": [
+                "solver-agnostic physical-name/interface-tag grammar",
+                "interface delimiter and exterior sentinel rules",
+                "XAO and in-place CAD route responsibilities",
+            ],
+            "missing_signals": [
+                "formal meshwell physical-name/interface-tag contract text",
+            ],
+            "current_signal": (
+                "meshwell source/tests and gsim consumers are locally aligned, "
+                "but the reusable contract is still implicit"
+            ),
+            "remaining_gap": (
+                "publish the grammar and ownership boundary in meshwell/gsim "
+                "docs or API docs before treating it as an upstream contract"
+            ),
+        },
+        {
+            "contract_item": "meshwell-to-gsim cross-repo consumer fixture/gate",
+            "owner_repo": "meshwell + gsim",
+            "source_path": None,
+            "relative_path": None,
+            "evidence_status": "pending_cross_repo_contract",
+            "required_signals": [
+                "meshwell-exported CAD/XAO or mesh artifact",
+                "gsim manifest parser consumes the artifact",
+                "gsim postprocessing index map preserves names and attributes",
+            ],
+            "missing_signals": [
+                "meshwell-to-gsim cross-repo consumer fixture/gate",
+            ],
+            "current_signal": (
+                "meshwell backend equivalence and gsim consumer parsing are "
+                "covered separately, but not yet joined by one fixture"
+            ),
+            "remaining_gap": (
+                "add a meshwell-to-gsim cross-repo fixture that starts from "
+                "meshwell output and ends at gsim manifest/index-map assertions"
+            ),
+        },
+    ]
+    status_counts = _evidence_status_counts(gate_rows)
+    missing_source_count = status_counts.get("missing_source_signal", 0)
+    covered_statuses = {
+        "covered_source",
+        "covered_meshwell_backend_equivalence",
+        "covered_gsim_consumer_parser",
+    }
+    pending_rows = [
+        row for row in gate_rows if str(row["evidence_status"]) == "pending_cross_repo_contract"
+    ]
+    evidence_path = output_dir / MESHWELL_HANDOFF_CONTRACT_GATE_FILENAME
+    evidence = {
+        "schema_version": 1,
+        "workflow": "public-meshwell-handoff-contract-gate",
+        "repo": "orpen-sc-pdk",
+        "meshwell_repo": meshwell_path.as_posix(),
+        "gsim_repo": gsim_path.as_posix(),
+        "contract_status": (
+            "source_and_backend_aligned_pending_cross_repo_contract"
+            if missing_source_count == 0
+            else "source_alignment_incomplete"
+        ),
+        "evidence_status_counts": status_counts,
+        "covered_source_count": status_counts.get("covered_source", 0),
+        "covered_meshwell_backend_equivalence_count": status_counts.get(
+            "covered_meshwell_backend_equivalence",
+            0,
+        ),
+        "covered_gsim_consumer_parser_count": status_counts.get(
+            "covered_gsim_consumer_parser",
+            0,
+        ),
+        "covered_count": sum(status_counts.get(status, 0) for status in covered_statuses),
+        "pending_count": len(pending_rows),
+        "blocking_gaps": [
+            "formal meshwell physical-name/interface-tag contract text",
+            "meshwell-to-gsim cross-repo consumer fixture/gate",
+        ],
+        "owner_boundaries": {
+            "meshwell": (
+                "solver-agnostic physical names, interface/exterior tag grammar, "
+                "XAO/CAD export, and backend equivalence tests"
+            ),
+            "gsim": (
+                "Palace mesh manifest parsing, postprocessing index maps, "
+                "config/report lookup, and legacy artifact compatibility"
+            ),
+            "orpen-sc-pdk": "publication-safe consumer evidence and notebook display",
+        },
+        "gate_rows": gate_rows,
+    }
+    evidence["output_dir"] = (
+        _relative_path(output_dir, relative_root)
+        if relative_root is not None
+        else output_dir.as_posix()
+    )
+    evidence["evidence_path"] = (
+        _relative_path(evidence_path, relative_root)
+        if relative_root is not None
+        else evidence_path.as_posix()
+    )
+    evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
+    return evidence
+
+
+def public_meshwell_handoff_contract_gate_table(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "meshwell-handoff-contract-gate",
+) -> Any:
+    """Return meshwell-to-gsim physical-name handoff contract gate rows."""
+
+    import pandas as pd
+
+    evidence = build_public_meshwell_handoff_contract_gate_evidence(output_dir)
+    columns = [
+        "contract_item",
+        "owner_repo",
+        "relative_path",
+        "evidence_status",
+        "current_signal",
+        "remaining_gap",
+    ]
+    return pd.DataFrame(evidence["gate_rows"]).loc[:, columns]
 
 
 def load_public_interface_preset_review_queue() -> dict[str, Any]:
@@ -2826,6 +3248,10 @@ def build_public_palace_smoke_evidence(
         output_root / "gsim-boundary-review-coverage",
         relative_to=output_root,
     )
+    meshwell_handoff_contract_gate = build_public_meshwell_handoff_contract_gate_evidence(
+        output_root / "meshwell-handoff-contract-gate",
+        relative_to=output_root,
+    )
     interface_preset_promotion_gate = build_public_interface_preset_promotion_gate_evidence(
         output_root / "interface-preset-promotion-gate",
         relative_to=output_root,
@@ -2846,6 +3272,7 @@ def build_public_palace_smoke_evidence(
         "goal_audit": load_public_simulation_goal_audit(),
         "gsim_boundary_review_crosscheck": load_public_gsim_boundary_review_crosscheck(),
         "gsim_boundary_review_coverage": gsim_boundary_review_coverage,
+        "meshwell_handoff_contract_gate": meshwell_handoff_contract_gate,
         "interface_preset_review_queue": load_public_interface_preset_review_queue(),
         "cad_mesh_identity_handoff": cad_mesh_identity_handoff,
         "interface_preset_promotion_gate": interface_preset_promotion_gate,
