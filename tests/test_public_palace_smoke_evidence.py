@@ -10,6 +10,7 @@ from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
     build_public_palace_smoke_evidence,
+    load_public_simulation_helper_node_inventory,
 )
 
 
@@ -59,6 +60,35 @@ def _assert_config_generation_material_provenance(problem: dict) -> list[dict]:
     return rows
 
 
+def _assert_helper_node_inventory(evidence: dict) -> None:
+    rows = evidence["helper_node_inventory"]
+    assert rows == load_public_simulation_helper_node_inventory()
+    assert len(rows) >= 10
+
+    by_node = {row["node"]: row for row in rows}
+    assert by_node["Driven problem fixture"]["public_status"] == "implemented_public_fixture"
+    assert by_node["Eigenmode problem fixture"]["gdsfactory_home"] == "gsim"
+    assert by_node["Electrostatic problem fixture"]["next_issue"] == (
+        "public-problem-type-notebook-coverage"
+    )
+
+    magnetostatic = by_node["Magnetostatic problem gap"]
+    assert magnetostatic["public_status"] == "inventory_only_pending_public_use_case"
+    assert "MagnetostaticConfig exists" in magnetostatic["public_api_or_artifact"]
+    assert "SurfaceCurrent" in magnetostatic["private_capability"]
+
+    for row in rows:
+        assert row["node"]
+        assert row["private_anchor"]
+        assert row["why_helper_exists"]
+        assert row["gdsfactory_home"] in {
+            "gsim",
+            "orpen-sc-pdk + gsim",
+            "meshwell + gsim",
+        }
+        assert row["next_issue"]
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -70,6 +100,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert evidence["workflow"] == "public-palace-smoke-evidence"
     assert evidence["solver"]["enabled"] is False
     assert "ORPEN_RUN_LOCAL_PALACE_SMOKE=1" in evidence["solver"]["skip_reason"]
+    _assert_helper_node_inventory(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",
         "eigenmode_resonator",

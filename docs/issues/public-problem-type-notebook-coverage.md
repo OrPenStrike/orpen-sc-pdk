@@ -128,6 +128,14 @@ Verified local changes:
 - the public simulation workflow notebook now also displays generated
   domain-material provenance tables for those public problem cells, making the
   material overlay usage visible in docs-safe outputs;
+- the public simulation workflow notebook now displays a helper-node coverage
+  matrix from `scripts/fixtures/public_simulation_helper_nodes.json`, tying
+  private helper capability shapes and private anchors to their intended
+  ecosystem home, current public `gsim`/OrPen API or artifact, and owning issue;
+- the public evidence runner now embeds the same helper-node inventory as
+  `helper_node_inventory`, so local JSON evidence and notebook output agree on
+  implemented public fixtures, shared material/interface/index/runtime nodes,
+  and the Magnetostatic inventory-only gap;
 - `gsim` commit `652fcec` adds
   `gsim.palace.load_palace_sweep_summary()`, and the public evidence runner now
   writes `points.json` for the three problem fixtures and records a
@@ -239,7 +247,9 @@ Remaining slices:
   policy exist;
 - add a public Magnetostatic fixture only after a public use case is selected;
   current public notebook coverage intentionally proves the private consumer
-  problem types that have active Driven/Eigenmode/Electrostatic notebooks;
+  problem types that have active Driven/Eigenmode/Electrostatic notebooks, while
+  `scripts/fixtures/public_simulation_helper_nodes.json` records the
+  Magnetostatic private anchors and current `gsim` model-only status;
 - keep full sweep orchestration and broader cost modeling as later `gsim`
   workflow slices; this issue now proves explicit point-table artifact,
   runtime, provenance, resource, scheduler, benchmark-index, and report-metric

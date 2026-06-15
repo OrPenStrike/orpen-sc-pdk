@@ -31,6 +31,12 @@ Current public notebook:
 - {doc}`../notebooks/public_simulation_workflows` runs public Driven,
   Eigenmode, and Electrostatic mesh/config/artifact handoffs with local `gsim`
   and public `orpen-sc-pdk` cells only;
+- the same notebook now displays a helper-node coverage matrix loaded from
+  `scripts/fixtures/public_simulation_helper_nodes.json`, showing why each
+  private helper node exists, which private notebook/helper anchors motivated
+  the row, which GDSFactory ecosystem repo should own the public equivalent,
+  which `gsim`/OrPen API or artifact currently covers it, and which issue owns
+  the next slice;
 - the same notebook loads synthetic public Driven, Eigenmode, and Electrostatic
   Palace report bundles through `gsim.palace.load_driven_report()`,
   `gsim.palace.load_eigenmode_report()`, and
@@ -130,6 +136,10 @@ Current executable smoke coverage:
   configs and `gsim.palace.load_domain_material_summary()`, proving each public
   problem fixture carries solver block, postprocessing count, boundary count, and
   material provenance evidence.
+- the same evidence runner now records the helper-node inventory fixture as
+  `helper_node_inventory`, including implemented public fixtures, shared
+  material/interface/index/runtime helper nodes, and the Magnetostatic
+  inventory-only gap.
 - the same evidence script uses `gsim.palace.write_palace_sweep_points()` to
   write a public `points.json` table for those three fixtures, then consumes
   `gsim.palace.load_palace_sweep_summary()` so sweep identity starts from
@@ -180,7 +190,9 @@ Current executable smoke coverage:
 Known gaps and non-goals:
 
 - Magnetostatic is acknowledged as a private helper/test surface, but it has no
-  public OrPen fixture or notebook equivalent yet.
+  public OrPen fixture or notebook equivalent yet; the shared helper-node
+  inventory records the private anchors and current `gsim` status as
+  `inventory_only_pending_public_use_case`.
 - Full sweep orchestration and broader cost modeling remain later reusable
   `gsim` workflow slices; the current public baseline is explicit point
   metadata plus table-ready per-point artifact, runtime, provenance, and

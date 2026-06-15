@@ -117,9 +117,21 @@ Verified local changes:
   config/material provenance as table output through
   `gsim.palace.load_domain_material_summary()`, so notebook review can inspect
   how PDK material overlay values enter Palace `Domains.Materials`.
+- current OrPen local evidence and notebook output now share a helper-node
+  inventory fixture that records Driven/Eigenmode/Electrostatic as implemented
+  public fixtures and Magnetostatic as an inventory-only config gap: `gsim`
+  currently exposes `MagnetostaticConfig`, while no public `MagnetostaticSim`,
+  fixture, or report loader is wired until a public use case is selected.
 
 Remaining slices:
 
+- after a public Magnetostatic use case is selected, the first `gsim` slice
+  should add a first-class `MagnetostaticSim` peer and config-writer path for
+  `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
+  caller-supplied `SurfaceCurrent` sources, magnetic `SurfaceFlux`
+  postprocessing/index-map rows, and public material permeability/London-depth
+  provenance; report loading should wait until the exact Palace Magnetostatic
+  CSV outputs are confirmed;
 - record richer dielectric interface provenance before promoting interface
   presets into public PDK material data;
 - split NCUAS-style Slurm/Sbatch handoff, profile/resource resolution,

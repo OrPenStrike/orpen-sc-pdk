@@ -93,6 +93,8 @@ def _find_repo_file(relative_path: str) -> Path:
 
 PUBLIC_SLURM_PROFILE_CATALOG_REF = "scripts/fixtures/public_slurm_profiles.json"
 PUBLIC_SLURM_PROFILE_CATALOG = _find_repo_file(PUBLIC_SLURM_PROFILE_CATALOG_REF)
+PUBLIC_HELPER_NODE_INVENTORY_REF = "scripts/fixtures/public_simulation_helper_nodes.json"
+PUBLIC_HELPER_NODE_INVENTORY = _find_repo_file(PUBLIC_HELPER_NODE_INVENTORY_REF)
 
 
 def _load_json(path: Path) -> dict:
@@ -102,6 +104,21 @@ def _load_json(path: Path) -> dict:
 def _write_json(path: Path, data: dict) -> Path:
     path.write_text(json.dumps(data, indent=2))
     return path
+
+
+def _helper_node_inventory_table() -> pd.DataFrame:
+    rows = json.loads(PUBLIC_HELPER_NODE_INVENTORY.read_text())
+    columns = [
+        "node",
+        "private_capability",
+        "private_anchor",
+        "why_helper_exists",
+        "gdsfactory_home",
+        "public_api_or_artifact",
+        "public_status",
+        "next_issue",
+    ]
+    return pd.DataFrame(rows).loc[:, columns]
 
 
 def _artifact_status(output_dir: Path) -> dict[str, bool]:
@@ -849,6 +866,20 @@ def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Pa
         "palace_material_resolution.json": material_resolution_path,
     }
 
+
+# %% [markdown]
+# ## Helper-node coverage matrix
+#
+# This table is the public migration inventory for the simulation helper
+# system. It records the private capability shape, why a helper node exists,
+# the intended GDSFactory ecosystem home, the current public API/artifact, and
+# the issue that owns the next slice. It intentionally treats Magnetostatic as
+# an inventory-only gap until a public use case is selected.
+
+# %%
+helper_node_inventory = _helper_node_inventory_table()
+with pd.option_context("display.max_columns", None, "display.max_colwidth", None):
+    display(helper_node_inventory)
 
 # %% [markdown]
 # ## Slurm profile catalog and handoff controls

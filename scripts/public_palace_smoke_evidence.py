@@ -23,6 +23,15 @@ EVIDENCE_FILENAME = "public_palace_smoke_evidence.json"
 PUBLIC_SLURM_PROFILE_CATALOG = (
     Path(__file__).resolve().parent / "fixtures" / "public_slurm_profiles.json"
 )
+PUBLIC_HELPER_NODE_INVENTORY = (
+    Path(__file__).resolve().parent / "fixtures" / "public_simulation_helper_nodes.json"
+)
+
+
+def load_public_simulation_helper_node_inventory() -> list[dict[str, Any]]:
+    """Load the public helper-node coverage matrix used by docs and evidence."""
+
+    return json.loads(PUBLIC_HELPER_NODE_INVENTORY.read_text())
 
 
 def _relative_path(path: Path, root: Path) -> str:
@@ -971,6 +980,7 @@ def build_public_palace_smoke_evidence(
         "workflow": "public-palace-smoke-evidence",
         "repo": "orpen-sc-pdk",
         "solver": solver,
+        "helper_node_inventory": load_public_simulation_helper_node_inventory(),
         "problems": problems,
         "sweep_summary": sweep_evidence["summary"],
         "sweep_resource_index": sweep_evidence["resource_index"],
