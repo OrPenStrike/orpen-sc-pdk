@@ -14,10 +14,12 @@ from .config import PATH
 from .logger import logger
 from .materials import (
     get_gsim_dielectric_interface_preset_kwargs,
+    get_gsim_material_kind_map,
     get_gsim_material_overlay,
     get_interface_preset_records,
     get_material_records,
     validate_interface_preset_records,
+    validate_material_kind_records,
     write_gsim_material_overlay,
 )
 from .pdk import PDK, activate, get_pdk
@@ -54,6 +56,7 @@ __all__ = [
     "cells",
     "config",
     "get_gsim_dielectric_interface_preset_kwargs",
+    "get_gsim_material_kind_map",
     "get_sample_functions",
     "get_pdk",
     "helper",
@@ -64,6 +67,7 @@ __all__ = [
     "materials",
     "models",
     "tech",
+    "validate_material_kind_records",
     "validate_interface_preset_records",
     "write_gsim_material_overlay",
 ]

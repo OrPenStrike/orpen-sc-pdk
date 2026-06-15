@@ -90,13 +90,13 @@ class LayerMapOrpenSCPDK(LayerMap):
 L = LAYER = LayerMapOrpenSCPDK
 
 material_properties = {
-    "vacuum": {"relative_permittivity": 1.0},
-    "Si": {"relative_permittivity": 11.45},
-    "Al": {"relative_permittivity": float("inf")},
-    "Nb": {"relative_permittivity": float("inf")},
-    "TiN": {"relative_permittivity": float("inf")},
-    "In": {"relative_permittivity": float("inf")},
-    "AlOx_native_generic": {"relative_permittivity": 10.0},
+    "vacuum": {"relative_permittivity": 1.0, "material_kind": "vacuum"},
+    "Si": {"relative_permittivity": 11.45, "material_kind": "dielectric"},
+    "Al": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
+    "Nb": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
+    "TiN": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
+    "In": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
+    "AlOx_native_generic": {"relative_permittivity": 10.0, "material_kind": "dielectric"},
 }
 
 interface_preset_records = {}

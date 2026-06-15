@@ -9,10 +9,12 @@ import orpen_sc_pdk
 from orpen_sc_pdk import tech
 from orpen_sc_pdk.materials import (
     get_gsim_dielectric_interface_preset_kwargs,
+    get_gsim_material_kind_map,
     get_gsim_material_overlay,
     get_interface_preset_records,
     get_material_records,
     validate_interface_preset_records,
+    validate_material_kind_records,
     write_gsim_material_overlay,
 )
 
@@ -21,6 +23,7 @@ def test_material_records_are_public_copy() -> None:
     records = get_material_records()
 
     assert records["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert records["Si"]["material_kind"] == "dielectric"
 
     records["Si"]["relative_permittivity"] = 1.0
     assert tech.material_properties["Si"]["relative_permittivity"] == pytest.approx(11.45)
@@ -28,8 +31,53 @@ def test_material_records_are_public_copy() -> None:
 
 def test_public_import_surface_exposes_material_overlay_helpers() -> None:
     assert orpen_sc_pdk.get_material_records()["vacuum"]["relative_permittivity"] == 1.0
+    assert orpen_sc_pdk.get_gsim_material_kind_map()["vacuum"] == "vacuum"
     assert "materials" in orpen_sc_pdk.get_gsim_material_overlay()
     assert orpen_sc_pdk.get_interface_preset_records() == {}
+
+
+def test_gsim_material_kind_map_is_public_explicit_copy() -> None:
+    kind_map = get_gsim_material_kind_map()
+
+    assert kind_map == {
+        "vacuum": "vacuum",
+        "Si": "dielectric",
+        "Al": "superconductor",
+        "Nb": "superconductor",
+        "TiN": "superconductor",
+        "In": "superconductor",
+        "AlOx_native_generic": "dielectric",
+    }
+
+    kind_map["Si"] = "vacuum"
+    assert get_gsim_material_kind_map()["Si"] == "dielectric"
+
+
+def test_gsim_material_kind_map_covers_public_layer_stack_materials() -> None:
+    kind_map = get_gsim_material_kind_map()
+    layer_stack_materials = {
+        layer.material for layer in tech.LAYER_STACK.layers.values() if layer.material
+    }
+
+    assert layer_stack_materials <= set(kind_map)
+    assert tech.interface_preset_records == {}
+
+
+@pytest.mark.parametrize(
+    ("records", "match"),
+    [
+        ({"Si": {}}, "material_kind"),
+        ({"Si": {"material_kind": ""}}, "material_kind"),
+        ({"Si": {"material_kind": None}}, "material_kind"),
+        ({"Si": {"material_kind": True}}, "material_kind"),
+        ({"Si": {"material_kind": "metal"}}, "unsupported"),
+        ({"": {"material_kind": "dielectric"}}, "Material names"),
+        ({None: {"material_kind": "dielectric"}}, "Material names"),
+    ],
+)
+def test_gsim_material_kind_map_validates_records(records, match) -> None:
+    with pytest.raises(ValueError, match=match):
+        validate_material_kind_records(records)
 
 
 def test_gsim_material_overlay_maps_finite_dielectrics() -> None:
@@ -37,7 +85,9 @@ def test_gsim_material_overlay_maps_finite_dielectrics() -> None:
     materials = overlay["materials"]
 
     assert materials["vacuum"]["relative_permittivity"] == pytest.approx(1.0)
+    assert "material_kind" not in materials["vacuum"]
     assert materials["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert "material_kind" not in materials["Si"]
     assert materials["Si"]["dispersion_models"] == [
         {
             "type": "constant",
@@ -54,6 +104,7 @@ def test_gsim_material_overlay_preserves_conductor_role_without_infinite_permitt
     assert materials["Al"]["material_role"] == "conductor"
     assert materials["Al"]["relative_permittivity_note"] == "inf"
     assert "relative_permittivity" not in materials["Al"]
+    assert "material_kind" not in materials["Al"]
     assert "permittivity" not in materials["Al"]
     assert "dispersion_models" not in materials["Al"]
 
@@ -475,7 +526,7 @@ def test_gsim_material_kind_classifier_accepts_public_interface_records(tmp_path
     manifest = build_mesh_manifest(groups)
     specs = build_dielectric_interface_specs_from_material_kinds(
         manifest,
-        material_kind_by_name={"Al": "superconductor", "Si": "dielectric"},
+        material_kind_by_name=get_gsim_material_kind_map(),
         presets=validate_interface_preset_records(records),
         preset_by_interface_type={"MS": "public_ms_example"},
     )

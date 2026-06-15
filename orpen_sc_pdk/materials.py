@@ -14,11 +14,40 @@ from orpen_sc_pdk.tech import interface_preset_records, material_properties
 _OVERLAY_SOURCE = "orpen-sc-pdk tech.material_properties"
 _INTERFACE_PRESET_SOURCE = "orpen-sc-pdk tech.interface_preset_records"
 _INTERFACE_TYPES = {"MA", "MS", "SA"}
+_MATERIAL_KINDS = {
+    "conductor",
+    "superconductor",
+    "mixed",
+    "conductive",
+    "dielectric",
+    "vacuum",
+}
 
 
 def get_material_records() -> dict[str, dict[str, Any]]:
     """Return a copy of public PDK material records."""
     return copy.deepcopy(material_properties)
+
+
+def validate_material_kind_records(
+    records: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, str]:
+    """Return normalized generic material kinds for public material records."""
+
+    source_records = material_properties if records is None else records
+    normalized: dict[str, str] = {}
+    for name, record in source_records.items():
+        material_name = _material_name(name)
+        normalized[material_name] = _normalize_material_kind(material_name, record)
+    return normalized
+
+
+def get_gsim_material_kind_map(
+    records: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, str]:
+    """Return ``material_kind_by_name`` input for gsim interface classification."""
+
+    return dict(validate_material_kind_records(records))
 
 
 def get_interface_preset_records() -> dict[str, dict[str, Any]]:
@@ -117,6 +146,33 @@ def _to_gsim_material_entry(record: dict[str, Any]) -> dict[str, Any]:
         if value is not None:
             entry[key] = value
     return entry
+
+
+def _material_name(name: Any) -> str:
+    if not isinstance(name, str) or not name:
+        msg = "Material names must be non-empty strings."
+        raise ValueError(msg)
+    return name
+
+
+def _normalize_material_kind(material_name: str, record: Mapping[str, Any]) -> str:
+    if not isinstance(record, Mapping):
+        msg = f"Material record {material_name!r} must be a mapping."
+        raise TypeError(msg)
+
+    kind = record.get("material_kind")
+    if isinstance(kind, bool) or not isinstance(kind, str) or not kind:
+        msg = f"Material record {material_name!r} must set a non-empty material_kind string."
+        raise ValueError(msg)
+
+    normalized = kind.lower()
+    if normalized not in _MATERIAL_KINDS:
+        msg = (
+            f"Material record {material_name!r} has unsupported material_kind "
+            f"{kind!r}; expected one of {sorted(_MATERIAL_KINDS)}."
+        )
+        raise ValueError(msg)
+    return normalized
 
 
 def _normalize_interface_preset_record(

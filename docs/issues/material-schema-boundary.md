@@ -72,6 +72,11 @@ Verified local changes:
   `conductor/dielectric -> MS`, and `dielectric/vacuum -> SA` classification,
   exterior `None`/`boundary` skipping, conductive aliases, and optional
   kind-pair overrides for duplicate MA/MS specs on one boundary;
+- `orpen-sc-pdk` now records explicit generic `material_kind` values on public
+  material records and exposes `validate_material_kind_records()` plus
+  `get_gsim_material_kind_map()`, giving `gsim` classifier callers a public
+  material-name-to-kind map without exporting preset defaults or copying
+  private process constants;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
@@ -95,8 +100,9 @@ Verified local changes:
   `config.json`, and load interface material provenance through the reusable
   report/index-map path;
 - public tests now also prove the same caller-supplied interface preset records
-  can flow through the `gsim` material-kind classifier before Palace config and
-  report loading, without introducing public default MA/MS/SA values;
+  can flow through the `gsim` material-kind classifier using OrPen's public
+  material-kind map before Palace config and report loading, without
+  introducing public default MA/MS/SA values;
 - read-only NCUAS audit confirms the private repo already has MA/MS/SA
   classification, thin-film MA+MS duplicate-spec behavior, preset lookup,
   `materials.json` numeric interface-loss values, notebook-local override
@@ -107,9 +113,10 @@ Verified local changes:
 
 Remaining slices:
 
-- introduce a validated public material-record schema when the current dict
-  grows to include aliases, provenance, conditions, loss, conductivity,
-  London-depth, or surface/interface presets;
+- introduce a broader validated public material-record schema when the current
+  dict grows beyond explicit material kinds and minimal EM fields to include
+  aliases, provenance, conditions, loss, conductivity, London-depth, or
+  surface/interface presets;
 - populate public interface preset records only after MA/MS/SA thickness, loss
   tangent, material-kind data, and automatic-selection values have source-backed
   public records;

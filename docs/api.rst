@@ -13,6 +13,9 @@ API
 .. automodule:: orpen_sc_pdk.config
     :members:
 
+.. automodule:: orpen_sc_pdk.materials
+    :members:
+
 .. automodule:: orpen_sc_pdk.models
     :members:
 

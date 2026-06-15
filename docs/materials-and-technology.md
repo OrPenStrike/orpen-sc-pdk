@@ -32,6 +32,11 @@ The current public bridge is intentionally small:
   the `gsim` material overlay mapping;
 - `orpen_sc_pdk.materials.write_gsim_material_overlay()` writes the same
   mapping as strict JSON for tools that consume overlay files;
+- `orpen_sc_pdk.materials.validate_material_kind_records()` validates explicit
+  generic `material_kind` values on public material records;
+- `orpen_sc_pdk.materials.get_gsim_material_kind_map()` returns the public
+  material-name-to-kind map expected by `gsim` dielectric-interface
+  classification helpers;
 - `orpen_sc_pdk.materials.get_interface_preset_records()` returns a copy of
   public dielectric-interface preset records, currently empty by default;
 - `orpen_sc_pdk.materials.validate_interface_preset_records()` validates
@@ -63,7 +68,8 @@ The current public bridge is intentionally small:
   when mode frequency is available.
 
 Finite public dielectric records are exported as constant material models.
-Conductor-like records currently represented by
+The generic `material_kind` labels are separate classifier inputs and are not
+written into the `gsim` material overlay. Conductor-like records currently represented by
 `relative_permittivity = inf` are preserved as material-role metadata until
 explicit conductivity, surface impedance, or London-depth values are part of
 the public material record.
@@ -94,9 +100,9 @@ should be:
 7. Use `gsim` assignment helpers for caller-supplied physical-name or
    interface-pair selection; automatic public selection policy belongs in a
    later source-backed PDK contract.
-8. Use `gsim` material-kind classification when the caller can provide public
-   material-kind data, but keep default public MA/MS/SA preset values out of the
-   PDK until those records are source-backed.
+8. Use the PDK's explicit public material-kind map with `gsim`
+   material-kind classification, but keep default public MA/MS/SA preset values
+   out of the PDK until those records are source-backed.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the
