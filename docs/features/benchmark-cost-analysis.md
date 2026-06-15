@@ -39,9 +39,14 @@ Current public baseline:
   reusing the existing Driven, Eigenmode, and Electrostatic report loaders to
   add compact physics/report rows when solver result artifacts are present,
   while recording missing report status for dry-run or partial sweeps;
+- local `gsim` commit `8879248` adds dry-run Palace handoff sidecars through
+  `write_palace_handoff_metadata()` and exposes them through
+  `load_palace_run_summary().handoff` plus table-ready sweep point handoff
+  fields;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
-  public fixture artifact status, solver skip/runtime summary fields, and a
-  public problem-type sweep-summary smoke in the ignored local evidence bundle.
+  public fixture artifact status, solver skip/runtime/handoff summary fields,
+  and a public problem-type sweep-summary smoke in the ignored local evidence
+  bundle.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output

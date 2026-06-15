@@ -58,6 +58,11 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert record["missing_artifact_count"] == 0
         assert record["core_artifact_count"] == 5
         assert record["core_artifact_bytes"] > 0
+        assert record["handoff_present"] is True
+        assert record["handoff_status"] == "planned"
+        assert record["handoff_profile_name"] == "public-local-dry-run"
+        assert record["handoff_script_present"] is False
+        assert record["handoff_archive_present"] is False
         assert record["runtime_present"] is False
         assert record["report_status"] == "missing"
         assert record["report_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
@@ -71,12 +76,42 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
 
         assert problem["solver_report"]["status"] == "skipped"
         assert output_dir.is_dir()
+        assert (output_dir / "palace_handoff_metadata.json").is_file()
         assert run_summary["problem_type"] == problem["problem_type"]
         assert run_summary["config"]["problem_type"] == problem["problem_type"]
         assert run_summary["mesh_manifest"]["present"] is True
         assert run_summary["mesh_manifest"]["entry_count"] > 0
         assert run_summary["index_map"]["present"] is True
         assert run_summary["index_map"]["entry_count"] > 0
+        assert run_summary["handoff"]["present"] is True
+        assert run_summary["handoff"]["status"] == "planned"
+        assert run_summary["handoff"]["launcher"] == {
+            "kind": "dry_run",
+            "solver_enabled": False,
+            "target": "palace",
+        }
+        assert run_summary["handoff"]["profile"]["name"] == "public-local-dry-run"
+        assert run_summary["handoff"]["resources"] == {
+            "num_processes": 1,
+            "num_threads": 1,
+        }
+        assert (
+            run_summary["handoff"]["path"]
+            == f"{problem['output_dir']}/palace_handoff_metadata.json"
+        )
+        assert run_summary["handoff"]["script"]["path"] == "run_palace.sbatch"
+        assert run_summary["handoff"]["script_present"] is False
+        assert run_summary["handoff"]["archive"]["path"] == "palace-handoff.tar.gz"
+        assert run_summary["handoff"]["archive_present"] is False
+        assert run_summary["handoff"]["metadata"] == {
+            "fixture": problem["fixture"],
+            "problem_type": problem["problem_type"],
+            "workflow": "public-palace-smoke-evidence",
+        }
+        assert run_summary["handoff"]["command"] == {
+            "argv": ["palace", "config.json"],
+            "redacted": True,
+        }
         assert run_summary["missing_artifacts"] == []
         assert run_summary["runtime"]["present"] is False
 

@@ -36,6 +36,16 @@ def _relative_run_summary(summary: dict[str, Any], output_root: Path) -> dict[st
             if not isinstance(row, dict) or row.get("path") is None:
                 continue
             row["path"] = _relative_path(Path(row["path"]), output_root)
+    for group_name in ("handoff", "runtime"):
+        group = summary.get(group_name, {})
+        if not isinstance(group, dict):
+            continue
+        if group.get("path") is not None:
+            group["path"] = _relative_path(Path(group["path"]), output_root)
+        for ref_name in ("script", "archive"):
+            ref = group.get(ref_name)
+            if isinstance(ref, dict) and ref.get("path") is not None:
+                ref["path"] = _relative_path(Path(ref["path"]), output_root)
     return summary
 
 
@@ -333,7 +343,7 @@ def _build_problem_evidence(
     run_kwargs: Mapping[str, Any],
     solver_skip_reason: str | None,
 ) -> dict[str, Any]:
-    from gsim.palace import load_palace_run_summary
+    from gsim.palace import load_palace_run_summary, write_palace_handoff_metadata
 
     output_dir = output_root / problem_key
     sim, mesh_result = build_sim(output_dir)
@@ -341,6 +351,28 @@ def _build_problem_evidence(
         postprocessing=build_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
+    )
+    write_palace_handoff_metadata(
+        output_dir,
+        status="planned",
+        launcher={
+            "kind": "dry_run",
+            "target": "palace",
+            "solver_enabled": solver_skip_reason is None,
+        },
+        profile={"name": "public-local-dry-run"},
+        resources={
+            "num_processes": int(run_kwargs.get("num_processes", 1) or 1),
+            "num_threads": int(run_kwargs.get("num_threads", 1) or 1),
+        },
+        script_path="run_palace.sbatch",
+        archive_path="palace-handoff.tar.gz",
+        command={"argv": ["palace", "config.json"], "redacted": True},
+        metadata={
+            "fixture": fixture_name,
+            "problem_type": problem_type,
+            "workflow": "public-palace-smoke-evidence",
+        },
     )
     run_summary = _relative_run_summary(
         load_palace_run_summary(output_dir, include_hashes=True).to_dict(),
@@ -384,6 +416,7 @@ def _build_sweep_evidence(
                 "fixture": problem["fixture"],
             },
             run_dir=problem["output_dir"],
+            handoff_metadata_path=(f"{problem['output_dir']}/palace_handoff_metadata.json"),
         )
         for problem_key, problem in sorted(problems.items())
     ]

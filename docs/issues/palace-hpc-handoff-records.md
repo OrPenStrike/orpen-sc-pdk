@@ -49,29 +49,35 @@ Proposed path:
 
 Current local evidence:
 
-- `gsim` has reusable local/cloud runtime sidecars and summary readers, but no
-  Slurm/Sbatch/HPC profile model;
+- `gsim` has reusable local/cloud runtime sidecars and summary readers;
+- local `gsim` commit `8879248` adds the first artifact-level handoff
+  contract: `write_palace_handoff_metadata()`, optional
+  `palace_handoff_metadata.json` discovery in `load_palace_run_summary()`,
+  `PalaceSweepPointSpec.handoff_metadata_path`, and flat sweep point handoff
+  fields for status, profile, script presence, and archive presence;
+- public OrPen evidence now writes dry-run handoff sidecars for Driven,
+  Eigenmode, and Electrostatic fixtures through the `gsim` API and reads them
+  back through the normal run/sweep summary surfaces;
 - `gsim` has point-local sweep summary readers/writers, but no Slurm array
   script or cluster campaign handoff;
 - `gplugins` has direct Palace wrapper functions that generate config, call a
   `palace` executable from `PATH`, and parse raw CSV output, but those helpers
   do not expose the richer `gsim` run-summary/report surfaces;
-- the public OrPen problem-type evidence bundle now proves the local
-  `palace_run_metadata.json` path for Driven, Eigenmode, and Electrostatic, so
-  the next step can extend the same summary schema instead of introducing a new
-  evidence channel.
+- the public OrPen problem-type evidence bundle now proves the
+  `palace_handoff_metadata.json` path for Driven, Eigenmode, and
+  Electrostatic in cluster-free dry-runs, while the existing opt-in local
+  Palace run path still reports `palace_run_metadata.json` through the same
+  summary schema.
 
 Remaining slices:
 
-- define the minimal `gsim` sidecar schema for single-run handoff metadata:
-  launcher kind, profile name, script path, archive path, requested resources,
-  resolved resources, and redacted scheduler command shape;
-- add dry-run writers/readers that produce summaries without requiring a live
-  cluster or submitting jobs;
-- extend sweep summaries with optional handoff/archive/resource fields for each
-  point and for the sweep-level array handoff;
-- add public OrPen fixture tests that prove the dry-run sidecars are readable
-  through `gsim` summary APIs while normal docs builds remain cluster-free;
+- split requested resources from resolved scheduler resources when real cluster
+  profiles are introduced;
+- add Slurm/Sbatch script rendering and validation as a `gsim` handoff layer
+  that consumes the sidecar schema instead of replacing it;
+- add sweep-level array handoff metadata beside point-level handoff metadata;
+- define generated archive manifests and post-run resource records without
+  committing private archives or private benchmark values;
 - only after dry-run schemas are stable, add local private-layout validation on
   NCUAS personal branches against real Slurm/HPC runs.
 
