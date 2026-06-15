@@ -13,6 +13,21 @@ from scripts.public_palace_smoke_evidence import (
 )
 
 
+def _assert_index_map_lookup_round_trip(problem: dict) -> list[dict]:
+    lookup = problem["index_map_lookup"]
+    rows = lookup["lookups"]
+
+    assert lookup["schema_version"] == 1
+    assert lookup["row_count"] == problem["run_summary"]["index_map"]["entry_count"]
+    assert rows
+    for row in rows:
+        assert row["physical_name"]
+        assert row["index"] in row["reverse_indices_for_physical_name"]
+        if row["attribute"] is not None:
+            assert row["entry_name"] in row["entry_names_for_attribute"]
+    return rows
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -360,22 +375,42 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
 
     driven = evidence["problems"]["driven_cpw"]
     driven_summary = driven["run_summary"]
+    driven_lookup = _assert_index_map_lookup_round_trip(driven)
     assert driven_summary["config"]["lumped_port_count"] == 2
     assert "Boundaries.Postprocessing.SurfaceFlux" in driven_summary["index_map"]["sections"]
     assert driven_summary["index_map"]["port_names"] == ["P1", "P2"]
+    assert sorted(
+        {
+            row["metadata"]["port"]
+            for row in driven_lookup
+            if row["section"] == "Boundaries.Postprocessing.SurfaceFlux"
+        }
+    ) == ["P1", "P2"]
 
     eigenmode = evidence["problems"]["eigenmode_resonator"]
     eigenmode_summary = eigenmode["run_summary"]
+    eigenmode_lookup = _assert_index_map_lookup_round_trip(eigenmode)
     assert eigenmode_summary["config"]["problem_type"] == "Eigenmode"
     assert "Boundaries.Postprocessing.SurfaceFlux" in eigenmode_summary["index_map"]["sections"]
+    assert any(
+        row["physical_name"] == "absorbing"
+        and row["section"] == "Boundaries.Postprocessing.SurfaceFlux"
+        for row in eigenmode_lookup
+    )
 
     electrostatic = evidence["problems"]["electrostatic_same_layer_capacitor"]
     electrostatic_summary = electrostatic["run_summary"]
+    electrostatic_lookup = _assert_index_map_lookup_round_trip(electrostatic)
     assert electrostatic_summary["config"]["terminal_count"] == 2
     assert electrostatic_summary["index_map"]["terminal_names"] == [
         "negative",
         "positive",
     ]
+    assert sorted(
+        row["terminal_name"]
+        for row in electrostatic_lookup
+        if row["section"] == "Boundaries.Terminal"
+    ) == ["negative", "positive"]
 
 
 def test_driven_report_summary_uses_sparams_public_keys(

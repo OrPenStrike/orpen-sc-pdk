@@ -36,7 +36,11 @@ Current prototype baseline:
   dimension, source, and parsed interface/exterior identity;
 - `gsim.palace.mesh` exposes a `PostprocessingIndexMap` that can resolve Palace
   postprocessing section/index values back to physical names and attributes;
-- both the mesh manifest and Palace index map can be written as JSON artifacts.
+- both the mesh manifest and Palace index map can be written as JSON artifacts;
+- public OrPen notebook/evidence fixtures now reload `palace_index_map.json`
+  through `gsim.palace.load_postprocessing_index_map()` and display forward
+  `section/index -> physical name`, reverse `physical name -> indices`, and
+  attribute lookup rows for Driven, Eigenmode, and Electrostatic workflows.
 - generated public example meshes now prove domain, conductor, port, terminal,
   absorbing-boundary, refinement, and non-exterior interface identities through
   the same manifest path; interface-loss classification remains a separate

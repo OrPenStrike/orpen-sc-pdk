@@ -46,6 +46,11 @@ Current public baseline:
 - local `gsim` commit `1da6783` adds material-overlay resolution provenance for
   dielectric interface rows, so surface-loss reports can show whether the
   interface permittivity/loss fields came from a public PDK material record;
+- public OrPen evidence and notebook fixtures now exercise the index-map contract
+  directly with `gsim.palace.load_postprocessing_index_map()`, showing forward
+  Palace section/index lookup, reverse physical-name lookup, and attribute lookup
+  for Driven port surfaces, Eigenmode absorbing/surface rows, and Electrostatic
+  terminal rows;
 - automatic public interface presets are still not part of the PDK material
   contract.
 

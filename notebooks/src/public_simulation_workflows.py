@@ -44,6 +44,7 @@ from gsim.palace import (
     load_electrostatic_report,
     load_palace_run_summary,
     load_palace_slurm_profile_catalog,
+    load_postprocessing_index_map,
     resolve_palace_slurm_profile,
     write_palace_slurm_sbatch_handoff,
 )
@@ -138,6 +139,54 @@ def _slurm_script_preview(script_path: Path) -> list[str]:
 
 def _public_solver_config_hints() -> dict:
     return _resolve_public_slurm_profile("public-slurm-dry-run").to_palace_config_hints()
+
+
+def _index_map_lookup_table(
+    output_dir: Path,
+    *,
+    sections: tuple[str, ...] | None = None,
+) -> pd.DataFrame:
+    index_map = load_postprocessing_index_map(output_dir)
+    rows = []
+    for entry in sorted(
+        index_map.entries,
+        key=lambda row: (row.section, row.index, row.entry_name),
+    ):
+        if sections is not None and entry.section not in sections:
+            continue
+        physical_name = index_map.physical_name_for_index(entry.section, entry.index)
+        reverse_indices = (
+            index_map.indices_for_physical_name(physical_name, section=entry.section)
+            if physical_name is not None
+            else ()
+        )
+        attribute = entry.attributes[0] if entry.attributes else None
+        attribute_entry_names = (
+            [
+                matched.entry_name
+                for matched in index_map.entries_for_attribute(
+                    attribute,
+                    section=entry.section,
+                )
+            ]
+            if attribute is not None
+            else []
+        )
+        rows.append(
+            {
+                "section": entry.section,
+                "index": entry.index,
+                "physical_name": physical_name,
+                "reverse_indices_for_physical_name": list(reverse_indices),
+                "attribute": attribute,
+                "entry_names_for_attribute": attribute_entry_names,
+                "entry_name": entry.entry_name,
+                "role": entry.role,
+                "port": entry.metadata.get("port"),
+                "terminal_name": entry.extra.get("terminal_name"),
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def _public_driven_cpw_sim(output_dir: Path):
@@ -834,6 +883,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
+    driven_index_lookup = _index_map_lookup_table(output_dir)
     driven_summary = {
         "problem_type": config["Problem"]["Type"],
         "profile_config_hints": config_hints,
@@ -841,6 +891,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
         "artifacts": _artifact_status(output_dir),
         "lumped_port_count": len(config["Boundaries"]["LumpedPort"]),
         "surface_flux_rows": len(config["Boundaries"]["Postprocessing"]["SurfaceFlux"]),
+        "index_lookup_rows": len(driven_index_lookup),
         "indexed_ports": sorted(
             {
                 row["metadata"]["port"]
@@ -851,6 +902,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
 display(driven_summary)
+display(driven_index_lookup)
 
 # %% [markdown]
 # ## Eigenmode resonator workflow
@@ -872,12 +924,14 @@ with tempfile.TemporaryDirectory() as temp_dir:
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
+    eigenmode_index_lookup = _index_map_lookup_table(output_dir)
     eigenmode_summary = {
         "problem_type": config["Problem"]["Type"],
         "profile_config_hints": config_hints,
         "solver_device": config["Solver"].get("Device"),
         "artifacts": _artifact_status(output_dir),
         "energy_rows": len(config["Domains"]["Postprocessing"]["Energy"]),
+        "index_lookup_rows": len(eigenmode_index_lookup),
         "surface_flux_names": sorted(
             {
                 row["entry_name"]
@@ -888,6 +942,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
 display(eigenmode_summary)
+display(eigenmode_index_lookup)
 
 # %% [markdown]
 # ## Caller-supplied Eigenmode interface classification
@@ -917,6 +972,10 @@ with tempfile.TemporaryDirectory() as temp_dir:
             "palace_index_map.json": output_dir / "palace_index_map.json",
         }
     )
+    interface_index_lookup = _index_map_lookup_table(
+        output_dir,
+        sections=("Boundaries.Postprocessing.Dielectric",),
+    )
     interface_preview = interface_summary.loc[
         :,
         [
@@ -937,10 +996,12 @@ with tempfile.TemporaryDirectory() as temp_dir:
         "profile_config_hints": config_hints,
         "solver_device": config["Solver"].get("Device"),
         "dielectric_interface_rows": len(config["Boundaries"]["Postprocessing"]["Dielectric"]),
+        "index_lookup_rows": len(interface_index_lookup),
         "classified_interfaces": interface_preview.to_dict(orient="records"),
     }
 
 display(generated_interface_summary)
+display(interface_index_lookup)
 
 # %% [markdown]
 # ## Electrostatic same-layer capacitor workflow
@@ -963,12 +1024,14 @@ with tempfile.TemporaryDirectory() as temp_dir:
     )
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
+    electrostatic_index_lookup = _index_map_lookup_table(output_dir)
     electrostatic_summary = {
         "problem_type": config["Problem"]["Type"],
         "profile_config_hints": config_hints,
         "solver_device": config["Solver"].get("Device"),
         "artifacts": _artifact_status(output_dir),
         "terminal_count": len(config["Boundaries"]["Terminal"]),
+        "index_lookup_rows": len(electrostatic_index_lookup),
         "terminal_names": sorted(
             {
                 row["terminal_name"]
@@ -986,6 +1049,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
 display(electrostatic_summary)
+display(electrostatic_index_lookup)
 
 # %% [markdown]
 # ## Reusable report table displays

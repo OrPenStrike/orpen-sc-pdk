@@ -59,6 +59,10 @@ Current public notebook:
   `Solver` config hints, and a generated dry-run `run_palace.sbatch` preview
   loaded back through
   `gsim.palace.load_palace_run_summary()`.
+- the same notebook now displays `PostprocessingIndexMap` lookup tables loaded
+  through `gsim.palace.load_postprocessing_index_map()`, so public Driven,
+  Eigenmode, interface, and Electrostatic cells show how generated Palace
+  section/index rows map back to physical names and reverse lookup indices.
 
 Current executable smoke coverage:
 
@@ -114,6 +118,10 @@ Current executable smoke coverage:
   mesh-manifest summaries, Palace index-map summaries, material-resolution
   sidecar presence, and either solver skip reasons or parsed `gsim` report
   summaries.
+- the same evidence runner now records `index_map_lookup` rows from
+  `gsim.palace.load_postprocessing_index_map()`, proving each public problem
+  fixture can query `section/index -> physical name`, reverse physical-name
+  indices, and attribute ownership from the generated `palace_index_map.json`.
 - the same evidence script uses `gsim.palace.write_palace_sweep_points()` to
   write a public `points.json` table for those three fixtures, then consumes
   `gsim.palace.load_palace_sweep_summary()` so sweep identity starts from

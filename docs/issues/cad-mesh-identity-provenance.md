@@ -66,6 +66,12 @@ Local prototype status:
   classifiable `interface_of` rows such as `air___silicon` instead of limiting
   manifests to domain, conductor, port, terminal, absorbing-boundary, and
   refinement identities.
+- current OrPen local evidence/notebook slice reloads generated
+  `palace_index_map.json` artifacts through
+  `gsim.palace.load_postprocessing_index_map()` and records forward
+  `section/index -> physical name`, reverse `physical name -> indices`, and
+  attribute-to-entry lookup rows for the public Driven, Eigenmode, and
+  Electrostatic fixtures.
 
 Verified local changes:
 
@@ -142,6 +148,10 @@ Verified local changes:
 - the optional Electrostatic smoke also reloads those matrices through
   `gsim.palace.load_terminal_matrix()`, proving the solver indices map back to
   `positive`/`negative` terminal names from the generated index map;
+- the public evidence runner and notebook now also load the generated index map
+  as a `gsim` `PostprocessingIndexMap`, proving reusable helper calls can resolve
+  forward Palace indices, reverse physical-name lookups, and attribute ownership
+  for public Driven, Eigenmode, and Electrostatic fixture outputs;
 - validation for `cb052db`: manifest/workflow/curved-meshing tests passed,
   mesh integration tests passed, Ruff check/format passed, and targeted Pyright
   reported no errors.

@@ -120,6 +120,60 @@ def _source_summary(rows: Any) -> list[dict[str, Any]]:
     return summary
 
 
+def _index_map_lookup_evidence(source: Path) -> dict[str, Any]:
+    from gsim.palace import load_postprocessing_index_map
+
+    index_map = load_postprocessing_index_map(source)
+    lookup_rows: list[dict[str, Any]] = []
+    for entry in sorted(
+        index_map.entries,
+        key=lambda row: (row.section, row.index, row.entry_name),
+    ):
+        physical_name = index_map.physical_name_for_index(entry.section, entry.index)
+        reverse_indices = (
+            index_map.indices_for_physical_name(
+                physical_name,
+                section=entry.section,
+            )
+            if physical_name is not None
+            else ()
+        )
+        attribute = entry.attributes[0] if entry.attributes else None
+        attribute_entry_names = (
+            sorted(
+                matched.entry_name
+                for matched in index_map.entries_for_attribute(
+                    attribute,
+                    section=entry.section,
+                )
+            )
+            if attribute is not None
+            else []
+        )
+        row = {
+            "section": entry.section,
+            "index": entry.index,
+            "entry_name": entry.entry_name,
+            "role": entry.role,
+            "physical_name": physical_name,
+            "reverse_indices_for_physical_name": list(reverse_indices),
+            "attribute": attribute,
+            "entry_names_for_attribute": attribute_entry_names,
+        }
+        if entry.metadata:
+            row["metadata"] = dict(entry.metadata)
+        if entry.extra:
+            row["extra"] = dict(entry.extra)
+            if entry.extra.get("terminal_name") is not None:
+                row["terminal_name"] = entry.extra["terminal_name"]
+        lookup_rows.append(row)
+    return {
+        "schema_version": index_map.schema_version,
+        "row_count": len(lookup_rows),
+        "lookups": lookup_rows,
+    }
+
+
 def _solver_env(environ: Mapping[str, str]) -> tuple[dict[str, Any], dict[str, Any]]:
     if environ.get("ORPEN_RUN_LOCAL_PALACE_SMOKE") != "1":
         return {}, {
@@ -483,6 +537,7 @@ def _build_problem_evidence(
         "fixture": fixture_name,
         "output_dir": _relative_path(output_dir, output_root),
         "run_summary": run_summary,
+        "index_map_lookup": _index_map_lookup_evidence(output_dir),
         "solver_report": solver_report,
     }
 

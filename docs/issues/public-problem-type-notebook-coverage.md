@@ -112,6 +112,14 @@ Verified local changes:
   `config.json`, `mesh_manifest.json`, `palace_index_map.json`, and
   `palace_material_resolution.json` artifacts for Driven, Eigenmode, and
   Electrostatic fixtures without requiring Palace;
+- the same evidence runner now records reusable
+  `gsim.palace.load_postprocessing_index_map()` lookup evidence for each public
+  problem fixture, including forward `section/index -> physical name`, reverse
+  `physical name -> indices`, and attribute-to-entry checks;
+- the public simulation workflow notebook now displays those same lookup
+  concepts as table outputs for Driven CPW, Eigenmode resonator, caller-supplied
+  Eigenmode interface classification, and Electrostatic same-layer capacitor
+  cells;
 - `gsim` commit `652fcec` adds
   `gsim.palace.load_palace_sweep_summary()`, and the public evidence runner now
   writes `points.json` for the three problem fixtures and records a
