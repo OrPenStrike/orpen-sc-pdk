@@ -97,9 +97,10 @@ Verified local changes:
   public domain/surface loss budget rows;
 - `orpen-sc-pdk` now exposes an empty-by-default
   `tech.interface_preset_records` table, validates caller-supplied
-  MA/MS/SA-style records through `validate_interface_preset_records()`, and
-  adapts validated records into `gsim.palace.mesh.DielectricInterfaceSpec`
-  keyword arguments through `get_gsim_dielectric_interface_preset_kwargs()`;
+  MA/MS/SA-style records through `validate_interface_preset_records()`,
+  rejects records without explicit source/provenance strings, and adapts
+  validated records into `gsim.palace.mesh.DielectricInterfaceSpec` keyword
+  arguments through `get_gsim_dielectric_interface_preset_kwargs()`;
 - public tests now prove a caller-supplied source-backed interface preset can
   feed `gsim` dielectric postprocessing, resolve `AlOx_native_generic` through
   the public material overlay, strip non-Palace handoff keys from
@@ -138,8 +139,9 @@ Remaining slices:
   minimal EM fields to include provenance, conditions, loss, conductivity,
   London-depth, or surface/interface presets;
 - populate public interface preset records only after MA/MS/SA thickness, loss
-  tangent, material-kind data, and automatic-selection values have source-backed
-  public records;
+  tangent, material-kind data, and automatic-selection values have selected
+  source-backed public records that satisfy the explicit source/provenance
+  schema;
 - design the later public default-selection policy separately from private
   notebook-local MA/MS/SA heuristics.
 

@@ -16,7 +16,6 @@ from orpen_sc_pdk.tech import (
 )
 
 _OVERLAY_SOURCE = "orpen-sc-pdk tech.material_properties"
-_INTERFACE_PRESET_SOURCE = "orpen-sc-pdk tech.interface_preset_records"
 _INTERFACE_TYPES = {"MA", "MS", "SA"}
 _MATERIAL_KINDS = {
     "conductor",
@@ -206,6 +205,13 @@ def _material_alias_name(name: Any) -> str:
     return name
 
 
+def _interface_preset_source(value: Any, preset_name: str) -> str:
+    if isinstance(value, bool) or not isinstance(value, str) or not value:
+        msg = f"Interface preset {preset_name!r} must set a non-empty source string."
+        raise ValueError(msg)
+    return value
+
+
 def _normalize_material_kind(material_name: str, record: Mapping[str, Any]) -> str:
     if not isinstance(record, Mapping):
         msg = f"Material record {material_name!r} must be a mapping."
@@ -258,7 +264,7 @@ def _normalize_interface_preset_record(
             name,
             "loss_tangent",
         ),
-        "source": str(record.get("source", _INTERFACE_PRESET_SOURCE)),
+        "source": _interface_preset_source(record.get("source"), name),
     }
     if has_material_name:
         normalized["material_name"] = str(material_name)

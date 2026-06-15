@@ -226,6 +226,34 @@ def test_interface_preset_schema_validates_caller_supplied_record() -> None:
     }
 
 
+@pytest.mark.parametrize("source", ["", None, True])
+def test_interface_preset_schema_requires_explicit_source(source) -> None:
+    records = {
+        "public_sa_example": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": source,
+        }
+    }
+
+    with pytest.raises(ValueError, match="source"):
+        validate_interface_preset_records(records)
+
+
+def test_interface_preset_schema_rejects_missing_source() -> None:
+    records = {
+        "public_sa_example": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+        }
+    }
+
+    with pytest.raises(ValueError, match="source"):
+        validate_interface_preset_records(records)
+
+
 def test_interface_preset_schema_rejects_ambiguous_records() -> None:
     records = {
         "bad": {

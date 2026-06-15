@@ -46,8 +46,8 @@ The current public bridge is intentionally small:
 - `orpen_sc_pdk.materials.get_interface_preset_records()` returns a copy of
   public dielectric-interface preset records, currently empty by default;
 - `orpen_sc_pdk.materials.validate_interface_preset_records()` validates
-  caller-supplied MA/MS/SA-style records with explicit thickness and either a
-  public material name or explicit permittivity;
+  caller-supplied MA/MS/SA-style records with an explicit source string,
+  thickness, and either a public material name or explicit permittivity;
 - `orpen_sc_pdk.materials.get_gsim_dielectric_interface_preset_kwargs()` adapts
   a validated record into keyword arguments accepted by
   `gsim.palace.mesh.DielectricInterfaceSpec` without importing `gsim` into the
@@ -102,8 +102,9 @@ should be:
 4. Upstream reusable adapter support into `gsim` when it is not PDK-specific.
 5. Use `gsim` interface material references when a Palace dielectric interface
    should draw permittivity/loss fields from a public material record.
-6. Keep public interface preset records schema-validated in the PDK, but do not
-   populate MA/MS/SA thickness, loss, or automatic-selection defaults until
+6. Keep public interface preset records schema-validated in the PDK and require
+   explicit source/provenance strings for every caller-supplied preset, but do
+   not populate MA/MS/SA thickness, loss, or automatic-selection defaults until
    source-backed public records exist.
 7. Use `gsim` assignment helpers for caller-supplied physical-name or
    interface-pair selection; automatic public selection policy belongs in a

@@ -91,7 +91,8 @@ Current public baseline:
   `get_interface_preset_records()`,
   `validate_interface_preset_records()`, and
   `get_gsim_dielectric_interface_preset_kwargs()` so caller-supplied
-  source-backed MA/MS/SA records can be validated and handed to
+  source-backed MA/MS/SA records can be validated, rejected when missing
+  explicit source/provenance, and handed to
   `gsim.palace.mesh.DielectricInterfaceSpec` without making private defaults
   public;
 - conductor-like public records that currently use
@@ -105,8 +106,8 @@ Remaining slices:
   current minimal electromagnetic records;
 - populate public interface preset records only after source-backed public
   MA/MS/SA values and automatic-selection rules are accepted into the PDK
-  contract; until then, keep selection caller-supplied through the `gsim`
-  assignment/classification helpers.
+  contract; until then, keep selection caller-supplied and explicitly sourced
+  through the `gsim` assignment/classification helpers.
 
 Related issue:
 
