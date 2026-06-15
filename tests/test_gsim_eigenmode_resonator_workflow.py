@@ -115,6 +115,13 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
         "refinement_line",
     } <= manifest_roles
 
+    interface_entries = [entry for entry in manifest["entries"] if entry.get("interface_of")]
+    assert interface_entries
+    assert any(set(entry["interface_of"]) == {"air", "silicon"} for entry in interface_entries)
+    assert all(entry["role"] == "boundary_surface" for entry in interface_entries)
+    assert all(entry["attributes"] for entry in interface_entries)
+    assert all(entry["physical_names"] for entry in interface_entries)
+
     absorbing_rows = [
         row
         for row in index_map["entries"]

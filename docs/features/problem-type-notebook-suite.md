@@ -37,9 +37,9 @@ Current public notebook:
   domain-loss, surface-loss, and loss-budget tables through a notebook-local
   presentation helper instead of raw report displays;
 - the notebook does not add automatic MA/MS/SA interface postprocessing yet:
-  material-kind classification is available as a manifest-level helper, while
-  public problem-type examples wait for generated interface identities and
-  source-backed public preset records;
+  generated interface identities and material-kind classification are available
+  as manifest-level helpers, while public problem-type examples wait for
+  source-backed public preset records and material-name alias policy;
 - the same notebook exposes an opt-in local Palace smoke cell for Driven,
   Eigenmode, and Electrostatic public fixtures; normal docs builds display a
   skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or

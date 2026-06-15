@@ -37,10 +37,10 @@ Current prototype baseline:
 - `gsim.palace.mesh` exposes a `PostprocessingIndexMap` that can resolve Palace
   postprocessing section/index values back to physical names and attributes;
 - both the mesh manifest and Palace index map can be written as JSON artifacts.
-- generated public example meshes currently prove domain, conductor, port,
-  terminal, absorbing-boundary, and refinement identities; interface-loss
-  classification remains a manifest-level handoff until the CAD/XAO mesh path
-  emits public classifiable interface physical groups.
+- generated public example meshes now prove domain, conductor, port, terminal,
+  absorbing-boundary, refinement, and non-exterior interface identities through
+  the same manifest path; interface-loss classification remains a separate
+  material/preset policy step.
 
 Acceptance direction:
 
@@ -50,8 +50,9 @@ Acceptance direction:
   material role`;
 - surface-Q and EPR reports can use the same index map as Palace config
   generation;
-- material-kind interface classification consumes manifest interface identities
-  only after those identities are present in generated public mesh groups;
+- material-kind interface classification consumes generated manifest interface
+  identities only after public material-kind aliases and source-backed presets
+  are supplied by the caller or PDK contract;
 - the implementation builds on meshwell physical-name and interface-tag
   conventions rather than copying private CAD/XAO code.
 

@@ -61,12 +61,11 @@ Local prototype status:
   `palace_material_resolution.json` and joins it into domain material reports,
   so material attributes can be traced to stack material names, matched public
   material records, model sources, validity status, and resolution frequency.
-- the public material-kind classifier path is available at the manifest
-  boundary, but generated public Driven/Eigenmode/Electrostatic mesh fixtures
-  currently emit domain, conductor, port, terminal, absorbing-boundary, and
-  refinement identities rather than classifiable `interface_of` rows; therefore
-  workflow examples must not imply public MA/MS/SA interface defaults until
-  generated mesh physical groups preserve those interface identities.
+- `gsim` commit `21f84a2` preserves generated non-exterior interface physical
+  groups in the role manifest, so public mesh artifacts can expose
+  classifiable `interface_of` rows such as `air___silicon` instead of limiting
+  manifests to domain, conductor, port, terminal, absorbing-boundary, and
+  refinement identities.
 
 Verified local changes:
 
@@ -84,6 +83,10 @@ Verified local changes:
 - `gsim` commit `3541ace`: generated interface and exterior physical names now
   use meshwell-style `___` and `___None` delimiters; mesh manifest and group
   consumers still parse legacy `__` labels for old artifacts;
+- `gsim` commit `21f84a2`: generated non-exterior interface physical groups
+  are now preserved as `boundary_surface` manifest entries with physical name,
+  entity-tag, and `interface_of` provenance, while exterior groups still feed
+  the absorbing boundary behavior;
 - `gsim` commit `5caa2db`: adds public result loaders that read
   `palace_index_map.json` and annotate indexed Palace CSV columns such as
   `domain-E.csv` and `surface-Q.csv` with physical-name provenance;
@@ -218,10 +221,9 @@ Verified local changes:
 
 Remaining implementation slices:
 
-- make generated public meshes preserve classifiable interface physical names
-  when the CAD/XAO path produces conductor/dielectric and dielectric/vacuum
-  boundaries, then feed those manifest identities into `gsim` material-kind
-  classification;
+- align generated mesh interface names with public PDK material-kind aliases so
+  `air`/`silicon`-style `gsim` volume names and public `vacuum`/`Si` material
+  names can be classified without private lookup tables;
 - add richer dielectric-interface provenance and source-backed preset
   validation before making MA/MS/SA defaults part of public PDK material data.
 
