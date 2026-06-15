@@ -119,9 +119,10 @@ Verified local changes:
 - the public simulation workflow notebook now shows that generated-interface
   classification path with a notebook-local caller-supplied preset, keeping
   public preset defaults source-gated while making the handoff visible in docs;
-- the public surface-loss paper board now lists candidate sources for
-  `MA`/`MS`/`SA` taxonomy, source-backed interface-loss extraction, transmon
-  validation targets, and uncertainty-aware CPW interpretation;
+- the public surface-loss paper board now lists candidate sources and extracted
+  review rows for `MA`/`MS`/`SA` taxonomy, source-backed interface-loss
+  extraction, transmon validation targets, and uncertainty-aware CPW
+  interpretation;
 - {doc}`source-backed-interface-presets` now records the issue-level gate for
   converting those sources into public PDK preset records and later default
   selection without copying private NCUAS preset names;

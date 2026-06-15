@@ -55,16 +55,15 @@ Verified local changes:
 - `orpen-sc-pdk` now passes validated preset name/source metadata into
   `gsim.palace.mesh.DielectricInterfaceSpec` kwargs and verifies the metadata
   can be loaded back from public interface report rows;
-- the surface-loss paper board now lists candidate public sources for CPW
-  `MA`/`MS`/`SA` taxonomy, extracted interface-loss values, transmon
-  validation targets, and uncertainty-aware CPW interpretation.
+- the surface-loss paper board now lists candidate public sources and extracted
+  review rows for CPW `MA`/`MS`/`SA` taxonomy, assumed/scaled Wenner-style
+  records, fitted Woods-style interface-loss candidates, transmon validation
+  targets, and uncertainty-aware CPW interpretation.
 
 Remaining slices:
 
-- extract a public candidate-value table from the selected sources, with one
-  row per role/source/process assumption;
-- add tests that accept only records with explicit source strings and public
-  material names or explicit permittivity;
+- add accepted-candidate tests after the candidate IDs and process scope are
+  approved for `tech.interface_preset_records`;
 - decide whether any candidate should become a public PDK default or stay
   caller-selected only;
 - add a public default-selection map only after candidate records are accepted;

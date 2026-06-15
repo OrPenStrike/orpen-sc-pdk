@@ -99,6 +99,9 @@ Current public baseline:
   source-backed interface preset issue, so future MA/MS/SA records have a
   documented path from public papers to PDK data instead of being copied from
   private presets;
+- the public source-review queue now includes candidate Wenner-style
+  assumed/scaled rows and Woods-style fitted CPW rows, keeping candidate values
+  reviewable without adding them to the default PDK table;
 - local `gsim` now carries caller-supplied interface preset name/source
   metadata through `palace_index_map.json`, dielectric-interface summaries, and
   surface-loss summaries; `orpen-sc-pdk` passes its validated preset source
