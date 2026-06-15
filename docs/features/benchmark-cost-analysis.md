@@ -53,10 +53,16 @@ Current public baseline:
   `points.csv` from existing `points.json`, writes `run_sweep_array.sbatch`,
   and exposes sweep-level handoff status through
   `load_palace_sweep_summary().handoff`;
+- local `gsim` commit `0ab7628` adds generated handoff archive manifests
+  through `write_palace_run_handoff_archive_manifest()` and
+  `write_palace_sweep_handoff_archive_manifest()`. These writers record the
+  reviewable files that would be packaged for a single run or sweep, expose the
+  manifest through the existing handoff summary `archive.manifest_path`, and do
+  not create archives or submit jobs;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
-  and a public problem-type sweep-summary smoke in the ignored local evidence
-  bundle.
+  generated handoff archive manifest status, and a public problem-type
+  sweep-summary smoke in the ignored local evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output
@@ -64,8 +70,8 @@ Current public baseline:
 - NCUAS already has a richer private run-stage layer for Slurm/Sbatch handoff,
   handoff archives, site/profile resources, and post-run records; the public
   migration path is to extend the same `gsim` run-summary and sweep-summary
-  schemas with optional handoff/resource sidecars, not to expose private
-  benchmark values or duplicate runtime code in the PDK.
+  schemas with optional handoff/archive/resource sidecars, not to expose
+  private benchmark values or duplicate runtime code in the PDK.
 
 Acceptance direction:
 

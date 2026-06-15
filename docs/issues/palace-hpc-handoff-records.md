@@ -67,13 +67,20 @@ Current local evidence:
   sweep-level Slurm array dry-runs. `load_palace_sweep_summary()` now exposes
   this as `summary.handoff` while point-local handoffs remain under each
   point's `run_summary.handoff`;
+- local `gsim` commit `0ab7628` adds `PalaceHandoffArchiveManifestResult`,
+  `write_palace_run_handoff_archive_manifest()`, and
+  `write_palace_sweep_handoff_archive_manifest()`. These writers generate
+  JSON manifests for the files that would be packaged for a single run or
+  sweep, update the existing handoff sidecar with
+  `archive.manifest_path`, and keep archive creation/submission out of
+  `gsim`;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
-  through the `gsim` renderers, then reads them back through the normal
-  run/sweep summary surfaces;
-- `gsim` has point-local sweep summary readers/writers and a dry-run Slurm
-  array script renderer, but no cluster campaign submission or archive
-  packaging;
+  and generated archive manifests through the `gsim` renderers, then reads
+  them back through the normal run/sweep summary surfaces;
+- `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
+  renderers, and generated archive manifests, but no cluster campaign
+  submission or archive packaging;
 - `gplugins` has direct Palace wrapper functions that generate config, call a
   `palace` executable from `PATH`, and parse raw CSV output, but those helpers
   do not expose the richer `gsim` run-summary/report surfaces;
@@ -87,8 +94,8 @@ Remaining slices:
 
 - resolve real site/profile resources outside public fixture code, then feed
   the resolved resources into the generic `gsim` Slurm handoff API;
-- define generated archive manifests and post-run resource records without
-  committing private archives or private benchmark values;
+- define post-run resource records without committing private archives or
+  private benchmark values;
 - only after dry-run schemas are stable, add local private-layout validation on
   NCUAS personal branches against real Slurm/HPC runs.
 

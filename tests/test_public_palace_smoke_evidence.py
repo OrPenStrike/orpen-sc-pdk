@@ -33,6 +33,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert (tmp_path / "points.csv").is_file()
     assert (tmp_path / "run_sweep_array.sbatch").is_file()
     assert (tmp_path / "palace_sweep_handoff_metadata.json").is_file()
+    assert (tmp_path / "palace_sweep_handoff_archive_manifest.json").is_file()
     assert sweep_summary["handoff"]["present"] is True
     assert sweep_summary["handoff"]["status"] == "scripted"
     assert sweep_summary["handoff"]["launcher"] == {
@@ -68,8 +69,11 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert sweep_summary["handoff"]["path"] == "palace_sweep_handoff_metadata.json"
     assert sweep_summary["handoff"]["script"]["path"] == "run_sweep_array.sbatch"
     assert sweep_summary["handoff"]["script_present"] is True
-    assert sweep_summary["handoff"]["archive"] == {}
+    assert sweep_summary["handoff"]["archive"] == {
+        "manifest_path": "palace_sweep_handoff_archive_manifest.json"
+    }
     assert sweep_summary["handoff"]["archive_present"] is False
+    assert sweep_summary["handoff"]["archive_manifest_present"] is True
     assert sweep_summary["handoff"]["metadata"] == {
         "command_style": "binary",
         "point_count": 3,
@@ -115,6 +119,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert record["handoff_profile_name"] == "public-slurm-dry-run"
         assert record["handoff_script_present"] is True
         assert record["handoff_archive_present"] is False
+        assert record["handoff_archive_manifest_present"] is True
         assert record["runtime_present"] is False
         assert record["report_status"] == "missing"
         assert record["report_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
@@ -129,6 +134,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert problem["solver_report"]["status"] == "skipped"
         assert output_dir.is_dir()
         assert (output_dir / "palace_handoff_metadata.json").is_file()
+        assert (output_dir / "palace_handoff_archive_manifest.json").is_file()
         assert (output_dir / "run_palace.sbatch").is_file()
         assert run_summary["problem_type"] == problem["problem_type"]
         assert run_summary["config"]["problem_type"] == problem["problem_type"]
@@ -169,8 +175,11 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         )
         assert run_summary["handoff"]["script"]["path"] == "run_palace.sbatch"
         assert run_summary["handoff"]["script_present"] is True
-        assert run_summary["handoff"]["archive"] == {}
+        assert run_summary["handoff"]["archive"] == {
+            "manifest_path": "palace_handoff_archive_manifest.json"
+        }
         assert run_summary["handoff"]["archive_present"] is False
+        assert run_summary["handoff"]["archive_manifest_present"] is True
         assert run_summary["handoff"]["metadata"] == {
             "command_style": "binary",
             "fixture": problem["fixture"],

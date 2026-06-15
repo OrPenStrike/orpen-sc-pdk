@@ -355,6 +355,7 @@ def _build_problem_evidence(
         PalaceSlurmResourceSpec,
         PalaceSlurmSbatchSpec,
         load_palace_run_summary,
+        write_palace_run_handoff_archive_manifest,
         write_palace_slurm_sbatch_handoff,
     )
 
@@ -392,6 +393,14 @@ def _build_problem_evidence(
             "workflow": "public-palace-smoke-evidence",
         },
     )
+    write_palace_run_handoff_archive_manifest(
+        output_dir,
+        metadata={
+            "fixture": fixture_name,
+            "problem_type": problem_type,
+            "workflow": "public-palace-smoke-evidence",
+        },
+    )
     run_summary = _relative_run_summary(
         load_palace_run_summary(output_dir, include_hashes=True).to_dict(),
         output_root,
@@ -426,6 +435,7 @@ def _build_sweep_evidence(
         PalaceSweepPointSpec,
         load_palace_sweep_summary,
         write_palace_slurm_sweep_array_handoff,
+        write_palace_sweep_handoff_archive_manifest,
         write_palace_sweep_points,
     )
 
@@ -465,6 +475,13 @@ def _build_sweep_evidence(
             "name": "public-slurm-sweep-dry-run",
             "source": "caller-supplied public fixture",
         },
+        metadata={
+            "workflow": "public-palace-smoke-evidence",
+            "point_count": len(points),
+        },
+    )
+    write_palace_sweep_handoff_archive_manifest(
+        output_root,
         metadata={
             "workflow": "public-palace-smoke-evidence",
             "point_count": len(points),
