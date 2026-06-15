@@ -514,10 +514,10 @@ def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
     from gsim.palace.mesh import (
         DielectricInterfaceSpec,
         MeshManifest,
-        MeshPhysicalGroup,
         build_postprocessing_config_from_manifest,
     )
     from gsim.palace.mesh.config_generator import generate_palace_config
+    from gsim.palace.mesh.manifest import MeshPhysicalGroup
 
     records = {
         "public_sa_example": {
@@ -596,10 +596,10 @@ def test_gsim_material_kind_classifier_accepts_public_interface_records(tmp_path
     from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
         build_dielectric_interface_specs_from_material_kinds,
-        build_mesh_manifest,
         build_postprocessing_config_from_manifest,
     )
     from gsim.palace.mesh.config_generator import generate_palace_config
+    from gsim.palace.mesh.manifest import build_mesh_manifest
 
     records = {
         "public_ms_example": {
@@ -680,10 +680,10 @@ def test_gsim_material_kind_classifier_accepts_public_generated_aliases(tmp_path
     from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
         build_dielectric_interface_specs_from_material_kinds,
-        build_mesh_manifest,
         build_postprocessing_config_from_manifest,
     )
     from gsim.palace.mesh.config_generator import generate_palace_config
+    from gsim.palace.mesh.manifest import build_mesh_manifest
 
     records = {
         "public_sa_example": {

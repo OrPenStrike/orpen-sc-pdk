@@ -81,6 +81,7 @@ Current review ledger:
 | Mesh artifact root API demotion (`gsim` commit `c52fb00`) | Reviewed, API-clean | `gsim.palace.__init__` now keeps root mesh-generation controls (`MeshConfig`, `generate_mesh`) but no longer imports or re-exports mesh artifact/reportability details: `MeshResult`, `DielectricInterfaceSelector`, `DielectricInterfaceSpec`, `DielectricInterfaceType`, `DielectricMaterialKind`, and the material-kind interface spec builders. Those symbols remain available from `gsim.palace.mesh`, which is the owner module already used by OrPen notebooks, evidence scripts, and tests. This preserves the boundary that manifest/reportability visibility belongs to mesh artifacts, not to broader root Palace API or `MeshConfig` knobs. |
 | Config model root API demotion (`gsim` commit `05b362a`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports raw config/lowering models: `DrivenConfig`, `EigenmodeConfig`, `ElectrostaticConfig`, `MagnetostaticConfig`, `GeometryConfig`, `MaterialConfig`, `NumericalConfig`, `PECBlockConfig`, and `TransientConfig`. These remain public from `gsim.palace.models`, which is the owner module for problem/numerical/material config contracts. Root `gsim.palace` keeps notebook-facing problem classes and the `MeshConfig` mesh-generation control, plus `SimulationResult`/`ValidationResult` for now because public methods return them. Local search found no OrPen/NCUAS direct root-import dependency for the demoted models. |
 | Common convenience root API demotion (`gsim` commit `144959e`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports broad common/stack/material/viz/cloud convenience symbols: `MATERIALS_DB`, `Geometry`, `Stack`, `StackLayer`, `MaterialProperties`, stack extraction/loading/printing helpers, `plot_cross_section()`, `plot_mesh()`, `plot_stack()`, `print_job_summary()`, `run_simulation()`, and `resolve_palace_materials_at_frequency()`. These remain available from their owner modules: `gsim.common`, `gsim.common.stack`, `gsim.common.stack.materials`, `gsim.viz`, `gsim.gcloud`, and `gsim.palace.materials`. Stale examples in `gsim.viz` and `gsim.gcloud` were updated to use owner-module imports, and independent boundary review found no OrPen/NCUAS direct root dependency. Root `gsim.palace` still keeps documented `Layer`, `LayerStack`, and `resolve_palace_materials_with_report()` pending a separate docs-contract decision. |
+| Mesh manifest internals package-root demotion (`gsim` commit `3324c7b`) | Reviewed, API-clean | `gsim.palace.mesh.__init__` now keeps notebook/downstream-facing mesh controls and artifact helpers (`MeshConfig`, `generate_mesh`, `MeshResult`, `MeshManifest`, `SurfaceFluxSpec`, `DielectricInterfaceSpec`, and the documented postprocessing/interface builders) while no longer importing or re-exporting manifest row builders and typing aliases: `MeshPhysicalGroup`, `MeshRole`, `build_mesh_manifest`, `SurfaceFluxType`, `DielectricInterfaceSelector`, `DielectricInterfaceType`, and `DielectricMaterialKind`. These remain available from `gsim.palace.mesh.manifest` or `gsim.palace.mesh.postprocessing`. OrPen public notebooks already use only the retained package-root artifact helpers; fixture-style tests now import low-level manifest construction from the owner module. Independent review found no NCUAS direct `gsim.palace.mesh` dependency for the demoted symbols. |
 
 Open API-surface follow-ups:
 
@@ -88,10 +89,10 @@ Open API-surface follow-ups:
   (`Layer`, `LayerStack`, `resolve_palace_materials_with_report()`,
   `SimulationResult`, and `ValidationResult`) should remain root, or move to
   owner modules after a separate docs-contract/public-typing review;
-- finish the remaining `gsim.palace.mesh` package-root review for advanced
-  manifest fixture symbols (`MeshPhysicalGroup`, `MeshRole`,
-  `build_mesh_manifest`) and type aliases that may belong only in
-  `mesh.manifest` / `mesh.postprocessing`;
+- decide whether `gsim.palace.mesh.DielectricInterfaceSpec` should remain a
+  package-root caller contract for manual dielectric-interface specs, or move
+  to `gsim.palace.mesh.postprocessing` with explicit docs for advanced manual
+  authoring;
 - keep `gsim` Palace API docs split between mesh generation controls and mesh
   artifacts, manifests, postprocessing index maps, and reportability;
 - keep OrPen API docs focused on copy-returning material helpers and avoid
