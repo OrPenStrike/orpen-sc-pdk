@@ -343,7 +343,12 @@ def _build_problem_evidence(
     run_kwargs: Mapping[str, Any],
     solver_skip_reason: str | None,
 ) -> dict[str, Any]:
-    from gsim.palace import load_palace_run_summary, write_palace_handoff_metadata
+    from gsim.palace import (
+        PalaceSlurmResourceSpec,
+        PalaceSlurmSbatchSpec,
+        load_palace_run_summary,
+        write_palace_slurm_sbatch_handoff,
+    )
 
     output_dir = output_root / problem_key
     sim, mesh_result = build_sim(output_dir)
@@ -352,25 +357,30 @@ def _build_problem_evidence(
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
     )
-    write_palace_handoff_metadata(
+    num_processes = int(run_kwargs.get("num_processes", 1) or 1)
+    num_threads = int(run_kwargs.get("num_threads", 1) or 1)
+    write_palace_slurm_sbatch_handoff(
         output_dir,
-        status="planned",
-        launcher={
-            "kind": "dry_run",
-            "target": "palace",
-            "solver_enabled": solver_skip_reason is None,
+        PalaceSlurmSbatchSpec(
+            job_name=f"palace_{problem_key}",
+            resources=PalaceSlurmResourceSpec(
+                account="public_alloc",
+                partition="public_cpu",
+                wall_time="00:10:00",
+                nodes=1,
+                ntasks_per_node=num_processes,
+                cpus_per_task=num_threads,
+            ),
+            petsc_options=(),
+        ),
+        profile={
+            "name": "public-slurm-dry-run",
+            "source": "caller-supplied public fixture",
         },
-        profile={"name": "public-local-dry-run"},
-        resources={
-            "num_processes": int(run_kwargs.get("num_processes", 1) or 1),
-            "num_threads": int(run_kwargs.get("num_threads", 1) or 1),
-        },
-        script_path="run_palace.sbatch",
-        archive_path="palace-handoff.tar.gz",
-        command={"argv": ["palace", "config.json"], "redacted": True},
         metadata={
             "fixture": fixture_name,
             "problem_type": problem_type,
+            "solver_enabled": solver_skip_reason is None,
             "workflow": "public-palace-smoke-evidence",
         },
     )

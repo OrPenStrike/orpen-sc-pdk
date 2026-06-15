@@ -55,9 +55,15 @@ Current local evidence:
   `palace_handoff_metadata.json` discovery in `load_palace_run_summary()`,
   `PalaceSweepPointSpec.handoff_metadata_path`, and flat sweep point handoff
   fields for status, profile, script presence, and archive presence;
+- local `gsim` commit `d4f226a` adds `PalaceSlurmResourceSpec`,
+  `PalaceSlurmSbatchSpec`, and `write_palace_slurm_sbatch_handoff()` for
+  generic Slurm/Sbatch dry-run script rendering. The API accepts explicit
+  caller-supplied resources/profile metadata, writes `run_palace.sbatch`, and
+  updates `palace_handoff_metadata.json`; it does not submit jobs, package
+  archives, or resolve private site profiles;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
-  Eigenmode, and Electrostatic fixtures through the `gsim` API and reads them
-  back through the normal run/sweep summary surfaces;
+  Eigenmode, and Electrostatic fixtures through the `gsim` Slurm renderer and
+  reads them back through the normal run/sweep summary surfaces;
 - `gsim` has point-local sweep summary readers/writers, but no Slurm array
   script or cluster campaign handoff;
 - `gplugins` has direct Palace wrapper functions that generate config, call a
@@ -71,10 +77,8 @@ Current local evidence:
 
 Remaining slices:
 
-- split requested resources from resolved scheduler resources when real cluster
-  profiles are introduced;
-- add Slurm/Sbatch script rendering and validation as a `gsim` handoff layer
-  that consumes the sidecar schema instead of replacing it;
+- resolve real site/profile resources outside public fixture code, then feed
+  the resolved resources into the generic `gsim` Slurm handoff API;
 - add sweep-level array handoff metadata beside point-level handoff metadata;
 - define generated archive manifests and post-run resource records without
   committing private archives or private benchmark values;
