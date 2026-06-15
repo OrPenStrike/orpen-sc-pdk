@@ -29,6 +29,9 @@ PUBLIC_HELPER_NODE_INVENTORY = (
 PUBLIC_PROBLEM_NOTEBOOK_CROSSCHECK = (
     Path(__file__).resolve().parent / "fixtures" / "public_problem_notebook_crosscheck.json"
 )
+PUBLIC_SIMULATION_GOAL_AUDIT = (
+    Path(__file__).resolve().parent / "fixtures" / "public_simulation_goal_audit.json"
+)
 
 
 def load_public_simulation_helper_node_inventory() -> list[dict[str, Any]]:
@@ -41,6 +44,12 @@ def load_public_problem_notebook_crosscheck() -> list[dict[str, Any]]:
     """Load the public/private notebook cross-check matrix."""
 
     return json.loads(PUBLIC_PROBLEM_NOTEBOOK_CROSSCHECK.read_text())
+
+
+def load_public_simulation_goal_audit() -> list[dict[str, Any]]:
+    """Load the public simulation migration goal audit matrix."""
+
+    return json.loads(PUBLIC_SIMULATION_GOAL_AUDIT.read_text())
 
 
 def _relative_path(path: Path, root: Path) -> str:
@@ -1094,6 +1103,21 @@ def public_problem_notebook_crosscheck_table() -> Any:
     return pd.DataFrame(load_public_problem_notebook_crosscheck()).loc[:, columns]
 
 
+def public_simulation_goal_audit_table() -> Any:
+    """Return the goal-level simulation migration audit as a notebook table."""
+
+    import pandas as pd
+
+    columns = [
+        "objective_requirement",
+        "current_status",
+        "current_evidence",
+        "remaining_gap",
+        "next_issue",
+    ]
+    return pd.DataFrame(load_public_simulation_goal_audit()).loc[:, columns]
+
+
 def public_domain_material_table(output_dir: str | Path) -> Any:
     """Load the public domain-material provenance table for a generated config."""
 
@@ -1864,6 +1888,7 @@ def build_public_palace_smoke_evidence(
         "solver": solver,
         "helper_node_inventory": load_public_simulation_helper_node_inventory(),
         "problem_notebook_crosscheck": load_public_problem_notebook_crosscheck(),
+        "goal_audit": load_public_simulation_goal_audit(),
         "problems": problems,
         "sweep_summary": sweep_evidence["summary"],
         "sweep_resource_index": sweep_evidence["resource_index"],

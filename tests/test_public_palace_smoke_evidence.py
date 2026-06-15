@@ -11,6 +11,7 @@ from scripts.public_palace_smoke_evidence import (
     _driven_report_summary,
     build_public_palace_smoke_evidence,
     load_public_problem_notebook_crosscheck,
+    load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
 )
 
@@ -139,6 +140,48 @@ def _assert_problem_notebook_crosscheck(evidence: dict) -> None:
     assert "Deferred owner decision" in q2d["owner_decision"]
 
 
+def _assert_goal_audit(evidence: dict) -> None:
+    rows = evidence["goal_audit"]
+    assert rows == load_public_simulation_goal_audit()
+    assert len(rows) >= 10
+
+    by_requirement = {row["objective_requirement"]: row for row in rows}
+    local_palace_key = (
+        "Verify local Palace coarse smoke for the public Driven, Eigenmode, "
+        "and Electrostatic fixtures."
+    )
+    local_palace = by_requirement[local_palace_key]
+    assert local_palace["current_status"] == "opt_in_solver_evidence"
+    assert "PALACE_EXECUTABLE" in local_palace["remaining_gap"]
+
+    deferred_scope_key = (
+        "Keep Magnetostatic report contract and real HPC/private profile validation "
+        "out of the current scope."
+    )
+    deferred_scope = by_requirement[deferred_scope_key]
+    assert deferred_scope["current_status"] == "deferred_user_scope"
+
+    q2d = by_requirement[
+        "Handle AEDT/Q2D capabilities without folding them into the Palace notebook suite."
+    ]
+    assert q2d["current_status"] == "deferred_owner_pending"
+    assert "owner_pending" in q2d["current_evidence"]
+
+    statuses = {row["current_status"] for row in rows}
+    assert {
+        "covered_current",
+        "opt_in_solver_evidence",
+        "deferred_user_scope",
+        "deferred_owner_pending",
+    } <= statuses
+
+    for row in rows:
+        assert row["objective_requirement"]
+        assert row["current_evidence"]
+        assert row["remaining_gap"]
+        assert row["next_issue"]
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -152,6 +195,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert "ORPEN_RUN_LOCAL_PALACE_SMOKE=1" in evidence["solver"]["skip_reason"]
     _assert_helper_node_inventory(evidence)
     _assert_problem_notebook_crosscheck(evidence)
+    _assert_goal_audit(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",
         "eigenmode_resonator",

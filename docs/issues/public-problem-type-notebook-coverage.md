@@ -115,6 +115,10 @@ Verified local changes:
   inventory notebook that displays the helper-node matrix and representative
   NCUAS notebook cross-check through public wrapper functions instead of
   notebook-local helper definitions;
+- the same inventory notebook now displays
+  `scripts/fixtures/public_simulation_goal_audit.json`, separating current
+  covered evidence from opt-in local Palace replay, user-deferred Magnetostatic
+  report/HPC scope, and owner-pending AEDT/Q2D work;
 - `scripts/fixtures/public_problem_notebook_crosscheck.json` records the
   Driven, Eigenmode, and Electrostatic representative private notebooks, their
   public OrPen notebook counterparts, the owner decision, separated reusable
@@ -124,6 +128,9 @@ Verified local changes:
 - `scripts/public_palace_smoke_evidence.py` now embeds that cross-check as
   `problem_notebook_crosscheck` in the local evidence bundle so docs, notebook
   output, and JSON evidence use the same inventory source;
+- `scripts/public_palace_smoke_evidence.py` also embeds the goal-level audit as
+  `goal_audit`, making local evidence bundles state which objective
+  requirements are covered, opt-in, deferred, or owner-pending;
 - `tests/test_public_problem_notebook_style.py` now checks every public
   Jupytext notebook source for notebook-local function definitions and private
   `_...()` helper calls, and rejects links to the old combined simulation

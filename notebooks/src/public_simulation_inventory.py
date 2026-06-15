@@ -21,8 +21,10 @@ from IPython.display import display
 
 from scripts.public_palace_smoke_evidence import (
     load_public_problem_notebook_crosscheck,
+    load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
     public_problem_notebook_crosscheck_table,
+    public_simulation_goal_audit_table,
     public_simulation_helper_node_inventory_table,
 )
 
@@ -51,19 +53,35 @@ problem_notebook_crosscheck = public_problem_notebook_crosscheck_table()
 display(problem_notebook_crosscheck)
 
 # %% [markdown]
+# ## Goal-level audit
+#
+# The goal audit separates covered public evidence from opt-in solver replay
+# requirements and explicitly deferred scope. This keeps notebook review tied
+# to the migration objective instead of only showing feature tables.
+
+# %%
+goal_audit = public_simulation_goal_audit_table()
+
+display(goal_audit)
+
+# %% [markdown]
 # ## Coverage summary
 #
-# The summary groups the public inventory by current coverage status, intended
-# ecosystem home, and owning issue.
+# The summary groups the public inventory by coverage status, intended
+# ecosystem home, goal-audit status, and owning issue.
 
 # %%
 display(
     {
         "helper_node_count": len(load_public_simulation_helper_node_inventory()),
         "crosscheck_row_count": len(load_public_problem_notebook_crosscheck()),
+        "goal_audit_row_count": len(load_public_simulation_goal_audit()),
         "coverage_status_counts": problem_notebook_crosscheck[
             "coverage_status"
         ].value_counts(sort=False).to_dict(),
+        "goal_status_counts": goal_audit["current_status"]
+        .value_counts(sort=False)
+        .to_dict(),
         "ecosystem_home_counts": helper_node_inventory["gdsfactory_home"]
         .value_counts(sort=False)
         .to_dict(),

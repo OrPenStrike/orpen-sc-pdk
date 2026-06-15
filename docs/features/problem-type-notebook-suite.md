@@ -51,7 +51,9 @@ Current public notebooks:
   `gsim.palace.load_electrostatic_report()`;
 - {doc}`../notebooks/public_simulation_inventory` displays the
   publication-safe helper-node matrix and NCUAS representative notebook
-  cross-check from JSON fixtures, keeping inventory/reportability out of
+  cross-check from JSON fixtures, plus a goal-level audit that separates
+  covered current evidence from opt-in solver replay, user-deferred scope, and
+  owner-pending AEDT/Q2D work; this keeps inventory/reportability out of
   notebook-local private helpers;
 - all three problem-type notebooks load generated domain-material provenance
   through `gsim.palace.load_domain_material_summary()` and generated

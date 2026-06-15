@@ -58,8 +58,8 @@ Notebook Items
         :doc:`notebooks/public_simulation_inventory`
 
         Displays the public/private simulation notebook cross-check,
-        helper-node inventory, ecosystem home, and issue ownership without
-        embedding private workflow code.
+        helper-node inventory, goal-level audit status, ecosystem home, and
+        issue ownership without embedding private workflow code.
 
     .. grid-item-card:: NB-006 Reference Qubit Workflow
 
