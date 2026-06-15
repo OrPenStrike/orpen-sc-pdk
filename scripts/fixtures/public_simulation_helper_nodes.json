@@ -30,13 +30,13 @@
     "next_issue": "public-problem-type-notebook-coverage"
   },
   {
-    "node": "Magnetostatic problem gap",
+    "node": "Magnetostatic problem fixture",
     "private_capability": "Magnetostatic helpers preserve London-domain materials and caller-supplied SurfaceCurrent sources for inductance-style workflows.",
     "private_anchor": "simulations/specs/palace/configs/templates/magnetostatic_base.jsonc; ncuas_designs/simulations/palace/config/problems.py; ncuas_designs/simulations/runtime.py; tests/palace/test_mapping.py",
     "why_helper_exists": "Mutual/self-inductance workflows need exact current-source attributes and London-depth material fields rather than fuzzy physical-name inference.",
     "gdsfactory_home": "gsim",
-    "public_api_or_artifact": "MagnetostaticConfig exists; no MagnetostaticSim class, config-writer branch, public fixture, or report loader is wired yet.",
-    "public_status": "inventory_only_pending_public_use_case",
+    "public_api_or_artifact": "MagnetostaticSim; center-selected current sources; Boundaries.SurfaceCurrent; magnetic SurfaceFlux; load_postprocessing_index_map()",
+    "public_status": "implemented_public_config_fixture_pending_report_loader",
     "next_issue": "public-problem-type-notebook-coverage"
   },
   {

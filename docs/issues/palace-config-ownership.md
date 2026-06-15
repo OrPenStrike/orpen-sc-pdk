@@ -21,8 +21,8 @@ Proposed path:
 - keep `orpen-sc-pdk` exports limited to public PDK data and example component
   metadata;
 - keep `gplugins` as a compatibility façade unless it delegates to `gsim`;
-- validate with public driven, eigenmode, and electrostatic fixtures before
-  using private layouts as local consumers.
+- validate with public driven, eigenmode, electrostatic, and magnetostatic
+  config fixtures before using private layouts as local consumers.
 
 Verified local changes:
 
@@ -36,8 +36,9 @@ Verified local changes:
   command or a direct solver binary, so local coarse smokes can use packaged
   wrappers, Apptainer SIFs, or local development binaries without changing PDK
   fixtures;
-- public `orpen-sc-pdk` executable fixtures now validate Driven, Eigenmode, and
-  Electrostatic mesh/config/artifact handoff through local editable `gsim`.
+- public `orpen-sc-pdk` executable fixtures now validate Driven, Eigenmode,
+  Electrostatic, and Magnetostatic mesh/config/artifact handoff through local
+  editable `gsim`.
 - the public electrostatic fixture now has an opt-in local Palace coarse solve
   that verifies non-empty terminal capacitance outputs.
 - the public driven CPW fixture now has an opt-in local Palace coarse solve that
@@ -117,21 +118,23 @@ Verified local changes:
   config/material provenance as table output through
   `gsim.palace.load_domain_material_summary()`, so notebook review can inspect
   how PDK material overlay values enter Palace `Domains.Materials`.
+- `gsim` commit `c72f0d3` adds first-class Magnetostatic config-surface support
+  in the same Palace ownership boundary: public `MagnetostaticSim`,
+  center-selected `CurrentSourceConfig` sources, generated
+  `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
+  `Boundaries.SurfaceCurrent`, `Boundaries.PMC`, magnetic `SurfaceFlux`, and
+  source-name rows in `palace_index_map.json`.
 - current OrPen local evidence and notebook output now share a helper-node
   inventory fixture that records Driven/Eigenmode/Electrostatic as implemented
-  public fixtures and Magnetostatic as an inventory-only config gap: `gsim`
-  currently exposes `MagnetostaticConfig`, while no public `MagnetostaticSim`,
-  fixture, or report loader is wired until a public use case is selected.
+  public fixtures and Magnetostatic as an implemented public config fixture
+  with report loading intentionally pending.
 
 Remaining slices:
 
-- after a public Magnetostatic use case is selected, the first `gsim` slice
-  should add a first-class `MagnetostaticSim` peer and config-writer path for
-  `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
-  caller-supplied `SurfaceCurrent` sources, magnetic `SurfaceFlux`
-  postprocessing/index-map rows, and public material permeability/London-depth
-  provenance; report loading should wait until the exact Palace Magnetostatic
-  CSV outputs are confirmed;
+- add a public Magnetostatic report loader only after the exact Palace
+  Magnetostatic CSV/output contract is confirmed;
+- extend public material permeability/London-depth provenance only after those
+  records have a source-backed public schema;
 - record richer dielectric interface provenance before promoting interface
   presets into public PDK material data;
 - split NCUAS-style Slurm/Sbatch handoff, profile/resource resolution,

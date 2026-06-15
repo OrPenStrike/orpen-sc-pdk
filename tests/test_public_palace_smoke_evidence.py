@@ -72,9 +72,11 @@ def _assert_helper_node_inventory(evidence: dict) -> None:
         "public-problem-type-notebook-coverage"
     )
 
-    magnetostatic = by_node["Magnetostatic problem gap"]
-    assert magnetostatic["public_status"] == "inventory_only_pending_public_use_case"
-    assert "MagnetostaticConfig exists" in magnetostatic["public_api_or_artifact"]
+    magnetostatic = by_node["Magnetostatic problem fixture"]
+    assert (
+        magnetostatic["public_status"] == "implemented_public_config_fixture_pending_report_loader"
+    )
+    assert "MagnetostaticSim" in magnetostatic["public_api_or_artifact"]
     assert "SurfaceCurrent" in magnetostatic["private_capability"]
 
     for row in rows:
@@ -105,6 +107,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         "driven_cpw",
         "eigenmode_resonator",
         "electrostatic_same_layer_capacitor",
+        "magnetostatic_cpw",
     }
     sweep_summary = evidence["sweep_summary"]
     assert sweep_summary["sweep_id"] == "public_palace_problem_type_smoke"
@@ -134,8 +137,8 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     sweep_script = (tmp_path / "run_sweep_array.sbatch").read_text()
     assert 'srun --mpi=pmix "$PALACE_EXECUTABLE" "$CONFIG_PATH"' in sweep_script
     assert sweep_summary["handoff"]["resources"]["array"] == {
-        "point_count": 3,
-        "max_parallel": 3,
+        "point_count": 4,
+        "max_parallel": 4,
     }
     assert sweep_summary["handoff"]["resources"]["requested"] == {
         "account": "public_alloc",
@@ -163,7 +166,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert sweep_summary["handoff"]["archive_manifest_present"] is True
     assert sweep_summary["handoff"]["metadata"] == {
         "command_style": "binary",
-        "point_count": 3,
+        "point_count": 4,
         "points_csv_path": "points.csv",
         "points_path": "points.json",
         "script_schema_version": 1,
@@ -173,25 +176,31 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         "argv": ["sbatch", "run_sweep_array.sbatch"],
         "redacted": True,
     }
-    assert sweep_summary["point_count"] == 3
+    assert sweep_summary["point_count"] == 4
     assert sweep_summary["point_slugs"] == [
         "driven_cpw",
         "eigenmode_resonator",
         "electrostatic_same_layer_capacitor",
+        "magnetostatic_cpw",
     ]
     assert sweep_summary["duplicate_point_slugs"] == []
     assert sweep_summary["parse_warnings"] == []
-    assert sweep_summary["complete_point_count"] == 3
+    assert sweep_summary["complete_point_count"] == 4
     assert sweep_summary["runtime_present_count"] == 0
-    assert sweep_summary["resource_present_count"] == 3
-    assert set(sweep_summary["problem_types"]) == {"Driven", "Eigenmode", "Electrostatic"}
+    assert sweep_summary["resource_present_count"] == 4
+    assert set(sweep_summary["problem_types"]) == {
+        "Driven",
+        "Eigenmode",
+        "Electrostatic",
+        "Magnetostatic",
+    }
 
     sweep_resource_index = evidence["sweep_resource_index"]
     assert sweep_resource_index == {
         "benchmark_jsonl_path": "metadata/records/sweep_benchmark_index.jsonl",
-        "point_count": 3,
+        "point_count": 4,
         "point_records_csv_path": "metadata/records/sweep_point_records.csv",
-        "resource_present_count": 3,
+        "resource_present_count": 4,
         "resource_records_csv_path": "metadata/records/sweep_resource_records.csv",
         "summary_path": "metadata/records/sweep_resource_index.json",
     }
@@ -204,8 +213,8 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert (tmp_path / path).is_file()
     index_payload = json.loads((tmp_path / sweep_resource_index["summary_path"]).read_text())
     assert index_payload["sweep_id"] == "public_palace_problem_type_smoke"
-    assert index_payload["point_count"] == 3
-    assert index_payload["resource_present_count"] == 3
+    assert index_payload["point_count"] == 4
+    assert index_payload["resource_present_count"] == 4
     assert index_payload["records"] == {
         "benchmark_jsonl": "metadata/records/sweep_benchmark_index.jsonl",
         "point_records_csv": "metadata/records/sweep_point_records.csv",
@@ -220,23 +229,26 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     benchmark_jsonl_rows = (
         (tmp_path / sweep_resource_index["benchmark_jsonl_path"]).read_text().splitlines()
     )
-    assert len(benchmark_jsonl_rows) == 3
+    assert len(benchmark_jsonl_rows) == 4
     assert {json.loads(row)["point_slug"] for row in benchmark_jsonl_rows} == {
         "driven_cpw",
         "eigenmode_resonator",
         "electrostatic_same_layer_capacitor",
+        "magnetostatic_cpw",
     }
 
     assert [point["point_slug"] for point in sweep_summary["points"]] == [
         "driven_cpw",
         "eigenmode_resonator",
         "electrostatic_same_layer_capacitor",
+        "magnetostatic_cpw",
     ]
     point_records = sweep_summary["point_records"]
     assert [record["point_slug"] for record in point_records] == [
         "driven_cpw",
         "eigenmode_resonator",
         "electrostatic_same_layer_capacitor",
+        "magnetostatic_cpw",
     ]
     for record in point_records:
         assert record["sweep_id"] == "public_palace_problem_type_smoke"
@@ -264,11 +276,25 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert record["resource_scheduler_job_id"] == 12345
         assert record["resource_scheduler_job_state"] == "COMPLETED"
         assert record["resource_scheduler_partition"] == "public_cpu"
-        assert record["report_status"] == "missing"
-        assert record["report_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
+        if record["parameter_problem_type"] == "Magnetostatic":
+            assert record["report_status"] == "skipped"
+            assert "unsupported Palace problem type 'Magnetostatic'" in (record["report_message"])
+        else:
+            assert record["report_status"] == "missing"
+        assert record["report_problem_type"] in {
+            "Driven",
+            "Eigenmode",
+            "Electrostatic",
+            "Magnetostatic",
+        }
         assert record["report_message"]
         assert record["parameter_fixture"]
-        assert record["parameter_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
+        assert record["parameter_problem_type"] in {
+            "Driven",
+            "Eigenmode",
+            "Electrostatic",
+            "Magnetostatic",
+        }
 
     for problem in evidence["problems"].values():
         output_dir = tmp_path / problem["output_dir"]
@@ -488,6 +514,31 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         for row in electrostatic_lookup
         if row["section"] == "Boundaries.Terminal"
     ) == ["negative", "positive"]
+
+    magnetostatic = evidence["problems"]["magnetostatic_cpw"]
+    magnetostatic_summary = magnetostatic["run_summary"]
+    magnetostatic_config = magnetostatic["config_generation"]
+    _assert_config_generation_material_provenance(magnetostatic)
+    magnetostatic_lookup = _assert_index_map_lookup_round_trip(magnetostatic)
+    assert magnetostatic_summary["config"]["problem_type"] == "Magnetostatic"
+    assert magnetostatic_config["surface_current_count"] == 2
+    assert magnetostatic_config["surface_flux_count"] == 2
+    assert magnetostatic_config["pmc_count"] == 1
+    assert magnetostatic_config["terminal_count"] == 0
+    assert "Boundaries.SurfaceCurrent" in magnetostatic_summary["index_map"]["sections"]
+    assert (
+        "Boundaries.Postprocessing.SurfaceFlux" in (magnetostatic_summary["index_map"]["sections"])
+    )
+    assert sorted(
+        row["current_source_name"]
+        for row in magnetostatic_lookup
+        if row["section"] == "Boundaries.SurfaceCurrent"
+    ) == ["return", "signal"]
+    assert {
+        row["extra"]["Type"]
+        for row in magnetostatic_lookup
+        if row["section"] == "Boundaries.Postprocessing.SurfaceFlux"
+    } == {"Magnetic"}
 
 
 def test_driven_report_summary_uses_sparams_public_keys(

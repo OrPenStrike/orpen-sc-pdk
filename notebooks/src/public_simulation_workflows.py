@@ -13,7 +13,7 @@
 #
 # This notebook demonstrates publication-safe Palace workflow fixtures for the
 # public OrPen SC PDK. It exercises the reusable `gsim` mesh/config/artifact
-# handoff for Driven, Eigenmode, and Electrostatic problem types without
+# handoff for Driven, Eigenmode, Electrostatic, and Magnetostatic problem types without
 # importing private layouts, private notebooks, saved private outputs, or
 # private run folders.
 #
@@ -37,6 +37,7 @@ from gsim.palace import (
     DrivenSim,
     EigenmodeSim,
     ElectrostaticSim,
+    MagnetostaticSim,
     PalaceSlurmSbatchSpec,
     load_dielectric_interface_summary,
     load_domain_material_summary,
@@ -50,6 +51,7 @@ from gsim.palace import (
     write_palace_slurm_sbatch_handoff,
 )
 from gsim.palace.mesh import (
+    PostprocessingConfig,
     SurfaceFluxSpec,
     build_dielectric_interface_specs_from_material_kinds,
     build_postprocessing_config_from_manifest,
@@ -202,6 +204,8 @@ def _index_map_lookup_table(
                 "role": entry.role,
                 "port": entry.metadata.get("port"),
                 "terminal_name": entry.extra.get("terminal_name"),
+                "current_source_name": entry.extra.get("current_source_name"),
+                "type": entry.extra.get("Type"),
             }
         )
     return pd.DataFrame(rows)
@@ -259,6 +263,8 @@ def _config_generation_summary(
         "dielectric_postprocessing_count": len(postprocessing.get("Dielectric", ())),
         "lumped_port_count": len(boundaries.get("LumpedPort", ())),
         "terminal_count": len(boundaries.get("Terminal", ())),
+        "surface_current_count": len(boundaries.get("SurfaceCurrent", ())),
+        "pmc_count": int(bool(boundaries.get("PMC"))),
         "boundary_sections": sorted(boundaries),
     }
 
@@ -418,6 +424,39 @@ def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
 
 def _electrostatic_postprocessing(mesh_result) -> dict:
     return build_postprocessing_config_from_manifest(mesh_result.manifest)
+
+
+def _public_magnetostatic_cpw_sim(output_dir: Path):
+    component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
+
+    sim = MagnetostaticSim()
+    sim.set_output_dir(output_dir)
+    sim.set_geometry(component)
+    sim.set_stack(
+        include_substrate=True,
+        substrate_thickness=20,
+        add_oxide_dielectric=False,
+        add_passivation_dielectric=False,
+    )
+    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
+    sim.add_current_source("signal", layer="D0_TOP_M1", center=(0, 0), direction="+X")
+    sim.add_current_source("return", layer="D0_TOP_M1", center=(0, 31), direction="-X")
+    sim.set_magnetostatic(save_fields=0)
+    sim.mesh(
+        preset="coarse",
+        refined_mesh_size=20,
+        max_mesh_size=200,
+        margin_x=40,
+        margin_y=40,
+        planar_conductors=True,
+        auto_size=False,
+    )
+    return sim, sim._last_mesh_result
+
+
+def _magnetostatic_postprocessing(mesh_result) -> dict:
+    base = build_postprocessing_config_from_manifest(mesh_result.manifest)
+    return PostprocessingConfig(domains=base.domains, index_map=base.index_map)
 
 
 def _local_palace_run_settings() -> tuple[dict, str | None]:
@@ -873,8 +912,8 @@ def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Pa
 # This table is the public migration inventory for the simulation helper
 # system. It records the private capability shape, why a helper node exists,
 # the intended GDSFactory ecosystem home, the current public API/artifact, and
-# the issue that owns the next slice. It intentionally treats Magnetostatic as
-# an inventory-only gap until a public use case is selected.
+# the issue that owns the next slice. Magnetostatic is covered here as a public
+# config fixture while solver report parsing remains a later slice.
 
 # %%
 helper_node_inventory = _helper_node_inventory_table()
@@ -1168,6 +1207,63 @@ display(electrostatic_domain_materials)
 display(electrostatic_index_lookup)
 
 # %% [markdown]
+# ## Magnetostatic CPW source workflow
+#
+# The magnetostatic fixture uses the public CPW straight cell. The workflow uses
+# `gsim` center-selected current sources to map signal and return current
+# sources to separate same-layer PEC islands, then writes `SurfaceCurrent`,
+# `PMC`, and magnetic `SurfaceFlux` entries without hand-editing Palace JSON.
+
+# %%
+with tempfile.TemporaryDirectory() as temp_dir:
+    output_dir = Path(temp_dir) / "magnetostatic-cpw"
+    sim, mesh_result = _public_magnetostatic_cpw_sim(output_dir)
+    config_hints = _public_solver_config_hints()
+    config_path = sim.write_config(
+        postprocessing=_magnetostatic_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+        hints=config_hints,
+    )
+    config = _load_json(config_path)
+    index_map = _load_json(output_dir / "palace_index_map.json")
+    magnetostatic_domain_materials = _domain_material_table(output_dir)
+    magnetostatic_index_lookup = _index_map_lookup_table(output_dir)
+    magnetostatic_summary = {
+        "problem_type": config["Problem"]["Type"],
+        "profile_config_hints": config_hints,
+        "solver_device": config["Solver"].get("Device"),
+        "config_generation": _config_generation_summary(
+            config,
+            output_dir,
+            magnetostatic_domain_materials,
+        ),
+        "artifacts": _artifact_status(output_dir),
+        "surface_current_count": len(config["Boundaries"]["SurfaceCurrent"]),
+        "surface_flux_rows": len(config["Boundaries"]["Postprocessing"]["SurfaceFlux"]),
+        "pmc_attributes": config["Boundaries"].get("PMC", {}).get("Attributes", []),
+        "index_lookup_rows": len(magnetostatic_index_lookup),
+        "current_source_names": sorted(
+            {
+                row["current_source_name"]
+                for row in index_map["entries"]
+                if row["section"] == "Boundaries.SurfaceCurrent"
+            }
+        ),
+        "surface_flux_types": sorted(
+            {
+                row["Type"]
+                for row in index_map["entries"]
+                if row["section"] == "Boundaries.Postprocessing.SurfaceFlux"
+            }
+        ),
+    }
+
+display(magnetostatic_summary)
+display(magnetostatic_domain_materials)
+display(magnetostatic_index_lookup)
+
+# %% [markdown]
 # ## Reusable report table displays
 #
 # The report examples use synthetic public Palace artifacts so the docs build
@@ -1369,5 +1465,7 @@ display(local_smoke_summary)
 # These examples prove public geometry, material/layer metadata, automatic
 # Palace config generation, mesh physical-name manifests, index-map artifacts,
 # reusable report display tables, and opt-in local solver smoke execution. A
-# full Palace solve is intentionally outside the default docs build; enable the
-# local smoke cell when a Palace binary or SIF is available.
+# full Palace solve is intentionally outside the default docs build. The
+# report-backed local smoke cell covers Driven, Eigenmode, and Electrostatic;
+# Magnetostatic is currently covered through config/index-map generation until
+# a public report parser is added.

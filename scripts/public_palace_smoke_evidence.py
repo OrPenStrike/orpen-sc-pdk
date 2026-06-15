@@ -195,6 +195,8 @@ def _config_generation_evidence(source: Path) -> dict[str, Any]:
         "lumped_port_count": len(boundaries.get("LumpedPort", ())),
         "terminal_count": len(boundaries.get("Terminal", ())),
         "wave_port_count": len(boundaries.get("WavePort", ())),
+        "surface_current_count": len(boundaries.get("SurfaceCurrent", ())),
+        "pmc_count": int(bool(boundaries.get("PMC"))),
         "surface_flux_count": len(postprocessing.get("SurfaceFlux", ())),
         "dielectric_postprocessing_count": len(postprocessing.get("Dielectric", ())),
         "boundary_sections": sorted(boundaries.keys()),
@@ -267,6 +269,8 @@ def _index_map_lookup_evidence(source: Path) -> dict[str, Any]:
             row["extra"] = dict(entry.extra)
             if entry.extra.get("terminal_name") is not None:
                 row["terminal_name"] = entry.extra["terminal_name"]
+            if entry.extra.get("current_source_name") is not None:
+                row["current_source_name"] = entry.extra["current_source_name"]
         lookup_rows.append(row)
     return {
         "schema_version": index_map.schema_version,
@@ -529,6 +533,63 @@ def _electrostatic_report_summary(output_dir: Path) -> dict[str, Any]:
         "surface_q_rows": int(len(report.surface_q)),
         "index_map_rows": int(len(report.index_map)),
         "sources": _source_summary(report.sources),
+    }
+
+
+def _public_magnetostatic_cpw_sim(output_dir: Path):
+    from gsim.palace import MagnetostaticSim
+
+    component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
+
+    sim = MagnetostaticSim()
+    sim.set_output_dir(output_dir)
+    sim.set_geometry(component)
+    sim.set_stack(
+        include_substrate=True,
+        substrate_thickness=20,
+        add_oxide_dielectric=False,
+        add_passivation_dielectric=False,
+    )
+    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
+    sim.add_current_source(
+        "signal",
+        layer="D0_TOP_M1",
+        center=(0, 0),
+        direction="+X",
+    )
+    sim.add_current_source(
+        "return",
+        layer="D0_TOP_M1",
+        center=(0, 31),
+        direction="-X",
+    )
+    sim.set_magnetostatic(save_fields=0)
+    sim.mesh(
+        preset="coarse",
+        refined_mesh_size=20,
+        max_mesh_size=200,
+        margin_x=40,
+        margin_y=40,
+        planar_conductors=True,
+        auto_size=False,
+    )
+    return sim, sim._last_mesh_result
+
+
+def _magnetostatic_postprocessing(mesh_result: Any) -> dict[str, Any]:
+    from gsim.palace.mesh import (
+        PostprocessingConfig,
+        build_postprocessing_config_from_manifest,
+    )
+
+    base = build_postprocessing_config_from_manifest(mesh_result.manifest)
+    return PostprocessingConfig(domains=base.domains, index_map=base.index_map)
+
+
+def _magnetostatic_report_summary(_output_dir: Path) -> dict[str, Any]:
+    return {
+        "status": "not_implemented",
+        "reason": "Magnetostatic report loader is pending a confirmed Palace output contract.",
     }
 
 
@@ -955,6 +1016,14 @@ def build_public_palace_smoke_evidence(
             "build_sim": _public_same_layer_capacitor_electrostatic_sim,
             "build_postprocessing": _electrostatic_postprocessing,
             "report_summary": _electrostatic_report_summary,
+        },
+        {
+            "problem_key": "magnetostatic_cpw",
+            "fixture_name": "cpw_straight",
+            "problem_type": "Magnetostatic",
+            "build_sim": _public_magnetostatic_cpw_sim,
+            "build_postprocessing": _magnetostatic_postprocessing,
+            "report_summary": _magnetostatic_report_summary,
         },
     )
 

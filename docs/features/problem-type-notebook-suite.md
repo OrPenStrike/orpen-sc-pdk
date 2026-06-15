@@ -16,6 +16,9 @@ Local/implemented capability:
   reuse, convergence records, and EPR-ready postprocessing;
 - electrostatic workflows validate terminal assignment, capacitance extraction,
   package analysis, and report generation.
+- magnetostatic workflows validate current-source ownership, generated
+  `SurfaceCurrent` boundaries, magnetic `SurfaceFlux` index rows, and
+  report-loader gap visibility.
 
 Public fixture direction:
 
@@ -25,12 +28,15 @@ Public fixture direction:
   later extend to sweep coverage;
 - electrostatic: a public capacitor fixture with named terminals and
   capacitance/report outputs.
+- magnetostatic: a public CPW fixture with center-selected signal/return
+  current sources and generated config/index-map evidence while report loading
+  waits for a confirmed Palace output contract.
 
 Current public notebook:
 
 - {doc}`../notebooks/public_simulation_workflows` runs public Driven,
-  Eigenmode, and Electrostatic mesh/config/artifact handoffs with local `gsim`
-  and public `orpen-sc-pdk` cells only;
+  Eigenmode, Electrostatic, and Magnetostatic mesh/config/artifact handoffs
+  with local `gsim` and public `orpen-sc-pdk` cells only;
 - the same notebook now displays a helper-node coverage matrix loaded from
   `scripts/fixtures/public_simulation_helper_nodes.json`, showing why each
   private helper node exists, which private notebook/helper anchors motivated
@@ -60,6 +66,11 @@ Current public notebook:
   Eigenmode, and Electrostatic public fixtures; normal docs builds display a
   skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or
   executable path is configured.
+- the same notebook displays a Magnetostatic CPW config fixture with
+  center-selected `signal`/`return` current sources, generated
+  `SurfaceCurrent`, `PMC`, and magnetic `SurfaceFlux` boundary sections, plus
+  source-name lookup rows from `palace_index_map.json`; report parsing remains
+  intentionally pending.
 - the same notebook displays the public Slurm profile catalog, resolved
   resource overrides, generic launcher/solver hints, generated Palace
   `Solver` config hints, and a generated dry-run `run_palace.sbatch` preview
@@ -121,7 +132,7 @@ Current executable smoke coverage:
   entrypoint that reuses the public fixture builders and keeps normal docs
   builds independent of local Palace.
 - `scripts/public_palace_smoke_evidence.py` builds the same public Driven,
-  Eigenmode, and Electrostatic coarse fixtures into
+  Eigenmode, Electrostatic, and Magnetostatic coarse fixtures into
   `build/public-palace-smoke-evidence/` and writes
   `public_palace_smoke_evidence.json` with a reusable
   `gsim.palace.load_palace_run_summary()` bundle for generated artifact status,
@@ -139,13 +150,13 @@ Current executable smoke coverage:
 - the same evidence runner now records the helper-node inventory fixture as
   `helper_node_inventory`, including implemented public fixtures, shared
   material/interface/index/runtime helper nodes, and the Magnetostatic
-  inventory-only gap.
+  config-fixture/report-loader gap.
 - the same evidence script uses `gsim.palace.write_palace_sweep_points()` to
-  write a public `points.json` table for those three fixtures, then consumes
+  write a public `points.json` table for those four fixtures, then consumes
   `gsim.palace.load_palace_sweep_summary()` so sweep identity starts from
   explicit point metadata rather than folder scans or PDK-local JSON assembly.
 - the public evidence test now checks `gsim` sweep identity validation output:
-  the three public problem fixtures have unique point slugs and no sweep
+  the four public problem fixtures have unique point slugs and no sweep
   metadata parse warnings.
 - the same sweep summary now exposes table-ready `point_records`, giving each
   public problem fixture a normalized row with point parameters, generated
@@ -153,8 +164,9 @@ Current executable smoke coverage:
   config/mesh/index/material-resolution counts.
 - the same evidence path now requests optional `gsim` sweep report metrics; in
   default dry-run mode those rows record missing Driven/Eigenmode/Electrostatic
-  report status without fabricating solver outputs, and opt-in local solver
-  replays can fill the same columns from the reusable report loaders.
+  report status and skipped Magnetostatic report status without fabricating
+  solver outputs, and opt-in local solver replays can fill the same columns
+  from supported reusable report loaders.
 - the same dry-run evidence path now writes a synthetic public Palace log for
   each problem fixture and consumes
   `gsim.palace.write_palace_resource_record_from_log()` so AMR, timing,
@@ -189,10 +201,9 @@ Current executable smoke coverage:
 
 Known gaps and non-goals:
 
-- Magnetostatic is acknowledged as a private helper/test surface, but it has no
-  public OrPen fixture or notebook equivalent yet; the shared helper-node
-  inventory records the private anchors and current `gsim` status as
-  `inventory_only_pending_public_use_case`.
+- Magnetostatic now has a public config/index-map fixture, but no public report
+  loader yet; the shared helper-node inventory records this as
+  `implemented_public_config_fixture_pending_report_loader`.
 - Full sweep orchestration and broader cost modeling remain later reusable
   `gsim` workflow slices; the current public baseline is explicit point
   metadata plus table-ready per-point artifact, runtime, provenance, and
