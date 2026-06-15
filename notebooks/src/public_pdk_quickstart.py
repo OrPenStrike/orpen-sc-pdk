@@ -31,10 +31,10 @@ def port_names(component):
 
 
 # %% [markdown]
-# ## Public demo cells
+# ## Public PDK cells
 #
-# The PDK can create small public superconducting RF primitives without loading
-# any private layout package.
+# The PDK registry contains reusable public superconducting RF primitives
+# without loading any private layout package.
 
 # %%
 cpw = cpw_straight(length=500, signal_width=10, gap=6)
@@ -48,10 +48,18 @@ display(
 )
 
 # %% [markdown]
+# ## Public samples
+#
+# Demo assemblies are discoverable as samples instead of core PDK cells.
+
+# %%
+display({"public_samples": sorted(orpen_sc_pdk.get_sample_functions())})
+
+# %% [markdown]
 # ## Public PDK registry
 #
-# The public PDK registry contains only publication-safe OrPen cells. Private
-# cells belong to a private GF+ project that uses this package as its Base PDK.
+# The public PDK registry contains only reusable OrPen cells. Private cells and
+# demo-only assemblies belong outside the core PDK registry.
 
 # %%
 display(

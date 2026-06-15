@@ -12,14 +12,10 @@ from orpen_sc_pdk.helper import layer_views_to_tuples
 def test_orpen_style_public_import_surface() -> None:
     assert orpen_sc_pdk.PATH == config.PATH
     assert cells.cpw_straight
-    assert cells.global_purcell_filter_demo_chip
     assert cells.interdigital_capacitor
     assert cells.launcher
     assert cells.martinis2022_differential_ribbon_capacitor
     assert cells.resonator
-    assert cells.sim_flip_chip_distance
-    assert cells.sim_flip_chip_distance_keepout_global_routing_demo
-    assert cells.sim_flip_chip_distance_keepout_routing_demo
     assert cells.taper
     assert (tech.LAYER.D0_TOP_M1_DRAW.layer, tech.LAYER.D0_TOP_M1_DRAW.datatype) == (1, 0)
     assert (tech.LAYER.D1_D2_UNDER_BUMP.layer, tech.LAYER.D1_D2_UNDER_BUMP.datatype) == (41, 1)
@@ -39,19 +35,11 @@ def test_pdk_registry_contains_public_cells() -> None:
         "bend_euler",
         "cpw_straight",
         "dicing_edge",
-        "global_purcell_filter_demo_chip",
         "interdigital_capacitor",
         "launcher",
         "manhattan_style_junction",
         "martinis2022_differential_ribbon_capacitor",
-        "single_trace_flip_chip_xs_chip",
-        "single_trace_xs_chip",
-        "sim_flip_chip_distance",
-        "sim_flip_chip_distance_keepout_global_routing_demo",
-        "sim_flip_chip_distance_keepout_routing_demo",
         "straight",
-        "two_trace_flip_chip_xs_chip",
-        "two_trace_xs_chip",
     }
 
     assert set(PDK.cells) == expected
@@ -96,6 +84,21 @@ def test_pdk_registry_does_not_publish_generic_gf_cells() -> None:
     assert generic_cells.isdisjoint(PDK.cells)
 
 
+def test_fixture_cells_stay_in_deep_owner_modules_until_notebook_facing() -> None:
+    from orpen_sc_pdk.cells import xs_chip
+
+    fixture_cells = {
+        "single_trace_flip_chip_xs_chip",
+        "single_trace_xs_chip",
+        "two_trace_flip_chip_xs_chip",
+        "two_trace_xs_chip",
+    }
+
+    assert all(callable(getattr(xs_chip, name)) for name in fixture_cells)
+    assert fixture_cells.isdisjoint(cells.__all__)
+    assert fixture_cells.isdisjoint(PDK.cells)
+
+
 def test_pdk_registry_contains_public_cpw_cross_sections() -> None:
     expected = {
         "coplanar_waveguide",
@@ -133,24 +136,22 @@ def test_gdsfactory_get_component_works_after_activation() -> None:
     orpen_sc_pdk.activate()
 
     assert gf.get_component("cpw_straight").name.startswith("cpw_straight")
-    assert gf.get_component("global_purcell_filter_demo_chip").ports
     assert gf.get_component("launcher").ports
     assert gf.get_component("interdigital_capacitor").ports
     assert gf.get_component("martinis2022_differential_ribbon_capacitor").ports
     assert gf.get_component("resonator").ports
-    assert gf.get_component("sim_flip_chip_distance").ports
-    assert gf.get_component(
-        "sim_flip_chip_distance_keepout_routing_demo",
-        show_route_centerline=False,
-        show_route_keepout=False,
-    )
-    assert gf.get_component(
-        "sim_flip_chip_distance_keepout_global_routing_demo",
-        show_route_centerline=False,
-        show_route_keepout=False,
-    )
     assert gf.get_component("taper").ports
 
 
-def test_public_samples_are_empty_after_registry_cleanup() -> None:
-    assert orpen_sc_pdk.get_sample_functions() == {}
+def test_public_samples_hold_demo_cells_after_registry_cleanup() -> None:
+    samples = orpen_sc_pdk.get_sample_functions()
+
+    assert set(samples) == {
+        "orpen_sc_pdk.samples.simulation_demos.global_purcell_filter_demo_chip",
+        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance",
+        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_global_routing_demo",
+        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_routing_demo",
+    }
+    assert samples[
+        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance"
+    ]().ports

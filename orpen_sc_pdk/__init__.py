@@ -34,17 +34,27 @@ def get_sample_functions() -> dict[str, ComponentFactory]:
 
     import orpen_sc_pdk.samples as sample_package
 
-    return {
-        f"{module_name}.{name}": obj
-        for _importer, module_name, _is_package in pkgutil.walk_packages(
-            sample_package.__path__,
-            sample_package.__name__ + ".",
+    samples: dict[str, ComponentFactory] = {}
+    for _importer, module_name, _is_package in pkgutil.walk_packages(
+        sample_package.__path__,
+        sample_package.__name__ + ".",
+    ):
+        module = importlib.import_module(module_name)
+        public_names = getattr(module, "__all__", None)
+        members = (
+            ((name, getattr(module, name)) for name in public_names)
+            if public_names is not None
+            else inspect.getmembers(module)
         )
-        for name, obj in inspect.getmembers(importlib.import_module(module_name))
-        if (inspect.isfunction(obj) or isinstance(obj, partial))
-        and not name.startswith("_")
-        and getattr(obj, "func", obj).__module__ == module_name
-    }
+        for name, obj in members:
+            if name.startswith("_"):
+                continue
+            if not (inspect.isfunction(obj) or isinstance(obj, partial)):
+                continue
+            if public_names is None and getattr(obj, "func", obj).__module__ != module_name:
+                continue
+            samples[f"{module_name}.{name}"] = obj
+    return samples
 
 
 __all__ = [

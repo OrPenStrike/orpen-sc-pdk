@@ -10,6 +10,7 @@ the GDSFactory+ extension.
 Required shape:
 
 - flat package layout;
-- public `orpen_sc_pdk.cells` registry;
+- public `orpen_sc_pdk.cells` registry for reusable PDK cells;
+- public sample catalog for demo-only assemblies;
 - reserved `orpen_sc_pdk.models`;
 - `[tool.gdsfactoryplus]` metadata in `pyproject.toml`.

@@ -10,7 +10,6 @@ from orpen_sc_pdk.cells import (
     bend_euler,
     cpw_straight,
     dicing_edge,
-    global_purcell_filter_demo_chip,
     indium_bump,
     indium_ground,
     interdigital_capacitor,
@@ -20,15 +19,8 @@ from orpen_sc_pdk.cells import (
     resonator,
     resonator_hanger,
     resonator_meander,
-    sim_flip_chip_distance,
-    sim_flip_chip_distance_keepout_global_routing_demo,
-    sim_flip_chip_distance_keepout_routing_demo,
-    single_trace_flip_chip_xs_chip,
-    single_trace_xs_chip,
     straight,
     taper,
-    two_trace_flip_chip_xs_chip,
-    two_trace_xs_chip,
 )
 from orpen_sc_pdk.ports import register_sim_port_types
 from orpen_sc_pdk.tech import (
@@ -59,21 +51,11 @@ _cells = {
     "bend_euler": bend_euler,
     "cpw_straight": cpw_straight,
     "dicing_edge": dicing_edge,
-    "global_purcell_filter_demo_chip": global_purcell_filter_demo_chip,
     "interdigital_capacitor": interdigital_capacitor,
     "launcher": launcher,
     "manhattan_style_junction": manhattan_style_junction,
     "martinis2022_differential_ribbon_capacitor": martinis2022_differential_ribbon_capacitor,
-    "single_trace_flip_chip_xs_chip": single_trace_flip_chip_xs_chip,
-    "single_trace_xs_chip": single_trace_xs_chip,
-    "sim_flip_chip_distance": sim_flip_chip_distance,
-    "sim_flip_chip_distance_keepout_global_routing_demo": (
-        sim_flip_chip_distance_keepout_global_routing_demo
-    ),
-    "sim_flip_chip_distance_keepout_routing_demo": sim_flip_chip_distance_keepout_routing_demo,
     "straight": straight,
-    "two_trace_flip_chip_xs_chip": two_trace_flip_chip_xs_chip,
-    "two_trace_xs_chip": two_trace_xs_chip,
 }
 
 _cross_sections = {
