@@ -48,6 +48,11 @@ Current public baseline:
   `run_palace.sbatch` and updates the same `palace_handoff_metadata.json`
   summary surface without submitting jobs or resolving private profile
   catalogs;
+- local `gsim` commit `c2c5383` adds a generic Slurm array dry-run handoff
+  renderer, `write_palace_slurm_sweep_array_handoff()`, which derives
+  `points.csv` from existing `points.json`, writes `run_sweep_array.sbatch`,
+  and exposes sweep-level handoff status through
+  `load_palace_sweep_summary().handoff`;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
   and a public problem-type sweep-summary smoke in the ignored local evidence

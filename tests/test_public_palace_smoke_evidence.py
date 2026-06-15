@@ -30,6 +30,58 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     sweep_summary = evidence["sweep_summary"]
     assert sweep_summary["sweep_id"] == "public_palace_problem_type_smoke"
     assert sweep_summary["source_path"] == "points.json"
+    assert (tmp_path / "points.csv").is_file()
+    assert (tmp_path / "run_sweep_array.sbatch").is_file()
+    assert (tmp_path / "palace_sweep_handoff_metadata.json").is_file()
+    assert sweep_summary["handoff"]["present"] is True
+    assert sweep_summary["handoff"]["status"] == "scripted"
+    assert sweep_summary["handoff"]["launcher"] == {
+        "array": True,
+        "dry_run": True,
+        "kind": "slurm",
+        "submission": "manual",
+    }
+    assert sweep_summary["handoff"]["profile"] == {
+        "name": "public-slurm-sweep-dry-run",
+        "source": "caller-supplied public fixture",
+    }
+    assert sweep_summary["handoff"]["resources"]["array"] == {
+        "point_count": 3,
+        "max_parallel": 3,
+    }
+    assert sweep_summary["handoff"]["resources"]["requested"] == {
+        "account": "public_alloc",
+        "cpus_per_task": 1,
+        "gres": None,
+        "memory_mb": None,
+        "nodes": 1,
+        "ntasks_per_node": 1,
+        "num_processes": 1,
+        "num_threads": 1,
+        "partition": "public_cpu",
+        "wall_time": "00:10:00",
+    }
+    assert (
+        sweep_summary["handoff"]["resources"]["resolved"]
+        == sweep_summary["handoff"]["resources"]["requested"]
+    )
+    assert sweep_summary["handoff"]["path"] == "palace_sweep_handoff_metadata.json"
+    assert sweep_summary["handoff"]["script"]["path"] == "run_sweep_array.sbatch"
+    assert sweep_summary["handoff"]["script_present"] is True
+    assert sweep_summary["handoff"]["archive"] == {}
+    assert sweep_summary["handoff"]["archive_present"] is False
+    assert sweep_summary["handoff"]["metadata"] == {
+        "command_style": "binary",
+        "point_count": 3,
+        "points_csv_path": "points.csv",
+        "points_path": "points.json",
+        "script_schema_version": 1,
+        "workflow": "public-palace-smoke-evidence",
+    }
+    assert sweep_summary["handoff"]["command"] == {
+        "argv": ["sbatch", "run_sweep_array.sbatch"],
+        "redacted": True,
+    }
     assert sweep_summary["point_count"] == 3
     assert sweep_summary["point_slugs"] == [
         "driven_cpw",

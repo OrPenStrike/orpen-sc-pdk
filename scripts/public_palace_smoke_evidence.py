@@ -56,6 +56,14 @@ def _relative_sweep_summary(
     source_path = summary.get("source_path")
     if source_path is not None:
         summary["source_path"] = _relative_path(Path(source_path), output_root)
+    handoff = summary.get("handoff")
+    if isinstance(handoff, dict):
+        if handoff.get("path") is not None:
+            handoff["path"] = _relative_path(Path(handoff["path"]), output_root)
+        for ref_name in ("script", "archive"):
+            ref = handoff.get(ref_name)
+            if isinstance(ref, dict) and ref.get("path") is not None:
+                ref["path"] = _relative_path(Path(ref["path"]), output_root)
     for point in summary.get("points", []):
         if not isinstance(point, dict):
             continue
@@ -413,8 +421,11 @@ def _build_sweep_evidence(
     problems: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
     from gsim.palace import (
+        PalaceSlurmResourceSpec,
+        PalaceSlurmSweepArraySpec,
         PalaceSweepPointSpec,
         load_palace_sweep_summary,
+        write_palace_slurm_sweep_array_handoff,
         write_palace_sweep_points,
     )
 
@@ -434,6 +445,30 @@ def _build_sweep_evidence(
         output_root,
         points,
         sweep_id="public_palace_problem_type_smoke",
+    )
+    write_palace_slurm_sweep_array_handoff(
+        output_root,
+        PalaceSlurmSweepArraySpec(
+            job_name="palace_public_problem_smoke",
+            resources=PalaceSlurmResourceSpec(
+                account="public_alloc",
+                partition="public_cpu",
+                wall_time="00:10:00",
+                nodes=1,
+                ntasks_per_node=1,
+                cpus_per_task=1,
+            ),
+            max_parallel=len(points),
+            petsc_options=(),
+        ),
+        profile={
+            "name": "public-slurm-sweep-dry-run",
+            "source": "caller-supplied public fixture",
+        },
+        metadata={
+            "workflow": "public-palace-smoke-evidence",
+            "point_count": len(points),
+        },
     )
     return _relative_sweep_summary(
         load_palace_sweep_summary(
