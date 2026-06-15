@@ -118,6 +118,10 @@ Verified local changes:
   config/material provenance as table output through
   `gsim.palace.load_domain_material_summary()`, so notebook review can inspect
   how PDK material overlay values enter Palace `Domains.Materials`.
+- public OrPen material records now expose unit permeability for nonmagnetic
+  vacuum/dielectric records, and local evidence verifies that `gsim` lowers
+  those common material values into Palace `Domains.Materials` without adding
+  solver-specific material parsing to the PDK.
 - `gsim` commit `c72f0d3` adds first-class Magnetostatic config-surface support
   in the same Palace ownership boundary: public `MagnetostaticSim`,
   center-selected `CurrentSourceConfig` sources, generated
@@ -129,6 +133,11 @@ Verified local changes:
   multielement `SurfaceCurrent.Elements`, matching the NCUAS/Palace helper
   shape without moving raw physical-group IDs or source geometry into
   `orpen-sc-pdk`.
+- `gsim` commit `bc78ad4` closes the responsibility-boundary review findings
+  for that source slice: `CoordinateSystem` now requires vector directions,
+  parent direction is rejected for multielement sources, overlapping element
+  selectors are rejected before misleading index maps can be written, and the
+  Palace direction lowering helper is private to config generation.
 - current OrPen local evidence and notebook output now share a helper-node
   inventory fixture that records Driven/Eigenmode/Electrostatic as implemented
   public fixtures and Magnetostatic as an implemented public config fixture
@@ -138,8 +147,8 @@ Remaining slices:
 
 - add a public Magnetostatic report loader only after the exact Palace
   Magnetostatic CSV/output contract is confirmed;
-- extend public material permeability/London-depth provenance only after those
-  records have a source-backed public schema;
+- extend public London-depth provenance only after those records have a
+  source-backed public schema;
 - record richer dielectric interface provenance before promoting interface
   presets into public PDK material data;
 - split NCUAS-style Slurm/Sbatch handoff, profile/resource resolution,
@@ -160,3 +169,4 @@ Related features:
 Related issue:
 
 - {doc}`palace-hpc-handoff-records`
+- {doc}`palace-api-responsibility-boundary`

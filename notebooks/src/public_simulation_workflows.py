@@ -236,6 +236,7 @@ def _domain_material_table(output_dir: Path) -> pd.DataFrame:
         "permittivity",
         "loss_tangent",
         "conductivity",
+        "permeability",
     ]
     selected_columns = [column for column in columns if column in frame.columns]
     return frame.loc[:, selected_columns].copy()

@@ -64,3 +64,7 @@ Acceptance checks:
 - any new `gplugins.palace` entrypoint can run against public OrPen examples
   through editable `gsim` and produces the same reusable summary/report
   artifacts.
+
+Related issue:
+
+- {doc}`palace-api-responsibility-boundary`

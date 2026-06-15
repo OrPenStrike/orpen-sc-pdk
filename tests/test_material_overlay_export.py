@@ -26,10 +26,13 @@ def test_material_records_are_public_copy() -> None:
     records = get_material_records()
 
     assert records["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert records["Si"]["permeability"] == pytest.approx(1.0)
     assert records["Si"]["material_kind"] == "dielectric"
 
     records["Si"]["relative_permittivity"] = 1.0
+    records["Si"]["permeability"] = 2.0
     assert tech.material_properties["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert tech.material_properties["Si"]["permeability"] == pytest.approx(1.0)
 
 
 def test_material_alias_records_are_public_copy() -> None:
@@ -46,6 +49,7 @@ def test_material_alias_records_are_public_copy() -> None:
 
 def test_public_import_surface_exposes_material_overlay_helpers() -> None:
     assert orpen_sc_pdk.get_material_records()["vacuum"]["relative_permittivity"] == 1.0
+    assert orpen_sc_pdk.get_material_records()["vacuum"]["permeability"] == 1.0
     assert orpen_sc_pdk.get_gsim_material_kind_map()["vacuum"] == "vacuum"
     assert orpen_sc_pdk.get_material_alias_records()["air"] == "vacuum"
     assert orpen_sc_pdk.get_gsim_material_kind_alias_map()["silicon"] == "Si"
@@ -132,8 +136,10 @@ def test_gsim_material_overlay_maps_finite_dielectrics() -> None:
     materials = overlay["materials"]
 
     assert materials["vacuum"]["relative_permittivity"] == pytest.approx(1.0)
+    assert materials["vacuum"]["permeability"] == pytest.approx(1.0)
     assert "material_kind" not in materials["vacuum"]
     assert materials["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert materials["Si"]["permeability"] == pytest.approx(1.0)
     assert "material_kind" not in materials["Si"]
     assert materials["Si"]["dispersion_models"] == [
         {
@@ -143,6 +149,7 @@ def test_gsim_material_overlay_maps_finite_dielectrics() -> None:
         }
     ]
     assert materials["AlOx_native_generic"]["relative_permittivity"] == pytest.approx(10.0)
+    assert materials["AlOx_native_generic"]["permeability"] == pytest.approx(1.0)
 
 
 def test_gsim_material_overlay_preserves_conductor_role_without_infinite_permittivity() -> None:
@@ -162,6 +169,7 @@ def test_write_gsim_material_overlay_is_strict_json(tmp_path) -> None:
     data = json.loads(overlay_path.read_text())
 
     assert data["materials"]["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert data["materials"]["Si"]["permeability"] == pytest.approx(1.0)
     assert "Infinity" not in overlay_path.read_text()
 
 
@@ -174,8 +182,11 @@ def test_written_gsim_material_overlay_loads_through_gsim(tmp_path) -> None:
     file_overlay = load_overlay(overlay_path)
 
     assert in_memory_overlay["Si"].permittivity == pytest.approx(11.45)
+    assert in_memory_overlay["Si"].permeability == pytest.approx(1.0)
     assert file_overlay["Si"].permittivity == pytest.approx(11.45)
+    assert file_overlay["Si"].permeability == pytest.approx(1.0)
     assert file_overlay["AlOx_native_generic"].permittivity == pytest.approx(10.0)
+    assert file_overlay["AlOx_native_generic"].permeability == pytest.approx(1.0)
 
 
 def test_interface_preset_records_are_public_copy_and_empty_by_default() -> None:
@@ -310,6 +321,7 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
 
     assert by_attr[(1,)]["Permittivity"] == pytest.approx(11.45)
     assert by_attr[(1,)]["Conductivity"] == pytest.approx(2.0)
+    assert by_attr[(1,)]["Permeability"] == pytest.approx(1.0)
     assert by_attr[(2,)]["Permittivity"] == pytest.approx(1.0)
     assert stack.materials["silicon"]["permittivity"] == pytest.approx(11.9)
     material_resolution_path = tmp_path / "palace_material_resolution.json"
@@ -323,6 +335,7 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     assert si_resolution["matched_material_name"] == "silicon"
     assert si_resolution["model_type"] == "constant"
     assert si_resolution["model_source"] == "orpen-sc-pdk tech.material_properties"
+    assert si_resolution["resolved_permeability"] == pytest.approx(1.0)
 
     index_map_path = tmp_path / "palace_index_map.json"
     index_map_path.write_text(
@@ -354,6 +367,7 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     assert si_row["source_name"] == "D1_SUBSTRATE"
     assert si_row["physical_name"] == "D1_SUBSTRATE"
     assert si_row["permittivity"] == pytest.approx(11.45)
+    assert si_row["permeability"] == pytest.approx(1.0)
     assert si_row["stack_material_name"] == "silicon"
     assert si_row["material_model_type"] == "constant"
     assert si_row["material_model_source"] == "orpen-sc-pdk tech.material_properties"

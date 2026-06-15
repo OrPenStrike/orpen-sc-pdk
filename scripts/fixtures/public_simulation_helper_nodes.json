@@ -43,7 +43,7 @@
     "node": "Material overlay and domain provenance",
     "private_capability": "Material registries convert stack/material policy into Palace domain material attributes and preserve model source/validity context.",
     "private_anchor": "ncuas_designs/materials.json; ncuas_designs/simulations/palace/mapping.py; ncuas_designs/simulations/palace/config/materials.py",
-    "why_helper_exists": "Generated Palace configs must explain which material source produced permittivity, loss, conductivity, and London-depth values.",
+    "why_helper_exists": "Generated Palace configs must explain which material source produced permittivity, permeability, loss, conductivity, and later London-depth values.",
     "gdsfactory_home": "orpen-sc-pdk + gsim",
     "public_api_or_artifact": "get_gsim_material_overlay(); palace_material_resolution.json; load_domain_material_summary()",
     "public_status": "implemented_public_fixture",

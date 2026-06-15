@@ -52,6 +52,7 @@ def _assert_config_generation_material_provenance(problem: dict) -> list[dict]:
     assert silicon["material_within_validity"] is True
     assert silicon["permittivity"] == pytest.approx(11.45)
     assert silicon["conductivity"] == pytest.approx(2.0)
+    assert silicon["permeability"] == pytest.approx(1.0)
 
     air = by_stack_material["air"]
     assert air["matched_material_name"] == "air"

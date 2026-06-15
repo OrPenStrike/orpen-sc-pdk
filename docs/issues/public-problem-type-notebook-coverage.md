@@ -113,10 +113,17 @@ Verified local changes:
   `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
   `Boundaries.SurfaceCurrent`, `Boundaries.PMC`, magnetic `SurfaceFlux`, and
   source-name rows in `palace_index_map.json`;
+- `gsim` commit `883fb78` extends the same Magnetostatic source surface with
+  vector `Direction`, optional `CoordinateSystem`, and selector-based
+  multielement `SurfaceCurrent.Elements`; the public fixture uses a vector
+  `signal` source and a multielement `return` source so the notebook and JSON
+  evidence can review generated element-count, direction, and coordinate-system
+  lookup rows without owning Palace attribute mapping in OrPen;
 - the public simulation workflow notebook now displays a Magnetostatic CPW
-  config fixture with `signal`/`return` current sources, generated
-  `SurfaceCurrent`/magnetic `SurfaceFlux` rows, `PMC` attributes, domain
-  material provenance, and source-name index-map lookup rows;
+  config fixture with vector-direction `signal` and multielement `return`
+  current sources, generated `SurfaceCurrent`/magnetic `SurfaceFlux` rows,
+  `PMC` attributes, domain material provenance, and source-name/index-map
+  lookup rows;
 - `scripts/public_palace_smoke_evidence.py` now regenerates four public
   problem fixtures under `build/public-palace-smoke-evidence/` and writes
   `public_palace_smoke_evidence.json`; the default dry-run path consumes
@@ -262,8 +269,9 @@ Remaining slices:
   Magnetostatic CSV/output contract is confirmed; the current fixture proves
   config generation, source ownership, magnetic `SurfaceFlux`, `PMC`, and
   index-map provenance only;
-- extend public material provenance for Magnetostatic only when
-  permeability/London-depth records have a source-backed public schema;
+- extend public material provenance for Magnetostatic-specific superconducting
+  fields only when London-depth records and any non-unit magnetic parameters
+  have a source-backed public schema;
 - keep full sweep orchestration and broader cost modeling as later `gsim`
   workflow slices; this issue now proves explicit point-table artifact,
   runtime, provenance, resource, scheduler, benchmark-index, and report-metric

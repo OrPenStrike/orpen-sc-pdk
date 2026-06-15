@@ -84,7 +84,8 @@ Current public notebook:
 - the same notebook now displays generated domain-material provenance tables
   loaded through `gsim.palace.load_domain_material_summary()`, so public problem
   cells show how `get_gsim_material_overlay()` becomes Palace material attributes
-  and material-resolution rows.
+  and material-resolution rows, including public material permeability where the
+  overlay supplies it.
 
 Current executable smoke coverage:
 

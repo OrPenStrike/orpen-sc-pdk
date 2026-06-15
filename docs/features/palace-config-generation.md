@@ -48,7 +48,8 @@ Acceptance direction:
 - public evidence can reload generated configs and material sidecars through
   `gsim` report helpers, proving the config writer emitted the expected solver
   block, boundary/postprocessing counts, domain material rows, and material
-  provenance for each problem type;
+  provenance for each problem type, including common permeability values when
+  supplied by the public material overlay;
 - private consumers can mount their own layouts without changing the public
   config generation contract;
 - Palace remains an external executable, not a Python package dependency of the

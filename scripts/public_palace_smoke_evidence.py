@@ -241,6 +241,7 @@ def _config_generation_evidence(source: Path) -> dict[str, Any]:
                 "permittivity",
                 "loss_tangent",
                 "conductivity",
+                "permeability",
             ),
         ),
     }

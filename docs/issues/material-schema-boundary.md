@@ -138,13 +138,26 @@ Verified local changes:
 - public evidence and notebook outputs now load generated domain material
   provenance through `gsim.palace.load_domain_material_summary()`, verifying
   public Driven, Eigenmode, and Electrostatic configs expose stack material,
-  matched material, model source, validity, frequency, permittivity, loss, and
-  conductivity without PDK-owned material report parsing;
+  matched material, model source, validity, frequency, permittivity,
+  permeability, loss, and conductivity without PDK-owned material report
+  parsing;
+- public `orpen-sc-pdk` material records now include explicit unit
+  permeability for the public nonmagnetic vacuum, silicon, and generic native
+  aluminum-oxide dielectric records; local evidence verifies that the generated
+  `silicon` domain resolves through the public `Si` overlay record, reaches
+  `Domains.Materials[*].Permeability`, and reloads through the reusable
+  `gsim.palace.load_domain_material_summary()` material-provenance table;
 - read-only NCUAS audit confirms the private repo already has MA/MS/SA
   classification, thin-film MA+MS duplicate-spec behavior, preset lookup,
   `materials.json` numeric interface-loss values, notebook-local override
   maps, and masked Surface EPR; this public slice preserves the schema/adapter
   boundary without copying private values or private layer names;
+- read-only NCUAS material audit also confirms private `materials.json` and
+  Palace material models include `LondonDepth`, default permeability, and
+  boundary material fields, but public `gsim` currently has no London-depth
+  overlay alias, resolved-material field, Palace config emission, or report
+  column; London-depth therefore remains a later schema/config/report feature,
+  not a value to copy into current public OrPen material records;
 - the exported overlay keeps finite dielectric records as constant material
   models and keeps conductor-like `inf` records out of solver permittivity.
 
@@ -152,8 +165,15 @@ Remaining slices:
 
 - introduce a broader validated public material-record schema when the current
   dict grows beyond explicit material kinds, generated-name aliases, and
-  minimal EM fields to include provenance, conditions, loss, conductivity,
-  London-depth, or surface/interface presets;
+  minimal EM fields to include provenance, conditions, loss, conductor
+  conductivity policy, London-depth, or surface/interface presets;
+- add public London-depth only with an explicit source-bearing schema, units and
+  process validity fields, `gsim` overlay aliases, Palace config emission, and
+  report/provenance columns;
+- decide whether generated material names such as `air` should resolve through
+  PDK material aliases during material overlay resolution, or remain matched to
+  built-in `gsim` material records unless the stack names the public PDK record
+  directly;
 - populate public interface preset records only after MA/MS/SA thickness, loss
   tangent, material-kind data, and automatic-selection values have selected
   source-backed public records that satisfy the explicit source/provenance

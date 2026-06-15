@@ -113,6 +113,17 @@ records should extend `gsim` run summaries instead of becoming PDK or
 `gplugins` runtime code.
 :::
 
+:::{grid-item-card} ISSUE-010 Palace API responsibility boundary
+:link: issues/palace-api-responsibility-boundary
+:link-type: doc
+
+**Repo:** `gsim`, `gplugins`, `orpen-sc-pdk`
+
+Simulation features should be placed by problem/config/result responsibility
+and exposed publicly only when notebooks or downstream packages should call the
+symbol directly.
+:::
+
 ::::
 
 ```{toctree}
@@ -127,4 +138,5 @@ issues/cad-mesh-identity-provenance
 issues/public-problem-type-notebook-coverage
 issues/source-backed-interface-presets
 issues/palace-hpc-handoff-records
+issues/palace-api-responsibility-boundary
 ```

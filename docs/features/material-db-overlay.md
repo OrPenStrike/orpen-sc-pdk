@@ -110,8 +110,14 @@ Current public baseline:
   through `gsim.palace.load_domain_material_summary()`, proving
   `palace_material_resolution.json` can explain stack material name, matched
   material record, model source, validity status, resolution frequency,
-  permittivity, loss, and conductivity for Driven, Eigenmode, and Electrostatic
-  public configs;
+  permittivity, permeability, loss, and conductivity for Driven, Eigenmode,
+  and Electrostatic public configs;
+- public nonmagnetic dielectric/vacuum material records now carry unit
+  permeability through the same OrPen material overlay and `gsim` Palace
+  material-resolution path; the current public fixtures verify the generated
+  `silicon` domain through the public `Si` record, while generated `air`
+  remains matched to built-in `gsim` material data until material-overlay alias
+  resolution is designed separately;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
@@ -121,6 +127,8 @@ Remaining slices:
 - add a broader validated material-record schema once the public material
   contract grows beyond explicit material kinds, generated-name aliases, and
   current minimal electromagnetic records;
+- decide whether generated names such as `air` should use PDK material aliases
+  in material overlay resolution or only in interface classification;
 - populate public interface preset records only after source-backed public
   MA/MS/SA values and automatic-selection rules are accepted into the PDK
   contract; until then, keep selection caller-supplied and explicitly sourced
