@@ -70,11 +70,17 @@ Current public baseline:
   writing public-safe AMR pass, stage timing, and stage memory CSV sidecars
   while omitting PETSc node, user, and executable path fields from the
   structured record;
+- local `gsim` commit `19e35fd` adds `parse_slurm_scontrol_job()` and optional
+  `scontrol_path` support in `write_palace_resource_record_from_log()`, merging
+  sanitized Slurm scheduler/allocation evidence into the same resource record
+  without retaining raw account, user, node, job-name, command, stdout/stderr,
+  or work-dir fields;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
   generated handoff archive manifest status, synthetic public log-derived
-  resource-record status and table sidecars, and a public problem-type
-  sweep-summary smoke in the ignored local evidence bundle.
+  resource-record status, sanitized synthetic Slurm scheduler fields, table
+  sidecars, and a public problem-type sweep-summary smoke in the ignored local
+  evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output
@@ -82,9 +88,8 @@ Current public baseline:
 - NCUAS already has a richer private run-stage layer for Slurm/Sbatch handoff,
   handoff archives, site/profile resources, and post-run records; the public
   migration path is to extend the same `gsim` run-summary and sweep-summary
-  schemas with optional handoff/archive/resource sidecars plus later sanitized
-  scheduler parsers, not to expose private benchmark values or duplicate
-  runtime code in the PDK.
+  schemas with optional handoff/archive/resource sidecars, not to expose private
+  benchmark values or duplicate runtime code in the PDK.
 
 Acceptance direction:
 

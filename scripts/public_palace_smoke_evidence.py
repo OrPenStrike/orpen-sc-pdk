@@ -597,9 +597,15 @@ def _write_public_log_resource_record(
         num_processes=num_processes,
         num_threads=num_threads,
     )
+    scontrol_path = _write_public_slurm_scontrol(
+        output_dir,
+        num_processes=num_processes,
+        num_threads=num_threads,
+    )
     writer(
         output_dir,
         log_path,
+        scontrol_path=scontrol_path,
         status=status,
         allocation={
             "nodes": 1,
@@ -697,6 +703,32 @@ def _write_public_palace_resource_log(
         )
     )
     return log_path
+
+
+def _write_public_slurm_scontrol(
+    output_dir: Path,
+    *,
+    num_processes: int,
+    num_threads: int,
+) -> Path:
+    scontrol_path = output_dir / "metadata" / "scontrol-job-public.txt"
+    scontrol_path.parent.mkdir(parents=True, exist_ok=True)
+    num_cpus = num_processes * num_threads
+    scontrol_path.write_text(
+        dedent(
+            f"""
+            JobId=12345 JobName=public_palace_fixture
+               Account=public_alloc JobState=COMPLETED
+               SubmitTime=2026-05-21T18:16:44 StartTime=2026-05-21T18:24:47
+               EndTime=2026-05-21T18:26:48
+               Partition=public_cpu NodeList=public-node BatchHost=public-node
+               NumNodes=1 NumCPUs={num_cpus} NumTasks={num_processes}
+               CPUs/Task={num_threads} TimeLimit=00:10:00 RunTime=00:02:01
+               TRES=cpu={num_cpus},mem=1024M,node=1,billing={num_cpus}
+            """
+        )
+    )
+    return scontrol_path
 
 
 def build_public_palace_smoke_evidence(

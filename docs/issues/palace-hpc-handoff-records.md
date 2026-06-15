@@ -22,8 +22,9 @@ Problem:
 - local `gsim` already owns Palace config generation, local/cloud execution
   metadata, run summaries, report loaders, point-local sweep summaries,
   Slurm/Sbatch dry-run handoff sidecars, archive manifests, resource-record
-  sidecars, and sanitized Palace log-derived resource tables, but it does not
-  yet resolve real site/profile catalogs or parse scheduler snapshots;
+  sidecars, sanitized Palace log-derived resource tables, and sanitized Slurm
+  scheduler/allocation parsing, but it does not yet resolve real site/profile
+  catalogs or build sweep-level resource record indexes;
 - `gplugins` still has older direct Palace helpers, but extending those into
   cluster handoff would create a second public Palace runtime.
 
@@ -89,11 +90,17 @@ Current local evidence:
   version, wall-time, memory, and model-size fields. The parser intentionally
   omits PETSc node, user, and executable path fields from the structured
   record;
+- local `gsim` commit `19e35fd` adds `parse_slurm_scontrol_job()` and optional
+  `scontrol_path` support in `write_palace_resource_record_from_log()`. The
+  parser keeps sanitized Slurm job state, partition, time, allocation, and
+  requested-memory fields while omitting raw scheduler text, account, user,
+  node, job-name, command, stdout/stderr, and work-dir values;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
   plus generated archive manifests and synthetic public log-derived
-  resource-record sidecars through the `gsim` renderers, then reads them back
-  through the normal run/sweep summary surfaces;
+  resource-record sidecars plus sanitized synthetic Slurm snapshot sidecars
+  through the `gsim` renderers, then reads them back through the normal
+  run/sweep summary surfaces;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
   renderers, generated archive manifests, and a generic post-run resource
   sidecar, but no cluster campaign submission or archive packaging;
@@ -110,8 +117,6 @@ Remaining slices:
 
 - resolve real site/profile resources outside public fixture code, then feed
   the resolved resources into the generic `gsim` Slurm handoff API;
-- add sanitized scheduler/scontrol parsing without public raw accounts,
-  user IDs, node names, private job names, or absolute work paths;
 - add sweep-level resource record builders and benchmark indexes without
   committing private archives or private benchmark values;
 - only after dry-run schemas are stable, add local private-layout validation on

@@ -129,6 +129,10 @@ Current executable smoke coverage:
   `gsim.palace.write_palace_resource_record_from_log()` so AMR, timing,
   memory, solver-version, wall-time, and model-size records are covered without
   exposing private scheduler or PETSc identity fields.
+- the same evidence path now writes a synthetic public Slurm `scontrol`
+  snapshot for each problem fixture and passes it to the `gsim` resource-record
+  writer, proving sanitized scheduler/allocation fields without retaining raw
+  account, user, node, job-name, command, or work-dir values.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
   turns the same script into an opt-in local Palace smoke replay, including

@@ -133,6 +133,10 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert record["resource_num_threads"] == 1
         assert record["resource_global_unknowns"] == 10718029
         assert record["resource_peak_total_hwm_gib"] == pytest.approx(20.8)
+        assert record["resource_scheduler_kind"] == "slurm"
+        assert record["resource_scheduler_job_id"] == 12345
+        assert record["resource_scheduler_job_state"] == "COMPLETED"
+        assert record["resource_scheduler_partition"] == "public_cpu"
         assert record["report_status"] == "missing"
         assert record["report_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
         assert record["report_message"]
@@ -151,6 +155,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert (output_dir / "metadata" / "records" / "palace_amr_passes.csv").is_file()
         assert (output_dir / "metadata" / "records" / "palace_stage_timing.csv").is_file()
         assert (output_dir / "metadata" / "records" / "palace_stage_memory.csv").is_file()
+        assert (output_dir / "metadata" / "scontrol-job-public.txt").is_file()
         assert (output_dir / "logs" / "palace-public-resource.log").is_file()
         assert (output_dir / "run_palace.sbatch").is_file()
         assert run_summary["problem_type"] == problem["problem_type"]
@@ -219,8 +224,13 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert run_summary["resource"]["allocation"] == {
             "cores": 1,
             "nodes": 1,
+            "num_cpus": 1,
             "num_processes": 1,
+            "num_tasks": 1,
             "num_threads": 1,
+            "cpus_per_task": 1,
+            "requested_memory": "1024M",
+            "requested_memory_bytes": 1024 * 1024**2,
         }
         assert run_summary["resource"]["runtime"]["wall_time_seconds"] == pytest.approx(121.0)
         assert run_summary["resource"]["runtime"]["core_hours"] == pytest.approx(121.0 / 3600)
@@ -233,9 +243,27 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
             "palace_git_changeset": "v0.16.1",
             "petsc_version": "3.24.3",
         }
+        assert run_summary["resource"]["scheduler"] == {
+            "end_time": "2026-05-21T18:26:48",
+            "job_id": 12345,
+            "job_state": "COMPLETED",
+            "kind": "slurm",
+            "partition": "public_cpu",
+            "run_time": "00:02:01",
+            "run_time_seconds": 121,
+            "start_time": "2026-05-21T18:24:47",
+            "submit_time": "2026-05-21T18:16:44",
+            "time_limit": "00:10:00",
+            "time_limit_seconds": 600,
+        }
+        assert run_summary["resource"]["source_count"] == 2
         assert (
             run_summary["resource"]["sources"]["palace_log"]["path"]
             == "logs/palace-public-resource.log"
+        )
+        assert (
+            run_summary["resource"]["sources"]["slurm_scontrol"]["path"]
+            == "metadata/scontrol-job-public.txt"
         )
         assert run_summary["resource"]["table_count"] == 3
         assert run_summary["resource"]["tables"]["amr_passes"]["row_count"] == 1
@@ -252,6 +280,9 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
             "resource_log_source": "synthetic-public-fixture",
             "workflow": "public-palace-smoke-evidence",
         }
+        resource_payload = json.dumps(run_summary["resource"])
+        assert "public_palace_fixture" not in resource_payload
+        assert "public-node" not in resource_payload
 
         for artifact_name in (
             "palace.msh",

@@ -138,6 +138,11 @@ Verified local changes:
   Palace log fixture per problem type to write AMR pass, stage timing, stage
   memory, solver-version, wall-time, memory, and model-size records without
   exposing PETSc node, user, or executable path fields;
+- `gsim` commit `19e35fd` adds sanitized Slurm `scontrol show job` parsing,
+  and the public evidence runner now writes a synthetic public scheduler
+  snapshot per problem type to exercise scheduler/allocation fields without
+  exposing account, user, node, job-name, command, stdout/stderr, or work-dir
+  values in the reusable resource summary;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
