@@ -57,11 +57,13 @@ Current review ledger:
 | `orpen-sc-pdk` commit `e54b677` multielement magnetostatic public fixture/docs | Reviewed, mostly clean with API follow-ups | OrPen remains a consumer of `gsim` source/config/index-map surfaces and does not own Palace attribute mapping. Review found stale notebook-coverage wording, now updated to mention `883fb78`, vector direction, and multielement return-source evidence. API docs now avoid member-expanding raw `tech` records; remaining OrPen API-narrowing follow-ups are top-level `helper`/`logger`/empty `models` and demo-style cells in the PDK registry. |
 | OrPen material-permeability provenance slice | Reviewed, API-clean | The slice adds public unit permeability values to material records and displays the generated provenance column through `get_gsim_material_overlay()`, `palace_material_resolution.json`, and `gsim.palace.load_domain_material_summary()`. It does not widen top-level imports, change `MeshConfig`, or move material lowering/report parsing into OrPen. |
 | Manifest postprocessing API cleanup slice (`gsim` commit `a736193`) | Reviewed, API-clean | `gsim.palace.mesh.build_postprocessing_config_from_manifest()` now owns omission of empty Palace postprocessing sections, so public OrPen notebook/evidence code avoids importing and reconstructing `PostprocessingConfig` only to preserve Magnetostatic solver-owned `SurfaceFlux` rows. Independent boundary review found no blockers: this remains a mesh artifact/reportability helper, does not widen top-level `gsim.palace`, and does not add `MeshConfig` knobs. |
+| Mesh package-root API cleanup slice (`gsim` commit `fa71c4b`) | Reviewed, API-clean | `gsim.palace.mesh.__init__` now stops importing/re-exporting lowering-only symbols: `PostprocessingConfig`, `PostprocessingIndexEntry`, `PostprocessingIndexMap`, terminal/current-source index-map builders, `GeometryData`, and low-level `write_config` remain reachable from their defining deep modules but are no longer `mesh.__all__` exports. `gmsh_utils` is likewise no longer imported or listed by `mesh.__init__`, while Python can still load it as the deep submodule `gsim.palace.mesh.gmsh_utils`. Independent review found no blockers after that Python submodule caveat was documented. The retained package-root surface is the notebook/downstream helper path plus manifest symbols already used by docs and fixture tests. |
 
 Open API-surface follow-ups:
 
-- review `gsim.palace.mesh.__all__` for low-level manifest/index-map builders
-  that may be advanced submodule APIs rather than top-level notebook APIs;
+- finish the remaining `gsim.palace.mesh` surface review for advanced manifest
+  fixture symbols (`MeshPhysicalGroup`, `MeshRole`, `build_mesh_manifest`) and
+  type aliases that may belong only in `mesh.manifest` / `mesh.postprocessing`;
 - keep `gsim` Palace API docs split between mesh generation controls and mesh
   artifacts, manifests, postprocessing index maps, and reportability;
 - keep OrPen API docs focused on copy-returning material helpers and avoid

@@ -34,8 +34,11 @@ Current prototype baseline:
 - `gsim.palace.mesh` exposes a `MeshManifest` built from mesh physical groups;
 - manifest entries preserve role, physical names, entity tags, inferred
   dimension, source, and parsed interface/exterior identity;
-- `gsim.palace.mesh` exposes a `PostprocessingIndexMap` that can resolve Palace
-  postprocessing section/index values back to physical names and attributes;
+- `gsim.palace.load_postprocessing_index_map()` reloads
+  `palace_index_map.json` into the reusable
+  `gsim.palace.mesh.postprocessing.PostprocessingIndexMap` schema, which can
+  resolve Palace postprocessing section/index values back to physical names and
+  attributes;
 - both the mesh manifest and Palace index map can be written as JSON artifacts;
 - public OrPen notebook/evidence fixtures now reload `palace_index_map.json`
   through `gsim.palace.load_postprocessing_index_map()` and display forward
