@@ -90,6 +90,10 @@ Verified local changes:
   interface-classification path from a public resonator mesh/config artifact,
   using a notebook-local caller-supplied preset and reusable `gsim` provenance
   loading rather than private notebook parsing or automatic public defaults;
+- the public notebook index now links
+  `notebooks/public_simulation_workflows` directly as a publication-safe
+  Driven/Eigenmode/Electrostatic workflow notebook instead of leaving the
+  resonator workflow slot marked private-source pending;
 - the public simulation workflow notebook now also writes synthetic public
   Eigenmode and Electrostatic report artifacts, loads them through reusable
   `gsim` report bundles, and displays curated domain-loss, surface-loss, and

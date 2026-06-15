@@ -102,9 +102,3 @@ Acceptance direction:
 Related issue:
 
 - {doc}`../issues/public-problem-type-notebook-coverage`
-
-```{toctree}
-:hidden:
-
-../notebooks/public_simulation_workflows
-```
