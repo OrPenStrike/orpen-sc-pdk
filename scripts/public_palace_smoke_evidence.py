@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from collections.abc import Callable, Mapping, Sequence
@@ -19,27 +18,6 @@ from orpen_sc_pdk.materials import get_gsim_material_overlay
 
 DEFAULT_OUTPUT_DIR = Path("build/public-palace-smoke-evidence")
 EVIDENCE_FILENAME = "public_palace_smoke_evidence.json"
-CORE_ARTIFACT_NAMES = (
-    "palace.msh",
-    "config.json",
-    "mesh_manifest.json",
-    "palace_index_map.json",
-    "palace_material_resolution.json",
-)
-
-
-def _load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text())
-
-
-def _sha256(path: Path) -> str | None:
-    if not path.exists() or not path.is_file():
-        return None
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _relative_path(path: Path, root: Path) -> str:
@@ -49,99 +27,16 @@ def _relative_path(path: Path, root: Path) -> str:
         return path.as_posix()
 
 
-def _artifact_status(output_dir: Path, output_root: Path) -> dict[str, dict[str, Any]]:
-    status: dict[str, dict[str, Any]] = {}
-    for name in CORE_ARTIFACT_NAMES:
-        path = output_dir / name
-        exists = path.exists()
-        status[name] = {
-            "path": _relative_path(path, output_root),
-            "exists": exists,
-            "bytes": int(path.stat().st_size) if exists else 0,
-            "sha256": _sha256(path) if exists else None,
-        }
-    return status
-
-
-def _count_by_key(rows: Sequence[Mapping[str, Any]], key: str) -> dict[str, int]:
-    counts: dict[str, int] = {}
-    for row in rows:
-        value = str(row.get(key, ""))
-        counts[value] = counts.get(value, 0) + 1
-    return dict(sorted(counts.items()))
-
-
-def _manifest_summary(output_dir: Path) -> dict[str, Any]:
-    path = output_dir / "mesh_manifest.json"
-    if not path.exists():
-        return {"present": False}
-    manifest = _load_json(path)
-    entries = manifest.get("entries", [])
-    physical_name_count = sum(len(entry.get("physical_names", [])) for entry in entries)
-    interface_entries = [
-        entry for entry in entries if entry.get("interface_of") or "___" in entry.get("name", "")
-    ]
-    return {
-        "present": True,
-        "schema_version": manifest.get("schema_version"),
-        "entry_count": len(entries),
-        "roles": _count_by_key(entries, "role"),
-        "physical_name_count": physical_name_count,
-        "interface_entry_count": len(interface_entries),
-        "interface_names": sorted(str(entry.get("name")) for entry in interface_entries),
-    }
-
-
-def _index_map_summary(output_dir: Path) -> dict[str, Any]:
-    path = output_dir / "palace_index_map.json"
-    if not path.exists():
-        return {"present": False}
-    index_map = _load_json(path)
-    entries = index_map.get("entries", [])
-    return {
-        "present": True,
-        "schema_version": index_map.get("schema_version"),
-        "entry_count": len(entries),
-        "sections": _count_by_key(entries, "section"),
-        "roles": _count_by_key(entries, "role"),
-        "terminal_names": sorted(
-            {
-                str(entry["terminal_name"])
-                for entry in entries
-                if "terminal_name" in entry and entry["terminal_name"] is not None
-            }
-        ),
-        "port_names": sorted(
-            {
-                str(entry.get("metadata", {}).get("port"))
-                for entry in entries
-                if entry.get("metadata", {}).get("port") is not None
-            }
-        ),
-    }
-
-
-def _config_summary(output_dir: Path) -> dict[str, Any]:
-    path = output_dir / "config.json"
-    if not path.exists():
-        return {"present": False}
-    config = _load_json(path)
-    domains = config.get("Domains", {})
-    boundaries = config.get("Boundaries", {})
-    postprocessing = boundaries.get("Postprocessing", {})
-    materials = domains.get("Materials", [])
-    return {
-        "present": True,
-        "problem_type": config.get("Problem", {}).get("Type"),
-        "material_names": sorted(str(row.get("Name")) for row in materials),
-        "material_attributes": [
-            row.get("Attributes", []) for row in materials if row.get("Attributes") is not None
-        ],
-        "domain_postprocessing_keys": sorted(domains.get("Postprocessing", {}).keys()),
-        "boundary_postprocessing_keys": sorted(postprocessing.keys()),
-        "lumped_port_count": len(boundaries.get("LumpedPort", [])),
-        "terminal_count": len(boundaries.get("Terminal", [])),
-    }
+def _relative_run_summary(summary: dict[str, Any], output_root: Path) -> dict[str, Any]:
+    for group_name in ("artifacts", "results"):
+        group = summary.get(group_name, {})
+        if not isinstance(group, dict):
+            continue
+        for row in group.values():
+            if not isinstance(row, dict) or row.get("path") is None:
+                continue
+            row["path"] = _relative_path(Path(row["path"]), output_root)
+    return summary
 
 
 def _source_summary(rows: Any) -> list[dict[str, Any]]:
@@ -415,6 +310,8 @@ def _build_problem_evidence(
     run_kwargs: Mapping[str, Any],
     solver_skip_reason: str | None,
 ) -> dict[str, Any]:
+    from gsim.palace import load_palace_run_summary
+
     output_dir = output_root / problem_key
     sim, mesh_result = build_sim(output_dir)
     sim.write_config(
@@ -422,9 +319,17 @@ def _build_problem_evidence(
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
     )
+    run_summary = _relative_run_summary(
+        load_palace_run_summary(output_dir, include_hashes=True).to_dict(),
+        output_root,
+    )
 
     if solver_skip_reason is None:
         sim.run_local(**dict(run_kwargs))
+        run_summary = _relative_run_summary(
+            load_palace_run_summary(output_dir, include_hashes=True).to_dict(),
+            output_root,
+        )
         solver_report = report_summary(output_dir)
     else:
         solver_report = {"status": "skipped", "reason": solver_skip_reason}
@@ -433,10 +338,7 @@ def _build_problem_evidence(
         "problem_type": problem_type,
         "fixture": fixture_name,
         "output_dir": _relative_path(output_dir, output_root),
-        "artifacts": _artifact_status(output_dir, output_root),
-        "config": _config_summary(output_dir),
-        "manifest": _manifest_summary(output_dir),
-        "index_map": _index_map_summary(output_dir),
+        "run_summary": run_summary,
         "solver_report": solver_report,
     }
 

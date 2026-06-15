@@ -100,7 +100,8 @@ Current executable smoke coverage:
 - `scripts/public_palace_smoke_evidence.py` builds the same public Driven,
   Eigenmode, and Electrostatic coarse fixtures into
   `build/public-palace-smoke-evidence/` and writes
-  `public_palace_smoke_evidence.json` with generated artifact status,
+  `public_palace_smoke_evidence.json` with a reusable
+  `gsim.palace.load_palace_run_summary()` bundle for generated artifact status,
   mesh-manifest summaries, Palace index-map summaries, material-resolution
   sidecar presence, and either solver skip reasons or parsed `gsim` report
   summaries.

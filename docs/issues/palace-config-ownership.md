@@ -73,9 +73,14 @@ Verified local changes:
   material row.
 - `orpen-sc-pdk` now has a dev-only
   `scripts/public_palace_smoke_evidence.py` runner that leaves solver runtime
-  ownership in `gsim`, but records public Driven, Eigenmode, and Electrostatic
-  mesh/config/index/material-resolution artifacts into an ignored JSON evidence
-  bundle for local review.
+  and artifact-summary ownership in `gsim`, but records public Driven,
+  Eigenmode, and Electrostatic mesh/config/index/material-resolution artifacts
+  into an ignored JSON evidence bundle for local review through
+  `gsim.palace.load_palace_run_summary()`.
+- `gsim` commit `e5e89ef` adds that reusable
+  `load_palace_run_summary()` API, including core handoff artifact status,
+  result-file status, compact config summaries, mesh-manifest role counts,
+  index-map section counts, material-resolution counts, and optional checksums.
 
 Remaining slices:
 
