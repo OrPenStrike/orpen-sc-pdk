@@ -300,21 +300,20 @@ def _assert_meshwell_handoff_contract_gate(evidence: dict) -> None:
         "meshwell-handoff-contract-gate/public_meshwell_handoff_contract_gate_evidence.json"
     )
     assert set(gate["owner_boundaries"]) == {"meshwell", "gsim", "orpen-sc-pdk"}
-    assert gate["contract_status"] == "formal_contract_aligned_pending_cross_repo_fixture"
+    assert gate["contract_status"] == "formal_contract_and_cross_repo_gate_aligned"
     assert gate["evidence_status_counts"] == {
+        "covered_cross_repo_consumer_fixture": 2,
         "covered_gsim_consumer_parser": 5,
         "covered_meshwell_backend_equivalence": 3,
         "covered_source": 7,
-        "pending_cross_repo_contract": 1,
     }
     assert gate["covered_source_count"] == 7
     assert gate["covered_meshwell_backend_equivalence_count"] == 3
     assert gate["covered_gsim_consumer_parser_count"] == 5
-    assert gate["covered_count"] == 15
-    assert gate["pending_count"] == 1
-    assert gate["blocking_gaps"] == [
-        "meshwell-to-gsim cross-repo consumer fixture/gate",
-    ]
+    assert gate["covered_cross_repo_consumer_fixture_count"] == 2
+    assert gate["covered_count"] == 17
+    assert gate["pending_count"] == 0
+    assert gate["blocking_gaps"] == []
 
     rows = gate["gate_rows"]
     by_item = {row["contract_item"]: row for row in rows}
@@ -373,11 +372,26 @@ def _assert_meshwell_handoff_contract_gate(evidence: dict) -> None:
     assert contract_text["evidence_status"] == "covered_source"
     assert contract_text["relative_path"] == "docs/physical_name_contract.md"
     assert contract_text["missing_signals"] == []
-    assert "cross-repo consumer fixture" in contract_text["remaining_gap"]
+    assert (
+        contract_text["remaining_gap"]
+        == "covered by the current gsim meshwell-generated MSH handoff fixture"
+    )
 
     cross_repo_gate = by_item["meshwell-to-gsim cross-repo consumer fixture/gate"]
-    assert cross_repo_gate["evidence_status"] == "pending_cross_repo_contract"
-    assert "meshwell-to-gsim" in cross_repo_gate["remaining_gap"]
+    assert cross_repo_gate["evidence_status"] == "covered_cross_repo_consumer_fixture"
+    assert cross_repo_gate["relative_path"] == "tests/palace/test_meshwell_handoff_contract.py"
+    assert cross_repo_gate["missing_signals"] == []
+    assert cross_repo_gate["remaining_gap"] == (
+        "none for the current meshwell-to-gsim consumer gate"
+    )
+
+    msh_fixture = by_item["gsim meshwell-generated MSH handoff fixture"]
+    assert msh_fixture["evidence_status"] == "covered_cross_repo_consumer_fixture"
+    assert (
+        msh_fixture["relative_path"]
+        == "tests/palace/test_meshwell_handoff_contract/physical_name_contract.msh"
+    )
+    assert msh_fixture["missing_signals"] == []
 
 
 def _assert_interface_preset_review_queue(evidence: dict) -> None:
@@ -479,7 +493,7 @@ def _assert_cad_mesh_identity_handoff_evidence(evidence: dict) -> None:
     assert set(audit["owner_boundaries"]) == {"meshwell", "gsim", "orpen-sc-pdk"}
     assert "Magnetostatic report contract" in audit["deferred_scope"]
     assert "real private HPC/profile validation" in audit["deferred_scope"]
-    assert "meshwell-to-gsim handoff tests" in audit["upstream_gap"]
+    assert "meshwell-to-gsim handoff fixture gate are covered" in audit["upstream_gap"]
     assert set(audit["problems"]) == {
         "driven_cpw",
         "eigenmode_resonator",
@@ -664,14 +678,13 @@ def test_public_meshwell_handoff_contract_gate_evidence_runs_standalone(
     assert (
         tmp_path / "meshwell-gate" / "public_meshwell_handoff_contract_gate_evidence.json"
     ).is_file()
-    assert gate["contract_status"] == "formal_contract_aligned_pending_cross_repo_fixture"
+    assert gate["contract_status"] == "formal_contract_and_cross_repo_gate_aligned"
     assert gate["covered_source_count"] == 7
     assert gate["covered_meshwell_backend_equivalence_count"] == 3
     assert gate["covered_gsim_consumer_parser_count"] == 5
-    assert gate["pending_count"] == 1
-    assert gate["blocking_gaps"] == [
-        "meshwell-to-gsim cross-repo consumer fixture/gate",
-    ]
+    assert gate["covered_cross_repo_consumer_fixture_count"] == 2
+    assert gate["pending_count"] == 0
+    assert gate["blocking_gaps"] == []
 
 
 def test_public_interface_preset_promotion_gate_evidence_runs_standalone(

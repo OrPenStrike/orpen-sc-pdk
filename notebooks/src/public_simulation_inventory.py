@@ -125,11 +125,11 @@ display(gsim_boundary_review_coverage_table)
 # %% [markdown]
 # ## Meshwell handoff contract gate
 #
-# This gate records where the local meshwell and `gsim` sources already agree
-# on meshwell-style interface and exterior physical names. The remaining
-# upstream work is the meshwell-to-`gsim` cross-repo consumer fixture/gate;
-# OrPen remains a consumer and does not own the physical-name grammar or
-# backend equivalence tests.
+# This gate records where the local meshwell and `gsim` sources agree on
+# meshwell-style interface and exterior physical names. `gsim` now carries a
+# consumer fixture backed by a meshwell-generated MSH artifact; OrPen remains a
+# consumer and does not own the physical-name grammar or backend equivalence
+# tests.
 
 # %%
 meshwell_handoff_contract_gate = build_public_meshwell_handoff_contract_gate_evidence()
@@ -145,6 +145,9 @@ display(
         ],
         "covered_gsim_consumer_parser_count": meshwell_handoff_contract_gate[
             "covered_gsim_consumer_parser_count"
+        ],
+        "covered_cross_repo_consumer_fixture_count": meshwell_handoff_contract_gate[
+            "covered_cross_repo_consumer_fixture_count"
         ],
         "pending_count": meshwell_handoff_contract_gate["pending_count"],
         "blocking_gaps": meshwell_handoff_contract_gate["blocking_gaps"],

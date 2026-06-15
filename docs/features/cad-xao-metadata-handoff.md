@@ -55,10 +55,9 @@ Current prototype baseline:
   source/tests expose `___` interface names, `___None` exterior names, multiple
   physical-name equivalence, interface/exterior refinement behavior, formal
   physical-name contract text, and backend equivalence across CAD/XAO routes,
-  while local `gsim` manifest, index-map, result-loader, and integration tests
-  consume those names as interface/exterior rows. The gate remains pending only
-  on the cross-repo consumer fixture that starts from meshwell output and ends
-  in `gsim` manifest/index-map assertions.
+  while local `gsim` manifest, index-map, result-loader, integration tests, and
+  a meshwell-generated MSH consumer fixture consume those names as
+  interface/exterior rows.
 - generated public example meshes now prove domain, conductor, port, terminal,
   absorbing-boundary, refinement, and non-exterior interface identities through
   the same manifest path; interface-loss classification remains a separate

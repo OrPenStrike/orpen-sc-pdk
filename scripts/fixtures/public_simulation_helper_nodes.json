@@ -90,9 +90,9 @@
     "why_helper_exists": "Config generation and report review both fail if the mesh artifact loses physical-name ownership.",
     "gdsfactory_home": "meshwell + gsim",
     "public_api_or_artifact": "mesh_manifest.json; palace_index_map.json; public_cad_mesh_identity_handoff_evidence.json; public_meshwell_handoff_contract_gate_evidence.json; load_palace_run_summary()",
-    "public_status": "implemented_public_fixture_with_source_aligned_contract_gate",
+    "public_status": "implemented_public_fixture_with_cross_repo_contract_gate",
     "promotion_gate": "meshwell_physical_name_contract_alignment",
-    "missing_evidence": "meshwell-to-gsim cross-repo consumer fixture/gate",
+    "missing_evidence": "none for the current meshwell-to-gsim handoff contract gate",
     "next_issue": "cad-mesh-identity-provenance"
   },
   {
