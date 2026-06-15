@@ -40,7 +40,8 @@ material resolution and Palace-specific evaluation.
 **Related features:** FEAT-001, FEAT-004
 
 Generic GDSFactory plugin helpers should not be duplicated in the PDK. Move
-only reusable plugin integration into `gplugins`.
+only reusable plugin integration into `gplugins`; Palace compatibility wrappers
+should delegate to `gsim` instead of growing a second solver runtime.
 :::
 
 :::{grid-item-card} ISSUE-004 Integration branch hygiene
