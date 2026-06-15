@@ -37,6 +37,7 @@ from gsim.palace import (
     EigenmodeSim,
     ElectrostaticSim,
     load_dielectric_interface_summary,
+    load_driven_report,
     load_eigenmode_report,
     load_electrostatic_report,
 )
@@ -274,10 +275,13 @@ def _run_driven_local_smoke(output_dir: Path, run_kwargs: dict) -> dict:
     )
 
     results = sim.run_local(**run_kwargs)
+    report = load_driven_report(output_dir)
     return {
         "problem_type": "Driven",
-        "port_names": list(results.port_names),
-        "frequency_points": int(len(results.freq)),
+        "port_names": list(report.sparams.port_names),
+        "frequency_points": int(len(report.sparams.freq)),
+        "port_epr_rows": int(len(report.port_epr)),
+        "source_rows": int(len(report.sources)),
         "has_port_s": "port-S.csv" in results.files,
         "port_s_bytes": int(results.files["port-S.csv"].stat().st_size),
     }
@@ -402,6 +406,98 @@ def _public_report_material_resolution() -> dict:
                 },
             }
         ],
+    }
+
+
+def _write_public_driven_report_fixture(output_dir: Path) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    port_info_path = _write_json(
+        output_dir / "port_information.json",
+        {
+            "ports": [
+                {"portnumber": 1, "name": "o1", "Z0": 50.0, "type": "cpw"},
+                {"portnumber": 2, "name": "o2", "Z0": 50.0, "type": "cpw"},
+            ],
+            "unit": 1e-6,
+            "name": "palace",
+        },
+    )
+    port_s_path = output_dir / "port-S.csv"
+    port_s_path.write_text(
+        "f (GHz), |S[1][1]| (dB), arg(S[1][1]) (deg.), "
+        "|S[2][1]| (dB), arg(S[2][1]) (deg.)\n"
+        "4.0, -18.0, -45.0, -3.0, -90.0\n"
+        "6.0, -12.0, -50.0, -2.0, -95.0\n"
+        "8.0, -16.0, -55.0, -4.0, -100.0\n"
+    )
+    port_epr_path = output_dir / "port-EPR.csv"
+    port_epr_path.write_text("m, p[3], p[4]\n1, 0.60, 0.40\n")
+    config_path = _write_json(
+        output_dir / "config.json",
+        {
+            "Domains": {
+                "Materials": [
+                    {
+                        "Attributes": [10],
+                        "Name": "Si",
+                        "Permittivity": 11.45,
+                        "LossTan": 2.0e-6,
+                    }
+                ]
+            }
+        },
+    )
+    index_map_path = _write_json(
+        output_dir / "palace_index_map.json",
+        {
+            "schema_version": 1,
+            "entries": [
+                {
+                    "section": "Domains.Postprocessing.Energy",
+                    "index": 1,
+                    "entry_name": "substrate",
+                    "role": "dielectric_volume",
+                    "attributes": [10],
+                    "physical_names": ["D1_SUBSTRATE"],
+                    "dimension": 3,
+                },
+                {
+                    "section": "Boundaries.Postprocessing.SurfaceFlux",
+                    "index": 3,
+                    "entry_name": "o1_port_surface",
+                    "role": "port_surface",
+                    "attributes": [31],
+                    "physical_names": ["P1_E0"],
+                    "dimension": 2,
+                    "Type": "Power",
+                    "metadata": {"port": "P1", "port_type": "cpw"},
+                },
+                {
+                    "section": "Boundaries.Postprocessing.SurfaceFlux",
+                    "index": 4,
+                    "entry_name": "o2_port_surface",
+                    "role": "port_surface",
+                    "attributes": [41],
+                    "physical_names": ["P2_E0"],
+                    "dimension": 2,
+                    "Type": "Power",
+                    "metadata": {"port": "P2", "port_type": "cpw"},
+                },
+            ],
+        },
+    )
+    material_resolution_path = _write_json(
+        output_dir / "palace_material_resolution.json",
+        _public_report_material_resolution(),
+    )
+    return {
+        "port-S.csv": port_s_path,
+        "port-EPR.csv": port_epr_path,
+        "port_information.json": port_info_path,
+        "config.json": config_path,
+        "palace_index_map.json": index_map_path,
+        "palace_material_resolution.json": material_resolution_path,
     }
 
 
@@ -752,6 +848,44 @@ display(electrostatic_summary)
 # can exercise the same `gsim` report loaders without requiring a local Palace
 # executable or publishing private solver output. The display helper keeps the
 # notebook presentation layer separate from `gsim` report parsing.
+
+# %%
+with tempfile.TemporaryDirectory() as temp_dir:
+    source = _write_public_driven_report_fixture(Path(temp_dir) / "driven-report")
+    driven_report = load_driven_report(source)
+
+    driven_sparams = _display_report_table(
+        "Driven S-parameters",
+        driven_report.sparams.to_dataframe(),
+        (
+            "freq_ghz",
+            "S_o1_o1_db",
+            "S_o2_o1_db",
+            "S_o1_o1_deg",
+            "S_o2_o1_deg",
+        ),
+    )
+    driven_port_epr = _display_report_table(
+        "Driven port EPR",
+        driven_report.port_epr,
+        (
+            "mode_index",
+            "port_index",
+            "source_name",
+            "entry_name",
+            "postprocessing_type",
+            "p_port",
+            "abs_p_port_fraction",
+        ),
+    )
+
+display(
+    {
+        "driven_frequency_rows": len(driven_sparams),
+        "driven_port_epr_rows": len(driven_port_epr),
+        "driven_missing_reports": list(driven_report.missing_reports),
+    }
+)
 
 # %%
 with tempfile.TemporaryDirectory() as temp_dir:

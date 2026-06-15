@@ -42,7 +42,7 @@ Verified local changes:
   that verifies non-empty terminal capacitance outputs.
 - the public driven CPW fixture now has an opt-in local Palace coarse solve that
   verifies generated Driven config and CPW lumped-port metadata can produce
-  parsed `SParams` output through local `gsim`.
+  parsed `SParams` output and a composed `DrivenReport` through local `gsim`.
 - the public eigenmode resonator fixture now has an opt-in local Palace coarse
   solve that verifies generated Eigenmode config can produce non-empty
   `eig.csv` and `domain-E.csv` outputs through local `gsim`.

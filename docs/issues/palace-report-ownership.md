@@ -58,6 +58,13 @@ Verified local changes:
 - `orpen-sc-pdk` now validates the public Driven CPW fixture against a real
   optional local Palace coarse solve, proving `port-S.csv` loads through
   `gsim.palace.SParams` with `o1`/`o2` port labels.
+- `gsim` commit `e8632bc`: adds `DrivenReport` and
+  `load_driven_report()` as a thin composition layer over required
+  `port-S.csv`, optional `port-EPR.csv`, `palace_index_map.json`,
+  `config.json`, material/interface provenance, and source bookkeeping.
+- `orpen-sc-pdk` public Driven fixtures and notebooks now consume
+  `load_driven_report()` so Driven report composition stays in `gsim` instead
+  of notebook-local parsing.
 - `orpen-sc-pdk` now validates the public Eigenmode resonator fixture against a
   real optional local Palace coarse solve, proving `eig.csv` and `domain-E.csv`
   are produced for a public resonator.
@@ -127,9 +134,9 @@ Verified local changes:
   reusable `gsim` interface material path without making MA/MS/SA defaults part
   of the PDK contract.
 - `orpen-sc-pdk` public simulation notebooks now load synthetic public
-  Eigenmode/Electrostatic report bundles through `gsim` and display curated
-  domain-loss, surface-loss, and loss-budget tables without importing private
-  runs or moving report parsing into the PDK.
+  Driven/Eigenmode/Electrostatic report bundles through `gsim` and display
+  curated S-parameter, port-EPR, domain-loss, surface-loss, and loss-budget
+  tables without importing private runs or moving report parsing into the PDK.
 
 Remaining slices:
 

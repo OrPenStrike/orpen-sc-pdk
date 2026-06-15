@@ -31,11 +31,12 @@ Current public notebook:
 - {doc}`../notebooks/public_simulation_workflows` runs public Driven,
   Eigenmode, and Electrostatic mesh/config/artifact handoffs with local `gsim`
   and public `orpen-sc-pdk` cells only;
-- the same notebook loads synthetic public Eigenmode and Electrostatic Palace
-  report bundles through `gsim.palace.load_eigenmode_report()` and
-  `gsim.palace.load_electrostatic_report()`, then displays curated
-  domain-loss, surface-loss, and loss-budget tables through a notebook-local
-  presentation helper instead of raw report displays;
+- the same notebook loads synthetic public Driven, Eigenmode, and Electrostatic
+  Palace report bundles through `gsim.palace.load_driven_report()`,
+  `gsim.palace.load_eigenmode_report()`, and
+  `gsim.palace.load_electrostatic_report()`, then displays curated S-parameter,
+  port-EPR, domain-loss, surface-loss, and loss-budget tables through a
+  notebook-local presentation helper instead of raw report displays;
 - the notebook does not add automatic MA/MS/SA interface postprocessing yet:
   generated interface identities and material-kind classification are available
   as manifest-level helpers, and generated `air`/`silicon` material names can
@@ -59,7 +60,9 @@ Current executable smoke coverage:
 - the public Driven CPW fixture has an opt-in local Palace coarse solve guarded
   by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
 - the Driven smoke verifies `gsim.palace.SParams` parsing, `o1`/`o2` port
-  labels, and non-empty `port-S.csv` output;
+  labels, non-empty `port-S.csv` output, and the reusable
+  `gsim.palace.load_driven_report()` bundle over the same public output
+  directory;
 - the public Eigenmode resonator fixture has an opt-in local Palace coarse
   solve guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
 - the Eigenmode smoke verifies non-empty `eig.csv` and `domain-E.csv` outputs
@@ -73,6 +76,10 @@ Current executable smoke coverage:
 - the Electrostatic smoke verifies both non-empty solver matrix outputs and the
   `gsim.palace.load_terminal_matrix()` report-loader round trip through
   `palace_index_map.json`;
+- Driven report loading now has a reusable public bundle that composes final
+  S-parameters, optional indexed port-EPR rows, index-map provenance, config
+  material/interface provenance, and source bookkeeping without importing
+  private notebook parsers.
 - Eigenmode report loading now has a reusable public bundle that composes final
   modes, AMR history, pass summaries, optional indexed EPR tables, index-map
   provenance, and source bookkeeping without importing private notebook parsers.
@@ -81,14 +88,25 @@ Current executable smoke coverage:
   domain/surface EPR tables, config/material/interface provenance, source
   bookkeeping, source-indexed loss budgets, and explicit-frequency T1
   derivation without importing private notebook parsers.
-- publication-safe notebook output now includes reusable Eigenmode and
-  Electrostatic loss-budget table displays from synthetic public artifacts,
-  keeping normal docs builds independent of local Palace.
+- publication-safe notebook output now includes reusable Driven S-parameter and
+  port-EPR displays plus Eigenmode and Electrostatic loss-budget table displays
+  from synthetic public artifacts, keeping normal docs builds independent of
+  local Palace.
 - publication-safe notebook output now includes generated Eigenmode
   interface-classification provenance with caller-owned preset values.
 - publication-safe notebook output now includes a guarded local solver smoke
   entrypoint that reuses the public fixture builders and keeps normal docs
   builds independent of local Palace.
+
+Known gaps and non-goals:
+
+- Magnetostatic is acknowledged as a private helper/test surface, but it has no
+  public OrPen fixture or notebook equivalent yet.
+- Sweep orchestration and sweep-level performance/physics summaries remain a
+  later reusable `gsim` workflow slice, separate from single-run public
+  problem-type coverage.
+- Native masked Surface EPR remains a Palace-source or upstream `gsim` lane,
+  not a Python replay inside the public PDK notebook suite.
 
 Acceptance direction:
 

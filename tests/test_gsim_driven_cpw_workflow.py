@@ -159,7 +159,7 @@ def test_public_cpw_driven_optional_local_palace_coarse_smoke(
     output_dir = tmp_path / "palace-smoke"
     sim, mesh_result = _public_cpw_driven_sim(output_dir)
 
-    from gsim.palace import SParams
+    from gsim.palace import DrivenReport, SParams, load_driven_report
     from gsim.palace.mesh import (
         SurfaceFluxSpec,
         build_postprocessing_config_from_manifest,
@@ -196,12 +196,19 @@ def test_public_cpw_driven_optional_local_palace_coarse_smoke(
         run_kwargs["serial"] = os.environ.get("PALACE_SERIAL") == "1"
 
     results = sim.run_local(**run_kwargs)
+    report = load_driven_report(output_dir)
 
     assert isinstance(results, SParams)
+    assert isinstance(report, DrivenReport)
     assert results.port_names == ["o1", "o2"]
+    assert report.sparams.port_names == ["o1", "o2"]
     assert len(results.freq) == 3
+    assert len(report.sparams.freq) == 3
     assert ("o1", "o1") in results.keys()
     assert ("o2", "o1") in results.keys()
     assert "port-S.csv" in results.files
     assert results.files["port-S.csv"].stat().st_size > 0
     assert results.to_dataframe().notna().all().all()
+    assert bool(report.sources.set_index("name").loc["port-S.csv", "loaded"])
+    assert bool(report.sources.set_index("name").loc["palace_index_map.json", "loaded"])
+    assert not report.index_map.empty

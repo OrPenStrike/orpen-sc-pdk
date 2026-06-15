@@ -62,8 +62,12 @@ Current public baseline:
   source bookkeeping;
 - Electrostatic report loss budgets preserve Palace `i`/source samples and
   only derive gamma/T1 columns when callers pass an explicit `frequency_ghz`;
+- local `gsim` commit `e8632bc` adds `DrivenReport` and
+  `load_driven_report()`, composing required `port-S.csv`, optional
+  `port-EPR.csv`, index-map provenance, config material/interface provenance,
+  and source bookkeeping;
 - `orpen-sc-pdk` public notebooks now demonstrate these report bundles with
-  synthetic public Eigenmode/Electrostatic artifacts and curated display
+  synthetic public Driven/Eigenmode/Electrostatic artifacts and curated display
   tables, keeping report parsing in `gsim` and notebook presentation downstream;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.

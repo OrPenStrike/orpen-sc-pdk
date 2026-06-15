@@ -36,7 +36,8 @@ Verified local changes:
 - the same driven fixture now includes an optional local Palace coarse-solve
   smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies that
   `run_local()` returns public `gsim.palace.SParams`, resolves `o1`/`o2` port
-  labels, and preserves a non-empty `port-S.csv` result file;
+  labels, preserves a non-empty `port-S.csv` result file, and can reload the
+  same public output directory through `gsim.palace.load_driven_report()`;
 - eigenmode now has an executable public fixture in
   `tests/test_gsim_eigenmode_resonator_workflow.py`: it builds the public
   `resonator` cell, runs local `gsim` `EigenmodeSim` coarse meshing, writes
@@ -95,9 +96,10 @@ Verified local changes:
   Driven/Eigenmode/Electrostatic workflow notebook instead of leaving the
   resonator workflow slot marked private-source pending;
 - the public simulation workflow notebook now also writes synthetic public
-  Eigenmode and Electrostatic report artifacts, loads them through reusable
-  `gsim` report bundles, and displays curated domain-loss, surface-loss, and
-  loss-budget tables through a notebook-local presentation helper;
+  Driven, Eigenmode, and Electrostatic report artifacts, loads them through
+  reusable `gsim` report bundles, and displays curated S-parameter, port-EPR,
+  domain-loss, surface-loss, and loss-budget tables through a notebook-local
+  presentation helper;
 - the same public simulation workflow notebook now exposes an opt-in local
   Palace smoke cell for Driven, Eigenmode, and Electrostatic public fixtures;
   the default docs path reports a skip reason, while local users can enable the
@@ -117,6 +119,9 @@ Verified local changes:
   `gsim.palace.load_electrostatic_report()` with terminal matrices,
   domain/surface EPR reports, config/material/interface provenance, separated
   source-index budgets, and explicit-frequency T1 derivation;
+- public synthetic Driven report validation now exercises
+  `gsim.palace.load_driven_report()` with S-parameters, port-EPR rows,
+  config/material provenance, index-map provenance, and source bookkeeping;
 - direct macOS development binaries may also require local dynamic-library
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
@@ -131,6 +136,14 @@ Remaining slices:
 - wire material-kind interface classification into public workflow examples
   only after source-backed public interface preset records and default-selection
   policy exist;
+- add a public Magnetostatic fixture only after a public use case is selected;
+  current public notebook coverage intentionally proves the private consumer
+  problem types that have active Driven/Eigenmode/Electrostatic notebooks;
+- keep sweep orchestration and sweep-level performance/physics summaries as a
+  later `gsim` workflow slice rather than expanding this single-run notebook
+  contract;
+- keep native masked Surface EPR in the Palace-source/upstream `gsim` lane
+  instead of replaying it inside `orpen-sc-pdk`;
 - future extensions should stay public-fixture based and keep normal docs
   builds independent of local Palace.
 
