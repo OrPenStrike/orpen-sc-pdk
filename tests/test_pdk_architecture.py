@@ -4,7 +4,8 @@ import gdsfactory as gf
 from gdsfactory.technology import LayerViews
 
 import orpen_sc_pdk
-from orpen_sc_pdk import PDK, cells, config, models, tech
+import orpen_sc_pdk.models as models
+from orpen_sc_pdk import PDK, cells, config, tech
 from orpen_sc_pdk.helper import layer_views_to_tuples
 
 
@@ -23,6 +24,7 @@ def test_orpen_style_public_import_surface() -> None:
     assert (tech.LAYER.D0_TOP_M1_DRAW.layer, tech.LAYER.D0_TOP_M1_DRAW.datatype) == (1, 0)
     assert (tech.LAYER.D1_D2_UNDER_BUMP.layer, tech.LAYER.D1_D2_UNDER_BUMP.datatype) == (41, 1)
     assert models.__all__ == []
+    assert {"helper", "logger", "models"}.isdisjoint(orpen_sc_pdk.__all__)
 
 
 def test_pdk_registry_contains_public_cells() -> None:

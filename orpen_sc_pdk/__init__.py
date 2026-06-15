@@ -9,9 +9,8 @@ from functools import lru_cache, partial
 
 from gdsfactory.typings import ComponentFactory
 
-from . import cells, config, helper, materials, models, tech
+from . import cells, config, materials, tech
 from .config import PATH
-from .logger import logger
 from .materials import (
     get_gsim_dielectric_interface_preset_kwargs,
     get_gsim_material_kind_alias_map,
@@ -63,14 +62,11 @@ __all__ = [
     "get_gsim_material_kind_map",
     "get_sample_functions",
     "get_pdk",
-    "helper",
     "get_gsim_material_overlay",
     "get_interface_preset_records",
     "get_material_alias_records",
     "get_material_records",
-    "logger",
     "materials",
-    "models",
     "tech",
     "validate_material_alias_records",
     "validate_material_kind_records",
