@@ -77,6 +77,7 @@ Current review ledger:
 | Runtime helper root API demotion (`gsim` commit `ad52acc`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports the locally added Slurm/profile/handoff/archive helpers or runtime/sweep/resource record helpers. They remain available from `gsim.palace.handoff` and `gsim.palace.results`, and `tests/palace/test_handoff.py` now imports them from those owner modules. Root `gsim.palace` keeps notebook-facing simulation classes, problem report loaders, material/provenance/index loaders, and pre-existing upstream convenience exports for separate review. Independent boundary review found no OrPen blocker and confirmed the owner-module split. |
 | Result-detail root API demotion (`gsim` commit `809b881`) | Reviewed, API-clean | Root `gsim.palace` keeps `SParams`, `load_sparams()`, and `load_fields()` because upstream notebooks and OrPen fixtures import those paths directly. Detail-only result helpers and dataclasses now stay in `gsim.palace.results`: `SParam`, `get_port_map()`, `IndexedCsv`, `IndexedCsvColumn`, `Eigenmodes`, `load_indexed_csv()`, eigenmode history loaders, terminal matrix history loaders, `load_port_epr_summary()`, and the matching summary helpers. This matches the notebook-facing API rule and avoids treating parser implementation details as public Palace workflow surface. |
 | Source config root API demotion (`gsim` commit `699ff6e`) | Reviewed, API-clean | `CurrentSourceConfig` and `CurrentSourceElementConfig` are no longer imported or re-exported from root `gsim.palace`. They remain in the owner module `gsim.palace.models`, while notebook-facing Magnetostatic workflows use `MagnetostaticSim.add_current_source(...)` with dict/keyword source intent. Independent review found no OrPen/NCUAS root-import dependency, and this avoids making locally added source-intent dataclasses broader public API than the simulation class requires. |
+| Port helper root API demotion (`gsim` commit `cf4204d`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports port config/lowering symbols: `CPWPortConfig`, `PortConfig`, `TerminalConfig`, `WavePortConfig`, `PalacePort`, `PortGeometry`, `PortType`, `configure_*_port()`, and `extract_ports()`. Notebook-facing workflows should continue through simulation-class methods such as `add_port()`, `add_cpw_port()`, `add_wave_port()`, and `add_terminal()`. Advanced port authoring remains documented from `gsim.palace.ports` and `gsim.palace.models`, matching the responsibility boundary for port geometry/extraction behavior. Local downstream search found no OrPen/NCUAS direct root-import dependency for these symbols. |
 
 Open API-surface follow-ups:
 
@@ -91,9 +92,6 @@ Open API-surface follow-ups:
   `TerminalConfig`, `TransientConfig`, `WavePortConfig`, `SimulationResult`,
   `ValidationResult`) unless notebook users directly construct them rather
   than using the problem-specific `set_*()` helpers;
-- demote port-lowering exports (`PalacePort`, `PortGeometry`, `PortType`,
-  `configure_*_port()`, `extract_ports()`) to `gsim.palace.ports` unless the
-  public docs add an explicit port-authoring workflow for them;
 - finish the remaining `gsim.palace.mesh` surface review for advanced manifest
   fixture symbols (`MeshPhysicalGroup`, `MeshRole`, `build_mesh_manifest`) and
   type aliases that may belong only in `mesh.manifest` / `mesh.postprocessing`;
