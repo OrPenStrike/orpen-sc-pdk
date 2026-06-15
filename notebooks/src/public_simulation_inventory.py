@@ -21,10 +21,13 @@ from IPython.display import display
 
 from scripts.public_palace_smoke_evidence import (
     load_public_gsim_boundary_review_crosscheck,
+    load_public_interface_preset_review_queue,
     load_public_problem_notebook_crosscheck,
     load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
     public_gsim_boundary_review_crosscheck_table,
+    public_interface_preset_candidate_review_table,
+    public_interface_preset_source_review_table,
     public_problem_notebook_crosscheck_table,
     public_simulation_goal_audit_table,
     public_simulation_helper_node_inventory_table,
@@ -81,6 +84,21 @@ gsim_boundary_review = public_gsim_boundary_review_crosscheck_table()
 display(gsim_boundary_review)
 
 # %% [markdown]
+# ## Interface preset source review
+#
+# MA/MS/SA candidate values stay in a source-review queue until accepted public
+# records, process scope, and default-selection rules exist. These tables are
+# notebook-visible promotion-gate evidence, not public defaults.
+
+# %%
+interface_preset_queue = load_public_interface_preset_review_queue()
+interface_preset_sources = public_interface_preset_source_review_table()
+interface_preset_candidates = public_interface_preset_candidate_review_table()
+
+display(interface_preset_sources)
+display(interface_preset_candidates)
+
+# %% [markdown]
 # ## Coverage summary
 #
 # The summary groups the public inventory by coverage status, intended
@@ -94,6 +112,10 @@ display(
         "goal_audit_row_count": len(load_public_simulation_goal_audit()),
         "gsim_boundary_review_row_count": len(
             load_public_gsim_boundary_review_crosscheck()
+        ),
+        "interface_preset_source_count": len(interface_preset_queue["sources"]),
+        "interface_preset_candidate_count": len(
+            interface_preset_queue["candidate_records"]
         ),
         "coverage_status_counts": problem_notebook_crosscheck[
             "coverage_status"

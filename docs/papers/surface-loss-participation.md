@@ -42,6 +42,10 @@ review must identify:
 These rows are review candidates only. They are not public defaults, and they
 do not populate `orpen_sc_pdk.tech.interface_preset_records` until the public
 preset gate below is satisfied.
+The same review queue is mirrored in
+`scripts/fixtures/public_interface_preset_review_queue.json` so notebook and
+evidence outputs can show the promotion state without turning these candidates
+into PDK data.
 
 | Candidate record | Role | Thickness (um) | Relative permittivity | Loss tangent | Source basis | Status |
 |---|---:|---:|---:|---:|---|---|
@@ -59,6 +63,9 @@ Open review decisions:
   for any OrPen process scope or remain caller-selected presets;
 - decide whether `Wenner2011_CPW_assumed_*_candidate` rows should stay
   documentation-only scaling checks rather than accepted PDK records;
+- prove public thin-film conductor-sheet proxy interfaces can request separate
+  caller-supplied `MA` and `MS` specs without private preset values, private
+  physical names, or notebook-local default policy;
 - add tests only after the accepted candidate IDs and material/process scope are
   finalized.
 

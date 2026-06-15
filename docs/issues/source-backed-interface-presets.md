@@ -59,15 +59,28 @@ Verified local changes:
   review rows for CPW `MA`/`MS`/`SA` taxonomy, assumed/scaled Wenner-style
   records, fitted Woods-style interface-loss candidates, transmon validation
   targets, and uncertainty-aware CPW interpretation.
+- `scripts/fixtures/public_interface_preset_review_queue.json` mirrors that
+  public source-review queue as structured evidence, including source IDs,
+  candidate roles, owner repo, `gsim` handoff path, default status, and
+  promotion gates without populating `tech.interface_preset_records`;
 - the public helper-node inventory and notebook coverage matrix now record the
   source-backed preset promotion gate explicitly: public workflows stay
   caller-supplied until accepted MA/MS/SA preset records, process scope, and
   default-selection rules are approved.
+- `notebooks/src/public_simulation_inventory.py` displays the source and
+  candidate review tables, so MA/MS/SA promotion status is notebook-visible
+  alongside the helper-node, representative-notebook, goal-audit, and `gsim`
+  boundary-review evidence.
 
 Remaining slices:
 
 - add accepted-candidate tests after the candidate IDs and process scope are
   approved for `tech.interface_preset_records`;
+- add public thin-film conductor-sheet proxy acceptance evidence: a conductive
+  sheet adjacent to vacuum and dielectric material regions must be able to
+  request separate caller-supplied `MA` and `MS` dielectric-interface specs
+  without copying private preset values, private physical names, or
+  notebook-local default policy;
 - decide whether any candidate should become a public PDK default or stay
   caller-selected only;
 - add a public default-selection map only after candidate records are accepted;

@@ -61,14 +61,14 @@
   },
   {
     "node": "Dielectric interface MA/MS/SA classification",
-    "private_capability": "Private helpers classify material-air, material-substrate, and substrate-air interfaces and map presets into Palace dielectric postprocessing.",
+    "private_capability": "Private helpers classify material-air, material-substrate, and substrate-air interfaces, including thin-film conductor-sheet MA/MS proxy interfaces, and map presets into Palace dielectric postprocessing.",
     "private_anchor": "ncuas_designs/simulations/interfaces.py; ncuas_designs/simulations/palace/mapping.py; tests/simulation/test_interfaces.py",
     "why_helper_exists": "Surface-loss analysis needs deterministic interface identity and preset provenance rather than notebook-local index guesses.",
     "gdsfactory_home": "orpen-sc-pdk + gsim",
     "public_api_or_artifact": "get_gsim_material_kind_map(); build_dielectric_interface_specs_from_material_kinds(); load_dielectric_interface_summary()",
     "public_status": "implemented_with_caller_supplied_test_preset_pending_source_policy",
     "promotion_gate": "source_backed_public_default_policy_required",
-    "missing_evidence": "accepted public MA/MS/SA preset records, process scope, and default-selection rules",
+    "missing_evidence": "accepted public MA/MS/SA preset records, process scope, default-selection rules, and public thin-film sheet proxy acceptance evidence",
     "next_issue": "source-backed-interface-presets"
   },
   {

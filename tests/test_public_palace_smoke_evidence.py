@@ -12,6 +12,7 @@ from scripts.public_palace_smoke_evidence import (
     _driven_report_summary,
     build_public_palace_smoke_evidence,
     load_public_gsim_boundary_review_crosscheck,
+    load_public_interface_preset_review_queue,
     load_public_problem_notebook_crosscheck,
     load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
@@ -94,6 +95,8 @@ def _assert_helper_node_inventory(evidence: dict) -> None:
     interface = by_node["Dielectric interface MA/MS/SA classification"]
     assert interface["promotion_gate"] == "source_backed_public_default_policy_required"
     assert "accepted public MA/MS/SA preset records" in interface["missing_evidence"]
+    assert "thin-film sheet proxy" in interface["missing_evidence"]
+    assert "thin-film conductor-sheet MA/MS proxy" in interface["private_capability"]
 
     for row in rows:
         assert row["node"]
@@ -170,6 +173,14 @@ def _assert_goal_audit(evidence: dict) -> None:
     assert q2d["current_status"] == "deferred_owner_pending"
     assert "owner_pending" in q2d["current_evidence"]
 
+    interface_gate = by_requirement[
+        "Keep MA/MS/SA dielectric-interface preset promotion source-backed and "
+        "notebook-visible without publishing defaults prematurely."
+    ]
+    assert interface_gate["current_status"] == "covered_current"
+    assert "public_interface_preset_review_queue.json" in interface_gate["current_evidence"]
+    assert "tech.interface_preset_records" in interface_gate["remaining_gap"]
+
     statuses = {row["current_status"] for row in rows}
     assert {
         "covered_current",
@@ -225,6 +236,38 @@ def _assert_gsim_boundary_review_crosscheck(evidence: dict) -> None:
         assert row["boundary_note"]
 
 
+def _assert_interface_preset_review_queue(evidence: dict) -> None:
+    queue = evidence["interface_preset_review_queue"]
+    assert queue == load_public_interface_preset_review_queue()
+    assert queue["schema_version"] == 1
+    assert queue["owner_repo"] == "orpen-sc-pdk"
+    assert "do not populate tech.interface_preset_records" in queue["promotion_policy"]
+    assert len(queue["sources"]) >= 4
+    assert len(queue["candidate_records"]) >= 7
+
+    source_ids = {row["source_id"] for row in queue["sources"]}
+    assert {"Wenner2011", "Woods2019"} <= source_ids
+
+    candidates = queue["candidate_records"]
+    roles = {row["role"] for row in candidates}
+    assert {"MA", "MS", "SA"} <= roles
+    assert all(row["public_default_status"] == "not_public_default" for row in candidates)
+    assert all(row["owner_repo"] == "orpen-sc-pdk" for row in candidates)
+    assert all(row["promotion_gate"] for row in candidates)
+    assert all(row["source_id"] in source_ids for row in candidates)
+    assert any(row["promotion_status"] == "not_interface_preset" for row in candidates)
+    assert any(
+        "thin-film conductor-sheet proxy" in decision
+        for decision in queue["open_decisions"]
+    )
+
+    by_candidate = {row["candidate_record"]: row for row in candidates}
+    woods_ms = by_candidate["Woods2019_CPW_Si_MS_candidate"]
+    assert woods_ms["role"] == "MS"
+    assert woods_ms["public_default_status"] == "not_public_default"
+    assert "gsim material-kind/exact assignment helpers" in woods_ms["gsim_handoff"]
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -240,6 +283,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     _assert_problem_notebook_crosscheck(evidence)
     _assert_goal_audit(evidence)
     _assert_gsim_boundary_review_crosscheck(evidence)
+    _assert_interface_preset_review_queue(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",
         "eigenmode_resonator",

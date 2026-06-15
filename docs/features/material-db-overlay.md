@@ -111,6 +111,10 @@ Current public baseline:
 - the public source-review queue now includes candidate Wenner-style
   assumed/scaled rows and Woods-style fitted CPW rows, keeping candidate values
   reviewable without adding them to the default PDK table;
+- the same source-review queue is mirrored as
+  `scripts/fixtures/public_interface_preset_review_queue.json` and displayed
+  from the public simulation inventory notebook, making MA/MS/SA promotion
+  gates reviewable without widening the PDK or `gsim` public runtime APIs;
 - local `gsim` now carries caller-supplied interface preset name/source
   metadata through `palace_index_map.json`, dielectric-interface summaries, and
   surface-loss summaries; `orpen-sc-pdk` passes its validated preset source
@@ -137,8 +141,10 @@ Remaining slices:
   current minimal electromagnetic records;
 - populate public interface preset records only after source-backed public
   MA/MS/SA values and automatic-selection rules are accepted into the PDK
-  contract; until then, keep selection caller-supplied and explicitly sourced
-  through the `gsim` assignment/classification helpers.
+  contract, including thin-film sheet proxy acceptance for separate
+  caller-supplied `MA` and `MS` specs; until then, keep selection
+  caller-supplied and explicitly sourced through the `gsim`
+  assignment/classification helpers.
 
 Related issue:
 

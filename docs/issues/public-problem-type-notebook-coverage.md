@@ -141,6 +141,10 @@ Verified local changes:
   `gsim` boundary-review cross-check and groups it by boundary group and
   review status, so review can inspect commit coverage from notebook outputs
   without treating every hash as a directly executed notebook feature;
+- the same inventory notebook now displays the public MA/MS/SA source-review
+  queue from `scripts/fixtures/public_interface_preset_review_queue.json`,
+  keeping candidate values notebook-visible as promotion-gate evidence without
+  adding automatic public defaults or private preset names;
 - `tests/test_public_problem_notebook_style.py` now checks every public
   Jupytext notebook source for notebook-local function definitions and private
   `_...()` helper calls, and rejects links to the old combined simulation

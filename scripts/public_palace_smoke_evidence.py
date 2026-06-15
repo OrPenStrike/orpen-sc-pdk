@@ -37,6 +37,11 @@ PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK = (
     / "fixtures"
     / "public_gsim_boundary_review_crosscheck.json"
 )
+PUBLIC_INTERFACE_PRESET_REVIEW_QUEUE = (
+    Path(__file__).resolve().parent
+    / "fixtures"
+    / "public_interface_preset_review_queue.json"
+)
 
 
 def load_public_simulation_helper_node_inventory() -> list[dict[str, Any]]:
@@ -61,6 +66,12 @@ def load_public_gsim_boundary_review_crosscheck() -> list[dict[str, Any]]:
     """Load the local gsim branch boundary-review cross-check matrix."""
 
     return json.loads(PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK.read_text())
+
+
+def load_public_interface_preset_review_queue() -> dict[str, Any]:
+    """Load the source-backed dielectric-interface preset review queue."""
+
+    return json.loads(PUBLIC_INTERFACE_PRESET_REVIEW_QUEUE.read_text())
 
 
 def _relative_path(path: Path, root: Path) -> str:
@@ -1149,6 +1160,45 @@ def public_gsim_boundary_review_crosscheck_table() -> Any:
     return pd.DataFrame(load_public_gsim_boundary_review_crosscheck()).loc[:, columns]
 
 
+def public_interface_preset_source_review_table() -> Any:
+    """Return source-review rows for public dielectric-interface preset candidates."""
+
+    import pandas as pd
+
+    columns = [
+        "source_id",
+        "source",
+        "doi",
+        "candidate_use",
+        "review_status",
+    ]
+    queue = load_public_interface_preset_review_queue()
+    return pd.DataFrame(queue["sources"]).loc[:, columns]
+
+
+def public_interface_preset_candidate_review_table() -> Any:
+    """Return candidate rows for public dielectric-interface preset review."""
+
+    import pandas as pd
+
+    columns = [
+        "candidate_record",
+        "source_id",
+        "role",
+        "geometry_family",
+        "thickness_um",
+        "material_or_permittivity",
+        "loss_tangent",
+        "extracted_fields_status",
+        "promotion_status",
+        "public_default_status",
+        "owner_repo",
+        "promotion_gate",
+    ]
+    queue = load_public_interface_preset_review_queue()
+    return pd.DataFrame(queue["candidate_records"]).loc[:, columns]
+
+
 def public_domain_material_table(output_dir: str | Path) -> Any:
     """Load the public domain-material provenance table for a generated config."""
 
@@ -1946,6 +1996,7 @@ def build_public_palace_smoke_evidence(
         "problem_notebook_crosscheck": load_public_problem_notebook_crosscheck(),
         "goal_audit": load_public_simulation_goal_audit(),
         "gsim_boundary_review_crosscheck": load_public_gsim_boundary_review_crosscheck(),
+        "interface_preset_review_queue": load_public_interface_preset_review_queue(),
         "problems": problems,
         "sweep_summary": sweep_evidence["summary"],
         "sweep_resource_index": sweep_evidence["resource_index"],
