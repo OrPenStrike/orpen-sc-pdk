@@ -32,6 +32,15 @@ The current public bridge is intentionally small:
   the `gsim` material overlay mapping;
 - `orpen_sc_pdk.materials.write_gsim_material_overlay()` writes the same
   mapping as strict JSON for tools that consume overlay files;
+- `orpen_sc_pdk.materials.get_interface_preset_records()` returns a copy of
+  public dielectric-interface preset records, currently empty by default;
+- `orpen_sc_pdk.materials.validate_interface_preset_records()` validates
+  caller-supplied MA/MS/SA-style records with explicit thickness and either a
+  public material name or explicit permittivity;
+- `orpen_sc_pdk.materials.get_gsim_dielectric_interface_preset_kwargs()` adapts
+  a validated record into keyword arguments accepted by
+  `gsim.palace.mesh.DielectricInterfaceSpec` without importing `gsim` into the
+  base PDK package;
 - local `gsim` Palace config generation accepts the overlay through
   `material_overlay=` and applies public material values to effective
   `Domains.Materials` without mutating the source layer stack;
@@ -72,9 +81,9 @@ should be:
 4. Upstream reusable adapter support into `gsim` when it is not PDK-specific.
 5. Use `gsim` interface material references when a Palace dielectric interface
    should draw permittivity/loss fields from a public material record.
-6. Add a validated public interface-preset schema before making MA/MS/SA-style
-   thickness or automatic loss-interface defaults part of the PDK material
-   contract.
+6. Keep public interface preset records schema-validated in the PDK, but do not
+   populate MA/MS/SA thickness, loss, or automatic-selection defaults until
+   source-backed public records exist.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the

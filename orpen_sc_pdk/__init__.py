@@ -13,8 +13,11 @@ from . import cells, config, helper, materials, models, tech
 from .config import PATH
 from .logger import logger
 from .materials import (
+    get_gsim_dielectric_interface_preset_kwargs,
     get_gsim_material_overlay,
+    get_interface_preset_records,
     get_material_records,
+    validate_interface_preset_records,
     write_gsim_material_overlay,
 )
 from .pdk import PDK, activate, get_pdk
@@ -50,15 +53,18 @@ __all__ = [
     "activate",
     "cells",
     "config",
+    "get_gsim_dielectric_interface_preset_kwargs",
     "get_sample_functions",
     "get_pdk",
     "helper",
     "get_gsim_material_overlay",
+    "get_interface_preset_records",
     "get_material_records",
     "logger",
     "materials",
     "models",
     "tech",
+    "validate_interface_preset_records",
     "write_gsim_material_overlay",
 ]
 

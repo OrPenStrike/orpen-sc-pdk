@@ -62,6 +62,14 @@ Current public baseline:
 - public material-overlay tests now verify `AlOx_native_generic` can be used as
   a dielectric-interface material reference while interface thickness and
   MA/MS/SA default selection remain explicit caller choices;
+- `orpen-sc-pdk` now exposes an empty-by-default
+  `tech.interface_preset_records` table plus
+  `get_interface_preset_records()`,
+  `validate_interface_preset_records()`, and
+  `get_gsim_dielectric_interface_preset_kwargs()` so caller-supplied
+  source-backed MA/MS/SA records can be validated and handed to
+  `gsim.palace.mesh.DielectricInterfaceSpec` without making private defaults
+  public;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
@@ -70,9 +78,9 @@ Remaining slices:
 
 - add a validated material-record schema and aliases table once the public
   material contract grows beyond the current minimal records;
-- add a validated public interface-preset schema before treating MA/MS/SA
-  thickness, loss tangent, and automatic preset selection as PDK-owned
-  defaults.
+- populate public interface preset records only after source-backed public
+  MA/MS/SA values and automatic-selection rules are accepted into the PDK
+  contract.
 
 Related issue:
 

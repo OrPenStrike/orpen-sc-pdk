@@ -8,8 +8,11 @@ import pytest
 import orpen_sc_pdk
 from orpen_sc_pdk import tech
 from orpen_sc_pdk.materials import (
+    get_gsim_dielectric_interface_preset_kwargs,
     get_gsim_material_overlay,
+    get_interface_preset_records,
     get_material_records,
+    validate_interface_preset_records,
     write_gsim_material_overlay,
 )
 
@@ -26,6 +29,7 @@ def test_material_records_are_public_copy() -> None:
 def test_public_import_surface_exposes_material_overlay_helpers() -> None:
     assert orpen_sc_pdk.get_material_records()["vacuum"]["relative_permittivity"] == 1.0
     assert "materials" in orpen_sc_pdk.get_gsim_material_overlay()
+    assert orpen_sc_pdk.get_interface_preset_records() == {}
 
 
 def test_gsim_material_overlay_maps_finite_dielectrics() -> None:
@@ -74,6 +78,68 @@ def test_written_gsim_material_overlay_loads_through_gsim(tmp_path) -> None:
     assert in_memory_overlay["Si"].permittivity == pytest.approx(11.45)
     assert file_overlay["Si"].permittivity == pytest.approx(11.45)
     assert file_overlay["AlOx_native_generic"].permittivity == pytest.approx(10.0)
+
+
+def test_interface_preset_records_are_public_copy_and_empty_by_default() -> None:
+    records = get_interface_preset_records()
+
+    assert records == {}
+
+    records["private_sa_example"] = {
+        "interface_type": "SA",
+        "thickness": 0.003,
+        "material_name": "AlOx_native_generic",
+    }
+    assert tech.interface_preset_records == {}
+
+
+def test_interface_preset_schema_validates_caller_supplied_record() -> None:
+    records = {
+        "public_sa_example": {
+            "interface_type": "sa",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public example only",
+            "description": "Example interface record without becoming a PDK default.",
+        }
+    }
+
+    normalized = validate_interface_preset_records(records)
+    record = normalized["public_sa_example"]
+
+    assert record["interface_type"] == "SA"
+    assert record["thickness"] == pytest.approx(0.003)
+    assert record["loss_tangent"] == pytest.approx(0.0)
+    assert record["material_name"] == "AlOx_native_generic"
+    assert record["source"] == "public example only"
+
+    kwargs = get_gsim_dielectric_interface_preset_kwargs(
+        "public_sa_example",
+        records=records,
+        entry_names=("sa_interface",),
+    )
+    assert kwargs == {
+        "interface_type": "SA",
+        "thickness": 0.003,
+        "loss_tangent": 0.0,
+        "material_name": "AlOx_native_generic",
+        "role": "boundary_surface",
+        "entry_names": ("sa_interface",),
+    }
+
+
+def test_interface_preset_schema_rejects_ambiguous_records() -> None:
+    records = {
+        "bad": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "permittivity": 10.0,
+        }
+    }
+
+    with pytest.raises(ValueError, match="exactly one"):
+        validate_interface_preset_records(records)
 
 
 def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
@@ -297,6 +363,87 @@ def test_gsim_resolves_public_interface_material_overlay(tmp_path) -> None:
     assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
     assert row["permittivity"] == pytest.approx(10.0)
     assert row["loss_tangent"] == pytest.approx(0.0)
+
+
+def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
+    pytest.importorskip("gsim")
+    from gsim.common.stack import LayerStack
+    from gsim.palace import load_dielectric_interface_summary
+    from gsim.palace.mesh import (
+        DielectricInterfaceSpec,
+        MeshManifest,
+        MeshPhysicalGroup,
+        build_postprocessing_config_from_manifest,
+    )
+    from gsim.palace.mesh.config_generator import generate_palace_config
+
+    records = {
+        "public_sa_example": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public example only",
+        }
+    }
+    manifest = MeshManifest(
+        entries=(
+            MeshPhysicalGroup(
+                name="sa_interface",
+                role="boundary_surface",
+                attributes=(70,),
+                entity_tags=(70,),
+                physical_names=("sa_interface",),
+                dimension=2,
+                metadata={},
+            ),
+        )
+    )
+    preset_kwargs = get_gsim_dielectric_interface_preset_kwargs(
+        "public_sa_example",
+        records=records,
+        entry_names=("sa_interface",),
+    )
+    postprocessing = build_postprocessing_config_from_manifest(
+        manifest,
+        dielectric_interfaces=(DielectricInterfaceSpec(**preset_kwargs),),
+    )
+
+    config_path = generate_palace_config(
+        groups={
+            "volumes": {"Si": {"phys_group": 1}},
+            "conductor_surfaces": {},
+            "pec_surfaces": {},
+            "port_surfaces": {},
+            "boundary_surfaces": {"sa_interface": {"phys_group": 70}},
+        },
+        ports=[],
+        port_info=[],
+        stack=LayerStack(materials={"Si": {"permittivity": 11.45}}),
+        output_path=tmp_path,
+        model_name="palace",
+        fmax=5e9,
+        absorbing_boundary=False,
+        boundary_postprocessing_config=postprocessing.boundaries,
+        material_overlay=get_gsim_material_overlay(),
+    )
+    postprocessing.index_map.write_json(tmp_path / "palace_index_map.json")
+
+    interface = json.loads(config_path.read_text())["Boundaries"]["Postprocessing"]["Dielectric"][0]
+    assert "_MaterialName" not in interface
+    assert interface["Type"] == "SA"
+    assert interface["Permittivity"] == pytest.approx(10.0)
+    assert interface["LossTan"] == pytest.approx(0.0)
+
+    summary = load_dielectric_interface_summary(
+        {
+            "config.json": config_path,
+            "palace_index_map.json": tmp_path / "palace_index_map.json",
+        }
+    )
+    row = summary.set_index("surface_index").loc[1]
+    assert row["source_name"] == "sa_interface"
+    assert row["interface_material_name"] == "AlOx_native_generic"
+    assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 
 
 def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:

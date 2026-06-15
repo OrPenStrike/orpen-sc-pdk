@@ -99,6 +99,8 @@ material_properties = {
     "AlOx_native_generic": {"relative_permittivity": 10.0},
 }
 
+interface_preset_records = {}
+
 SUBSTRATE_THICKNESS_UM = 500.0
 METAL_THICKNESS_UM = 200 * nm
 AIRBRIDGE_VIA_THICKNESS_UM = 100 * nm
@@ -729,6 +731,7 @@ __all__ = [
     "josephson_junction_cross_section_narrow",
     "josephson_junction_cross_section_wide",
     "launcher_cross_section_big",
+    "interface_preset_records",
     "material_properties",
     "microstrip",
     "route_astar",

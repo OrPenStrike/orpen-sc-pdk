@@ -73,6 +73,21 @@ Verified local changes:
 - public `orpen-sc-pdk` tests now also verify a synthetic Eigenmode artifact
   bundle can load through `gsim.palace.load_eigenmode_report()` and expose
   public domain/surface loss budget rows;
+- `orpen-sc-pdk` now exposes an empty-by-default
+  `tech.interface_preset_records` table, validates caller-supplied
+  MA/MS/SA-style records through `validate_interface_preset_records()`, and
+  adapts validated records into `gsim.palace.mesh.DielectricInterfaceSpec`
+  keyword arguments through `get_gsim_dielectric_interface_preset_kwargs()`;
+- public tests now prove a caller-supplied source-backed interface preset can
+  feed `gsim` dielectric postprocessing, resolve `AlOx_native_generic` through
+  the public material overlay, strip non-Palace handoff keys from
+  `config.json`, and load interface material provenance through the reusable
+  report/index-map path;
+- read-only NCUAS audit confirms the private repo already has MA/MS/SA
+  classification, thin-film MA+MS duplicate-spec behavior, preset lookup,
+  `materials.json` numeric interface-loss values, notebook-local override
+  maps, and masked Surface EPR; this public slice preserves the schema/adapter
+  boundary without copying private values or private layer names;
 - the exported overlay keeps finite dielectric records as constant material
   models and keeps conductor-like `inf` records out of solver permittivity.
 
@@ -81,8 +96,11 @@ Remaining slices:
 - introduce a validated public material-record schema when the current dict
   grows to include aliases, provenance, conditions, loss, conductivity,
   London-depth, or surface/interface presets;
-- introduce a validated public interface-preset schema for MA/MS/SA-style
-  thickness, loss tangent, and automatic preset selection records.
+- populate public interface preset records only after MA/MS/SA thickness, loss
+  tangent, and automatic-selection values have source-backed public records.
+- upstream a generic `gsim` role/physical-group assignment path for
+  user-supplied interface preset maps before trying to reproduce private
+  notebook-local automatic MA/MS/SA selection.
 
 Related feature:
 
