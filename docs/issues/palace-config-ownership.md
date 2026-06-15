@@ -124,6 +124,11 @@ Verified local changes:
   `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
   `Boundaries.SurfaceCurrent`, `Boundaries.PMC`, magnetic `SurfaceFlux`, and
   source-name rows in `palace_index_map.json`.
+- `gsim` commit `883fb78` extends the same Magnetostatic source boundary with
+  vector `Direction`, optional `CoordinateSystem`, and selector-based
+  multielement `SurfaceCurrent.Elements`, matching the NCUAS/Palace helper
+  shape without moving raw physical-group IDs or source geometry into
+  `orpen-sc-pdk`.
 - current OrPen local evidence and notebook output now share a helper-node
   inventory fixture that records Driven/Eigenmode/Electrostatic as implemented
   public fixtures and Magnetostatic as an implemented public config fixture

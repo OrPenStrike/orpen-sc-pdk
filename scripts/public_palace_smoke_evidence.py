@@ -166,6 +166,7 @@ def _config_generation_evidence(source: Path) -> dict[str, Any]:
     )
     boundaries = config.get("Boundaries", {})
     postprocessing = boundaries.get("Postprocessing", {})
+    surface_currents = boundaries.get("SurfaceCurrent", ())
     domains = config.get("Domains", {})
     solver = config.get("Solver", {})
     domain_materials = load_domain_material_summary(source)
@@ -195,7 +196,29 @@ def _config_generation_evidence(source: Path) -> dict[str, Any]:
         "lumped_port_count": len(boundaries.get("LumpedPort", ())),
         "terminal_count": len(boundaries.get("Terminal", ())),
         "wave_port_count": len(boundaries.get("WavePort", ())),
-        "surface_current_count": len(boundaries.get("SurfaceCurrent", ())),
+        "surface_current_count": len(surface_currents),
+        "surface_current_element_count": sum(
+            len(entry.get("Elements", ())) for entry in surface_currents if isinstance(entry, dict)
+        ),
+        "surface_current_directions": [
+            _json_safe(entry.get("Direction"))
+            for entry in surface_currents
+            if isinstance(entry, dict) and "Direction" in entry
+        ],
+        "surface_current_coordinate_systems": sorted(
+            {
+                str(entry["CoordinateSystem"])
+                for entry in surface_currents
+                if isinstance(entry, dict) and "CoordinateSystem" in entry
+            }
+            | {
+                str(element["CoordinateSystem"])
+                for entry in surface_currents
+                if isinstance(entry, dict)
+                for element in entry.get("Elements", ())
+                if isinstance(element, dict) and "CoordinateSystem" in element
+            }
+        ),
         "pmc_count": int(bool(boundaries.get("PMC"))),
         "surface_flux_count": len(postprocessing.get("SurfaceFlux", ())),
         "dielectric_postprocessing_count": len(postprocessing.get("Dielectric", ())),
@@ -555,13 +578,24 @@ def _public_magnetostatic_cpw_sim(output_dir: Path):
         "signal",
         layer="D0_TOP_M1",
         center=(0, 0),
-        direction="+X",
+        direction=[1.0, 0.0, 0.0],
+        coordinate_system="Cartesian",
     )
     sim.add_current_source(
         "return",
-        layer="D0_TOP_M1",
-        center=(0, 31),
-        direction="-X",
+        elements=(
+            {
+                "layer": "D0_TOP_M1",
+                "center": (0, 31),
+                "direction": "-X",
+            },
+            {
+                "layer": "D0_TOP_M1",
+                "center": (0, -31),
+                "direction": [-1.0, 0.0, 0.0],
+                "coordinate_system": "Cartesian",
+            },
+        ),
     )
     sim.set_magnetostatic(save_fields=0)
     sim.mesh(

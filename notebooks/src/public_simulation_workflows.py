@@ -205,6 +205,10 @@ def _index_map_lookup_table(
                 "port": entry.metadata.get("port"),
                 "terminal_name": entry.extra.get("terminal_name"),
                 "current_source_name": entry.extra.get("current_source_name"),
+                "current_source_element_index": entry.extra.get("current_source_element_index"),
+                "current_source_element_count": entry.extra.get("current_source_element_count"),
+                "direction": entry.extra.get("Direction"),
+                "coordinate_system": entry.extra.get("CoordinateSystem"),
                 "type": entry.extra.get("Type"),
             }
         )
@@ -245,6 +249,7 @@ def _config_generation_summary(
     material_resolution = _load_json(output_dir / "palace_material_resolution.json")
     boundaries = config.get("Boundaries", {})
     postprocessing = boundaries.get("Postprocessing", {})
+    surface_currents = boundaries.get("SurfaceCurrent", ())
     domains = config.get("Domains", {})
     solver = config.get("Solver", {})
     return {
@@ -263,7 +268,29 @@ def _config_generation_summary(
         "dielectric_postprocessing_count": len(postprocessing.get("Dielectric", ())),
         "lumped_port_count": len(boundaries.get("LumpedPort", ())),
         "terminal_count": len(boundaries.get("Terminal", ())),
-        "surface_current_count": len(boundaries.get("SurfaceCurrent", ())),
+        "surface_current_count": len(surface_currents),
+        "surface_current_element_count": sum(
+            len(entry.get("Elements", ())) for entry in surface_currents if isinstance(entry, dict)
+        ),
+        "surface_current_directions": [
+            entry.get("Direction")
+            for entry in surface_currents
+            if isinstance(entry, dict) and "Direction" in entry
+        ],
+        "surface_current_coordinate_systems": sorted(
+            {
+                str(entry["CoordinateSystem"])
+                for entry in surface_currents
+                if isinstance(entry, dict) and "CoordinateSystem" in entry
+            }
+            | {
+                str(element["CoordinateSystem"])
+                for entry in surface_currents
+                if isinstance(entry, dict)
+                for element in entry.get("Elements", ())
+                if isinstance(element, dict) and "CoordinateSystem" in element
+            }
+        ),
         "pmc_count": int(bool(boundaries.get("PMC"))),
         "boundary_sections": sorted(boundaries),
     }
@@ -439,8 +466,29 @@ def _public_magnetostatic_cpw_sim(output_dir: Path):
         add_passivation_dielectric=False,
     )
     sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
-    sim.add_current_source("signal", layer="D0_TOP_M1", center=(0, 0), direction="+X")
-    sim.add_current_source("return", layer="D0_TOP_M1", center=(0, 31), direction="-X")
+    sim.add_current_source(
+        "signal",
+        layer="D0_TOP_M1",
+        center=(0, 0),
+        direction=[1.0, 0.0, 0.0],
+        coordinate_system="Cartesian",
+    )
+    sim.add_current_source(
+        "return",
+        elements=(
+            {
+                "layer": "D0_TOP_M1",
+                "center": (0, 31),
+                "direction": "-X",
+            },
+            {
+                "layer": "D0_TOP_M1",
+                "center": (0, -31),
+                "direction": [-1.0, 0.0, 0.0],
+                "coordinate_system": "Cartesian",
+            },
+        ),
+    )
     sim.set_magnetostatic(save_fields=0)
     sim.mesh(
         preset="coarse",
@@ -1210,9 +1258,10 @@ display(electrostatic_index_lookup)
 # ## Magnetostatic CPW source workflow
 #
 # The magnetostatic fixture uses the public CPW straight cell. The workflow uses
-# `gsim` center-selected current sources to map signal and return current
-# sources to separate same-layer PEC islands, then writes `SurfaceCurrent`,
-# `PMC`, and magnetic `SurfaceFlux` entries without hand-editing Palace JSON.
+# `gsim` center-selected current sources to map signal and multielement return
+# current sources to separate same-layer PEC islands, then writes
+# `SurfaceCurrent`, `PMC`, and magnetic `SurfaceFlux` entries without
+# hand-editing Palace JSON.
 
 # %%
 with tempfile.TemporaryDirectory() as temp_dir:
@@ -1242,6 +1291,12 @@ with tempfile.TemporaryDirectory() as temp_dir:
         "surface_current_count": len(config["Boundaries"]["SurfaceCurrent"]),
         "surface_flux_rows": len(config["Boundaries"]["Postprocessing"]["SurfaceFlux"]),
         "pmc_attributes": config["Boundaries"].get("PMC", {}).get("Attributes", []),
+        "surface_current_element_count": sum(
+            len(entry.get("Elements", ())) for entry in config["Boundaries"]["SurfaceCurrent"]
+        ),
+        "surface_current_coordinate_systems": sorted(
+            set(magnetostatic_index_lookup["coordinate_system"].dropna().astype(str).tolist())
+        ),
         "index_lookup_rows": len(magnetostatic_index_lookup),
         "current_source_names": sorted(
             {

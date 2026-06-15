@@ -14,6 +14,9 @@ Local/implemented capability:
   ports, current excitations, and Q2D conductor intent;
 - runtime controls can assemble driven, eigenmode, electrostatic, and
   magnetostatic Palace problem definitions;
+- magnetostatic current-source intent can express axis or vector `Direction`,
+  optional `CoordinateSystem`, and selector-based multielement
+  `SurfaceCurrent.Elements` through `gsim` models;
 - material policy can be resolved before writing solver domain materials;
 - physical-group tables can be lowered into Palace attributes, boundaries,
   terminals, lumped ports, and postprocessing requests;
@@ -32,8 +35,8 @@ GDSFactory ecosystem mapping:
 
 Acceptance direction:
 
-- a public `gsim` API can write Palace configs for driven, eigenmode, and
-  electrostatic examples using only public PDK metadata;
+- a public `gsim` API can write Palace configs for driven, eigenmode,
+  electrostatic, and magnetostatic examples using only public PDK metadata;
 - generated configs include auditable material, boundary, terminal, and
   postprocessing provenance;
 - public PDK material overlays can be passed to `gsim` config generation and

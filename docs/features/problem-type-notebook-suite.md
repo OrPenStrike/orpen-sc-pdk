@@ -17,7 +17,8 @@ Local/implemented capability:
 - electrostatic workflows validate terminal assignment, capacitance extraction,
   package analysis, and report generation.
 - magnetostatic workflows validate current-source ownership, generated
-  `SurfaceCurrent` boundaries, magnetic `SurfaceFlux` index rows, and
+  `SurfaceCurrent` boundaries, vector direction/coordinate-system emission,
+  multielement current-source rows, magnetic `SurfaceFlux` index rows, and
   report-loader gap visibility.
 
 Public fixture direction:
@@ -28,9 +29,9 @@ Public fixture direction:
   later extend to sweep coverage;
 - electrostatic: a public capacitor fixture with named terminals and
   capacitance/report outputs.
-- magnetostatic: a public CPW fixture with center-selected signal/return
-  current sources and generated config/index-map evidence while report loading
-  waits for a confirmed Palace output contract.
+- magnetostatic: a public CPW fixture with center-selected signal and
+  multielement return current sources plus generated config/index-map evidence
+  while report loading waits for a confirmed Palace output contract.
 
 Current public notebook:
 
@@ -66,11 +67,11 @@ Current public notebook:
   Eigenmode, and Electrostatic public fixtures; normal docs builds display a
   skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or
   executable path is configured.
-- the same notebook displays a Magnetostatic CPW config fixture with
-  center-selected `signal`/`return` current sources, generated
-  `SurfaceCurrent`, `PMC`, and magnetic `SurfaceFlux` boundary sections, plus
-  source-name lookup rows from `palace_index_map.json`; report parsing remains
-  intentionally pending.
+- the same notebook displays a Magnetostatic CPW config fixture with a
+  vector-direction `signal` source and a multielement `return` source,
+  generated `SurfaceCurrent`, `PMC`, and magnetic `SurfaceFlux` boundary
+  sections, plus source-name, coordinate-system, and element-count lookup rows
+  from `palace_index_map.json`; report parsing remains intentionally pending.
 - the same notebook displays the public Slurm profile catalog, resolved
   resource overrides, generic launcher/solver hints, generated Palace
   `Solver` config hints, and a generated dry-run `run_palace.sbatch` preview
@@ -201,8 +202,9 @@ Current executable smoke coverage:
 
 Known gaps and non-goals:
 
-- Magnetostatic now has a public config/index-map fixture, but no public report
-  loader yet; the shared helper-node inventory records this as
+- Magnetostatic now has a public config/index-map fixture covering vector
+  direction, coordinate-system, and multielement source config, but no public
+  report loader yet; the shared helper-node inventory records this as
   `implemented_public_config_fixture_pending_report_loader`.
 - Full sweep orchestration and broader cost modeling remain later reusable
   `gsim` workflow slices; the current public baseline is explicit point

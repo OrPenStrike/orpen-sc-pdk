@@ -522,18 +522,50 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     magnetostatic_lookup = _assert_index_map_lookup_round_trip(magnetostatic)
     assert magnetostatic_summary["config"]["problem_type"] == "Magnetostatic"
     assert magnetostatic_config["surface_current_count"] == 2
+    assert magnetostatic_config["surface_current_element_count"] == 2
+    assert magnetostatic_config["surface_current_directions"] == [[1.0, 0.0, 0.0]]
+    assert magnetostatic_config["surface_current_coordinate_systems"] == ["Cartesian"]
     assert magnetostatic_config["surface_flux_count"] == 2
     assert magnetostatic_config["pmc_count"] == 1
     assert magnetostatic_config["terminal_count"] == 0
     assert "Boundaries.SurfaceCurrent" in magnetostatic_summary["index_map"]["sections"]
-    assert (
-        "Boundaries.Postprocessing.SurfaceFlux" in (magnetostatic_summary["index_map"]["sections"])
-    )
-    assert sorted(
-        row["current_source_name"]
-        for row in magnetostatic_lookup
-        if row["section"] == "Boundaries.SurfaceCurrent"
-    ) == ["return", "signal"]
+    assert "Boundaries.Postprocessing.SurfaceFlux" in magnetostatic_summary["index_map"]["sections"]
+    source_rows = [
+        row for row in magnetostatic_lookup if row["section"] == "Boundaries.SurfaceCurrent"
+    ]
+    assert {row["current_source_name"] for row in source_rows} == {
+        "return",
+        "signal",
+    }
+    assert sum(row["current_source_name"] == "return" for row in source_rows) == 2
+    assert {
+        row["extra"].get("current_source_element_count")
+        for row in source_rows
+        if row["current_source_name"] == "return"
+    } == {2}
+    assert {
+        row["extra"].get("current_source_element_index")
+        for row in source_rows
+        if row["current_source_name"] == "return"
+    } == {1, 2}
+    assert {
+        tuple(row["extra"]["Direction"])
+        if isinstance(row["extra"].get("Direction"), list)
+        else row["extra"].get("Direction")
+        for row in source_rows
+        if row["current_source_name"] == "return"
+    } == {"-X", (-1.0, 0.0, 0.0)}
+    assert {
+        row["extra"].get("CoordinateSystem")
+        for row in source_rows
+        if row["current_source_name"] == "return"
+        and row["extra"].get("CoordinateSystem") is not None
+    } == {"Cartesian"}
+    assert {
+        tuple(row["extra"]["Direction"])
+        for row in source_rows
+        if row["current_source_name"] == "signal"
+    } == {(1.0, 0.0, 0.0)}
     assert {
         row["extra"]["Type"]
         for row in magnetostatic_lookup
