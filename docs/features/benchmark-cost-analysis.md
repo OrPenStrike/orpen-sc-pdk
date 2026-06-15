@@ -59,10 +59,17 @@ Current public baseline:
   reviewable files that would be packaged for a single run or sweep, expose the
   manifest through the existing handoff summary `archive.manifest_path`, and do
   not create archives or submit jobs;
+- local `gsim` commit `7febb33` adds a generic post-run
+  `palace_resource_record.json` sidecar through
+  `write_palace_resource_record()`, exposes compact resource status through
+  `load_palace_run_summary().resource`, and flattens sweep point resource
+  fields such as wall time, core-hours, allocation shape, peak HWM memory, and
+  global unknowns without parsing private scheduler logs;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
-  generated handoff archive manifest status, and a public problem-type
-  sweep-summary smoke in the ignored local evidence bundle.
+  generated handoff archive manifest status, synthetic public resource-record
+  status, and a public problem-type sweep-summary smoke in the ignored local
+  evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output
@@ -70,8 +77,9 @@ Current public baseline:
 - NCUAS already has a richer private run-stage layer for Slurm/Sbatch handoff,
   handoff archives, site/profile resources, and post-run records; the public
   migration path is to extend the same `gsim` run-summary and sweep-summary
-  schemas with optional handoff/archive/resource sidecars, not to expose
-  private benchmark values or duplicate runtime code in the PDK.
+  schemas with optional handoff/archive/resource sidecars plus later sanitized
+  log/scheduler parsers, not to expose private benchmark values or duplicate
+  runtime code in the PDK.
 
 Acceptance direction:
 
@@ -80,7 +88,7 @@ Acceptance direction:
 - sweep summaries start from reusable explicit point metadata writing/loading
   with identity validation, per-point run summaries, table-ready point records,
   and reusable report-derived metrics before adding broader handoff,
-  orchestration, resource, and cost modeling;
+  orchestration, resource parsing, and cost modeling;
 - public fixtures provide normalized records for docs and regression tests;
 - private consumers can compare local records against the same schema without
   publishing raw values;

@@ -96,6 +96,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     assert sweep_summary["parse_warnings"] == []
     assert sweep_summary["complete_point_count"] == 3
     assert sweep_summary["runtime_present_count"] == 0
+    assert sweep_summary["resource_present_count"] == 3
     assert set(sweep_summary["problem_types"]) == {"Driven", "Eigenmode", "Electrostatic"}
     assert [point["point_slug"] for point in sweep_summary["points"]] == [
         "driven_cpw",
@@ -121,6 +122,11 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert record["handoff_archive_present"] is False
         assert record["handoff_archive_manifest_present"] is True
         assert record["runtime_present"] is False
+        assert record["resource_present"] is True
+        assert record["resource_status"] == "skipped"
+        assert record["resource_nodes"] == 1
+        assert record["resource_num_processes"] == 1
+        assert record["resource_num_threads"] == 1
         assert record["report_status"] == "missing"
         assert record["report_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
         assert record["report_message"]
@@ -135,6 +141,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert output_dir.is_dir()
         assert (output_dir / "palace_handoff_metadata.json").is_file()
         assert (output_dir / "palace_handoff_archive_manifest.json").is_file()
+        assert (output_dir / "metadata" / "records" / "palace_resource_record.json").is_file()
         assert (output_dir / "run_palace.sbatch").is_file()
         assert run_summary["problem_type"] == problem["problem_type"]
         assert run_summary["config"]["problem_type"] == problem["problem_type"]
@@ -194,6 +201,25 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         }
         assert run_summary["missing_artifacts"] == []
         assert run_summary["runtime"]["present"] is False
+        assert run_summary["resource"]["present"] is True
+        assert run_summary["resource"]["status"] == "skipped"
+        assert run_summary["resource"]["path"] == (
+            f"{problem['output_dir']}/metadata/records/palace_resource_record.json"
+        )
+        assert run_summary["resource"]["allocation"] == {
+            "cores": 1,
+            "nodes": 1,
+            "num_processes": 1,
+            "num_threads": 1,
+        }
+        assert run_summary["resource"]["runtime"] == {}
+        assert run_summary["resource"]["missing_source_count"] == 1
+        assert run_summary["resource"]["metadata"] == {
+            "fixture": problem["fixture"],
+            "measured": False,
+            "problem_type": problem["problem_type"],
+            "workflow": "public-palace-smoke-evidence",
+        }
 
         for artifact_name in (
             "palace.msh",

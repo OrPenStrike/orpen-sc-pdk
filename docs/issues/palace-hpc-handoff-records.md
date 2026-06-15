@@ -74,13 +74,21 @@ Current local evidence:
   sweep, update the existing handoff sidecar with
   `archive.manifest_path`, and keep archive creation/submission out of
   `gsim`;
+- local `gsim` commit `7febb33` adds `write_palace_resource_record()`,
+  `palace_resource_record.json` discovery, `load_palace_run_summary().resource`,
+  `PalaceSweepPointSpec.resource_record_path`, sweep-level
+  `resource_present_count`, and flat point fields for resource status,
+  wall-time, core-hours, allocation shape, peak HWM memory, and global
+  unknowns. This is the public post-run resource sidecar surface; it does not
+  parse Palace logs or Slurm snapshots yet;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
-  and generated archive manifests through the `gsim` renderers, then reads
-  them back through the normal run/sweep summary surfaces;
+  plus generated archive manifests and synthetic public resource-record
+  sidecars through the `gsim` renderers, then reads them back through the
+  normal run/sweep summary surfaces;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
-  renderers, and generated archive manifests, but no cluster campaign
-  submission or archive packaging;
+  renderers, generated archive manifests, and a generic post-run resource
+  sidecar, but no cluster campaign submission or archive packaging;
 - `gplugins` has direct Palace wrapper functions that generate config, call a
   `palace` executable from `PATH`, and parse raw CSV output, but those helpers
   do not expose the richer `gsim` run-summary/report surfaces;
@@ -94,8 +102,13 @@ Remaining slices:
 
 - resolve real site/profile resources outside public fixture code, then feed
   the resolved resources into the generic `gsim` Slurm handoff API;
-- define post-run resource records without committing private archives or
-  private benchmark values;
+- add sanitized Palace log parsing into public resource records, including AMR
+  pass tables, stage timing, stage memory, solver version/PETSc metadata, and
+  model-size fields;
+- add sanitized scheduler/scontrol parsing without public raw accounts,
+  user IDs, node names, private job names, or absolute work paths;
+- add sweep-level resource record builders and benchmark indexes without
+  committing private archives or private benchmark values;
 - only after dry-run schemas are stable, add local private-layout validation on
   NCUAS personal branches against real Slurm/HPC runs.
 

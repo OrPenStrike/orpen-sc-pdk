@@ -36,7 +36,7 @@ def _relative_run_summary(summary: dict[str, Any], output_root: Path) -> dict[st
             if not isinstance(row, dict) or row.get("path") is None:
                 continue
             row["path"] = _relative_path(Path(row["path"]), output_root)
-    for group_name in ("handoff", "runtime"):
+    for group_name in ("handoff", "runtime", "resource"):
         group = summary.get(group_name, {})
         if not isinstance(group, dict):
             continue
@@ -46,7 +46,21 @@ def _relative_run_summary(summary: dict[str, Any], output_root: Path) -> dict[st
             ref = group.get(ref_name)
             if isinstance(ref, dict) and ref.get("path") is not None:
                 ref["path"] = _relative_path(Path(ref["path"]), output_root)
+        if group_name == "resource":
+            _relative_resource_refs(group, output_root)
     return summary
+
+
+def _relative_resource_refs(group: dict[str, Any], output_root: Path) -> None:
+    for collection_name in ("sources", "tables"):
+        collection = group.get(collection_name)
+        if not isinstance(collection, dict):
+            continue
+        for key, value in list(collection.items()):
+            if isinstance(value, dict) and value.get("path") is not None:
+                value["path"] = _relative_path(Path(value["path"]), output_root)
+            elif isinstance(value, str):
+                collection[key] = _relative_path(Path(value), output_root)
 
 
 def _relative_sweep_summary(
@@ -355,6 +369,7 @@ def _build_problem_evidence(
         PalaceSlurmResourceSpec,
         PalaceSlurmSbatchSpec,
         load_palace_run_summary,
+        write_palace_resource_record,
         write_palace_run_handoff_archive_manifest,
         write_palace_slurm_sbatch_handoff,
     )
@@ -401,6 +416,17 @@ def _build_problem_evidence(
             "workflow": "public-palace-smoke-evidence",
         },
     )
+    if solver_skip_reason is not None:
+        _write_public_resource_record(
+            write_palace_resource_record,
+            output_dir=output_dir,
+            fixture_name=fixture_name,
+            problem_type=problem_type,
+            run_kwargs=run_kwargs,
+            status="skipped",
+            runtime_summary=None,
+            missing_sources=(solver_skip_reason,),
+        )
     run_summary = _relative_run_summary(
         load_palace_run_summary(output_dir, include_hashes=True).to_dict(),
         output_root,
@@ -408,6 +434,17 @@ def _build_problem_evidence(
 
     if solver_skip_reason is None:
         sim.run_local(**dict(run_kwargs))
+        completed_summary = load_palace_run_summary(output_dir, include_hashes=True)
+        _write_public_resource_record(
+            write_palace_resource_record,
+            output_dir=output_dir,
+            fixture_name=fixture_name,
+            problem_type=problem_type,
+            run_kwargs=run_kwargs,
+            status="completed",
+            runtime_summary=completed_summary.runtime,
+            missing_sources=(),
+        )
         run_summary = _relative_run_summary(
             load_palace_run_summary(output_dir, include_hashes=True).to_dict(),
             output_root,
@@ -448,6 +485,9 @@ def _build_sweep_evidence(
             },
             run_dir=problem["output_dir"],
             handoff_metadata_path=(f"{problem['output_dir']}/palace_handoff_metadata.json"),
+            resource_record_path=(
+                f"{problem['output_dir']}/metadata/records/palace_resource_record.json"
+            ),
         )
         for problem_key, problem in sorted(problems.items())
     ]
@@ -494,6 +534,48 @@ def _build_sweep_evidence(
             include_report_metrics=True,
         ).to_dict(),
         output_root,
+    )
+
+
+def _write_public_resource_record(
+    writer: Callable[..., Path],
+    *,
+    output_dir: Path,
+    fixture_name: str,
+    problem_type: str,
+    run_kwargs: Mapping[str, Any],
+    status: str,
+    runtime_summary: Mapping[str, Any] | None,
+    missing_sources: Sequence[str],
+) -> None:
+    num_processes = int(run_kwargs.get("num_processes", 1) or 1)
+    num_threads = int(run_kwargs.get("num_threads", 1) or 1)
+    runtime: dict[str, Any] = {}
+    launcher: dict[str, Any] = {}
+    if runtime_summary:
+        runtime["return_code"] = runtime_summary.get("return_code")
+        if runtime_summary.get("elapsed_seconds") is not None:
+            runtime["wall_time_seconds"] = runtime_summary["elapsed_seconds"]
+        launcher = dict(runtime_summary.get("launcher", {}) or {})
+
+    writer(
+        output_dir,
+        status=status,
+        launcher=launcher,
+        allocation={
+            "nodes": 1,
+            "num_processes": num_processes,
+            "num_threads": num_threads,
+            "cores": num_processes * num_threads,
+        },
+        runtime=runtime,
+        missing_sources=missing_sources,
+        metadata={
+            "fixture": fixture_name,
+            "problem_type": problem_type,
+            "workflow": "public-palace-smoke-evidence",
+            "measured": status == "completed",
+        },
     )
 
 
