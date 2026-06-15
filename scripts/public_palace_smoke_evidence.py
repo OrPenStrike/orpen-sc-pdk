@@ -38,12 +38,14 @@ PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK = (
 PUBLIC_INTERFACE_PRESET_REVIEW_QUEUE = (
     Path(__file__).resolve().parent / "fixtures" / "public_interface_preset_review_queue.json"
 )
+INTERFACE_PRESET_PROMOTION_GATE_FILENAME = "public_interface_preset_promotion_gate_evidence.json"
 CAD_MESH_IDENTITY_HANDOFF_FILENAME = "public_cad_mesh_identity_handoff_evidence.json"
 PUBLIC_CAD_MESH_IDENTITY_PROBLEM_KEYS = (
     "driven_cpw",
     "eigenmode_resonator",
     "electrostatic_same_layer_capacitor",
 )
+INTERFACE_PRESET_ROLES = ("MA", "MS", "SA")
 
 
 def load_public_simulation_helper_node_inventory() -> list[dict[str, Any]]:
@@ -1313,6 +1315,171 @@ def public_interface_preset_candidate_review_table() -> Any:
     return pd.DataFrame(queue["candidate_records"]).loc[:, columns]
 
 
+def _source_review_by_id(queue: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    return {
+        str(source["source_id"]): source
+        for source in queue.get("sources", ())
+        if isinstance(source, Mapping)
+    }
+
+
+def _interface_preset_candidate_gate_rows(
+    queue: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    sources = _source_review_by_id(queue)
+    rows = []
+    for candidate in queue.get("candidate_records", ()):
+        if not isinstance(candidate, Mapping):
+            continue
+        role = str(candidate.get("role"))
+        is_interface_candidate = role in INTERFACE_PRESET_ROLES
+        public_default_status = str(candidate.get("public_default_status"))
+        promotion_status = str(candidate.get("promotion_status"))
+        source_id = str(candidate.get("source_id"))
+        missing_decisions = []
+        if is_interface_candidate and not promotion_status.startswith("accepted"):
+            missing_decisions.append("accepted_candidate_id")
+        if is_interface_candidate:
+            missing_decisions.extend(("process_scope", "default_selection_rule"))
+        if public_default_status != "public_default":
+            missing_decisions.append("public_default_decision")
+
+        if not is_interface_candidate:
+            readiness_status = "not_interface_preset"
+        elif missing_decisions:
+            readiness_status = "awaiting_public_policy"
+        else:
+            readiness_status = "ready_for_public_default"
+
+        rows.append(
+            {
+                "candidate_record": candidate.get("candidate_record"),
+                "role": role,
+                "is_interface_preset_candidate": is_interface_candidate,
+                "source_id": source_id,
+                "source_review_status": sources.get(source_id, {}).get("review_status"),
+                "geometry_family": candidate.get("geometry_family"),
+                "has_thickness": candidate.get("thickness_um") is not None,
+                "has_material_or_permittivity": bool(candidate.get("material_or_permittivity")),
+                "has_loss_tangent": candidate.get("loss_tangent") is not None,
+                "extracted_fields_status": candidate.get("extracted_fields_status"),
+                "promotion_status": promotion_status,
+                "public_default_status": public_default_status,
+                "promotion_gate": candidate.get("promotion_gate"),
+                "readiness_status": readiness_status,
+                "missing_decisions": missing_decisions,
+                "owner_repo": candidate.get("owner_repo"),
+                "gsim_handoff": candidate.get("gsim_handoff"),
+            }
+        )
+    return rows
+
+
+def build_public_interface_preset_promotion_gate_evidence(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "interface-preset-promotion-gate",
+    *,
+    relative_to: str | Path | None = None,
+) -> dict[str, Any]:
+    """Build source-backed interface-preset promotion gate evidence."""
+
+    from orpen_sc_pdk.materials import get_interface_preset_records
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    relative_root = Path(relative_to) if relative_to is not None else None
+    queue = load_public_interface_preset_review_queue()
+    gate_rows = _interface_preset_candidate_gate_rows(queue)
+    public_default_rows = [
+        row for row in gate_rows if row["public_default_status"] == "public_default"
+    ]
+    accepted_interface_rows = [
+        row
+        for row in gate_rows
+        if row["is_interface_preset_candidate"]
+        and str(row["promotion_status"]).startswith("accepted")
+    ]
+    pdk_records = get_interface_preset_records()
+    evidence = {
+        "schema_version": 1,
+        "workflow": "public-interface-preset-promotion-gate",
+        "repo": "orpen-sc-pdk",
+        "promotion_policy": queue["promotion_policy"],
+        "owner_boundaries": {
+            "orpen-sc-pdk": (
+                "public process/material preset records, source review, "
+                "accepted default policy, and validation"
+            ),
+            "gsim": (
+                "DielectricInterfaceSpec assignment, material-kind "
+                "classification, Palace config emission, and report joins"
+            ),
+        },
+        "default_policy_status": ("defined" if public_default_rows else "not_defined"),
+        "pdk_interface_preset_record_count": len(pdk_records),
+        "tech_interface_preset_records_populated": bool(pdk_records),
+        "accepted_interface_candidate_ids": [
+            str(row["candidate_record"]) for row in accepted_interface_rows
+        ],
+        "public_default_candidate_ids": [
+            str(row["candidate_record"]) for row in public_default_rows
+        ],
+        "source_count": len(queue.get("sources", ())),
+        "candidate_count": len(gate_rows),
+        "interface_candidate_count": sum(
+            1 for row in gate_rows if row["is_interface_preset_candidate"]
+        ),
+        "role_counts": _count_values([row["role"] for row in gate_rows]),
+        "readiness_counts": _count_values([row["readiness_status"] for row in gate_rows]),
+        "required_acceptance_fields": [
+            "accepted_candidate_id",
+            "process_scope",
+            "default_selection_rule",
+            "source_id",
+            "role",
+            "thickness_um",
+            "material_or_permittivity",
+            "loss_tangent",
+            "source_basis",
+        ],
+        "open_decisions": list(queue.get("open_decisions", ())),
+        "candidate_gate_rows": gate_rows,
+    }
+    evidence_path = output_dir / INTERFACE_PRESET_PROMOTION_GATE_FILENAME
+    evidence["output_dir"] = (
+        _relative_path(output_dir, relative_root)
+        if relative_root is not None
+        else output_dir.as_posix()
+    )
+    evidence["evidence_path"] = (
+        _relative_path(evidence_path, relative_root)
+        if relative_root is not None
+        else evidence_path.as_posix()
+    )
+    evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
+    return evidence
+
+
+def public_interface_preset_promotion_gate_table(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "interface-preset-promotion-gate",
+) -> Any:
+    """Return source-backed interface-preset promotion gate evidence."""
+
+    import pandas as pd
+
+    evidence = build_public_interface_preset_promotion_gate_evidence(output_dir)
+    columns = [
+        "candidate_record",
+        "role",
+        "source_review_status",
+        "promotion_status",
+        "public_default_status",
+        "readiness_status",
+        "missing_decisions",
+        "gsim_handoff",
+    ]
+    return pd.DataFrame(evidence["candidate_gate_rows"]).loc[:, columns]
+
+
 def build_public_thin_film_sheet_proxy_interface_evidence(
     output_dir: str | Path = DEFAULT_OUTPUT_DIR / "thin-film-sheet-proxy-interface",
     *,
@@ -2440,6 +2607,10 @@ def build_public_palace_smoke_evidence(
         problems,
         relative_to=output_root,
     )
+    interface_preset_promotion_gate = build_public_interface_preset_promotion_gate_evidence(
+        output_root / "interface-preset-promotion-gate",
+        relative_to=output_root,
+    )
     thin_film_proxy_evidence = build_public_thin_film_sheet_proxy_interface_evidence(
         output_root / "thin-film-sheet-proxy-interface",
         relative_to=output_root,
@@ -2457,6 +2628,7 @@ def build_public_palace_smoke_evidence(
         "gsim_boundary_review_crosscheck": load_public_gsim_boundary_review_crosscheck(),
         "interface_preset_review_queue": load_public_interface_preset_review_queue(),
         "cad_mesh_identity_handoff": cad_mesh_identity_handoff,
+        "interface_preset_promotion_gate": interface_preset_promotion_gate,
         "thin_film_sheet_proxy_interface": thin_film_proxy_evidence,
         "problems": problems,
         "sweep_summary": sweep_evidence["summary"],

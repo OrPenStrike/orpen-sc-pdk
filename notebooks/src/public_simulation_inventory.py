@@ -28,6 +28,7 @@ from scripts.public_palace_smoke_evidence import (
     public_cad_mesh_identity_handoff_table,
     public_gsim_boundary_review_crosscheck_table,
     public_interface_preset_candidate_review_table,
+    public_interface_preset_promotion_gate_table,
     public_interface_preset_source_review_table,
     public_problem_notebook_crosscheck_table,
     public_simulation_goal_audit_table,
@@ -115,6 +116,18 @@ display(interface_preset_sources)
 display(interface_preset_candidates)
 
 # %% [markdown]
+# ## Interface preset promotion gate
+#
+# Candidate MA/MS/SA rows are review evidence, not public defaults. The gate
+# table records which acceptance decisions are still missing before any row can
+# populate `tech.interface_preset_records` or become automatic notebook policy.
+
+# %%
+interface_preset_promotion_gate = public_interface_preset_promotion_gate_table()
+
+display(interface_preset_promotion_gate)
+
+# %% [markdown]
 # ## Thin-film sheet proxy evidence
 #
 # The source-backed preset gate also needs evidence for conductor-sheet
@@ -143,6 +156,7 @@ display(
         "cad_mesh_identity_problem_count": len(cad_mesh_identity_handoff),
         "interface_preset_source_count": len(interface_preset_queue["sources"]),
         "interface_preset_candidate_count": len(interface_preset_queue["candidate_records"]),
+        "interface_preset_promotion_gate_count": len(interface_preset_promotion_gate),
         "thin_film_proxy_interface_count": len(thin_film_proxy_interfaces),
         "coverage_status_counts": problem_notebook_crosscheck["coverage_status"]
         .value_counts(sort=False)

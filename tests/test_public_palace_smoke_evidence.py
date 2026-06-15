@@ -11,6 +11,7 @@ from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
     build_public_cad_mesh_identity_handoff_evidence,
+    build_public_interface_preset_promotion_gate_evidence,
     build_public_palace_smoke_evidence,
     build_public_thin_film_sheet_proxy_interface_evidence,
     load_public_gsim_boundary_review_crosscheck,
@@ -265,6 +266,66 @@ def _assert_interface_preset_review_queue(evidence: dict) -> None:
     assert "gsim material-kind/exact assignment helpers" in woods_ms["gsim_handoff"]
 
 
+def _assert_interface_preset_promotion_gate_evidence(evidence: dict) -> None:
+    gate = evidence["interface_preset_promotion_gate"]
+
+    assert gate["schema_version"] == 1
+    assert gate["workflow"] == "public-interface-preset-promotion-gate"
+    assert gate["repo"] == "orpen-sc-pdk"
+    assert gate["output_dir"] == "interface-preset-promotion-gate"
+    assert gate["evidence_path"] == (
+        "interface-preset-promotion-gate/public_interface_preset_promotion_gate_evidence.json"
+    )
+    assert set(gate["owner_boundaries"]) == {"orpen-sc-pdk", "gsim"}
+    assert gate["default_policy_status"] == "not_defined"
+    assert gate["pdk_interface_preset_record_count"] == 0
+    assert gate["tech_interface_preset_records_populated"] is False
+    assert gate["accepted_interface_candidate_ids"] == []
+    assert gate["public_default_candidate_ids"] == []
+    assert gate["source_count"] >= 4
+    assert gate["candidate_count"] >= 7
+    assert gate["interface_candidate_count"] >= 6
+    assert {"MA", "MS", "SA"} <= set(gate["role_counts"])
+    assert gate["readiness_counts"]["awaiting_public_policy"] >= 6
+    assert gate["readiness_counts"]["not_interface_preset"] >= 1
+    assert {
+        "accepted_candidate_id",
+        "process_scope",
+        "default_selection_rule",
+        "source_id",
+        "role",
+        "thickness_um",
+        "material_or_permittivity",
+        "loss_tangent",
+        "source_basis",
+    } <= set(gate["required_acceptance_fields"])
+    assert gate["open_decisions"]
+
+    rows = gate["candidate_gate_rows"]
+    assert all(row["public_default_status"] == "not_public_default" for row in rows)
+    assert all(row["owner_repo"] == "orpen-sc-pdk" for row in rows)
+    interface_rows = [row for row in rows if row["is_interface_preset_candidate"]]
+    assert interface_rows
+    assert all(row["readiness_status"] == "awaiting_public_policy" for row in interface_rows)
+    assert all("process_scope" in row["missing_decisions"] for row in interface_rows)
+    assert all("default_selection_rule" in row["missing_decisions"] for row in interface_rows)
+    assert all("public_default_decision" in row["missing_decisions"] for row in interface_rows)
+
+    by_candidate = {row["candidate_record"]: row for row in rows}
+    woods_ms = by_candidate["Woods2019_CPW_Si_MS_candidate"]
+    assert woods_ms["role"] == "MS"
+    assert woods_ms["source_review_status"] == "primary_extraction_candidate"
+    assert woods_ms["has_thickness"] is True
+    assert woods_ms["has_material_or_permittivity"] is True
+    assert woods_ms["has_loss_tangent"] is True
+    assert woods_ms["readiness_status"] == "awaiting_public_policy"
+
+    bulk = by_candidate["Woods2019_CPW_Si_bulk_candidate"]
+    assert bulk["is_interface_preset_candidate"] is False
+    assert bulk["readiness_status"] == "not_interface_preset"
+    assert bulk["promotion_gate"] == "material_schema_boundary_required"
+
+
 def _assert_cad_mesh_identity_handoff_evidence(evidence: dict) -> None:
     audit = evidence["cad_mesh_identity_handoff"]
 
@@ -424,6 +485,22 @@ def test_public_cad_mesh_identity_handoff_evidence_runs_standalone(
         assert (tmp_path / "identity" / problem_key / "config.json").is_file()
 
 
+def test_public_interface_preset_promotion_gate_evidence_runs_standalone(
+    tmp_path: Path,
+) -> None:
+    gate = build_public_interface_preset_promotion_gate_evidence(
+        tmp_path / "gate",
+        relative_to=tmp_path,
+    )
+
+    assert gate["output_dir"] == "gate"
+    assert gate["evidence_path"] == ("gate/public_interface_preset_promotion_gate_evidence.json")
+    assert (tmp_path / "gate" / "public_interface_preset_promotion_gate_evidence.json").is_file()
+    assert gate["default_policy_status"] == "not_defined"
+    assert gate["pdk_interface_preset_record_count"] == 0
+    assert gate["public_default_candidate_ids"] == []
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -441,6 +518,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     _assert_gsim_boundary_review_crosscheck(evidence)
     _assert_interface_preset_review_queue(evidence)
     _assert_cad_mesh_identity_handoff_evidence(evidence)
+    _assert_interface_preset_promotion_gate_evidence(evidence)
     _assert_thin_film_sheet_proxy_interface_evidence(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",

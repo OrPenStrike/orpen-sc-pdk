@@ -115,6 +115,10 @@ Current public baseline:
   `scripts/fixtures/public_interface_preset_review_queue.json` and displayed
   from the public simulation inventory notebook, making MA/MS/SA promotion
   gates reviewable without widening the PDK or `gsim` public runtime APIs;
+- `public_interface_preset_promotion_gate_evidence.json` now records each
+  candidate's missing acceptance decisions, so notebook review can see that
+  interface candidates remain `awaiting_public_policy` until accepted IDs,
+  process scope, default-selection rules, and public-default decisions exist;
 - public thin-film conductor-sheet proxy evidence now uses OrPen material-kind
   maps and generated-name aliases with `gsim` material-kind classification to
   emit separate caller-supplied `MA` and `MS` dielectric-interface rows for

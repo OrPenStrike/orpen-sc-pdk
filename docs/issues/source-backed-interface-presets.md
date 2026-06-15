@@ -71,6 +71,14 @@ Verified local changes:
   candidate review tables, so MA/MS/SA promotion status is notebook-visible
   alongside the helper-node, representative-notebook, goal-audit, and `gsim`
   boundary-review evidence.
+- `scripts/public_palace_smoke_evidence.py` now writes
+  `public_interface_preset_promotion_gate_evidence.json`, which records
+  candidate readiness, missing acceptance decisions, empty
+  `tech.interface_preset_records` status, and the OrPen/`gsim` owner boundary
+  before any source-backed row can become a public default.
+- `notebooks/src/public_simulation_inventory.py` displays the same promotion
+  gate table, keeping accepted-candidate ID, process scope, default-selection
+  rule, and public-default decision gaps visible in notebook review.
 - `scripts/public_palace_smoke_evidence.py` now builds public thin-film
   conductor-sheet proxy evidence: public `Al` sheet interfaces adjacent to
   public `air` and `silicon` material names generate separate caller-supplied
@@ -83,7 +91,8 @@ Remaining slices:
 - add accepted-candidate tests after the candidate IDs and process scope are
   approved for `tech.interface_preset_records`;
 - decide whether any candidate should become a public PDK default or stay
-  caller-selected only;
+  caller-selected only; the promotion gate currently records every interface
+  candidate as `awaiting_public_policy`;
 - add a public default-selection map only after candidate records are accepted;
 - wire material-kind interface classification into public workflow examples
   only after the public default-selection map exists.
