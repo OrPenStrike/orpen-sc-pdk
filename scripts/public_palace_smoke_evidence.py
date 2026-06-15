@@ -639,15 +639,17 @@ def _build_problem_evidence(
     run_kwargs: Mapping[str, Any],
     solver_skip_reason: str | None,
 ) -> dict[str, Any]:
-    from gsim.palace import (
+    from gsim.palace.handoff import (
         PalaceSlurmSbatchSpec,
-        load_palace_run_summary,
         load_palace_slurm_profile_catalog,
         resolve_palace_slurm_profile,
-        write_palace_resource_record,
-        write_palace_resource_record_from_log,
         write_palace_run_handoff_archive_manifest,
         write_palace_slurm_sbatch_handoff,
+    )
+    from gsim.palace.results import (
+        load_palace_run_summary,
+        write_palace_resource_record,
+        write_palace_resource_record_from_log,
     )
 
     output_dir = output_root / problem_key
@@ -743,14 +745,16 @@ def _build_sweep_evidence(
     output_root: Path,
     problems: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    from gsim.palace import (
+    from gsim.palace.handoff import (
         PalaceSlurmSweepArraySpec,
-        PalaceSweepPointSpec,
         load_palace_slurm_profile_catalog,
-        load_palace_sweep_summary,
         resolve_palace_slurm_profile,
         write_palace_slurm_sweep_array_handoff,
         write_palace_sweep_handoff_archive_manifest,
+    )
+    from gsim.palace.results import (
+        PalaceSweepPointSpec,
+        load_palace_sweep_summary,
         write_palace_sweep_points,
         write_palace_sweep_resource_index,
     )

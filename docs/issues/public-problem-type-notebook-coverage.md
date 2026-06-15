@@ -127,7 +127,7 @@ Verified local changes:
 - `scripts/public_palace_smoke_evidence.py` now regenerates four public
   problem fixtures under `build/public-palace-smoke-evidence/` and writes
   `public_palace_smoke_evidence.json`; the default dry-run path consumes
-  `gsim.palace.load_palace_run_summary()` and records non-empty `palace.msh`,
+  `gsim.palace.results.load_palace_run_summary()` and records non-empty `palace.msh`,
   `config.json`, `mesh_manifest.json`, `palace_index_map.json`, and
   `palace_material_resolution.json` artifacts for Driven, Eigenmode,
   Electrostatic, and Magnetostatic fixtures without requiring Palace;
@@ -156,7 +156,7 @@ Verified local changes:
   implemented public fixtures, shared material/interface/index/runtime nodes,
   and the Magnetostatic config-fixture/report-loader gap;
 - `gsim` commit `652fcec` adds
-  `gsim.palace.load_palace_sweep_summary()`, and the public evidence runner now
+  `gsim.palace.results.load_palace_sweep_summary()`, and the public evidence runner now
   writes `points.json` for the four problem fixtures and records a
   `sweep_summary` built from that reusable API;
 - `gsim` commit `1d9390f` adds `write_palace_sweep_points()`, and the public

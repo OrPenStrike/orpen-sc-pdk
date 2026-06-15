@@ -38,15 +38,16 @@ from gsim.palace import (
     EigenmodeSim,
     ElectrostaticSim,
     MagnetostaticSim,
-    PalaceSlurmSbatchSpec,
     load_dielectric_interface_summary,
     load_domain_material_summary,
     load_driven_report,
     load_eigenmode_report,
     load_electrostatic_report,
-    load_palace_run_summary,
-    load_palace_slurm_profile_catalog,
     load_postprocessing_index_map,
+)
+from gsim.palace.handoff import (
+    PalaceSlurmSbatchSpec,
+    load_palace_slurm_profile_catalog,
     resolve_palace_slurm_profile,
     write_palace_slurm_sbatch_handoff,
 )
@@ -55,6 +56,7 @@ from gsim.palace.mesh import (
     build_dielectric_interface_specs_from_material_kinds,
     build_postprocessing_config_from_manifest,
 )
+from gsim.palace.results import load_palace_run_summary
 from IPython.display import display
 
 import orpen_sc_pdk

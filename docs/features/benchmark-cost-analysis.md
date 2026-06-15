@@ -15,13 +15,13 @@ Current public baseline:
 
 - local `gsim` writes sanitized `palace_run_metadata.json` sidecars for
   successful local Palace runs and exposes them through
-  `gsim.palace.load_palace_run_summary().runtime`;
+  `gsim.palace.results.load_palace_run_summary().runtime`;
 - local `gsim` commit `00b2777` writes solver-specific runtime metadata
   sidecars for GDSFactory+ cloud result downloads, including Palace
   `palace_run_metadata.json`, so local and cloud executions can share the same
   summary surface;
 - local `gsim` commit `652fcec` adds
-  `gsim.palace.load_palace_sweep_summary()` for explicit `points.json`
+  `gsim.palace.results.load_palace_sweep_summary()` for explicit `points.json`
   point-local Palace sweep folders, reusing the same per-point run summaries
   without inferring point identity from folder names;
 - local `gsim` commit `1d9390f` adds `PalaceSweepPointSpec` and

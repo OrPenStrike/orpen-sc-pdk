@@ -78,7 +78,7 @@ Current public notebook:
   resource overrides, generic launcher/solver hints, generated Palace
   `Solver` config hints, and a generated dry-run `run_palace.sbatch` preview
   loaded back through
-  `gsim.palace.load_palace_run_summary()`.
+  `gsim.palace.results.load_palace_run_summary()`.
 - the same notebook now displays `PostprocessingIndexMap` lookup tables loaded
   through `gsim.palace.load_postprocessing_index_map()`, so public Driven,
   Eigenmode, interface, and Electrostatic cells show how generated Palace
@@ -139,7 +139,7 @@ Current executable smoke coverage:
   Eigenmode, Electrostatic, and Magnetostatic coarse fixtures into
   `build/public-palace-smoke-evidence/` and writes
   `public_palace_smoke_evidence.json` with a reusable
-  `gsim.palace.load_palace_run_summary()` bundle for generated artifact status,
+  `gsim.palace.results.load_palace_run_summary()` bundle for generated artifact status,
   mesh-manifest summaries, Palace index-map summaries, material-resolution
   sidecar presence, and either solver skip reasons or parsed `gsim` report
   summaries.
@@ -155,9 +155,9 @@ Current executable smoke coverage:
   `helper_node_inventory`, including implemented public fixtures, shared
   material/interface/index/runtime helper nodes, and the Magnetostatic
   config-fixture/report-loader gap.
-- the same evidence script uses `gsim.palace.write_palace_sweep_points()` to
+- the same evidence script uses `gsim.palace.results.write_palace_sweep_points()` to
   write a public `points.json` table for those four fixtures, then consumes
-  `gsim.palace.load_palace_sweep_summary()` so sweep identity starts from
+  `gsim.palace.results.load_palace_sweep_summary()` so sweep identity starts from
   explicit point metadata rather than folder scans or PDK-local JSON assembly.
 - the public evidence test now checks `gsim` sweep identity validation output:
   the four public problem fixtures have unique point slugs and no sweep
@@ -173,7 +173,7 @@ Current executable smoke coverage:
   from supported reusable report loaders.
 - the same dry-run evidence path now writes a synthetic public Palace log for
   each problem fixture and consumes
-  `gsim.palace.write_palace_resource_record_from_log()` so AMR, timing,
+  `gsim.palace.results.write_palace_resource_record_from_log()` so AMR, timing,
   memory, solver-version, wall-time, and model-size records are covered without
   exposing private scheduler or PETSc identity fields.
 - the same evidence path now writes a synthetic public Slurm `scontrol`
@@ -181,13 +181,13 @@ Current executable smoke coverage:
   writer, proving sanitized scheduler/allocation fields without retaining raw
   account, user, node, job-name, command, or work-dir values.
 - the same evidence path now calls
-  `gsim.palace.write_palace_sweep_resource_index()` to emit sweep-level point
+  `gsim.palace.results.write_palace_sweep_resource_index()` to emit sweep-level point
   records, resource records, and benchmark JSONL indexes under
   `metadata/records/`.
 - the same evidence path now resolves named public Slurm dry-run profiles
   from `scripts/fixtures/public_slurm_profiles.json` through
-  `gsim.palace.load_palace_slurm_profile_catalog()` and
-  `gsim.palace.resolve_palace_slurm_profile()`, keeping profile/resource
+  `gsim.palace.handoff.load_palace_slurm_profile_catalog()` and
+  `gsim.palace.handoff.resolve_palace_slurm_profile()`, keeping profile/resource
   normalization in `gsim` while leaving real site catalog content outside the
   public PDK fixture.
 - those public profile fixtures now also carry generic launcher hints
