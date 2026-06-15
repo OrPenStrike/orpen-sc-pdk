@@ -113,6 +113,9 @@ Remaining slices:
 
 - record richer dielectric interface provenance before promoting interface
   presets into public PDK material data;
+- split NCUAS-style Slurm/Sbatch handoff, profile/resource resolution,
+  archives, and run/sweep resource records into the `gsim` handoff/resource
+  issue instead of adding those controls to `orpen-sc-pdk` fixtures;
 - keep executable fixtures, publication-safe notebooks, and local evidence
   scripts aligned without moving solver orchestration into the PDK package;
 - keep normal docs and CI paths independent from local Palace while exposing
@@ -124,3 +127,7 @@ Related features:
 - {doc}`../features/material-db-overlay`
 - {doc}`../features/palace-config-generation`
 - {doc}`../features/problem-type-notebook-suite`
+
+Related issue:
+
+- {doc}`palace-hpc-handoff-records`

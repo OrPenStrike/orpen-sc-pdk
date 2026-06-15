@@ -36,6 +36,9 @@ Current local evidence:
 - the current `gsim` local branch already owns the richer SCQ-relevant path:
   role/index artifacts, material-resolution provenance, composed
   Driven/Eigenmode/Electrostatic report bundles, and reusable run summaries.
+- the NCUAS handoff inventory also points to `gsim` for future Slurm/Sbatch,
+  handoff archive, site/profile, and resource-record schemas; adding those to
+  the older `gplugins.palace` wrappers would duplicate the Palace runtime.
 
 Proposed path:
 
@@ -48,6 +51,9 @@ Proposed path:
   gplugins-local JSON templates;
 - keep `gplugins` docs explicit that Palace workflow ownership for this
   ecosystem is `gsim`, while `gplugins` remains a generic plugin façade.
+- do not add HPC profile catalogs, sbatch renderers, handoff archives, or
+  benchmark/resource record schemas to `gplugins.palace`; those belong to
+  `gsim.palace` when they become reusable.
 
 Acceptance checks:
 

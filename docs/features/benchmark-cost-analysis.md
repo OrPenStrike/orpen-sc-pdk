@@ -46,6 +46,11 @@ Current public baseline:
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output
   counts, and report-loader status through the same `gsim` run-summary schema.
+- NCUAS already has a richer private run-stage layer for Slurm/Sbatch handoff,
+  handoff archives, site/profile resources, and post-run records; the public
+  migration path is to extend the same `gsim` run-summary and sweep-summary
+  schemas with optional handoff/resource sidecars, not to expose private
+  benchmark values or duplicate runtime code in the PDK.
 
 Acceptance direction:
 
@@ -53,8 +58,8 @@ Acceptance direction:
   execution-cost metadata;
 - sweep summaries start from reusable explicit point metadata writing/loading
   with identity validation, per-point run summaries, table-ready point records,
-  and reusable report-derived metrics before adding broader orchestration and
-  cost modeling;
+  and reusable report-derived metrics before adding broader handoff,
+  orchestration, resource, and cost modeling;
 - public fixtures provide normalized records for docs and regression tests;
 - private consumers can compare local records against the same schema without
   publishing raw values;
@@ -65,3 +70,4 @@ Related issues:
 
 - {doc}`../issues/palace-report-ownership`
 - {doc}`../issues/public-problem-type-notebook-coverage`
+- {doc}`../issues/palace-hpc-handoff-records`

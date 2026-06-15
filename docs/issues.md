@@ -102,6 +102,17 @@ Public MA/MS/SA dielectric-interface presets need source-selection and
 default-selection gates before becoming PDK data.
 :::
 
+:::{grid-item-card} ISSUE-009 Palace HPC handoff and resource records
+:link: issues/palace-hpc-handoff-records
+:link-type: doc
+
+**Repo:** `gsim`
+
+NCUAS-style runtime staging, Slurm/Sbatch handoff, archives, and resource
+records should extend `gsim` run summaries instead of becoming PDK or
+`gplugins` runtime code.
+:::
+
 ::::
 
 ```{toctree}
@@ -115,4 +126,5 @@ issues/palace-config-ownership
 issues/cad-mesh-identity-provenance
 issues/public-problem-type-notebook-coverage
 issues/source-backed-interface-presets
+issues/palace-hpc-handoff-records
 ```
