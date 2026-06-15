@@ -78,6 +78,7 @@ Current review ledger:
 | Result-detail root API demotion (`gsim` commit `809b881`) | Reviewed, API-clean | Root `gsim.palace` keeps `SParams`, `load_sparams()`, and `load_fields()` because upstream notebooks and OrPen fixtures import those paths directly. Detail-only result helpers and dataclasses now stay in `gsim.palace.results`: `SParam`, `get_port_map()`, `IndexedCsv`, `IndexedCsvColumn`, `Eigenmodes`, `load_indexed_csv()`, eigenmode history loaders, terminal matrix history loaders, `load_port_epr_summary()`, and the matching summary helpers. This matches the notebook-facing API rule and avoids treating parser implementation details as public Palace workflow surface. |
 | Source config root API demotion (`gsim` commit `699ff6e`) | Reviewed, API-clean | `CurrentSourceConfig` and `CurrentSourceElementConfig` are no longer imported or re-exported from root `gsim.palace`. They remain in the owner module `gsim.palace.models`, while notebook-facing Magnetostatic workflows use `MagnetostaticSim.add_current_source(...)` with dict/keyword source intent. Independent review found no OrPen/NCUAS root-import dependency, and this avoids making locally added source-intent dataclasses broader public API than the simulation class requires. |
 | Port helper root API demotion (`gsim` commit `cf4204d`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports port config/lowering symbols: `CPWPortConfig`, `PortConfig`, `TerminalConfig`, `WavePortConfig`, `PalacePort`, `PortGeometry`, `PortType`, `configure_*_port()`, and `extract_ports()`. Notebook-facing workflows should continue through simulation-class methods such as `add_port()`, `add_cpw_port()`, `add_wave_port()`, and `add_terminal()`. Advanced port authoring remains documented from `gsim.palace.ports` and `gsim.palace.models`, matching the responsibility boundary for port geometry/extraction behavior. Local downstream search found no OrPen/NCUAS direct root-import dependency for these symbols. |
+| Mesh artifact root API demotion (`gsim` commit `c52fb00`) | Reviewed, API-clean | `gsim.palace.__init__` now keeps root mesh-generation controls (`MeshConfig`, `generate_mesh`) but no longer imports or re-exports mesh artifact/reportability details: `MeshResult`, `DielectricInterfaceSelector`, `DielectricInterfaceSpec`, `DielectricInterfaceType`, `DielectricMaterialKind`, and the material-kind interface spec builders. Those symbols remain available from `gsim.palace.mesh`, which is the owner module already used by OrPen notebooks, evidence scripts, and tests. This preserves the boundary that manifest/reportability visibility belongs to mesh artifacts, not to broader root Palace API or `MeshConfig` knobs. |
 
 Open API-surface follow-ups:
 
@@ -88,13 +89,13 @@ Open API-surface follow-ups:
   part of the Palace public API;
 - demote raw config/model exports (`DrivenConfig`, `EigenmodeConfig`,
   `ElectrostaticConfig`, `MagnetostaticConfig`, `GeometryConfig`,
-  `MaterialConfig`, `NumericalConfig`, `PECBlockConfig`, `PortConfig`,
-  `TerminalConfig`, `TransientConfig`, `WavePortConfig`, `SimulationResult`,
-  `ValidationResult`) unless notebook users directly construct them rather
-  than using the problem-specific `set_*()` helpers;
-- finish the remaining `gsim.palace.mesh` surface review for advanced manifest
-  fixture symbols (`MeshPhysicalGroup`, `MeshRole`, `build_mesh_manifest`) and
-  type aliases that may belong only in `mesh.manifest` / `mesh.postprocessing`;
+  `MaterialConfig`, `NumericalConfig`, `PECBlockConfig`, `TransientConfig`,
+  `SimulationResult`, `ValidationResult`) unless notebook users directly
+  construct them rather than using the problem-specific `set_*()` helpers;
+- finish the remaining `gsim.palace.mesh` package-root review for advanced
+  manifest fixture symbols (`MeshPhysicalGroup`, `MeshRole`,
+  `build_mesh_manifest`) and type aliases that may belong only in
+  `mesh.manifest` / `mesh.postprocessing`;
 - keep `gsim` Palace API docs split between mesh generation controls and mesh
   artifacts, manifests, postprocessing index maps, and reportability;
 - keep OrPen API docs focused on copy-returning material helpers and avoid
