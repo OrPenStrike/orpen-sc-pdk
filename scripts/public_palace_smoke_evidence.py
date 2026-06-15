@@ -32,6 +32,11 @@ PUBLIC_PROBLEM_NOTEBOOK_CROSSCHECK = (
 PUBLIC_SIMULATION_GOAL_AUDIT = (
     Path(__file__).resolve().parent / "fixtures" / "public_simulation_goal_audit.json"
 )
+PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK = (
+    Path(__file__).resolve().parent
+    / "fixtures"
+    / "public_gsim_boundary_review_crosscheck.json"
+)
 
 
 def load_public_simulation_helper_node_inventory() -> list[dict[str, Any]]:
@@ -50,6 +55,12 @@ def load_public_simulation_goal_audit() -> list[dict[str, Any]]:
     """Load the public simulation migration goal audit matrix."""
 
     return json.loads(PUBLIC_SIMULATION_GOAL_AUDIT.read_text())
+
+
+def load_public_gsim_boundary_review_crosscheck() -> list[dict[str, Any]]:
+    """Load the local gsim branch boundary-review cross-check matrix."""
+
+    return json.loads(PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK.read_text())
 
 
 def _relative_path(path: Path, root: Path) -> str:
@@ -1121,6 +1132,23 @@ def public_simulation_goal_audit_table() -> Any:
     return pd.DataFrame(load_public_simulation_goal_audit()).loc[:, columns]
 
 
+def public_gsim_boundary_review_crosscheck_table() -> Any:
+    """Return the local gsim commit boundary-review matrix as a notebook table."""
+
+    import pandas as pd
+
+    columns = [
+        "commit",
+        "summary",
+        "boundary_group",
+        "review_status",
+        "ecosystem_home",
+        "owner_surface",
+        "evidence_anchor",
+    ]
+    return pd.DataFrame(load_public_gsim_boundary_review_crosscheck()).loc[:, columns]
+
+
 def public_domain_material_table(output_dir: str | Path) -> Any:
     """Load the public domain-material provenance table for a generated config."""
 
@@ -1917,6 +1945,7 @@ def build_public_palace_smoke_evidence(
         "helper_node_inventory": load_public_simulation_helper_node_inventory(),
         "problem_notebook_crosscheck": load_public_problem_notebook_crosscheck(),
         "goal_audit": load_public_simulation_goal_audit(),
+        "gsim_boundary_review_crosscheck": load_public_gsim_boundary_review_crosscheck(),
         "problems": problems,
         "sweep_summary": sweep_evidence["summary"],
         "sweep_resource_index": sweep_evidence["resource_index"],

@@ -11,6 +11,7 @@ from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
     build_public_palace_smoke_evidence,
+    load_public_gsim_boundary_review_crosscheck,
     load_public_problem_notebook_crosscheck,
     load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
@@ -183,6 +184,47 @@ def _assert_goal_audit(evidence: dict) -> None:
         assert row["next_issue"]
 
 
+def _assert_gsim_boundary_review_crosscheck(evidence: dict) -> None:
+    rows = evidence["gsim_boundary_review_crosscheck"]
+    assert rows == load_public_gsim_boundary_review_crosscheck()
+    assert len(rows) >= 60
+
+    commits = [row["commit"] for row in rows]
+    assert len(commits) == len(set(commits))
+    assert commits[0] == "2ab16d7"
+    assert commits[-1] == "e80eb28"
+
+    by_commit = {row["commit"]: row for row in rows}
+    assert by_commit["00b2777"]["ecosystem_home"] == "gsim"
+    assert "not OrPen or gplugins" in by_commit["00b2777"]["boundary_note"]
+    assert by_commit["d996f87"]["boundary_group"] == "api-surface-and-owner-module-cleanup"
+    assert by_commit["9b3574a"]["boundary_group"] == "api-surface-and-owner-module-cleanup"
+    assert by_commit["883fb78"]["review_status"] == "reviewed_explicit_with_fix"
+    assert by_commit["bc78ad4"]["review_status"] == "reviewed_explicit_fix"
+
+    groups = {row["boundary_group"] for row in rows}
+    assert {
+        "mesh-index-and-postprocessing-provenance",
+        "port-terminal-intent",
+        "result-report-loaders",
+        "material-overlay-and-interface-provenance",
+        "runtime-handoff-and-resource-records",
+        "sweep-handoff-and-resource-records",
+        "magnetostatic-config-intent",
+        "api-surface-and-owner-module-cleanup",
+    } <= groups
+
+    for row in rows:
+        assert row["commit"]
+        assert row["summary"]
+        assert row["boundary_group"]
+        assert row["review_status"].startswith("reviewed_")
+        assert row["ecosystem_home"] in {"gsim", "meshwell + gsim"}
+        assert row["owner_surface"]
+        assert row["evidence_anchor"].endswith(".md") or ".md;" in row["evidence_anchor"]
+        assert row["boundary_note"]
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -197,6 +239,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     _assert_helper_node_inventory(evidence)
     _assert_problem_notebook_crosscheck(evidence)
     _assert_goal_audit(evidence)
+    _assert_gsim_boundary_review_crosscheck(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",
         "eigenmode_resonator",

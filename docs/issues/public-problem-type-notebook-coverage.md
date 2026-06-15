@@ -131,6 +131,16 @@ Verified local changes:
 - `scripts/public_palace_smoke_evidence.py` also embeds the goal-level audit as
   `goal_audit`, making local evidence bundles state which objective
   requirements are covered, opt-in, deferred, or owner-pending;
+- `scripts/fixtures/public_gsim_boundary_review_crosscheck.json` records the
+  current local `gsim` Palace branch commits as traceability evidence, one row
+  per commit, grouped by responsibility boundary; the table distinguishes
+  notebook-visible problem fixtures from runtime, cloud, handoff, resource,
+  and API-documentation support commits that are covered through reusable
+  `gsim` evidence surfaces or owner-module import rules;
+- `notebooks/src/public_simulation_inventory.py` displays the same local
+  `gsim` boundary-review cross-check and groups it by boundary group and
+  review status, so review can inspect commit coverage from notebook outputs
+  without treating every hash as a directly executed notebook feature;
 - `tests/test_public_problem_notebook_style.py` now checks every public
   Jupytext notebook source for notebook-local function definitions and private
   `_...()` helper calls, and rejects links to the old combined simulation

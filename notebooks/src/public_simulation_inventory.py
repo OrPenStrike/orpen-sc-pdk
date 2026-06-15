@@ -20,9 +20,11 @@
 from IPython.display import display
 
 from scripts.public_palace_smoke_evidence import (
+    load_public_gsim_boundary_review_crosscheck,
     load_public_problem_notebook_crosscheck,
     load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
+    public_gsim_boundary_review_crosscheck_table,
     public_problem_notebook_crosscheck_table,
     public_simulation_goal_audit_table,
     public_simulation_helper_node_inventory_table,
@@ -65,10 +67,24 @@ goal_audit = public_simulation_goal_audit_table()
 display(goal_audit)
 
 # %% [markdown]
+# ## Gsim boundary review cross-check
+#
+# The cross-check maps the current local `gsim` Palace branch commits to
+# responsibility-boundary review groups. It is traceability evidence only: some
+# commits are directly exercised by public notebooks, while runtime, cloud,
+# handoff, and API-documentation commits are covered through reusable `gsim`
+# evidence surfaces or owner-module import rules.
+
+# %%
+gsim_boundary_review = public_gsim_boundary_review_crosscheck_table()
+
+display(gsim_boundary_review)
+
+# %% [markdown]
 # ## Coverage summary
 #
 # The summary groups the public inventory by coverage status, intended
-# ecosystem home, goal-audit status, and owning issue.
+# ecosystem home, goal-audit status, boundary-review status, and owning issue.
 
 # %%
 display(
@@ -76,10 +92,19 @@ display(
         "helper_node_count": len(load_public_simulation_helper_node_inventory()),
         "crosscheck_row_count": len(load_public_problem_notebook_crosscheck()),
         "goal_audit_row_count": len(load_public_simulation_goal_audit()),
+        "gsim_boundary_review_row_count": len(
+            load_public_gsim_boundary_review_crosscheck()
+        ),
         "coverage_status_counts": problem_notebook_crosscheck[
             "coverage_status"
         ].value_counts(sort=False).to_dict(),
         "goal_status_counts": goal_audit["current_status"]
+        .value_counts(sort=False)
+        .to_dict(),
+        "boundary_group_counts": gsim_boundary_review["boundary_group"]
+        .value_counts(sort=False)
+        .to_dict(),
+        "boundary_review_status_counts": gsim_boundary_review["review_status"]
         .value_counts(sort=False)
         .to_dict(),
         "ecosystem_home_counts": helper_node_inventory["gdsfactory_home"]

@@ -51,7 +51,7 @@
   {
     "objective_requirement": "Keep public API and responsibility boundaries compatible with gsim/gplugins review expectations.",
     "current_status": "covered_current",
-    "current_evidence": "docs/issues/palace-api-responsibility-boundary.md records reviewed gsim/OrPen slices and current notebook inventory boundary review",
+    "current_evidence": "docs/issues/palace-api-responsibility-boundary.md records reviewed gsim/OrPen slices; scripts/fixtures/public_gsim_boundary_review_crosscheck.json maps the current local gsim Palace branch commits to boundary-review groups; notebooks/src/public_simulation_inventory.py displays the cross-check",
     "remaining_gap": "every future upstreamable slice still needs an independent boundary review before local branch promotion",
     "next_issue": "palace-api-responsibility-boundary"
   },
