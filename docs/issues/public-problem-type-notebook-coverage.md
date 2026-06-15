@@ -133,6 +133,11 @@ Verified local changes:
   dry-run test verifies the three problem-type rows report missing solver
   reports instead of fabricating physics outputs, while local solver replay can
   fill the same columns from `gsim` report loaders;
+- `gsim` commit `452b3d4` adds sanitized Palace log parsing into reusable
+  resource records, and the public evidence runner now uses a synthetic public
+  Palace log fixture per problem type to write AMR pass, stage timing, stage
+  memory, solver-version, wall-time, memory, and model-size records without
+  exposing PETSc node, user, or executable path fields;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`

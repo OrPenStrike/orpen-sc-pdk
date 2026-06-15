@@ -20,8 +20,10 @@ Problem:
   sbatch/package helpers, HPC profile resolution, sweep runtime staging,
   package analysis, result archives, and run/sweep record builders;
 - local `gsim` already owns Palace config generation, local/cloud execution
-  metadata, run summaries, report loaders, and point-local sweep summaries, but
-  it has no first-class Slurm/Sbatch/HPC handoff or resource-record schema yet;
+  metadata, run summaries, report loaders, point-local sweep summaries,
+  Slurm/Sbatch dry-run handoff sidecars, archive manifests, resource-record
+  sidecars, and sanitized Palace log-derived resource tables, but it does not
+  yet resolve real site/profile catalogs or parse scheduler snapshots;
 - `gplugins` still has older direct Palace helpers, but extending those into
   cluster handoff would create a second public Palace runtime.
 
@@ -81,11 +83,17 @@ Current local evidence:
   wall-time, core-hours, allocation shape, peak HWM memory, and global
   unknowns. This is the public post-run resource sidecar surface; it does not
   parse Palace logs or Slurm snapshots yet;
+- local `gsim` commit `452b3d4` adds `parse_palace_resource_log()` and
+  `write_palace_resource_record_from_log()`, including public-safe AMR pass,
+  stage timing, and stage memory CSV sidecars plus solver version, PETSc
+  version, wall-time, memory, and model-size fields. The parser intentionally
+  omits PETSc node, user, and executable path fields from the structured
+  record;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
-  plus generated archive manifests and synthetic public resource-record
-  sidecars through the `gsim` renderers, then reads them back through the
-  normal run/sweep summary surfaces;
+  plus generated archive manifests and synthetic public log-derived
+  resource-record sidecars through the `gsim` renderers, then reads them back
+  through the normal run/sweep summary surfaces;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
   renderers, generated archive manifests, and a generic post-run resource
   sidecar, but no cluster campaign submission or archive packaging;
@@ -102,9 +110,6 @@ Remaining slices:
 
 - resolve real site/profile resources outside public fixture code, then feed
   the resolved resources into the generic `gsim` Slurm handoff API;
-- add sanitized Palace log parsing into public resource records, including AMR
-  pass tables, stage timing, stage memory, solver version/PETSc metadata, and
-  model-size fields;
 - add sanitized scheduler/scontrol parsing without public raw accounts,
   user IDs, node names, private job names, or absolute work paths;
 - add sweep-level resource record builders and benchmark indexes without

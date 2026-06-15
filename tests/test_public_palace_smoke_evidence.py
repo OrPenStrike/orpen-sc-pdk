@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
@@ -123,10 +125,14 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert record["handoff_archive_manifest_present"] is True
         assert record["runtime_present"] is False
         assert record["resource_present"] is True
-        assert record["resource_status"] == "skipped"
+        assert record["resource_status"] == "synthetic"
+        assert record["resource_wall_time_seconds"] == pytest.approx(121.0)
+        assert record["resource_core_hours"] == pytest.approx(121.0 / 3600)
         assert record["resource_nodes"] == 1
         assert record["resource_num_processes"] == 1
         assert record["resource_num_threads"] == 1
+        assert record["resource_global_unknowns"] == 10718029
+        assert record["resource_peak_total_hwm_gib"] == pytest.approx(20.8)
         assert record["report_status"] == "missing"
         assert record["report_problem_type"] in {"Driven", "Eigenmode", "Electrostatic"}
         assert record["report_message"]
@@ -142,6 +148,10 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert (output_dir / "palace_handoff_metadata.json").is_file()
         assert (output_dir / "palace_handoff_archive_manifest.json").is_file()
         assert (output_dir / "metadata" / "records" / "palace_resource_record.json").is_file()
+        assert (output_dir / "metadata" / "records" / "palace_amr_passes.csv").is_file()
+        assert (output_dir / "metadata" / "records" / "palace_stage_timing.csv").is_file()
+        assert (output_dir / "metadata" / "records" / "palace_stage_memory.csv").is_file()
+        assert (output_dir / "logs" / "palace-public-resource.log").is_file()
         assert (output_dir / "run_palace.sbatch").is_file()
         assert run_summary["problem_type"] == problem["problem_type"]
         assert run_summary["config"]["problem_type"] == problem["problem_type"]
@@ -202,7 +212,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert run_summary["missing_artifacts"] == []
         assert run_summary["runtime"]["present"] is False
         assert run_summary["resource"]["present"] is True
-        assert run_summary["resource"]["status"] == "skipped"
+        assert run_summary["resource"]["status"] == "synthetic"
         assert run_summary["resource"]["path"] == (
             f"{problem['output_dir']}/metadata/records/palace_resource_record.json"
         )
@@ -212,12 +222,34 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
             "num_processes": 1,
             "num_threads": 1,
         }
-        assert run_summary["resource"]["runtime"] == {}
+        assert run_summary["resource"]["runtime"]["wall_time_seconds"] == pytest.approx(121.0)
+        assert run_summary["resource"]["runtime"]["core_hours"] == pytest.approx(121.0 / 3600)
+        assert run_summary["resource"]["model_size"]["global_unknowns"] == 10718029
+        assert run_summary["resource"]["memory"]["peak_total_hwm_gib"] == pytest.approx(20.8)
+        assert run_summary["resource"]["solver"] == {
+            "device_configuration": "omp,cpu",
+            "libceed_backend": "/cpu/self/xsmm/blocked",
+            "memory_configuration": "host-std",
+            "palace_git_changeset": "v0.16.1",
+            "petsc_version": "3.24.3",
+        }
+        assert (
+            run_summary["resource"]["sources"]["palace_log"]["path"]
+            == "logs/palace-public-resource.log"
+        )
+        assert run_summary["resource"]["table_count"] == 3
+        assert run_summary["resource"]["tables"]["amr_passes"]["row_count"] == 1
+        assert run_summary["resource"]["tables"]["stage_timing"]["row_count"] == 8
+        assert run_summary["resource"]["tables"]["stage_memory"]["row_count"] == 8
+        assert run_summary["resource"]["tables"]["stage_timing"]["path"] == (
+            "metadata/records/palace_stage_timing.csv"
+        )
         assert run_summary["resource"]["missing_source_count"] == 1
         assert run_summary["resource"]["metadata"] == {
             "fixture": problem["fixture"],
             "measured": False,
             "problem_type": problem["problem_type"],
+            "resource_log_source": "synthetic-public-fixture",
             "workflow": "public-palace-smoke-evidence",
         }
 

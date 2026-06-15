@@ -124,6 +124,11 @@ Current executable smoke coverage:
   default dry-run mode those rows record missing Driven/Eigenmode/Electrostatic
   report status without fabricating solver outputs, and opt-in local solver
   replays can fill the same columns from the reusable report loaders.
+- the same dry-run evidence path now writes a synthetic public Palace log for
+  each problem fixture and consumes
+  `gsim.palace.write_palace_resource_record_from_log()` so AMR, timing,
+  memory, solver-version, wall-time, and model-size records are covered without
+  exposing private scheduler or PETSc identity fields.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
   turns the same script into an opt-in local Palace smoke replay, including

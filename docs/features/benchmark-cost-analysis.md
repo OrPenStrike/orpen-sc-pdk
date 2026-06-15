@@ -65,11 +65,16 @@ Current public baseline:
   `load_palace_run_summary().resource`, and flattens sweep point resource
   fields such as wall time, core-hours, allocation shape, peak HWM memory, and
   global unknowns without parsing private scheduler logs;
+- local `gsim` commit `452b3d4` adds
+  `parse_palace_resource_log()` and `write_palace_resource_record_from_log()`,
+  writing public-safe AMR pass, stage timing, and stage memory CSV sidecars
+  while omitting PETSc node, user, and executable path fields from the
+  structured record;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
-  generated handoff archive manifest status, synthetic public resource-record
-  status, and a public problem-type sweep-summary smoke in the ignored local
-  evidence bundle.
+  generated handoff archive manifest status, synthetic public log-derived
+  resource-record status and table sidecars, and a public problem-type
+  sweep-summary smoke in the ignored local evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output
@@ -78,7 +83,7 @@ Current public baseline:
   handoff archives, site/profile resources, and post-run records; the public
   migration path is to extend the same `gsim` run-summary and sweep-summary
   schemas with optional handoff/archive/resource sidecars plus later sanitized
-  log/scheduler parsers, not to expose private benchmark values or duplicate
+  scheduler parsers, not to expose private benchmark values or duplicate
   runtime code in the PDK.
 
 Acceptance direction:

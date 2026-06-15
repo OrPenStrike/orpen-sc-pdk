@@ -6,6 +6,7 @@ import os
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
+from textwrap import dedent
 from typing import Any
 
 import orpen_sc_pdk
@@ -370,6 +371,7 @@ def _build_problem_evidence(
         PalaceSlurmSbatchSpec,
         load_palace_run_summary,
         write_palace_resource_record,
+        write_palace_resource_record_from_log,
         write_palace_run_handoff_archive_manifest,
         write_palace_slurm_sbatch_handoff,
     )
@@ -417,14 +419,13 @@ def _build_problem_evidence(
         },
     )
     if solver_skip_reason is not None:
-        _write_public_resource_record(
-            write_palace_resource_record,
+        _write_public_log_resource_record(
+            write_palace_resource_record_from_log,
             output_dir=output_dir,
             fixture_name=fixture_name,
             problem_type=problem_type,
             run_kwargs=run_kwargs,
-            status="skipped",
-            runtime_summary=None,
+            status="synthetic",
             missing_sources=(solver_skip_reason,),
         )
     run_summary = _relative_run_summary(
@@ -577,6 +578,125 @@ def _write_public_resource_record(
             "measured": status == "completed",
         },
     )
+
+
+def _write_public_log_resource_record(
+    writer: Callable[..., Path],
+    *,
+    output_dir: Path,
+    fixture_name: str,
+    problem_type: str,
+    run_kwargs: Mapping[str, Any],
+    status: str,
+    missing_sources: Sequence[str],
+) -> None:
+    num_processes = int(run_kwargs.get("num_processes", 1) or 1)
+    num_threads = int(run_kwargs.get("num_threads", 1) or 1)
+    log_path = _write_public_palace_resource_log(
+        output_dir,
+        num_processes=num_processes,
+        num_threads=num_threads,
+    )
+    writer(
+        output_dir,
+        log_path,
+        status=status,
+        allocation={
+            "nodes": 1,
+            "num_processes": num_processes,
+            "num_threads": num_threads,
+            "cores": num_processes * num_threads,
+        },
+        missing_sources=missing_sources,
+        metadata={
+            "fixture": fixture_name,
+            "measured": False,
+            "problem_type": problem_type,
+            "resource_log_source": "synthetic-public-fixture",
+            "workflow": "public-palace-smoke-evidence",
+        },
+    )
+
+
+def _write_public_palace_resource_log(
+    output_dir: Path,
+    *,
+    num_processes: int,
+    num_threads: int,
+) -> Path:
+    log_path = output_dir / "logs" / "palace-public-resource.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(
+        dedent(
+            f"""
+            Git changeset ID: v0.16.1
+            Running with {num_processes} MPI processes, {num_threads} OpenMP threads
+            Device configuration: omp,cpu
+            Memory configuration: host-std
+            libCEED backend: /cpu/self/xsmm/blocked
+
+            Cumulative timing statistics:
+
+            Elapsed Time Report (s)           Min.        Max.        Avg.
+            ==============================================================
+            Initialization                   1.000       1.100       1.050
+            Operator Construction            2.000       2.200       2.100
+            Disk IO                          0.400       0.500       0.450
+            --------------------------------------------------------------
+            Total                           58.573      58.580      58.578
+
+            Peak Memory                   Per-Node       Total   Total HWM
+            ==============================================================
+            Initialization                   79.1M       79.1M       79.1M
+            Operator Construction             1.6G        1.6G        2.0G
+            Disk IO                         216.9M      216.9M        2.1G
+            --------------------------------------------------------------
+            Total                            10.8G       10.8G       10.8G
+            Estimated peak per-rank memory usage is: Min. 2.7G, Max. 2.7G, Avg. 2.7G, Total 10.9G
+            Estimated peak per-node memory usage is: Min. 10.9G, Max. 10.9G, Avg. 10.9G, Total 10.9G
+
+            Adaptive mesh refinement (AMR) iteration 1:
+             Indicator norm = 3.158e-01, global unknowns = 887970
+             Max. iterations = 15, tol. = 1.000e-02, max. size = 5000000
+             Marked 12568/664696 elements for refinement (70.00% of the error, theta = 0.70)
+             Conforming mesh refinement added 659265 elements (initial = 664696, final = 1323961)
+
+            Proceeding with solve/estimate iteration 2...
+
+            Elapsed Time Report (s)           Min.        Max.        Avg.
+            ==============================================================
+            Initialization                   1.000       1.100       1.050
+            Operator Construction            3.000       3.200       3.100
+            Disk IO                          0.400       0.500       0.450
+            --------------------------------------------------------------
+            Total                          120.000     121.000     120.500
+
+            Peak Memory                   Per-Node       Total   Total HWM
+            ==============================================================
+            Initialization                   79.1M       79.1M       79.1M
+            Operator Construction             2.6G        2.6G        3.0G
+            Disk IO                         216.9M      216.9M        3.1G
+            --------------------------------------------------------------
+            Total                            20.8G       20.8G       20.8G
+            Estimated peak per-rank memory usage is: Min. 5.2G, Max. 5.2G, Avg. 5.2G, Total 20.9G
+            Estimated peak per-node memory usage is: Min. 20.9G, Max. 20.9G, Avg. 20.9G, Total 20.9G
+
+            Completed 1 iterations of adaptive mesh refinement (AMR):
+             Indicator norm = 1.522e-01, global unknowns = 10718029
+             Max. iterations = 15, tol. = 1.000e-02, max. size = 5000000
+
+            ---------- PETSc Performance Summary: ----------
+
+            palace on a  named public-node with {num_processes} processes, by user on 2026-05-21
+            Using {num_threads} OpenMP threads
+            Using PETSc Release Version 3.24.3, unknown
+
+                                     Max       Max/Min     Avg       Total
+            Time (sec):           1.029e+03     1.000   1.029e+03
+            """
+        )
+    )
+    return log_path
 
 
 def build_public_palace_smoke_evidence(
