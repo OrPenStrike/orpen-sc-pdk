@@ -135,6 +135,8 @@ def get_gsim_dielectric_interface_preset_kwargs(
         "loss_tangent": preset["loss_tangent"],
         "role": role,
         "entry_names": tuple(entry_names),
+        "preset_name": name,
+        "preset_source": preset["source"],
     }
     if "material_name" in preset:
         kwargs["material_name"] = preset["material_name"]

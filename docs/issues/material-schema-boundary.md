@@ -119,6 +119,16 @@ Verified local changes:
 - the public simulation workflow notebook now shows that generated-interface
   classification path with a notebook-local caller-supplied preset, keeping
   public preset defaults source-gated while making the handoff visible in docs;
+- the public surface-loss paper board now lists candidate sources for
+  `MA`/`MS`/`SA` taxonomy, source-backed interface-loss extraction, transmon
+  validation targets, and uncertainty-aware CPW interpretation;
+- {doc}`source-backed-interface-presets` now records the issue-level gate for
+  converting those sources into public PDK preset records and later default
+  selection without copying private NCUAS preset names;
+- local `gsim` now preserves caller preset name/source metadata in index maps
+  and dielectric-interface report summaries, and OrPen passes validated
+  source strings into that reusable handoff without changing Palace
+  `config.json`;
 - public Driven, Eigenmode, and Electrostatic workflow examples intentionally
   continue to pass only `get_gsim_material_overlay()` into generated configs:
   those examples should not wire `get_gsim_material_kind_map()` into automatic
@@ -145,6 +155,7 @@ Remaining slices:
 - design the later public default-selection policy separately from private
   notebook-local MA/MS/SA heuristics.
 
-Related feature:
+Related docs:
 
 - {doc}`../features/material-db-overlay`
+- {doc}`source-backed-interface-presets`

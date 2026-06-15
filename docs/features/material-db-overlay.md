@@ -95,6 +95,14 @@ Current public baseline:
   explicit source/provenance, and handed to
   `gsim.palace.mesh.DielectricInterfaceSpec` without making private defaults
   public;
+- `orpen-sc-pdk` now has a public surface-loss source-review queue and a
+  source-backed interface preset issue, so future MA/MS/SA records have a
+  documented path from public papers to PDK data instead of being copied from
+  private presets;
+- local `gsim` now carries caller-supplied interface preset name/source
+  metadata through `palace_index_map.json`, dielectric-interface summaries, and
+  surface-loss summaries; `orpen-sc-pdk` passes its validated preset source
+  strings into that path without adding non-Palace fields to `config.json`;
 - conductor-like public records that currently use
   `relative_permittivity = inf` are preserved as material-role metadata rather
   than exported as solver permittivity values.
@@ -112,3 +120,4 @@ Remaining slices:
 Related issue:
 
 - {doc}`../issues/material-schema-boundary`
+- {doc}`../issues/source-backed-interface-presets`

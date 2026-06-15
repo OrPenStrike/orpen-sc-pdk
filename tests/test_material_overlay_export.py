@@ -223,6 +223,8 @@ def test_interface_preset_schema_validates_caller_supplied_record() -> None:
         "material_name": "AlOx_native_generic",
         "role": "boundary_surface",
         "entry_names": ("sa_interface",),
+        "preset_name": "public_sa_example",
+        "preset_source": "public example only",
     }
 
 
@@ -568,6 +570,8 @@ def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
     )
     row = summary.set_index("surface_index").loc[1]
     assert row["source_name"] == "sa_interface"
+    assert row["preset_name"] == "public_sa_example"
+    assert row["preset_source"] == "public example only"
     assert row["interface_material_name"] == "AlOx_native_generic"
     assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 
@@ -650,6 +654,8 @@ def test_gsim_material_kind_classifier_accepts_public_interface_records(tmp_path
     row = summary.set_index("surface_index").loc[1]
     assert row["source_name"] == "Al___Si"
     assert row["interface_type"] == "MS"
+    assert row["preset_name"] == "public_ms_example"
+    assert row["preset_source"] == "public example only"
     assert row["interface_material_name"] == "AlOx_native_generic"
     assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 
@@ -741,6 +747,8 @@ def test_gsim_material_kind_classifier_accepts_public_generated_aliases(tmp_path
     row = summary.set_index("surface_index").loc[1]
     assert row["source_name"] == "air___silicon"
     assert row["interface_type"] == "SA"
+    assert row["preset_name"] == "public_sa_example"
+    assert row["preset_source"] == "public example only"
     assert row["interface_material_name"] == "AlOx_native_generic"
     assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 

@@ -187,6 +187,8 @@ def test_public_resonator_generated_interface_classifies_with_public_aliases(
     assert specs[0].interface_type == "SA"
     assert specs[0].entry_names == ("air___silicon",)
     assert specs[0].material_name == "AlOx_native_generic"
+    assert specs[0].preset_name == "public_sa_example"
+    assert specs[0].preset_source == "public test fixture only"
     assert dielectric_rows == [
         {
             "Index": 1,
@@ -207,6 +209,8 @@ def test_public_resonator_generated_interface_classifies_with_public_aliases(
     row = summary.set_index("surface_index").loc[1]
     assert row["source_name"] == "air___silicon"
     assert row["interface_type"] == "SA"
+    assert row["preset_name"] == "public_sa_example"
+    assert row["preset_source"] == "public test fixture only"
     assert row["interface_material_name"] == "AlOx_native_generic"
     assert row["matched_material_name"] == "AlOx_native_generic"
     assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"

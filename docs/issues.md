@@ -91,6 +91,16 @@ Public notebooks should validate driven, eigenmode, and electrostatic workflows
 with public fixtures and coarse local Palace smoke tests.
 :::
 
+:::{grid-item-card} ISSUE-008 Source-backed interface presets
+:link: issues/source-backed-interface-presets
+:link-type: doc
+
+**Repo:** `orpen-sc-pdk`, `gsim`
+
+Public MA/MS/SA dielectric-interface presets need source-selection and
+default-selection gates before becoming PDK data.
+:::
+
 ::::
 
 ```{toctree}
@@ -103,4 +113,5 @@ issues/integration-branch-hygiene
 issues/palace-config-ownership
 issues/cad-mesh-identity-provenance
 issues/public-problem-type-notebook-coverage
+issues/source-backed-interface-presets
 ```
