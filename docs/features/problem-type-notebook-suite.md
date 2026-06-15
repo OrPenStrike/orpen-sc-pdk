@@ -52,10 +52,11 @@ Current public notebooks:
 - {doc}`../notebooks/public_simulation_inventory` displays the
   publication-safe helper-node matrix and NCUAS representative notebook
   cross-check from JSON fixtures, plus a goal-level audit and local `gsim`
-  commit boundary-review cross-check that separate covered current evidence
-  from opt-in solver replay, user-deferred scope, owner-pending AEDT/Q2D work,
-  and reusable `gsim` commits covered by boundary-review groups; this keeps
-  inventory/reportability out of notebook-local private helpers;
+  commit boundary-review cross-check plus coverage audit that separate covered
+  current evidence from opt-in solver replay, user-deferred scope,
+  owner-pending AEDT/Q2D work, and reusable `gsim` commits covered by
+  boundary-review groups; this keeps inventory/reportability out of
+  notebook-local private helpers;
 - all three problem-type notebooks load generated domain-material provenance
   through `gsim.palace.load_domain_material_summary()` and generated
   section/index provenance through `gsim.palace.load_postprocessing_index_map()`;
@@ -71,6 +72,9 @@ Current public notebooks:
 - the helper-node coverage matrix remains in
   `scripts/fixtures/public_simulation_helper_nodes.json` and the JSON evidence
   bundle rather than being embedded as notebook-local helper logic;
+- local `gsim` boundary-review coverage remains a script-level evidence
+  sidecar and notebook display, not a package-root API or a claim that every
+  grouped support commit is directly executed by OrPen notebooks;
 - Magnetostatic remains a public config/index-map evidence fixture in
   `scripts/public_palace_smoke_evidence.py`; it is intentionally outside the
   report-backed notebook suite until a public Palace report contract is needed,

@@ -4,6 +4,7 @@ import argparse
 import json
 import math
 import os
+import subprocess
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
@@ -35,6 +36,7 @@ PUBLIC_SIMULATION_GOAL_AUDIT = (
 PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK = (
     Path(__file__).resolve().parent / "fixtures" / "public_gsim_boundary_review_crosscheck.json"
 )
+GSIM_BOUNDARY_REVIEW_COVERAGE_FILENAME = "public_gsim_boundary_review_coverage_evidence.json"
 PUBLIC_INTERFACE_PRESET_REVIEW_QUEUE = (
     Path(__file__).resolve().parent / "fixtures" / "public_interface_preset_review_queue.json"
 )
@@ -46,6 +48,10 @@ PUBLIC_CAD_MESH_IDENTITY_PROBLEM_KEYS = (
     "electrostatic_same_layer_capacitor",
 )
 INTERFACE_PRESET_ROLES = ("MA", "MS", "SA")
+
+
+def _default_gsim_repo_path() -> Path:
+    return Path(__file__).resolve().parents[2] / "GDSFactory_Community_Workbench" / "gsim"
 
 
 def load_public_simulation_helper_node_inventory() -> list[dict[str, Any]]:
@@ -70,6 +76,215 @@ def load_public_gsim_boundary_review_crosscheck() -> list[dict[str, Any]]:
     """Load the local gsim branch boundary-review cross-check matrix."""
 
     return json.loads(PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK.read_text())
+
+
+def _run_git(repo: Path, args: Sequence[str]) -> list[str]:
+    completed = subprocess.run(
+        ["git", "-C", repo.as_posix(), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [line for line in completed.stdout.splitlines() if line]
+
+
+def _first_existing_git_ref(repo: Path, refs: Sequence[str]) -> str | None:
+    for ref in refs:
+        try:
+            _run_git(repo, ["rev-parse", "--verify", "--quiet", ref])
+        except subprocess.CalledProcessError:
+            continue
+        return ref
+    return None
+
+
+def _local_gsim_commits(
+    repo: Path,
+    base_ref: str | None = None,
+) -> tuple[str | None, list[dict[str, str]]]:
+    resolved_base = base_ref or _first_existing_git_ref(repo, ("upstream/main", "origin/main"))
+    if resolved_base is None:
+        return None, []
+    lines = _run_git(repo, ["rev-list", "--oneline", "--reverse", f"{resolved_base}..HEAD"])
+    commits = []
+    for line in lines:
+        commit, _, summary = line.partition(" ")
+        commits.append({"commit": commit, "summary": summary})
+    return resolved_base, commits
+
+
+def build_public_gsim_boundary_review_coverage_evidence(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "gsim-boundary-review-coverage",
+    *,
+    gsim_repo: str | Path | None = None,
+    base_ref: str | None = None,
+    relative_to: str | Path | None = None,
+) -> dict[str, Any]:
+    """Build local gsim commit-to-boundary-review coverage evidence."""
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    relative_root = Path(relative_to) if relative_to is not None else None
+    repo_path = Path(gsim_repo) if gsim_repo is not None else _default_gsim_repo_path()
+    review_rows = load_public_gsim_boundary_review_crosscheck()
+    reviewed_commits = [str(row["commit"]) for row in review_rows]
+    duplicate_review_commits = sorted(
+        commit for commit, count in _count_values(reviewed_commits).items() if count > 1
+    )
+    invalid_review_rows = [
+        str(row.get("commit", ""))
+        for row in review_rows
+        if not str(row.get("review_status", "")).startswith("reviewed_")
+        or not row.get("boundary_group")
+        or not row.get("owner_surface")
+        or ".md" not in str(row.get("evidence_anchor", ""))
+    ]
+
+    local_repo_status = "available" if (repo_path / ".git").exists() else "missing"
+    resolved_base: str | None = None
+    local_commits: list[dict[str, str]] = []
+    git_error: str | None = None
+    if local_repo_status == "available":
+        try:
+            resolved_base, local_commits = _local_gsim_commits(repo_path, base_ref)
+        except subprocess.CalledProcessError as exc:
+            local_repo_status = "git_error"
+            git_error = exc.stderr.strip() or str(exc)
+    gsim_branch = None
+    gsim_head = None
+    if local_repo_status == "available":
+        try:
+            gsim_branch = _run_git(repo_path, ["rev-parse", "--abbrev-ref", "HEAD"])[0]
+            gsim_head = _run_git(repo_path, ["rev-parse", "--short", "HEAD"])[0]
+        except (IndexError, subprocess.CalledProcessError) as exc:
+            local_repo_status = "git_error"
+            git_error = str(exc)
+
+    local_commit_ids = [row["commit"] for row in local_commits]
+    reviewed_set = set(reviewed_commits)
+    local_set = set(local_commit_ids)
+    missing_review_commits = [commit for commit in local_commit_ids if commit not in reviewed_set]
+    stale_review_commits = [commit for commit in reviewed_commits if commit not in local_set]
+    if local_repo_status != "available" or resolved_base is None:
+        coverage_status = "not_checked"
+    elif (
+        missing_review_commits
+        or stale_review_commits
+        or duplicate_review_commits
+        or invalid_review_rows
+    ):
+        coverage_status = "incomplete"
+    else:
+        coverage_status = "complete"
+
+    review_by_commit = {str(row["commit"]): row for row in review_rows}
+    coverage_rows = []
+    for local_row in local_commits:
+        commit = local_row["commit"]
+        review = review_by_commit.get(commit, {})
+        coverage_rows.append(
+            {
+                "commit": commit,
+                "summary": local_row["summary"],
+                "local_branch_status": "present",
+                "review_status": review.get("review_status", "missing_review"),
+                "boundary_group": review.get("boundary_group"),
+                "ecosystem_home": review.get("ecosystem_home"),
+                "owner_surface": review.get("owner_surface"),
+                "evidence_anchor": review.get("evidence_anchor"),
+            }
+        )
+    for commit in stale_review_commits:
+        review = review_by_commit[commit]
+        coverage_rows.append(
+            {
+                "commit": commit,
+                "summary": review.get("summary"),
+                "local_branch_status": "not_in_local_range",
+                "review_status": review.get("review_status"),
+                "boundary_group": review.get("boundary_group"),
+                "ecosystem_home": review.get("ecosystem_home"),
+                "owner_surface": review.get("owner_surface"),
+                "evidence_anchor": review.get("evidence_anchor"),
+            }
+        )
+
+    evidence_path = output_dir / GSIM_BOUNDARY_REVIEW_COVERAGE_FILENAME
+    evidence = {
+        "schema_version": 1,
+        "workflow": "public-gsim-boundary-review-coverage",
+        "repo": "orpen-sc-pdk",
+        "local_gsim_repo": repo_path.as_posix(),
+        "local_repo_status": local_repo_status,
+        "gsim_branch": gsim_branch,
+        "gsim_head": gsim_head,
+        "base_ref": resolved_base,
+        "first_commit": local_commit_ids[0] if local_commit_ids else None,
+        "last_commit": local_commit_ids[-1] if local_commit_ids else None,
+        "git_error": git_error,
+        "coverage_status": coverage_status,
+        "coverage_complete": coverage_status == "complete",
+        "fixture_commit_count": len(reviewed_commits),
+        "git_log_commit_count": len(local_commits),
+        "reviewed_commit_count": len(reviewed_commits),
+        "local_commit_count": len(local_commits),
+        "covered_commit_count": sum(
+            1 for row in coverage_rows if str(row["review_status"]).startswith("reviewed_")
+        ),
+        "missing_review_commits": missing_review_commits,
+        "stale_review_commits": stale_review_commits,
+        "missing_from_fixture": missing_review_commits,
+        "extra_in_fixture": stale_review_commits,
+        "duplicate_review_commits": duplicate_review_commits,
+        "duplicate_fixture_commits": duplicate_review_commits,
+        "invalid_review_rows": invalid_review_rows,
+        "boundary_group_counts": _count_values([str(row["boundary_group"]) for row in review_rows]),
+        "review_status_counts": _count_values([str(row["review_status"]) for row in review_rows]),
+        "ecosystem_home_counts": _count_values([str(row["ecosystem_home"]) for row in review_rows]),
+        "deferred_scope": [
+            "Magnetostatic report contract",
+            "real HPC/private profile validation",
+        ],
+        "owner_boundaries": {
+            "gsim": (
+                "reusable Palace simulation, config, manifest, runtime, and report-loader code"
+            ),
+            "orpen-sc-pdk": "publication-safe review evidence and notebook display",
+        },
+        "coverage_rows": coverage_rows,
+    }
+    evidence["output_dir"] = (
+        _relative_path(output_dir, relative_root)
+        if relative_root is not None
+        else output_dir.as_posix()
+    )
+    evidence["evidence_path"] = (
+        _relative_path(evidence_path, relative_root)
+        if relative_root is not None
+        else evidence_path.as_posix()
+    )
+    evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
+    return evidence
+
+
+def public_gsim_boundary_review_coverage_table(
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR / "gsim-boundary-review-coverage",
+) -> Any:
+    """Return local gsim commit-to-boundary-review coverage rows."""
+
+    import pandas as pd
+
+    evidence = build_public_gsim_boundary_review_coverage_evidence(output_dir)
+    columns = [
+        "commit",
+        "summary",
+        "local_branch_status",
+        "review_status",
+        "boundary_group",
+        "ecosystem_home",
+        "evidence_anchor",
+    ]
+    return pd.DataFrame(evidence["coverage_rows"]).loc[:, columns]
 
 
 def load_public_interface_preset_review_queue() -> dict[str, Any]:
@@ -2607,6 +2822,10 @@ def build_public_palace_smoke_evidence(
         problems,
         relative_to=output_root,
     )
+    gsim_boundary_review_coverage = build_public_gsim_boundary_review_coverage_evidence(
+        output_root / "gsim-boundary-review-coverage",
+        relative_to=output_root,
+    )
     interface_preset_promotion_gate = build_public_interface_preset_promotion_gate_evidence(
         output_root / "interface-preset-promotion-gate",
         relative_to=output_root,
@@ -2626,6 +2845,7 @@ def build_public_palace_smoke_evidence(
         "problem_notebook_crosscheck": load_public_problem_notebook_crosscheck(),
         "goal_audit": load_public_simulation_goal_audit(),
         "gsim_boundary_review_crosscheck": load_public_gsim_boundary_review_crosscheck(),
+        "gsim_boundary_review_coverage": gsim_boundary_review_coverage,
         "interface_preset_review_queue": load_public_interface_preset_review_queue(),
         "cad_mesh_identity_handoff": cad_mesh_identity_handoff,
         "interface_preset_promotion_gate": interface_preset_promotion_gate,

@@ -141,6 +141,14 @@ Verified local changes:
   `gsim` boundary-review cross-check and groups it by boundary group and
   review status, so review can inspect commit coverage from notebook outputs
   without treating every hash as a directly executed notebook feature;
+- `scripts/public_palace_smoke_evidence.py` now writes
+  `public_gsim_boundary_review_coverage_evidence.json`, comparing the
+  commit-by-commit review fixture with the sibling local `gsim` branch range so
+  missing, extra, duplicate, and invalid review rows become testable evidence;
+- `notebooks/src/public_simulation_inventory.py` displays the same coverage
+  status, branch/head/range counts, empty missing/extra/duplicate lists, and
+  deferred Magnetostatic-report/HPC-private-validation scope beside the raw
+  commit review table;
 - the same inventory notebook now displays the public MA/MS/SA source-review
   queue from `scripts/fixtures/public_interface_preset_review_queue.json`,
   keeping candidate values notebook-visible as promotion-gate evidence without

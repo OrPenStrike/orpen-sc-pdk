@@ -11,6 +11,7 @@ from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
     build_public_cad_mesh_identity_handoff_evidence,
+    build_public_gsim_boundary_review_coverage_evidence,
     build_public_interface_preset_promotion_gate_evidence,
     build_public_palace_smoke_evidence,
     build_public_thin_film_sheet_proxy_interface_evidence,
@@ -236,6 +237,55 @@ def _assert_gsim_boundary_review_crosscheck(evidence: dict) -> None:
         assert row["owner_surface"]
         assert row["evidence_anchor"].endswith(".md") or ".md;" in row["evidence_anchor"]
         assert row["boundary_note"]
+
+
+def _assert_gsim_boundary_review_coverage(evidence: dict) -> None:
+    coverage = evidence["gsim_boundary_review_coverage"]
+    review_rows = load_public_gsim_boundary_review_crosscheck()
+    review_commits = [row["commit"] for row in review_rows]
+
+    assert coverage["schema_version"] == 1
+    assert coverage["workflow"] == "public-gsim-boundary-review-coverage"
+    assert coverage["repo"] == "orpen-sc-pdk"
+    assert coverage["output_dir"] == "gsim-boundary-review-coverage"
+    assert coverage["evidence_path"] == (
+        "gsim-boundary-review-coverage/public_gsim_boundary_review_coverage_evidence.json"
+    )
+    assert set(coverage["owner_boundaries"]) == {"gsim", "orpen-sc-pdk"}
+    assert coverage["local_repo_status"] == "available"
+    assert coverage["coverage_status"] == "complete"
+    assert coverage["coverage_complete"] is True
+    assert coverage["base_ref"] in {"upstream/main", "origin/main"}
+    assert coverage["gsim_branch"]
+    assert coverage["gsim_head"] == review_commits[-1]
+    assert coverage["first_commit"] == review_commits[0]
+    assert coverage["last_commit"] == review_commits[-1]
+    assert coverage["fixture_commit_count"] == len(review_commits)
+    assert coverage["git_log_commit_count"] == len(review_commits)
+    assert coverage["reviewed_commit_count"] == len(review_commits)
+    assert coverage["local_commit_count"] == len(review_commits)
+    assert coverage["covered_commit_count"] == len(review_commits)
+    assert coverage["missing_from_fixture"] == []
+    assert coverage["extra_in_fixture"] == []
+    assert coverage["missing_review_commits"] == []
+    assert coverage["stale_review_commits"] == []
+    assert coverage["duplicate_fixture_commits"] == []
+    assert coverage["duplicate_review_commits"] == []
+    assert coverage["invalid_review_rows"] == []
+    assert coverage["deferred_scope"] == [
+        "Magnetostatic report contract",
+        "real HPC/private profile validation",
+    ]
+    assert coverage["ecosystem_home_counts"]["gsim"] >= 1
+    assert coverage["ecosystem_home_counts"]["meshwell + gsim"] >= 1
+    assert coverage["boundary_group_counts"]["api-surface-and-owner-module-cleanup"] >= 1
+    assert coverage["review_status_counts"]["reviewed_explicit"] >= 1
+
+    rows = coverage["coverage_rows"]
+    assert [row["commit"] for row in rows] == review_commits
+    assert all(row["local_branch_status"] == "present" for row in rows)
+    assert all(str(row["review_status"]).startswith("reviewed_") for row in rows)
+    assert all(row["evidence_anchor"] for row in rows)
 
 
 def _assert_interface_preset_review_queue(evidence: dict) -> None:
@@ -485,6 +535,28 @@ def test_public_cad_mesh_identity_handoff_evidence_runs_standalone(
         assert (tmp_path / "identity" / problem_key / "config.json").is_file()
 
 
+def test_public_gsim_boundary_review_coverage_evidence_runs_standalone(
+    tmp_path: Path,
+) -> None:
+    coverage = build_public_gsim_boundary_review_coverage_evidence(
+        tmp_path / "coverage",
+        relative_to=tmp_path,
+    )
+    review_rows = load_public_gsim_boundary_review_crosscheck()
+
+    assert coverage["output_dir"] == "coverage"
+    assert coverage["evidence_path"] == (
+        "coverage/public_gsim_boundary_review_coverage_evidence.json"
+    )
+    assert (tmp_path / "coverage" / "public_gsim_boundary_review_coverage_evidence.json").is_file()
+    assert coverage["coverage_complete"] is True
+    assert coverage["missing_from_fixture"] == []
+    assert coverage["extra_in_fixture"] == []
+    assert coverage["duplicate_fixture_commits"] == []
+    assert coverage["fixture_commit_count"] == len(review_rows)
+    assert coverage["git_log_commit_count"] == len(review_rows)
+
+
 def test_public_interface_preset_promotion_gate_evidence_runs_standalone(
     tmp_path: Path,
 ) -> None:
@@ -516,6 +588,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     _assert_problem_notebook_crosscheck(evidence)
     _assert_goal_audit(evidence)
     _assert_gsim_boundary_review_crosscheck(evidence)
+    _assert_gsim_boundary_review_coverage(evidence)
     _assert_interface_preset_review_queue(evidence)
     _assert_cad_mesh_identity_handoff_evidence(evidence)
     _assert_interface_preset_promotion_gate_evidence(evidence)

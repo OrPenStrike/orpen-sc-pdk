@@ -20,12 +20,14 @@
 from IPython.display import display
 
 from scripts.public_palace_smoke_evidence import (
+    build_public_gsim_boundary_review_coverage_evidence,
     load_public_gsim_boundary_review_crosscheck,
     load_public_interface_preset_review_queue,
     load_public_problem_notebook_crosscheck,
     load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
     public_cad_mesh_identity_handoff_table,
+    public_gsim_boundary_review_coverage_table,
     public_gsim_boundary_review_crosscheck_table,
     public_interface_preset_candidate_review_table,
     public_interface_preset_promotion_gate_table,
@@ -85,6 +87,38 @@ display(goal_audit)
 gsim_boundary_review = public_gsim_boundary_review_crosscheck_table()
 
 display(gsim_boundary_review)
+
+# %% [markdown]
+# ## Gsim boundary review coverage
+#
+# Coverage evidence compares the local `gsim` commit range with the
+# commit-by-commit boundary-review fixture. The raw cross-check remains the
+# source for per-commit review notes; this summary makes missing, extra, or
+# duplicate review rows visible without implying every commit is executed by an
+# OrPen notebook.
+
+# %%
+gsim_boundary_review_coverage = build_public_gsim_boundary_review_coverage_evidence()
+gsim_boundary_review_coverage_table = public_gsim_boundary_review_coverage_table()
+
+display(
+    {
+        "coverage_complete": gsim_boundary_review_coverage["coverage_complete"],
+        "coverage_status": gsim_boundary_review_coverage["coverage_status"],
+        "gsim_branch": gsim_boundary_review_coverage["gsim_branch"],
+        "gsim_head": gsim_boundary_review_coverage["gsim_head"],
+        "base_ref": gsim_boundary_review_coverage["base_ref"],
+        "first_commit": gsim_boundary_review_coverage["first_commit"],
+        "last_commit": gsim_boundary_review_coverage["last_commit"],
+        "fixture_commit_count": gsim_boundary_review_coverage["fixture_commit_count"],
+        "git_log_commit_count": gsim_boundary_review_coverage["git_log_commit_count"],
+        "missing_from_fixture": gsim_boundary_review_coverage["missing_from_fixture"],
+        "extra_in_fixture": gsim_boundary_review_coverage["extra_in_fixture"],
+        "duplicate_fixture_commits": gsim_boundary_review_coverage["duplicate_fixture_commits"],
+        "deferred_scope": gsim_boundary_review_coverage["deferred_scope"],
+    }
+)
+display(gsim_boundary_review_coverage_table)
 
 # %% [markdown]
 # ## CAD/mesh identity handoff
@@ -153,6 +187,7 @@ display(
         "crosscheck_row_count": len(load_public_problem_notebook_crosscheck()),
         "goal_audit_row_count": len(load_public_simulation_goal_audit()),
         "gsim_boundary_review_row_count": len(load_public_gsim_boundary_review_crosscheck()),
+        "gsim_boundary_review_coverage_status": gsim_boundary_review_coverage["coverage_status"],
         "cad_mesh_identity_problem_count": len(cad_mesh_identity_handoff),
         "interface_preset_source_count": len(interface_preset_queue["sources"]),
         "interface_preset_candidate_count": len(interface_preset_queue["candidate_records"]),
