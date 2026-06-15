@@ -97,6 +97,16 @@ Current executable smoke coverage:
 - publication-safe notebook output now includes a guarded local solver smoke
   entrypoint that reuses the public fixture builders and keeps normal docs
   builds independent of local Palace.
+- `scripts/public_palace_smoke_evidence.py` builds the same public Driven,
+  Eigenmode, and Electrostatic coarse fixtures into
+  `build/public-palace-smoke-evidence/` and writes
+  `public_palace_smoke_evidence.json` with generated artifact status,
+  mesh-manifest summaries, Palace index-map summaries, material-resolution
+  sidecar presence, and either solver skip reasons or parsed `gsim` report
+  summaries.
+- default evidence generation is dry-run and solver-free; setting
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
+  turns the same script into an opt-in local Palace smoke replay.
 
 Known gaps and non-goals:
 
@@ -113,6 +123,8 @@ Acceptance direction:
 - each notebook uses `gsim` APIs and `orpen-sc-pdk` public metadata only;
 - each notebook can run a coarse local Palace smoke test when Palace is
   available;
+- local review can regenerate a durable JSON evidence bundle with
+  `uv run --group ecosystem-dev python scripts/public_palace_smoke_evidence.py`;
 - saved outputs are scrubbed or synthetic unless explicitly publication-safe;
 - notebook tests verify the workflow contract without depending on private
   layout modules, private run folders, or private benchmark values.

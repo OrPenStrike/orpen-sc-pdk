@@ -71,12 +71,18 @@ Verified local changes:
   `load_domain_material_summary()`, so generated config artifacts can explain
   which public PDK material source and validity status produced each Palace
   material row.
+- `orpen-sc-pdk` now has a dev-only
+  `scripts/public_palace_smoke_evidence.py` runner that leaves solver runtime
+  ownership in `gsim`, but records public Driven, Eigenmode, and Electrostatic
+  mesh/config/index/material-resolution artifacts into an ignored JSON evidence
+  bundle for local review.
 
 Remaining slices:
 
 - record richer dielectric interface provenance before promoting interface
   presets into public PDK material data;
-- convert executable fixtures into publication-safe notebooks or examples;
+- keep executable fixtures, publication-safe notebooks, and local evidence
+  scripts aligned without moving solver orchestration into the PDK package;
 - keep normal docs and CI paths independent from local Palace while exposing
   opt-in solver validation commands for local development.
 

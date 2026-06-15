@@ -105,6 +105,15 @@ Verified local changes:
   the default docs path reports a skip reason, while local users can enable the
   coarse solves with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or
   `PALACE_EXECUTABLE`;
+- `scripts/public_palace_smoke_evidence.py` now regenerates all three public
+  problem fixtures under `build/public-palace-smoke-evidence/` and writes
+  `public_palace_smoke_evidence.json`; the default dry-run path records
+  non-empty `palace.msh`, `config.json`, `mesh_manifest.json`,
+  `palace_index_map.json`, and `palace_material_resolution.json` artifacts for
+  Driven, Eigenmode, and Electrostatic fixtures without requiring Palace;
+- when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
+  local Palace SIF or executable, the JSON evidence switches from solver skip
+  rows to parsed `gsim` Driven/Eigenmode/Electrostatic report summaries;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - optional local Palace validation passed with
@@ -146,6 +155,8 @@ Remaining slices:
   instead of replaying it inside `orpen-sc-pdk`;
 - future extensions should stay public-fixture based and keep normal docs
   builds independent of local Palace.
+- keep the generated evidence bundle ignored under `build/`; it is local
+  review evidence, not a committed public artifact.
 
 Acceptance checks:
 

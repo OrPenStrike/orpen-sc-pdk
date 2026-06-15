@@ -69,6 +69,10 @@ Current public baseline:
 - `orpen-sc-pdk` public notebooks now demonstrate these report bundles with
   synthetic public Driven/Eigenmode/Electrostatic artifacts and curated display
   tables, keeping report parsing in `gsim` and notebook presentation downstream;
+- `scripts/public_palace_smoke_evidence.py` can also load real opt-in local
+  Palace outputs through the same `gsim` Driven/Eigenmode/Electrostatic report
+  bundles when local solver execution is enabled, while its default dry-run
+  evidence records only generated artifact status and skip reasons;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 
