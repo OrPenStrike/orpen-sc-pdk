@@ -90,12 +90,18 @@ Current public baseline:
 - local `gsim` commit `ba04d9d` adds
   `load_palace_slurm_profile_catalog()`, loading caller-owned JSON Slurm
   profile catalogs before feeding the same resolver and handoff sidecar path;
+- local `gsim` commit `5ff58b6` extends caller-owned Slurm profiles with
+  generic launcher hints (`palace_executable`, command style, setup commands,
+  PETSc options, and `srun` arguments) plus solver hints (`device` and
+  `backend`), so NCUAS-style profile controls can flow into public dry-run
+  scripts without publishing private site catalogs;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
   generated handoff archive manifest status, synthetic public log-derived
   resource-record status, sanitized synthetic Slurm scheduler fields, table
   sidecars, resolved public Slurm dry-run profiles loaded from
-  `scripts/fixtures/public_slurm_profiles.json`, a public problem-type
+  `scripts/fixtures/public_slurm_profiles.json` including launcher/solver
+  hints, a public problem-type
   sweep-summary smoke, and generated sweep-level resource/benchmark index files
   in the ignored local evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary

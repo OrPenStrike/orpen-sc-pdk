@@ -54,6 +54,10 @@ Current public notebook:
   Eigenmode, and Electrostatic public fixtures; normal docs builds display a
   skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or
   executable path is configured.
+- the same notebook displays the public Slurm profile catalog, resolved
+  resource overrides, generic launcher/solver hints, and a generated dry-run
+  `run_palace.sbatch` preview loaded back through
+  `gsim.palace.load_palace_run_summary()`.
 
 Current executable smoke coverage:
 
@@ -143,6 +147,10 @@ Current executable smoke coverage:
   `gsim.palace.resolve_palace_slurm_profile()`, keeping profile/resource
   normalization in `gsim` while leaving real site catalog content outside the
   public PDK fixture.
+- those public profile fixtures now also carry generic launcher hints
+  (`command_style`, PETSc options, and `srun_args`) plus solver hints, and the
+  generated dry-run scripts prove those hints flow into both single-run and
+  sweep-array Slurm handoff output.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
   turns the same script into an opt-in local Palace smoke replay, including

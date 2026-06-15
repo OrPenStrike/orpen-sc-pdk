@@ -45,9 +45,17 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         "submission": "manual",
     }
     assert sweep_summary["handoff"]["profile"] == {
+        "launcher": {
+            "command_style": "binary",
+            "petsc_options": [],
+            "srun_args": ["--mpi=pmix"],
+        },
         "name": "public-slurm-sweep-dry-run",
+        "solver": {"device": "CPU"},
         "source": "caller-supplied public fixture catalog",
     }
+    sweep_script = (tmp_path / "run_sweep_array.sbatch").read_text()
+    assert 'srun --mpi=pmix "$PALACE_EXECUTABLE" "$CONFIG_PATH"' in sweep_script
     assert sweep_summary["handoff"]["resources"]["array"] == {
         "point_count": 3,
         "max_parallel": 3,
@@ -214,9 +222,17 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
             "submission": "manual",
         }
         assert run_summary["handoff"]["profile"] == {
+            "launcher": {
+                "command_style": "binary",
+                "petsc_options": [],
+                "srun_args": ["--mpi=pmix"],
+            },
             "name": "public-slurm-dry-run",
+            "solver": {"device": "CPU"},
             "source": "caller-supplied public fixture catalog",
         }
+        script = (output_dir / "run_palace.sbatch").read_text()
+        assert 'srun --mpi=pmix "$PALACE_EXECUTABLE" "$PALACE_CONFIG"' in script
         assert run_summary["handoff"]["resources"]["requested"] == {
             "account": "public_alloc",
             "cpus_per_task": 1,

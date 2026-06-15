@@ -423,7 +423,7 @@ def _build_problem_evidence(
         PalaceSlurmSbatchSpec(
             job_name=f"palace_{problem_key}",
             resources=slurm_profile.resources,
-            petsc_options=(),
+            **slurm_profile.launcher.to_sbatch_kwargs(),
         ),
         profile=slurm_profile.profile,
         metadata={
@@ -533,7 +533,7 @@ def _build_sweep_evidence(
             job_name="palace_public_problem_smoke",
             resources=slurm_profile.resources,
             max_parallel=len(points),
-            petsc_options=(),
+            **slurm_profile.launcher.to_sbatch_kwargs(),
         ),
         profile=slurm_profile.profile,
         metadata={

@@ -29,6 +29,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -36,10 +37,15 @@ from gsim.palace import (
     DrivenSim,
     EigenmodeSim,
     ElectrostaticSim,
+    PalaceSlurmSbatchSpec,
     load_dielectric_interface_summary,
     load_driven_report,
     load_eigenmode_report,
     load_electrostatic_report,
+    load_palace_run_summary,
+    load_palace_slurm_profile_catalog,
+    resolve_palace_slurm_profile,
+    write_palace_slurm_sbatch_handoff,
 )
 from gsim.palace.mesh import (
     SurfaceFluxSpec,
@@ -61,7 +67,30 @@ from orpen_sc_pdk.materials import (
     validate_interface_preset_records,
 )
 
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="Material model for evaluation at wavelength=.*has unspecified validity range.*",
+    module="gsim.palace.materials",
+)
+
 orpen_sc_pdk.activate()
+
+
+def _find_repo_file(relative_path: str) -> Path:
+    search_roots = [Path.cwd(), *Path.cwd().parents]
+    if "__file__" in globals():
+        source_path = Path(__file__).resolve()
+        search_roots.extend([source_path.parent, *source_path.parents])
+    for root in search_roots:
+        candidate = root / relative_path
+        if candidate.is_file():
+            return candidate
+    return Path(relative_path)
+
+
+PUBLIC_SLURM_PROFILE_CATALOG_REF = "scripts/fixtures/public_slurm_profiles.json"
+PUBLIC_SLURM_PROFILE_CATALOG = _find_repo_file(PUBLIC_SLURM_PROFILE_CATALOG_REF)
 
 
 def _load_json(path: Path) -> dict:
@@ -78,6 +107,33 @@ def _artifact_status(output_dir: Path) -> dict[str, bool]:
         name: (output_dir / name).exists()
         for name in ("palace.msh", "config.json", "mesh_manifest.json", "palace_index_map.json")
     }
+
+
+def _resolve_public_slurm_profile(
+    profile_name: str,
+    *,
+    num_processes: int = 1,
+    num_threads: int = 1,
+):
+    resource_overrides = {}
+    if num_processes != 1:
+        resource_overrides["ntasks_per_node"] = num_processes
+    if num_threads != 1:
+        resource_overrides["cpus_per_task"] = num_threads
+    profiles = load_palace_slurm_profile_catalog(PUBLIC_SLURM_PROFILE_CATALOG)
+    return resolve_palace_slurm_profile(
+        profiles,
+        profile_name,
+        resource_overrides=resource_overrides,
+    )
+
+
+def _slurm_script_preview(script_path: Path) -> list[str]:
+    return [
+        line
+        for line in script_path.read_text().splitlines()
+        if line.startswith("#SBATCH") or line.startswith("srun")
+    ]
 
 
 def _public_driven_cpw_sim(output_dir: Path):
@@ -683,6 +739,75 @@ def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Pa
         "palace_material_resolution.json": material_resolution_path,
     }
 
+
+# %% [markdown]
+# ## Slurm profile catalog and handoff controls
+#
+# Public fixtures keep real site profile catalogs outside the PDK. The notebook
+# still exercises the reusable `gsim` profile helpers by loading a public dry-run
+# catalog, resolving resource overrides, and exposing the launcher/solver hints
+# that feed generated Palace Slurm scripts.
+
+# %%
+profile_catalog = load_palace_slurm_profile_catalog(PUBLIC_SLURM_PROFILE_CATALOG)
+resolved_profile = _resolve_public_slurm_profile(
+    "public-slurm-dry-run",
+    num_processes=2,
+    num_threads=1,
+)
+profile_catalog_summary = {
+    "catalog_path": PUBLIC_SLURM_PROFILE_CATALOG_REF,
+    "profile_names": sorted(profile_catalog),
+    "resolved_profile": resolved_profile.name,
+    "resolved_resources": resolved_profile.resources.to_dict(),
+    "launcher_kwargs": resolved_profile.launcher.to_sbatch_kwargs(),
+    "solver_hints": dict(resolved_profile.solver),
+    "profile_metadata": dict(resolved_profile.profile),
+}
+
+display(profile_catalog_summary)
+
+# %% [markdown]
+# ## Slurm handoff script preview
+#
+# The next cell writes a docs-safe dry-run handoff beside placeholder public
+# Palace artifacts. This previews the exact helper-function path used by the
+# evidence runner: profile catalog loading, profile resolution, `sbatch` spec
+# construction, sidecar writing, and summary reload.
+
+# %%
+with tempfile.TemporaryDirectory() as temp_dir:
+    output_dir = Path(temp_dir) / "slurm-handoff-preview"
+    output_dir.mkdir(parents=True)
+    _write_json(output_dir / "config.json", {"Problem": {"Type": "Eigenmode"}})
+    (output_dir / "palace.msh").write_text("$MeshFormat\n2.2 0 8\n$EndMeshFormat\n")
+
+    handoff_profile = _resolve_public_slurm_profile(
+        "public-slurm-dry-run",
+        num_processes=2,
+        num_threads=1,
+    )
+    handoff_result = write_palace_slurm_sbatch_handoff(
+        output_dir,
+        PalaceSlurmSbatchSpec(
+            job_name="palace_public_notebook",
+            resources=handoff_profile.resources,
+            **handoff_profile.launcher.to_sbatch_kwargs(),
+        ),
+        profile=handoff_profile.profile,
+        metadata={"workflow": "public-simulation-workflows"},
+    )
+    handoff_summary = load_palace_run_summary(output_dir)
+    handoff_preview = {
+        "script_name": handoff_result.script_path.name,
+        "metadata_name": handoff_result.metadata_path.name,
+        "handoff_status": handoff_summary.handoff["status"],
+        "profile": handoff_summary.handoff["profile"],
+        "resolved_resources": handoff_summary.handoff["resources"]["resolved"],
+        "script_lines": _slurm_script_preview(handoff_result.script_path),
+    }
+
+display(handoff_preview)
 
 # %% [markdown]
 # ## Driven CPW workflow

@@ -109,13 +109,20 @@ Current local evidence:
   `load_palace_slurm_profile_catalog()`, which loads caller-owned JSON catalog
   files with `schema_version: 1` plus a `profiles` mapping, or a direct profile
   mapping, and returns normalized `PalaceSlurmProfileSpec` objects;
+- local `gsim` commit `5ff58b6` adds `PalaceSlurmLauncherSpec` and extends
+  `PalaceSlurmProfileSpec`/`PalaceSlurmProfileResolution` with generic
+  launcher hints (`palace_executable`, command style, setup commands, PETSc
+  options, and `srun` arguments) plus solver hints (`device` and `backend`).
+  This captures the reusable NCUAS-style runtime controls while keeping real
+  site catalogs, private setup commands, and submission policy caller-owned;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
   plus generated archive manifests and synthetic public log-derived
   resource-record sidecars plus sanitized synthetic Slurm snapshot sidecars
   through the `gsim` renderers, loads
   `scripts/fixtures/public_slurm_profiles.json`, resolves named public dry-run
-  profiles through the `gsim` profile resolver, then reads the sidecars back
+  profiles through the `gsim` profile resolver, forwards launcher hints into
+  generated single-run and sweep-array scripts, then reads the sidecars back
   through the normal run/sweep summary surfaces and writes reusable sweep-level
   resource/benchmark index files;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script

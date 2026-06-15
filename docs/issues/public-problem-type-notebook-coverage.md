@@ -157,6 +157,14 @@ Verified local changes:
   public evidence runner now loads its dry-run profiles from
   `scripts/fixtures/public_slurm_profiles.json` before resolving them through
   the same `gsim` profile API;
+- `gsim` commit `5ff58b6` adds generic Slurm profile launcher/solver hints,
+  and the public evidence runner now carries public dry-run `srun_args`,
+  command style, PETSc option, and solver-device metadata from the catalog into
+  generated single-run and sweep-array scripts;
+- the public simulation workflow notebook now displays the same catalog
+  loading, profile resolution, launcher/solver metadata, and generated
+  `run_palace.sbatch` preview through executable cells before the
+  Driven/Eigenmode/Electrostatic workflow cells;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`

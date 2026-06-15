@@ -7,6 +7,14 @@
   "profiles": {
     "public-slurm-dry-run": {
       "source": "caller-supplied public fixture catalog",
+      "launcher": {
+        "command_style": "binary",
+        "petsc_options": [],
+        "srun_args": ["--mpi=pmix"]
+      },
+      "solver": {
+        "device": "CPU"
+      },
       "resources": {
         "account": "public_alloc",
         "partition": "public_cpu",
@@ -18,6 +26,14 @@
     },
     "public-slurm-sweep-dry-run": {
       "source": "caller-supplied public fixture catalog",
+      "launcher": {
+        "command_style": "binary",
+        "petsc_options": [],
+        "srun_args": ["--mpi=pmix"]
+      },
+      "solver": {
+        "device": "CPU"
+      },
       "resources": {
         "account": "public_alloc",
         "partition": "public_cpu",
