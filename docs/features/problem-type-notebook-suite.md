@@ -45,6 +45,10 @@ Current public notebook:
   `air___silicon` interface can be classified with OrPen's public
   material-kind and alias helpers when the caller supplies an explicit test
   preset;
+- the same notebook now displays the generated `air___silicon`
+  interface-classification path and reloads the configured interface
+  provenance through `gsim`, keeping automatic public defaults out of the
+  notebook;
 - the same notebook exposes an opt-in local Palace smoke cell for Driven,
   Eigenmode, and Electrostatic public fixtures; normal docs builds display a
   skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or
@@ -80,6 +84,8 @@ Current executable smoke coverage:
 - publication-safe notebook output now includes reusable Eigenmode and
   Electrostatic loss-budget table displays from synthetic public artifacts,
   keeping normal docs builds independent of local Palace.
+- publication-safe notebook output now includes generated Eigenmode
+  interface-classification provenance with caller-owned preset values.
 - publication-safe notebook output now includes a guarded local solver smoke
   entrypoint that reuses the public fixture builders and keeps normal docs
   builds independent of local Palace.

@@ -115,6 +115,9 @@ Verified local changes:
   aliases, resolves `AlOx_native_generic` through the public material overlay,
   and loads interface material provenance through the reusable report/index-map
   path;
+- the public simulation workflow notebook now shows that generated-interface
+  classification path with a notebook-local caller-supplied preset, keeping
+  public preset defaults source-gated while making the handoff visible in docs;
 - public Driven, Eigenmode, and Electrostatic workflow examples intentionally
   continue to pass only `get_gsim_material_overlay()` into generated configs:
   those examples should not wire `get_gsim_material_kind_map()` into automatic

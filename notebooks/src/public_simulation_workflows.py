@@ -36,11 +36,13 @@ from gsim.palace import (
     DrivenSim,
     EigenmodeSim,
     ElectrostaticSim,
+    load_dielectric_interface_summary,
     load_eigenmode_report,
     load_electrostatic_report,
 )
 from gsim.palace.mesh import (
     SurfaceFluxSpec,
+    build_dielectric_interface_specs_from_material_kinds,
     build_postprocessing_config_from_manifest,
 )
 from IPython.display import display
@@ -51,7 +53,12 @@ from orpen_sc_pdk.cells import (
     martinis2022_differential_ribbon_capacitor,
     resonator,
 )
-from orpen_sc_pdk.materials import get_gsim_material_overlay
+from orpen_sc_pdk.materials import (
+    get_gsim_material_kind_alias_map,
+    get_gsim_material_kind_map,
+    get_gsim_material_overlay,
+    validate_interface_preset_records,
+)
 
 orpen_sc_pdk.activate()
 
@@ -164,6 +171,28 @@ def _eigenmode_postprocessing(mesh_result) -> dict:
                 two_sided=None,
             ),
         ),
+    )
+
+
+def _eigenmode_interface_postprocessing(mesh_result) -> dict:
+    interface_records = {
+        "public_sa_example": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public notebook fixture only",
+        }
+    }
+    dielectric_interfaces = build_dielectric_interface_specs_from_material_kinds(
+        mesh_result.manifest,
+        material_kind_by_name=get_gsim_material_kind_map(),
+        material_name_aliases=get_gsim_material_kind_alias_map(),
+        presets=validate_interface_preset_records(interface_records),
+        preset_by_interface_type={"SA": "public_sa_example"},
+    )
+    return build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        dielectric_interfaces=dielectric_interfaces,
     )
 
 
@@ -625,6 +654,53 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
 display(eigenmode_summary)
+
+# %% [markdown]
+# ## Caller-supplied Eigenmode interface classification
+#
+# Generated mesh manifests can expose material interfaces such as
+# `air___silicon`. Public workflows keep MA/MS/SA preset values caller-supplied
+# until source-backed defaults are accepted into the PDK contract. This example
+# classifies the generated resonator substrate-air interface through OrPen's
+# public material-kind and alias helpers, then lets `gsim` write and reload the
+# Palace dielectric-interface provenance.
+
+# %%
+with tempfile.TemporaryDirectory() as temp_dir:
+    output_dir = Path(temp_dir) / "eigenmode-interface"
+    sim, mesh_result = _public_eigenmode_resonator_sim(output_dir)
+    config_path = sim.write_config(
+        postprocessing=_eigenmode_interface_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+    )
+    config = _load_json(config_path)
+    interface_summary = load_dielectric_interface_summary(
+        {
+            "config.json": config_path,
+            "palace_index_map.json": output_dir / "palace_index_map.json",
+        }
+    )
+    interface_preview = interface_summary.loc[
+        :,
+        [
+            "surface_index",
+            "source_name",
+            "interface_type",
+            "interface_material_name",
+            "matched_material_name",
+            "material_model_source",
+            "permittivity",
+            "loss_tangent",
+        ],
+    ]
+    generated_interface_summary = {
+        "problem_type": config["Problem"]["Type"],
+        "dielectric_interface_rows": len(config["Boundaries"]["Postprocessing"]["Dielectric"]),
+        "classified_interfaces": interface_preview.to_dict(orient="records"),
+    }
+
+display(generated_interface_summary)
 
 # %% [markdown]
 # ## Electrostatic same-layer capacitor workflow

@@ -224,6 +224,11 @@ Verified local changes:
   OrPen's generated-name alias map, and a caller-supplied public test preset
   to emit a configured `SA` dielectric interface row and load the joined
   material provenance through `gsim.palace.load_dielectric_interface_summary()`.
+- validation after the notebook exposure slice: the public simulation workflow
+  notebook displays the same generated resonator interface-classification path
+  with a notebook-local caller-supplied preset, so the docs-visible workflow now
+  shows generated physical names, Palace config generation, index-map joining,
+  and material provenance without adopting automatic public defaults.
 
 Remaining implementation slices:
 

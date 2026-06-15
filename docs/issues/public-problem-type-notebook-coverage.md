@@ -86,6 +86,10 @@ Verified local changes:
   `air___silicon` interface can be classified with OrPen's public material-kind
   and alias helpers plus a caller-supplied test preset, then joined back through
   `gsim.palace.load_dielectric_interface_summary()`;
+- the public simulation workflow notebook now displays that generated
+  interface-classification path from a public resonator mesh/config artifact,
+  using a notebook-local caller-supplied preset and reusable `gsim` provenance
+  loading rather than private notebook parsing or automatic public defaults;
 - the public simulation workflow notebook now also writes synthetic public
   Eigenmode and Electrostatic report artifacts, loads them through reusable
   `gsim` report bundles, and displays curated domain-loss, surface-loss, and
