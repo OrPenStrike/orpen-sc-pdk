@@ -61,6 +61,11 @@ Verified local changes:
   dielectric postprocessing interfaces, so a typed interface can reference a
   public material overlay entry and reports can show interface material name,
   matched material, model source, validity, and resolution frequency;
+- `gsim` commit `667cd21`: adds
+  `build_dielectric_interface_specs_from_assignments()` for caller-supplied
+  interface preset maps, exact manifest entry or physical-name selectors,
+  parsed interface-pair selectors, ordered duplicate MA/MS entries on one
+  boundary, and default rejection of exterior/non-interface boundaries;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
@@ -97,10 +102,9 @@ Remaining slices:
   grows to include aliases, provenance, conditions, loss, conductivity,
   London-depth, or surface/interface presets;
 - populate public interface preset records only after MA/MS/SA thickness, loss
-  tangent, and automatic-selection values have source-backed public records.
-- upstream a generic `gsim` role/physical-group assignment path for
-  user-supplied interface preset maps before trying to reproduce private
-  notebook-local automatic MA/MS/SA selection.
+  tangent, and automatic-selection values have source-backed public records;
+- design the later public automatic-selection contract separately from private
+  notebook-local MA/MS/SA heuristics.
 
 Related feature:
 

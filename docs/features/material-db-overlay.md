@@ -54,6 +54,11 @@ Current public baseline:
   `config.json`, strips the non-Palace handoff key, records interface material
   provenance in `palace_material_resolution.json`, and exposes that provenance
   through `load_dielectric_interface_summary()`;
+- `gsim` commit `667cd21` adds
+  `build_dielectric_interface_specs_from_assignments()`, so caller-owned
+  preset maps can target exact manifest entry names, physical group names, or
+  parsed interface pairs and produce ordered `DielectricInterfaceSpec` records
+  without baking private layer names or MA/MS/SA values into `gsim`;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -80,7 +85,8 @@ Remaining slices:
   material contract grows beyond the current minimal records;
 - populate public interface preset records only after source-backed public
   MA/MS/SA values and automatic-selection rules are accepted into the PDK
-  contract.
+  contract; until then, keep selection caller-supplied through the `gsim`
+  assignment helper.
 
 Related issue:
 

@@ -51,6 +51,10 @@ The current public bridge is intentionally small:
   `Boundaries.Postprocessing.Dielectric` rows, including `Thickness`,
   `Permittivity`, and `LossTan`, and join them to interface physical names
   through `palace_index_map.json`.
+- local `gsim` can build ordered
+  `gsim.palace.mesh.DielectricInterfaceSpec` tuples from caller-supplied preset
+  maps and exact manifest entry names, physical group names, or parsed
+  interface pairs without hard-coding private process values.
 - local `gsim` can derive reusable domain/surface loss budgets from those
   loaded artifacts, including inverse-Q, equivalent Q, gamma, and T1 columns
   when mode frequency is available.
@@ -84,6 +88,9 @@ should be:
 6. Keep public interface preset records schema-validated in the PDK, but do not
    populate MA/MS/SA thickness, loss, or automatic-selection defaults until
    source-backed public records exist.
+7. Use `gsim` assignment helpers for caller-supplied physical-name or
+   interface-pair selection; automatic public selection policy belongs in a
+   later source-backed PDK contract.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the
