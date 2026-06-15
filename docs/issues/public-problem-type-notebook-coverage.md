@@ -255,32 +255,34 @@ Verified local changes:
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
-  Driven/Eigenmode/Electrostatic report summaries; successful local solver
-  execution also exposes the sanitized `palace_run_metadata.json` sidecar
-  through the same run-summary bundle;
+  Driven/Eigenmode/Electrostatic report summaries; Magnetostatic remains
+  solver-skipped by per-problem scope gate; successful local solver execution
+  also exposes the sanitized `palace_run_metadata.json` sidecar through the
+  same run-summary bundle;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
-- optional local Palace validation passed on the public fixtures with a direct
-  macOS development binary using
+- optional local Palace validation passed on the public fixtures with the Spack
+  Palace wrapper using
+  `spack load palace` plus
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=$(command -v palace) PALACE_EXECUTABLE_MODE=wrapper PALACE_NP=1 PALACE_NT=1 uv run python -m pytest <workflow-test> -q`;
+- direct macOS development binaries remain a supported local route using
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=<palace-build>/bin/palace-arm64.bin PALACE_EXECUTABLE_MODE=binary PALACE_NP=1 PALACE_NT=1 DYLD_LIBRARY_PATH=<palace-build>/lib:<palace-build>/lib64 uv run --group ecosystem-dev python -m pytest <workflow-test> -q`;
-- the direct binary path was required for this local build: the wrapper launcher
-  reached `mpirun` and failed to resolve `@rpath/libceed.dylib` because the
-  binary still carried stale build rpaths, while `palace-arm64.bin --version`
-  succeeded with the corrected loader path;
-- optional local Electrostatic Palace validation passed with
-  `tests/test_gsim_electrostatic_capacitor_workflow.py -q`
-  (`2 passed`, public material validity-range warnings only);
-- optional local Driven Palace validation passed with
-  `tests/test_gsim_driven_cpw_workflow.py -q`
-  (`2 passed`, public material validity-range warnings only);
-- optional local Eigenmode Palace validation passed with
-  `tests/test_gsim_eigenmode_resonator_workflow.py -q`
-  (`3 passed`, public material validity-range warnings only);
-- the unified local evidence runner also passed with the same direct-binary
-  environment and wrote the ignored
-  `build/public-palace-smoke-evidence/public_palace_smoke_evidence.json`
-  bundle; the bundle reports loaded Driven, Eigenmode, and Electrostatic
-  `gsim` report summaries plus sanitized `palace_run_metadata.json` sidecars;
+- the Eigenmode local smoke now uses `gsim`'s existing
+  `EigenmodeSim.set_eigenmode(...)` and `PalaceSimMixin.set_numerical(...)`
+  knobs for a smoke-grade one-mode, first-order solve, keeping the notebook
+  surface public while avoiding a multi-minute local gate;
+- current Spack-wrapper local replay passed for
+  `tests/test_gsim_driven_cpw_workflow.py::test_public_cpw_driven_optional_local_palace_coarse_smoke`,
+  `tests/test_gsim_eigenmode_resonator_workflow.py::test_public_resonator_eigenmode_optional_local_palace_coarse_smoke`,
+  and
+  `tests/test_gsim_electrostatic_capacitor_workflow.py::test_public_same_layer_capacitor_optional_local_palace_coarse_smoke`
+  in 68.33 seconds (`3 passed`, public material validity-range warnings only);
+- current Spack-wrapper unified evidence replay also passed with
+  `scripts/public_palace_smoke_evidence.py --output-dir build/public-palace-smoke-evidence-local-review`;
+  the ignored evidence JSON reports loaded Driven, Eigenmode, and
+  Electrostatic solver reports, keeps Magnetostatic skipped by the per-problem
+  scope gate, and writes an Eigenmode local config with `Solver.Order == 1` and
+  `Solver.Eigenmode.N == 1`;
 - the same optional Eigenmode validation now exercises
   `gsim.palace.load_eigenmode_report()` against real local solver output;
 - public synthetic Electrostatic report validation now exercises

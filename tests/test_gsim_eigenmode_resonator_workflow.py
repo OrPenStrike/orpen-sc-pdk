@@ -236,6 +236,8 @@ def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
 
     output_dir = tmp_path / "palace-smoke"
     sim, mesh_result = _public_resonator_eigenmode_sim(output_dir)
+    sim.set_numerical(order=1, tolerance=1e-4, max_iterations=200)
+    sim.set_eigenmode(num_modes=1, target=6e9, tolerance=1e-3)
     sim.write_config(
         postprocessing=_eigenmode_postprocessing(mesh_result),
         validate_mesh=False,
@@ -266,7 +268,7 @@ def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
     assert results["domain-E.csv"].stat().st_size > 0
 
     report = load_eigenmode_report(results)
-    assert report.eigenmodes.n_modes == 2
+    assert report.eigenmodes.n_modes >= 1
     assert report.eigenmodes.freq_real_ghz.min() > 0
     assert report.eigenmodes.q.min() > 0
     assert {
@@ -278,6 +280,6 @@ def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
     assert bool(report.sources.set_index("name").loc["domain-E.csv", "loaded"])
 
     history = report.mode_history
-    assert history["source_kind"].tolist() == ["final", "final"]
-    assert history["mode_index"].tolist() == [1, 2]
+    assert history["source_kind"].eq("final").all()
+    assert history["mode_index"].tolist() == list(range(1, len(history) + 1))
     assert history["frequency_ghz"].min() > 0

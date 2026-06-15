@@ -386,6 +386,7 @@ def _public_slurm_resource_overrides(
 def _public_driven_cpw_sim(output_dir: Path):
     from gsim.palace import DrivenSim
 
+    orpen_sc_pdk.activate()
     component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
 
     sim = DrivenSim()
@@ -453,6 +454,7 @@ def _driven_report_summary(output_dir: Path) -> dict[str, Any]:
 def _public_eigenmode_resonator_sim(output_dir: Path):
     from gsim.palace import EigenmodeSim
 
+    orpen_sc_pdk.activate()
     component = resonator(
         length=1200,
         meanders=2,
@@ -520,6 +522,7 @@ def _eigenmode_report_summary(output_dir: Path) -> dict[str, Any]:
 def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
     from gsim.palace import ElectrostaticSim
 
+    orpen_sc_pdk.activate()
     component = martinis2022_differential_ribbon_capacitor(
         a_um=20,
         b_um=35,
@@ -1304,6 +1307,11 @@ def run_public_driven_local_smoke(
     }
 
 
+def _apply_public_eigenmode_local_smoke_profile(sim: Any) -> None:
+    sim.set_numerical(order=1, tolerance=1e-4, max_iterations=200)
+    sim.set_eigenmode(num_modes=1, target=6e9, tolerance=1e-3)
+
+
 def run_public_eigenmode_local_smoke(
     output_dir: str | Path,
     run_kwargs: Mapping[str, Any],
@@ -1314,6 +1322,7 @@ def run_public_eigenmode_local_smoke(
 
     output_dir = Path(output_dir)
     sim, mesh_result = build_public_eigenmode_resonator_sim(output_dir)
+    _apply_public_eigenmode_local_smoke_profile(sim)
     sim.write_config(
         postprocessing=build_public_eigenmode_postprocessing(mesh_result),
         validate_mesh=False,
@@ -1437,6 +1446,8 @@ def _build_problem_evidence(
     report_summary: Callable[[Path], dict[str, Any]],
     run_kwargs: Mapping[str, Any],
     solver_skip_reason: str | None,
+    solver_enabled: bool = True,
+    prepare_local_solver: Callable[[Any], None] | None = None,
 ) -> dict[str, Any]:
     from gsim.palace.handoff import (
         PalaceSlurmSbatchSpec,
@@ -1452,6 +1463,11 @@ def _build_problem_evidence(
     )
 
     output_dir = output_root / problem_key
+    effective_solver_skip_reason = solver_skip_reason
+    if not solver_enabled and effective_solver_skip_reason is None:
+        effective_solver_skip_reason = (
+            f"{problem_type} local Palace solve deferred by current scope"
+        )
     num_processes = int(run_kwargs.get("num_processes", 1) or 1)
     num_threads = int(run_kwargs.get("num_threads", 1) or 1)
     slurm_profiles = load_palace_slurm_profile_catalog(PUBLIC_SLURM_PROFILE_CATALOG)
@@ -1464,6 +1480,8 @@ def _build_problem_evidence(
         ),
     )
     sim, mesh_result = build_sim(output_dir)
+    if effective_solver_skip_reason is None and prepare_local_solver is not None:
+        prepare_local_solver(sim)
     sim.write_config(
         postprocessing=build_postprocessing(mesh_result),
         validate_mesh=False,
@@ -1481,7 +1499,7 @@ def _build_problem_evidence(
         metadata={
             "fixture": fixture_name,
             "problem_type": problem_type,
-            "solver_enabled": solver_skip_reason is None,
+            "solver_enabled": effective_solver_skip_reason is None,
             "workflow": "public-palace-smoke-evidence",
         },
     )
@@ -1493,7 +1511,7 @@ def _build_problem_evidence(
             "workflow": "public-palace-smoke-evidence",
         },
     )
-    if solver_skip_reason is not None:
+    if effective_solver_skip_reason is not None:
         _write_public_log_resource_record(
             write_palace_resource_record_from_log,
             output_dir=output_dir,
@@ -1501,14 +1519,14 @@ def _build_problem_evidence(
             problem_type=problem_type,
             run_kwargs=run_kwargs,
             status="synthetic",
-            missing_sources=(solver_skip_reason,),
+            missing_sources=(effective_solver_skip_reason,),
         )
     run_summary = _relative_run_summary(
         load_palace_run_summary(output_dir, include_hashes=True).to_dict(),
         output_root,
     )
 
-    if solver_skip_reason is None:
+    if effective_solver_skip_reason is None:
         sim.run_local(**dict(run_kwargs))
         completed_summary = load_palace_run_summary(output_dir, include_hashes=True)
         _write_public_resource_record(
@@ -1527,7 +1545,7 @@ def _build_problem_evidence(
         )
         solver_report = report_summary(output_dir)
     else:
-        solver_report = {"status": "skipped", "reason": solver_skip_reason}
+        solver_report = {"status": "skipped", "reason": effective_solver_skip_reason}
 
     return {
         "problem_type": problem_type,
@@ -1837,6 +1855,8 @@ def build_public_palace_smoke_evidence(
             "build_sim": _public_driven_cpw_sim,
             "build_postprocessing": _driven_postprocessing,
             "report_summary": _driven_report_summary,
+            "solver_enabled": True,
+            "prepare_local_solver": None,
         },
         {
             "problem_key": "eigenmode_resonator",
@@ -1845,6 +1865,8 @@ def build_public_palace_smoke_evidence(
             "build_sim": _public_eigenmode_resonator_sim,
             "build_postprocessing": _eigenmode_postprocessing,
             "report_summary": _eigenmode_report_summary,
+            "solver_enabled": True,
+            "prepare_local_solver": _apply_public_eigenmode_local_smoke_profile,
         },
         {
             "problem_key": "electrostatic_same_layer_capacitor",
@@ -1853,6 +1875,8 @@ def build_public_palace_smoke_evidence(
             "build_sim": _public_same_layer_capacitor_electrostatic_sim,
             "build_postprocessing": _electrostatic_postprocessing,
             "report_summary": _electrostatic_report_summary,
+            "solver_enabled": True,
+            "prepare_local_solver": None,
         },
         {
             "problem_key": "magnetostatic_cpw",
@@ -1861,6 +1885,8 @@ def build_public_palace_smoke_evidence(
             "build_sim": _public_magnetostatic_cpw_sim,
             "build_postprocessing": _magnetostatic_postprocessing,
             "report_summary": _magnetostatic_report_summary,
+            "solver_enabled": False,
+            "prepare_local_solver": None,
         },
     )
 
@@ -1875,6 +1901,8 @@ def build_public_palace_smoke_evidence(
             report_summary=spec["report_summary"],
             run_kwargs=run_kwargs,
             solver_skip_reason=solver["skip_reason"],
+            solver_enabled=spec["solver_enabled"],
+            prepare_local_solver=spec["prepare_local_solver"],
         )
         for spec in problem_specs
     }

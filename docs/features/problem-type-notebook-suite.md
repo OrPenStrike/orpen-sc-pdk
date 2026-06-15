@@ -72,7 +72,9 @@ Current public notebooks:
   bundle rather than being embedded as notebook-local helper logic;
 - Magnetostatic remains a public config/index-map evidence fixture in
   `scripts/public_palace_smoke_evidence.py`; it is intentionally outside the
-  report-backed notebook suite until a public Palace report contract is needed.
+  report-backed notebook suite until a public Palace report contract is needed,
+  and the evidence runner keeps its local solver path disabled even when
+  Driven/Eigenmode/Electrostatic local smokes are enabled.
 
 Current executable smoke coverage:
 
@@ -87,15 +89,20 @@ Current executable smoke coverage:
 - the Eigenmode smoke verifies non-empty `eig.csv` and `domain-E.csv` outputs
   and reads positive eigenfrequency rows, source visibility, and domain-energy
   rows through `gsim.palace.load_eigenmode_report()`;
+- the Eigenmode local smoke uses the existing `gsim` problem/numerical knobs
+  (`EigenmodeSim.set_eigenmode(...)` and `PalaceSimMixin.set_numerical(...)`)
+  to run a smoke-grade one-mode, first-order solve without changing the
+  notebook-facing mesh/config fixture contract;
 - the public Electrostatic capacitor fixture has an opt-in local Palace coarse
   solve guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`;
 - the smoke path accepts either a Palace SIF (`PALACE_SIF`) or a direct local
   executable (`PALACE_EXECUTABLE`), with `PALACE_EXECUTABLE_MODE=binary` for
   development binaries that do not accept wrapper launcher flags;
-- the direct-binary path has been replayed locally for all three public
-  fixtures with one process and one thread; macOS development builds may also
-  need `DYLD_LIBRARY_PATH=<palace-build>/lib:<palace-build>/lib64` when the
-  binary carries stale rpaths;
+- the Spack Palace wrapper path has been replayed locally for all three public
+  fixtures with one process and one thread; direct macOS development binaries
+  remain supported and may need
+  `DYLD_LIBRARY_PATH=<palace-build>/lib:<palace-build>/lib64` when the binary
+  carries stale rpaths;
 - the Electrostatic smoke verifies both non-empty solver matrix outputs and the
   `gsim.palace.load_terminal_matrix()` report-loader round trip through
   `palace_index_map.json`;

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import scripts.public_palace_smoke_evidence as smoke_evidence
 from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
@@ -151,7 +152,8 @@ def _assert_goal_audit(evidence: dict) -> None:
         "and Electrostatic fixtures."
     )
     local_palace = by_requirement[local_palace_key]
-    assert local_palace["current_status"] == "opt_in_solver_evidence"
+    assert local_palace["current_status"] == "covered_current"
+    assert "Spack-wrapper local replay passed" in local_palace["current_evidence"]
     assert "PALACE_EXECUTABLE" in local_palace["remaining_gap"]
 
     deferred_scope_key = (
@@ -170,7 +172,6 @@ def _assert_goal_audit(evidence: dict) -> None:
     statuses = {row["current_status"] for row in rows}
     assert {
         "covered_current",
-        "opt_in_solver_evidence",
         "deferred_user_scope",
         "deferred_owner_pending",
     } <= statuses
@@ -664,6 +665,90 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         for row in magnetostatic_lookup
         if row["section"] == "Boundaries.Postprocessing.SurfaceFlux"
     } == {"Magnetic"}
+
+
+def test_public_palace_smoke_evidence_solver_gate_skips_magnetostatic(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from gsim.palace.base import PalaceSimMixin
+
+    run_local_outputs: list[str] = []
+
+    def fake_run_local(self, **_kwargs):
+        output_dir = Path(self.output_dir)
+        run_local_outputs.append(output_dir.name)
+        return {}
+
+    monkeypatch.setattr(PalaceSimMixin, "run_local", fake_run_local)
+    monkeypatch.setattr(
+        smoke_evidence,
+        "_driven_report_summary",
+        lambda _output_dir: {"status": "loaded", "problem_type": "Driven"},
+    )
+    monkeypatch.setattr(
+        smoke_evidence,
+        "_eigenmode_report_summary",
+        lambda _output_dir: {"status": "loaded", "problem_type": "Eigenmode"},
+    )
+    monkeypatch.setattr(
+        smoke_evidence,
+        "_electrostatic_report_summary",
+        lambda _output_dir: {"status": "loaded", "problem_type": "Electrostatic"},
+    )
+    monkeypatch.setattr(
+        smoke_evidence,
+        "_magnetostatic_report_summary",
+        lambda _output_dir: pytest.fail("Magnetostatic report loader should stay deferred"),
+    )
+
+    evidence = build_public_palace_smoke_evidence(
+        tmp_path,
+        environ={
+            "ORPEN_RUN_LOCAL_PALACE_SMOKE": "1",
+            "PALACE_EXECUTABLE": "/usr/bin/true",
+            "PALACE_EXECUTABLE_MODE": "binary",
+            "PALACE_NP": "1",
+            "PALACE_NT": "1",
+        },
+    )
+
+    assert evidence["solver"]["enabled"] is True
+    assert run_local_outputs == [
+        "driven_cpw",
+        "eigenmode_resonator",
+        "electrostatic_same_layer_capacitor",
+    ]
+
+    eigenmode_config = json.loads((tmp_path / "eigenmode_resonator" / "config.json").read_text())
+    assert eigenmode_config["Solver"]["Order"] == 1
+    assert eigenmode_config["Solver"]["Linear"]["Tol"] == pytest.approx(1e-4)
+    assert eigenmode_config["Solver"]["Linear"]["MaxIts"] == 200
+    assert eigenmode_config["Solver"]["Eigenmode"] == {
+        "N": 1,
+        "Target": 6.0,
+        "Tol": 1e-3,
+    }
+
+    for problem_key in (
+        "driven_cpw",
+        "eigenmode_resonator",
+        "electrostatic_same_layer_capacitor",
+    ):
+        problem = evidence["problems"][problem_key]
+        assert problem["solver_report"]["status"] == "loaded"
+        assert problem["run_summary"]["handoff"]["metadata"]["solver_enabled"] is True
+
+    magnetostatic = evidence["problems"]["magnetostatic_cpw"]
+    assert magnetostatic["solver_report"] == {
+        "status": "skipped",
+        "reason": "Magnetostatic local Palace solve deferred by current scope",
+    }
+    assert magnetostatic["run_summary"]["handoff"]["metadata"]["solver_enabled"] is False
+    assert (
+        magnetostatic["run_summary"]["resource"]["missing_sources"]
+        == ["Magnetostatic local Palace solve deferred by current scope"]
+    )
 
 
 def test_driven_report_summary_uses_sparams_public_keys(
