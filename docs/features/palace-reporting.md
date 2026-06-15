@@ -35,6 +35,10 @@ Current public baseline:
 - effective Palace domain material rows can be loaded through
   `load_domain_material_summary()` and joined from `config.json` material
   attributes to `palace_index_map.json` domain physical names;
+- local `gsim` commit `61d7d66` adds generated
+  `palace_material_resolution.json` sidecars and extends domain material
+  summaries with stack material, matched material record, model source,
+  validity, and resolution-frequency provenance;
 - configured dielectric interface postprocessing rows can be loaded through
   `load_dielectric_interface_summary()` and joined from
   `Boundaries.Postprocessing.Dielectric` config rows to index-map physical

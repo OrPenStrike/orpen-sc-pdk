@@ -39,6 +39,9 @@ Acceptance direction:
 - public PDK material overlays can be passed to `gsim` config generation and
   produce effective `Domains.Materials` values without mutating the source
   layer stack;
+- generated material-resolution sidecars can record which stack material,
+  matched public material record, model source, validity status, and frequency
+  produced each Palace material attribute;
 - private consumers can mount their own layouts without changing the public
   config generation contract;
 - Palace remains an external executable, not a Python package dependency of the

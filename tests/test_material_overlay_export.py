@@ -117,6 +117,17 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     assert by_attr[(1,)]["Conductivity"] == pytest.approx(2.0)
     assert by_attr[(2,)]["Permittivity"] == pytest.approx(1.0)
     assert stack.materials["silicon"]["permittivity"] == pytest.approx(11.9)
+    material_resolution_path = tmp_path / "palace_material_resolution.json"
+    assert material_resolution_path.exists()
+
+    material_resolution = json.loads(material_resolution_path.read_text())
+    si_resolution = next(
+        row for row in material_resolution["materials"] if row["material_attribute"] == 1
+    )
+    assert si_resolution["stack_material_name"] == "silicon"
+    assert si_resolution["matched_material_name"] == "silicon"
+    assert si_resolution["model_type"] == "constant"
+    assert si_resolution["model_source"] == "orpen-sc-pdk tech.material_properties"
 
     index_map_path = tmp_path / "palace_index_map.json"
     index_map_path.write_text(
@@ -148,6 +159,9 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     assert si_row["source_name"] == "D1_SUBSTRATE"
     assert si_row["physical_name"] == "D1_SUBSTRATE"
     assert si_row["permittivity"] == pytest.approx(11.45)
+    assert si_row["stack_material_name"] == "silicon"
+    assert si_row["material_model_type"] == "constant"
+    assert si_row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 
 
 def test_gsim_dielectric_interface_summary_loads_public_interface_config(

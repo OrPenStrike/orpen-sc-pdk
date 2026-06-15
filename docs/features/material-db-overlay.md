@@ -44,6 +44,11 @@ Current public baseline:
 - `gsim` commit `f12312c` adds domain/surface loss interpretation on top of
   the existing report joins, deriving inverse-Q, equivalent Q, gamma, and T1
   columns without moving report parsing into the PDK;
+- `gsim` commit `61d7d66` adds material-resolution provenance sidecars for
+  generated Palace configs and extends `load_domain_material_summary()` so
+  reports can show the stack material name, matched material record, model
+  source, validity status, and resolution frequency used for each Palace
+  material attribute;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -57,8 +62,6 @@ Remaining slices:
 
 - add a validated material-record schema and aliases table once the public
   material contract grows beyond the current minimal records;
-- add explicit material validity/provenance fields so generated configs and
-  reports can explain which PDK overlay values were applied;
 - add a validated public interface-preset schema before treating MA/MS/SA
   thickness, permittivity, and loss tangent values as PDK-owned defaults.
 

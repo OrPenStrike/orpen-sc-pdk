@@ -53,11 +53,15 @@ Verified local changes:
   `EigenmodeReport.domain_loss` / `surface_loss` / `loss_budget`, deriving
   inverse-Q, equivalent Q, gamma, and T1 columns from reusable public report
   frames;
+- `gsim` commit `61d7d66`: adds `resolve_palace_materials_with_report()`,
+  writes `palace_material_resolution.json` beside generated Palace configs,
+  and extends `load_domain_material_summary()` with stack material, matched
+  material, model source, validity, and frequency provenance columns;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
-  verify the effective substrate material row is loadable through the reusable
-  `gsim` report/index-map API;
+  verify the effective substrate material row and material-resolution
+  provenance are loadable through the reusable `gsim` report/index-map API;
 - public `orpen-sc-pdk` tests now also verify a synthetic Eigenmode artifact
   bundle can load through `gsim.palace.load_eigenmode_report()` and expose
   public domain/surface loss budget rows;
@@ -69,8 +73,6 @@ Remaining slices:
 - introduce a validated public material-record schema when the current dict
   grows to include aliases, provenance, conditions, loss, conductivity,
   London-depth, or surface/interface presets;
-- add explicit material validity ranges and provenance fields to remove
-  ambiguity from effective config/report material interpretation;
 - introduce a validated public interface-preset schema for MA/MS/SA-style
   thickness, permittivity, and loss tangent records.
 

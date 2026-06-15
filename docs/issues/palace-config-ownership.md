@@ -66,11 +66,14 @@ Verified local changes:
 - public `orpen-sc-pdk` material-overlay tests now verify that the generated
   `Si` substrate material row can be loaded back through this `gsim` API for
   Driven, Eigenmode, and Electrostatic artifacts.
+- `gsim` commit `61d7d66` writes `palace_material_resolution.json` during
+  material-overlay config generation and exposes the same provenance through
+  `load_domain_material_summary()`, so generated config artifacts can explain
+  which public PDK material source and validity status produced each Palace
+  material row.
 
 Remaining slices:
 
-- record richer material-overlay provenance in generated config/report
-  artifacts;
 - record richer dielectric interface provenance before promoting interface
   presets into public PDK material data;
 - convert executable fixtures into publication-safe notebooks or examples;

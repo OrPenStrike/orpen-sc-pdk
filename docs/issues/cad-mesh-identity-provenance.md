@@ -57,6 +57,10 @@ Local prototype status:
 - tenth `gsim` results slice derives domain/surface loss budgets from the
   same report, material, interface, and index-map artifacts without introducing
   PDK-owned report parsing.
+- eleventh `gsim` config/results slice writes
+  `palace_material_resolution.json` and joins it into domain material reports,
+  so material attributes can be traced to stack material names, matched public
+  material records, model sources, validity status, and resolution frequency.
 
 Verified local changes:
 
@@ -100,6 +104,10 @@ Verified local changes:
   `summarize_domain_loss()`, `summarize_surface_loss()`, and
   `summarize_loss_budget()`, proving derived loss rows reuse the same domain
   and interface physical-name provenance;
+- `gsim` commit `61d7d66`: adds generated material-resolution sidecars and
+  domain material provenance columns, proving the material/attribute side of
+  the config/report chain can be audited without embedding non-Palace keys in
+  `config.json`;
 - `orpen-sc-pdk` local test `tests/test_gsim_driven_cpw_workflow.py`: proves
   CPW port-surface manifest/index-map artifacts on a generated public driven
   mesh, including `P1`/`P2` port metadata and Palace Power `SurfaceFlux`
@@ -181,13 +189,17 @@ Verified local changes:
 - validation after the loss-budget slice: domain/surface loss rows and
   per-mode loss budgets can be derived from public synthetic Palace artifacts
   through `gsim.palace.load_eigenmode_report()`.
+- validation after the material-resolution provenance slice: generated public
+  Palace configs write `palace_material_resolution.json`, and
+  `gsim.palace.load_domain_material_summary()` can join public PDK material
+  source and validity metadata back to Palace material attributes.
 
 Remaining implementation slices:
 
 - expose these opt-in solver smokes in publication-safe notebook/example form
   without making normal docs builds depend on local Palace;
-- add richer material/interface provenance and preset validation before making
-  MA/MS/SA defaults part of public PDK material data.
+- add richer dielectric-interface provenance and preset validation before
+  making MA/MS/SA defaults part of public PDK material data.
 
 Acceptance checks:
 

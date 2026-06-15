@@ -98,11 +98,19 @@ Verified local changes:
 - `orpen-sc-pdk` public material-overlay fixtures now verify that a synthetic
   public Eigenmode artifact bundle can derive inverse-Q, equivalent Q, gamma,
   and T1-ready loss budget rows through `gsim.palace.load_eigenmode_report()`.
+- `gsim` commit `61d7d66` extends generated config/report provenance with
+  `palace_material_resolution.json` and domain material summary columns for
+  stack material name, matched material record, model source, validity status,
+  and resolution frequency; `orpen-sc-pdk` material-overlay fixtures verify the
+  public `Si` model source is visible through the reusable report loader.
 
 Remaining slices:
 
-- add richer material/interface provenance and public preset validation before
-  treating MA/MS/SA defaults as part of the PDK contract;
+- add richer dielectric-interface provenance and public preset validation
+  before treating MA/MS/SA defaults as part of the PDK contract;
+- promote Electrostatic domain/surface loss and optional frequency-gated T1
+  reporting into reusable `gsim` loaders instead of leaving Electrostatic as
+  matrix-only in the public report surface;
 - keep native masked Surface EPR as a Palace-source/upstream capability rather
   than a Python replay in the public PDK.
 
