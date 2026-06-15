@@ -33,14 +33,16 @@ PUBLIC_SIMULATION_GOAL_AUDIT = (
     Path(__file__).resolve().parent / "fixtures" / "public_simulation_goal_audit.json"
 )
 PUBLIC_GSIM_BOUNDARY_REVIEW_CROSSCHECK = (
-    Path(__file__).resolve().parent
-    / "fixtures"
-    / "public_gsim_boundary_review_crosscheck.json"
+    Path(__file__).resolve().parent / "fixtures" / "public_gsim_boundary_review_crosscheck.json"
 )
 PUBLIC_INTERFACE_PRESET_REVIEW_QUEUE = (
-    Path(__file__).resolve().parent
-    / "fixtures"
-    / "public_interface_preset_review_queue.json"
+    Path(__file__).resolve().parent / "fixtures" / "public_interface_preset_review_queue.json"
+)
+CAD_MESH_IDENTITY_HANDOFF_FILENAME = "public_cad_mesh_identity_handoff_evidence.json"
+PUBLIC_CAD_MESH_IDENTITY_PROBLEM_KEYS = (
+    "driven_cpw",
+    "eigenmode_resonator",
+    "electrostatic_same_layer_capacitor",
 )
 
 
@@ -341,6 +343,120 @@ def _index_map_lookup_evidence(source: Path) -> dict[str, Any]:
         "row_count": len(lookup_rows),
         "lookups": lookup_rows,
     }
+
+
+def _count_values(values: Sequence[Any]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        key = str(value)
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _manifest_identity_evidence(source: Path) -> dict[str, Any]:
+    manifest = json.loads((source / "mesh_manifest.json").read_text())
+    entries = list(manifest.get("entries", ()))
+    role_names = [entry.get("role") for entry in entries]
+    dimension_names = [
+        entry.get("dimension") for entry in entries if entry.get("dimension") is not None
+    ]
+    interface_entries = [entry for entry in entries if entry.get("interface_of") is not None]
+    exterior_entries = [entry for entry in entries if entry.get("exterior_of") is not None]
+    metadata_keys_by_role: dict[str, list[str]] = {}
+    physical_names_by_role: dict[str, list[str]] = {}
+    for entry in entries:
+        role = str(entry.get("role"))
+        metadata = entry.get("metadata")
+        if isinstance(metadata, Mapping):
+            keys = set(metadata_keys_by_role.get(role, ()))
+            keys.update(str(key) for key in metadata)
+            metadata_keys_by_role[role] = sorted(keys)
+        names = physical_names_by_role.setdefault(role, [])
+        names.extend(str(name) for name in entry.get("physical_names", ()) if name)
+
+    entries_without_physical_names = [
+        str(entry.get("name")) for entry in entries if not entry.get("physical_names")
+    ]
+    entries_without_attributes = [
+        str(entry.get("name")) for entry in entries if not entry.get("attributes")
+    ]
+    entries_without_entity_tags = [
+        str(entry.get("name")) for entry in entries if not entry.get("entity_tags")
+    ]
+    return {
+        "schema_version": manifest.get("schema_version"),
+        "entry_count": len(entries),
+        "roles": _count_values(role_names),
+        "dimensions": _count_values(dimension_names),
+        "physical_name_count": sum(len(entry.get("physical_names", ())) for entry in entries),
+        "interface_entry_count": len(interface_entries),
+        "interface_physical_names": [
+            str(name) for entry in interface_entries for name in entry.get("physical_names", ())
+        ],
+        "exterior_entry_count": len(exterior_entries),
+        "exterior_physical_names": [
+            str(name) for entry in exterior_entries for name in entry.get("physical_names", ())
+        ],
+        "entries_without_physical_names": entries_without_physical_names,
+        "entries_without_attributes": entries_without_attributes,
+        "entries_without_entity_tags": entries_without_entity_tags,
+        "metadata_keys_by_role": dict(sorted(metadata_keys_by_role.items())),
+        "physical_names_by_role": {
+            role: sorted(dict.fromkeys(names))
+            for role, names in sorted(physical_names_by_role.items())
+        },
+    }
+
+
+def _public_core_problem_specs() -> tuple[dict[str, Any], ...]:
+    return (
+        {
+            "problem_key": "driven_cpw",
+            "fixture_name": "cpw_straight",
+            "problem_type": "Driven",
+            "build_sim": _public_driven_cpw_sim,
+            "build_postprocessing": _driven_postprocessing,
+            "report_summary": _driven_report_summary,
+            "solver_enabled": True,
+            "prepare_local_solver": None,
+        },
+        {
+            "problem_key": "eigenmode_resonator",
+            "fixture_name": "resonator",
+            "problem_type": "Eigenmode",
+            "build_sim": _public_eigenmode_resonator_sim,
+            "build_postprocessing": _eigenmode_postprocessing,
+            "report_summary": _eigenmode_report_summary,
+            "solver_enabled": True,
+            "prepare_local_solver": _apply_public_eigenmode_local_smoke_profile,
+        },
+        {
+            "problem_key": "electrostatic_same_layer_capacitor",
+            "fixture_name": "martinis2022_differential_ribbon_capacitor",
+            "problem_type": "Electrostatic",
+            "build_sim": _public_same_layer_capacitor_electrostatic_sim,
+            "build_postprocessing": _electrostatic_postprocessing,
+            "report_summary": _electrostatic_report_summary,
+            "solver_enabled": True,
+            "prepare_local_solver": None,
+        },
+    )
+
+
+def _public_problem_specs() -> tuple[dict[str, Any], ...]:
+    return (
+        *_public_core_problem_specs(),
+        {
+            "problem_key": "magnetostatic_cpw",
+            "fixture_name": "cpw_straight",
+            "problem_type": "Magnetostatic",
+            "build_sim": _public_magnetostatic_cpw_sim,
+            "build_postprocessing": _magnetostatic_postprocessing,
+            "report_summary": _magnetostatic_report_summary,
+            "solver_enabled": False,
+            "prepare_local_solver": None,
+        },
+    )
 
 
 def _solver_env(environ: Mapping[str, str]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -847,9 +963,7 @@ def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Pa
 
     terminal_c_path = output_dir / "terminal-C.csv"
     terminal_c_path.write_text(
-        "i, C[i][1] (F), C[i][2] (F)\n"
-        "1.00e+00, 1.0e-15, -2.0e-15\n"
-        "2.00e+00, -2.0e-15, 4.0e-15\n"
+        "i, C[i][1] (F), C[i][2] (F)\n1.00e+00, 1.0e-15, -2.0e-15\n2.00e+00, -2.0e-15, 4.0e-15\n"
     )
     domain_e_path = output_dir / "domain-E.csv"
     domain_e_path.write_text("i, E_elec[1] (J), p_elec[1]\n1, 1.0, 0.25\n2, 1.0, 0.125\n")
@@ -1439,12 +1553,8 @@ def public_index_map_lookup_table(
                 "port": entry.metadata.get("port"),
                 "terminal_name": entry.extra.get("terminal_name"),
                 "current_source_name": entry.extra.get("current_source_name"),
-                "current_source_element_index": entry.extra.get(
-                    "current_source_element_index"
-                ),
-                "current_source_element_count": entry.extra.get(
-                    "current_source_element_count"
-                ),
+                "current_source_element_index": entry.extra.get("current_source_element_index"),
+                "current_source_element_count": entry.extra.get("current_source_element_count"),
                 "direction": entry.extra.get("Direction"),
                 "coordinate_system": entry.extra.get("CoordinateSystem"),
                 "type": entry.extra.get("Type"),
@@ -1466,9 +1576,7 @@ def public_config_generation_summary(output_dir: str | Path) -> dict[str, Any]:
         "solver_has_linear": evidence["solver_has_linear"],
         "domain_material_count": evidence["domain_material_count"],
         "domain_material_rows": len(evidence["domain_materials"]),
-        "domain_postprocessing_energy_count": evidence[
-            "domain_postprocessing_energy_count"
-        ],
+        "domain_postprocessing_energy_count": evidence["domain_postprocessing_energy_count"],
         "surface_flux_count": evidence["surface_flux_count"],
         "dielectric_postprocessing_count": evidence["dielectric_postprocessing_count"],
         "lumped_port_count": evidence["lumped_port_count"],
@@ -1612,6 +1720,223 @@ def run_public_electrostatic_local_smoke(
         "has_inverse_matrix": report.inverse_capacitance is not None,
         "terminal_c_bytes": int(results["terminal-C.csv"].stat().st_size),
     }
+
+
+def _cad_mesh_identity_problem_evidence(
+    source: Path,
+    *,
+    problem_type: str,
+    fixture_name: str,
+    relative_to: Path | None,
+) -> dict[str, Any]:
+    manifest = _manifest_identity_evidence(source)
+    lookup = _index_map_lookup_evidence(source)
+    config = _config_generation_evidence(source)
+    lookup_rows = lookup["lookups"]
+    rows_without_physical_name = [
+        row["entry_name"] for row in lookup_rows if not row.get("physical_name")
+    ]
+    rows_missing_reverse_lookup = [
+        row["entry_name"]
+        for row in lookup_rows
+        if row["index"] not in row.get("reverse_indices_for_physical_name", ())
+    ]
+    rows_missing_attribute_lookup = [
+        row["entry_name"]
+        for row in lookup_rows
+        if row.get("attribute") is not None
+        and row["entry_name"] not in row.get("entry_names_for_attribute", ())
+    ]
+    port_names = sorted(
+        {
+            str(row["metadata"]["port"])
+            for row in lookup_rows
+            if isinstance(row.get("metadata"), Mapping) and row["metadata"].get("port") is not None
+        }
+    )
+    terminal_names = sorted(
+        {str(row["terminal_name"]) for row in lookup_rows if row.get("terminal_name") is not None}
+    )
+    covered_contracts = [
+        "mesh_manifest_schema",
+        "mesh_manifest_roles",
+        "mesh_manifest_physical_names",
+        "palace_index_forward_lookup",
+        "palace_index_reverse_lookup",
+        "palace_attribute_lookup",
+        "config_domain_material_join",
+    ]
+    if manifest["interface_entry_count"]:
+        covered_contracts.append("meshwell_style_interface_identity")
+    if port_names:
+        covered_contracts.append("port_metadata")
+    if terminal_names:
+        covered_contracts.append("terminal_metadata")
+
+    return {
+        "problem_type": problem_type,
+        "fixture": fixture_name,
+        "output_dir": (
+            _relative_path(source, relative_to) if relative_to is not None else source.as_posix()
+        ),
+        "artifact_paths": {
+            name: (
+                _relative_path(source / name, relative_to)
+                if relative_to is not None
+                else (source / name).as_posix()
+            )
+            for name in ("mesh_manifest.json", "palace_index_map.json", "config.json")
+        },
+        "mesh_manifest": manifest,
+        "index_map": {
+            "schema_version": lookup["schema_version"],
+            "entry_count": lookup["row_count"],
+            "sections": _count_values([row["section"] for row in lookup_rows]),
+            "roles": _count_values([row["role"] for row in lookup_rows]),
+            "rows_without_physical_name": rows_without_physical_name,
+            "rows_missing_reverse_lookup": rows_missing_reverse_lookup,
+            "rows_missing_attribute_lookup": rows_missing_attribute_lookup,
+            "port_names": port_names,
+            "terminal_names": terminal_names,
+        },
+        "config_generation": {
+            "problem_type": config["problem_type"],
+            "solver_problem_block": config["solver_problem_block"],
+            "domain_material_count": config["domain_material_count"],
+            "domain_material_rows": len(config["domain_materials"]),
+            "domain_postprocessing_energy_count": config["domain_postprocessing_energy_count"],
+            "surface_flux_count": config["surface_flux_count"],
+            "terminal_count": config["terminal_count"],
+            "dielectric_postprocessing_count": config["dielectric_postprocessing_count"],
+        },
+        "covered_contracts": covered_contracts,
+        "identity_status": (
+            "covered_public_fixture"
+            if not rows_without_physical_name
+            and not rows_missing_reverse_lookup
+            and not rows_missing_attribute_lookup
+            else "needs_attention"
+        ),
+    }
+
+
+def _build_cad_mesh_identity_handoff_evidence_from_outputs(
+    output_root: Path,
+    problems: Mapping[str, Mapping[str, Any]],
+    *,
+    relative_to: Path | None,
+) -> dict[str, Any]:
+    selected: dict[str, Any] = {}
+    for problem_key in PUBLIC_CAD_MESH_IDENTITY_PROBLEM_KEYS:
+        problem = problems[problem_key]
+        source = output_root / str(problem["output_dir"])
+        selected[problem_key] = _cad_mesh_identity_problem_evidence(
+            source,
+            problem_type=str(problem["problem_type"]),
+            fixture_name=str(problem["fixture"]),
+            relative_to=relative_to,
+        )
+
+    evidence = {
+        "schema_version": 1,
+        "workflow": "public-cad-mesh-identity-handoff",
+        "scope": "Driven, Eigenmode, and Electrostatic public fixture artifacts",
+        "repo": "orpen-sc-pdk",
+        "owner_boundaries": {
+            "meshwell": (
+                "solver-agnostic physical names, interface/exterior tag grammar, "
+                "XAO/CAD export, and backend equivalence"
+            ),
+            "gsim": (
+                "Palace mesh manifests, config fragments, index maps, and "
+                "report/postprocessing lookup"
+            ),
+            "orpen-sc-pdk": (
+                "public PDK layer/material labels, publication-safe fixtures, "
+                "notebook evidence, and issue traceability"
+            ),
+        },
+        "deferred_scope": [
+            "Magnetostatic report contract",
+            "real private HPC/profile validation",
+            "upstream meshwell backend-equivalence contract promotion",
+        ],
+        "upstream_gap": (
+            "Formal meshwell physical-name/interface-tag contract and cross-repo "
+            "meshwell-to-gsim handoff tests remain future upstream slices."
+        ),
+        "problems": selected,
+    }
+    evidence_path = output_root / CAD_MESH_IDENTITY_HANDOFF_FILENAME
+    evidence["evidence_path"] = (
+        _relative_path(evidence_path, relative_to)
+        if relative_to is not None
+        else evidence_path.as_posix()
+    )
+    evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n")
+    return evidence
+
+
+def build_public_cad_mesh_identity_handoff_evidence(
+    output_root: str | Path = DEFAULT_OUTPUT_DIR / "cad-mesh-identity-handoff",
+    *,
+    relative_to: str | Path | None = None,
+) -> dict[str, Any]:
+    """Build publication-safe CAD/mesh identity handoff evidence."""
+
+    output_root = Path(output_root)
+    output_root.mkdir(parents=True, exist_ok=True)
+    relative_root = Path(relative_to) if relative_to is not None else None
+    problems: dict[str, dict[str, Any]] = {}
+    for spec in _public_core_problem_specs():
+        output_dir = output_root / str(spec["problem_key"])
+        sim, mesh_result = spec["build_sim"](output_dir)
+        sim.write_config(
+            postprocessing=spec["build_postprocessing"](mesh_result),
+            validate_mesh=False,
+            material_overlay=get_gsim_material_overlay(),
+            hints=public_solver_config_hints(),
+        )
+        problems[str(spec["problem_key"])] = {
+            "problem_type": spec["problem_type"],
+            "fixture": spec["fixture_name"],
+            "output_dir": _relative_path(output_dir, output_root),
+        }
+
+    return _build_cad_mesh_identity_handoff_evidence_from_outputs(
+        output_root,
+        problems,
+        relative_to=relative_root,
+    )
+
+
+def public_cad_mesh_identity_handoff_table(
+    output_root: str | Path = DEFAULT_OUTPUT_DIR / "cad-mesh-identity-handoff",
+) -> Any:
+    """Return CAD/mesh identity handoff evidence as a notebook table."""
+
+    import pandas as pd
+
+    evidence = build_public_cad_mesh_identity_handoff_evidence(output_root)
+    rows = []
+    for problem in evidence["problems"].values():
+        mesh_manifest = problem["mesh_manifest"]
+        index_map = problem["index_map"]
+        rows.append(
+            {
+                "problem_type": problem["problem_type"],
+                "fixture": problem["fixture"],
+                "identity_status": problem["identity_status"],
+                "mesh_roles": mesh_manifest["roles"],
+                "interface_physical_names": mesh_manifest["interface_physical_names"],
+                "index_sections": index_map["sections"],
+                "port_names": index_map["port_names"],
+                "terminal_names": index_map["terminal_names"],
+                "covered_contracts": problem["covered_contracts"],
+                "upstream_gap": evidence["upstream_gap"],
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def _public_magnetostatic_cpw_sim(output_dir: Path):
@@ -2093,49 +2418,6 @@ def build_public_palace_smoke_evidence(
     run_kwargs, solver = _solver_env(environ)
 
     orpen_sc_pdk.activate()
-    problem_specs = (
-        {
-            "problem_key": "driven_cpw",
-            "fixture_name": "cpw_straight",
-            "problem_type": "Driven",
-            "build_sim": _public_driven_cpw_sim,
-            "build_postprocessing": _driven_postprocessing,
-            "report_summary": _driven_report_summary,
-            "solver_enabled": True,
-            "prepare_local_solver": None,
-        },
-        {
-            "problem_key": "eigenmode_resonator",
-            "fixture_name": "resonator",
-            "problem_type": "Eigenmode",
-            "build_sim": _public_eigenmode_resonator_sim,
-            "build_postprocessing": _eigenmode_postprocessing,
-            "report_summary": _eigenmode_report_summary,
-            "solver_enabled": True,
-            "prepare_local_solver": _apply_public_eigenmode_local_smoke_profile,
-        },
-        {
-            "problem_key": "electrostatic_same_layer_capacitor",
-            "fixture_name": "martinis2022_differential_ribbon_capacitor",
-            "problem_type": "Electrostatic",
-            "build_sim": _public_same_layer_capacitor_electrostatic_sim,
-            "build_postprocessing": _electrostatic_postprocessing,
-            "report_summary": _electrostatic_report_summary,
-            "solver_enabled": True,
-            "prepare_local_solver": None,
-        },
-        {
-            "problem_key": "magnetostatic_cpw",
-            "fixture_name": "cpw_straight",
-            "problem_type": "Magnetostatic",
-            "build_sim": _public_magnetostatic_cpw_sim,
-            "build_postprocessing": _magnetostatic_postprocessing,
-            "report_summary": _magnetostatic_report_summary,
-            "solver_enabled": False,
-            "prepare_local_solver": None,
-        },
-    )
-
     problems = {
         spec["problem_key"]: _build_problem_evidence(
             output_root=output_root,
@@ -2150,9 +2432,14 @@ def build_public_palace_smoke_evidence(
             solver_enabled=spec["solver_enabled"],
             prepare_local_solver=spec["prepare_local_solver"],
         )
-        for spec in problem_specs
+        for spec in _public_problem_specs()
     }
     sweep_evidence = _build_sweep_evidence(output_root, problems)
+    cad_mesh_identity_handoff = _build_cad_mesh_identity_handoff_evidence_from_outputs(
+        output_root,
+        problems,
+        relative_to=output_root,
+    )
     thin_film_proxy_evidence = build_public_thin_film_sheet_proxy_interface_evidence(
         output_root / "thin-film-sheet-proxy-interface",
         relative_to=output_root,
@@ -2169,6 +2456,7 @@ def build_public_palace_smoke_evidence(
         "goal_audit": load_public_simulation_goal_audit(),
         "gsim_boundary_review_crosscheck": load_public_gsim_boundary_review_crosscheck(),
         "interface_preset_review_queue": load_public_interface_preset_review_queue(),
+        "cad_mesh_identity_handoff": cad_mesh_identity_handoff,
         "thin_film_sheet_proxy_interface": thin_film_proxy_evidence,
         "problems": problems,
         "sweep_summary": sweep_evidence["summary"],

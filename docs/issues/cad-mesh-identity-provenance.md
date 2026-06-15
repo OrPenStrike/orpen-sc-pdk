@@ -72,6 +72,14 @@ Local prototype status:
   `section/index -> physical name`, reverse `physical name -> indices`, and
   attribute-to-entry lookup rows for the public Driven, Eigenmode, and
   Electrostatic fixtures.
+- current OrPen local evidence/notebook slice also writes
+  `public_cad_mesh_identity_handoff_evidence.json`, a consumer-side audit of
+  the generated Driven, Eigenmode, and Electrostatic `mesh_manifest.json`,
+  `palace_index_map.json`, and `config.json` artifacts. The audit records
+  manifest role coverage, physical-name coverage, generated interface names,
+  index-map sections, port metadata, terminal metadata, and config material
+  joins while keeping physical-name grammar and backend equivalence in
+  `meshwell`.
 
 Verified local changes:
 
@@ -248,6 +256,13 @@ Verified local changes:
   docs-visible workflow now shows generated physical names, Palace config
   generation, index-map joining, and material provenance without adopting
   automatic public defaults.
+- validation after the CAD/mesh identity audit slice: the public inventory
+  notebook displays `public_cad_mesh_identity_handoff_table()`, and the smoke
+  evidence bundle embeds a Driven/Eigenmode/Electrostatic-only audit proving
+  manifest role/physical-name coverage, generated `air___silicon` interface
+  identity, index-map forward/reverse/attribute lookups, Driven port metadata,
+  Electrostatic terminal metadata, and config material joins through public
+  `gsim` artifacts.
 
 Remaining implementation slices:
 
@@ -259,6 +274,9 @@ Remaining implementation slices:
   tested with caller-supplied presets;
 - add richer dielectric-interface provenance and source-backed preset
   validation before making MA/MS/SA defaults part of public PDK material data.
+- promote a formal meshwell physical-name/interface-tag grammar and
+  meshwell-to-gsim handoff contract with backend equivalence tests before
+  treating CAD/XAO provenance as upstream-complete.
 
 Acceptance checks:
 

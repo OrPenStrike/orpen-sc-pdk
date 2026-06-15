@@ -44,6 +44,12 @@ Current prototype baseline:
   through `gsim.palace.load_postprocessing_index_map()` and display forward
   `section/index -> physical name`, reverse `physical name -> indices`, and
   attribute lookup rows for Driven, Eigenmode, and Electrostatic workflows.
+- `public_cad_mesh_identity_handoff_evidence.json` records the same
+  publication-safe CAD/mesh identity audit for the Driven, Eigenmode, and
+  Electrostatic fixtures: manifest role coverage, generated interface physical
+  names, index-map sections, port metadata, terminal metadata, and config
+  material joins. This is OrPen consumer evidence; meshwell still owns the
+  physical-name/interface-tag grammar and backend equivalence contract.
 - generated public example meshes now prove domain, conductor, port, terminal,
   absorbing-boundary, refinement, and non-exterior interface identities through
   the same manifest path; interface-loss classification remains a separate

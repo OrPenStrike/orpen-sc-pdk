@@ -10,6 +10,7 @@ import scripts.public_palace_smoke_evidence as smoke_evidence
 from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
     _driven_report_summary,
+    build_public_cad_mesh_identity_handoff_evidence,
     build_public_palace_smoke_evidence,
     build_public_thin_film_sheet_proxy_interface_evidence,
     load_public_gsim_boundary_review_crosscheck,
@@ -86,8 +87,7 @@ def _assert_helper_node_inventory(evidence: dict) -> None:
         magnetostatic["public_status"] == "implemented_public_config_fixture_pending_report_loader"
     )
     assert (
-        magnetostatic["promotion_gate"]
-        == "report_loader_requires_confirmed_palace_output_contract"
+        magnetostatic["promotion_gate"] == "report_loader_requires_confirmed_palace_output_contract"
     )
     assert "Magnetostatic Palace CSV/output schema" in magnetostatic["missing_evidence"]
     assert "MagnetostaticSim" in magnetostatic["public_api_or_artifact"]
@@ -265,6 +265,78 @@ def _assert_interface_preset_review_queue(evidence: dict) -> None:
     assert "gsim material-kind/exact assignment helpers" in woods_ms["gsim_handoff"]
 
 
+def _assert_cad_mesh_identity_handoff_evidence(evidence: dict) -> None:
+    audit = evidence["cad_mesh_identity_handoff"]
+
+    assert audit["schema_version"] == 1
+    assert audit["workflow"] == "public-cad-mesh-identity-handoff"
+    assert audit["scope"] == ("Driven, Eigenmode, and Electrostatic public fixture artifacts")
+    assert audit["repo"] == "orpen-sc-pdk"
+    assert audit["evidence_path"] == "public_cad_mesh_identity_handoff_evidence.json"
+    assert set(audit["owner_boundaries"]) == {"meshwell", "gsim", "orpen-sc-pdk"}
+    assert "Magnetostatic report contract" in audit["deferred_scope"]
+    assert "real private HPC/profile validation" in audit["deferred_scope"]
+    assert "meshwell-to-gsim handoff tests" in audit["upstream_gap"]
+    assert set(audit["problems"]) == {
+        "driven_cpw",
+        "eigenmode_resonator",
+        "electrostatic_same_layer_capacitor",
+    }
+
+    for problem_key, problem in audit["problems"].items():
+        manifest = problem["mesh_manifest"]
+        index_map = problem["index_map"]
+        config = problem["config_generation"]
+
+        assert problem["identity_status"] == "covered_public_fixture"
+        assert problem["output_dir"] == problem_key
+        assert problem["artifact_paths"] == {
+            "config.json": f"{problem_key}/config.json",
+            "mesh_manifest.json": f"{problem_key}/mesh_manifest.json",
+            "palace_index_map.json": f"{problem_key}/palace_index_map.json",
+        }
+        assert problem["problem_type"] == config["problem_type"]
+        assert config["solver_problem_block"] == problem["problem_type"]
+        assert config["domain_material_rows"] == config["domain_material_count"]
+        assert config["domain_postprocessing_energy_count"] == 2
+        assert manifest["schema_version"] == 1
+        assert manifest["entry_count"] > 0
+        assert manifest["physical_name_count"] == manifest["entry_count"]
+        assert manifest["interface_entry_count"] >= 1
+        assert "air___silicon" in manifest["interface_physical_names"]
+        assert manifest["entries_without_physical_names"] == []
+        assert "dielectric_volume" in manifest["roles"]
+        assert index_map["schema_version"] == 1
+        assert index_map["entry_count"] > 0
+        assert index_map["rows_without_physical_name"] == []
+        assert index_map["rows_missing_reverse_lookup"] == []
+        assert index_map["rows_missing_attribute_lookup"] == []
+        assert "Domains.Postprocessing.Energy" in index_map["sections"]
+        assert "mesh_manifest_physical_names" in problem["covered_contracts"]
+        assert "palace_index_reverse_lookup" in problem["covered_contracts"]
+        assert "meshwell_style_interface_identity" in problem["covered_contracts"]
+
+    driven = audit["problems"]["driven_cpw"]
+    assert driven["problem_type"] == "Driven"
+    assert driven["index_map"]["port_names"] == ["P1", "P2"]
+    assert driven["index_map"]["terminal_names"] == []
+    assert driven["config_generation"]["surface_flux_count"] == 4
+    assert "port_metadata" in driven["covered_contracts"]
+
+    eigenmode = audit["problems"]["eigenmode_resonator"]
+    assert eigenmode["problem_type"] == "Eigenmode"
+    assert eigenmode["index_map"]["port_names"] == []
+    assert eigenmode["index_map"]["terminal_names"] == []
+    assert eigenmode["config_generation"]["surface_flux_count"] == 1
+
+    electrostatic = audit["problems"]["electrostatic_same_layer_capacitor"]
+    assert electrostatic["problem_type"] == "Electrostatic"
+    assert electrostatic["index_map"]["port_names"] == []
+    assert electrostatic["index_map"]["terminal_names"] == ["negative", "positive"]
+    assert electrostatic["config_generation"]["terminal_count"] == 2
+    assert "terminal_metadata" in electrostatic["covered_contracts"]
+
+
 def _assert_thin_film_sheet_proxy_interface_evidence(evidence: dict) -> None:
     proxy = evidence["thin_film_sheet_proxy_interface"]
     assert proxy["schema_version"] == 1
@@ -274,9 +346,7 @@ def _assert_thin_film_sheet_proxy_interface_evidence(evidence: dict) -> None:
     assert proxy["pdk_interface_preset_record_count"] == 0
     assert proxy["output_dir"] == "thin-film-sheet-proxy-interface"
     assert proxy["config_path"] == "thin-film-sheet-proxy-interface/config.json"
-    assert proxy["index_map_path"] == (
-        "thin-film-sheet-proxy-interface/palace_index_map.json"
-    )
+    assert proxy["index_map_path"] == ("thin-film-sheet-proxy-interface/palace_index_map.json")
 
     assert [row["interface_type"] for row in proxy["specs"]] == ["MA", "MS"]
     assert [row["entry_names"] for row in proxy["specs"]] == [
@@ -286,9 +356,7 @@ def _assert_thin_film_sheet_proxy_interface_evidence(evidence: dict) -> None:
     assert {row["preset_source"] for row in proxy["specs"]} == {
         "public thin-film sheet proxy fixture only"
     }
-    assert {row["material_name"] for row in proxy["specs"]} == {
-        "AlOx_native_generic"
-    }
+    assert {row["material_name"] for row in proxy["specs"]} == {"AlOx_native_generic"}
 
     assert [row["Type"] for row in proxy["config_rows"]] == ["MA", "MS"]
     assert all("_MaterialName" not in row for row in proxy["config_rows"])
@@ -333,6 +401,29 @@ def test_public_thin_film_sheet_proxy_interface_evidence_runs_standalone(
     ]
 
 
+def test_public_cad_mesh_identity_handoff_evidence_runs_standalone(
+    tmp_path: Path,
+) -> None:
+    audit = build_public_cad_mesh_identity_handoff_evidence(
+        tmp_path / "identity",
+        relative_to=tmp_path,
+    )
+
+    assert audit["evidence_path"] == ("identity/public_cad_mesh_identity_handoff_evidence.json")
+    assert set(audit["problems"]) == {
+        "driven_cpw",
+        "eigenmode_resonator",
+        "electrostatic_same_layer_capacitor",
+    }
+    assert "magnetostatic_cpw" not in audit["problems"]
+    for problem_key, problem in audit["problems"].items():
+        assert problem["output_dir"] == f"identity/{problem_key}"
+        assert problem["identity_status"] == "covered_public_fixture"
+        assert (tmp_path / "identity" / problem_key / "mesh_manifest.json").is_file()
+        assert (tmp_path / "identity" / problem_key / "palace_index_map.json").is_file()
+        assert (tmp_path / "identity" / problem_key / "config.json").is_file()
+
+
 def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -> None:
     evidence = build_public_palace_smoke_evidence(tmp_path, environ={})
 
@@ -349,6 +440,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
     _assert_goal_audit(evidence)
     _assert_gsim_boundary_review_crosscheck(evidence)
     _assert_interface_preset_review_queue(evidence)
+    _assert_cad_mesh_identity_handoff_evidence(evidence)
     _assert_thin_film_sheet_proxy_interface_evidence(evidence)
     assert set(evidence["problems"]) == {
         "driven_cpw",
@@ -898,10 +990,9 @@ def test_public_palace_smoke_evidence_solver_gate_skips_magnetostatic(
         "reason": "Magnetostatic local Palace solve deferred by current scope",
     }
     assert magnetostatic["run_summary"]["handoff"]["metadata"]["solver_enabled"] is False
-    assert (
-        magnetostatic["run_summary"]["resource"]["missing_sources"]
-        == ["Magnetostatic local Palace solve deferred by current scope"]
-    )
+    assert magnetostatic["run_summary"]["resource"]["missing_sources"] == [
+        "Magnetostatic local Palace solve deferred by current scope"
+    ]
 
 
 def test_driven_report_summary_uses_sparams_public_keys(

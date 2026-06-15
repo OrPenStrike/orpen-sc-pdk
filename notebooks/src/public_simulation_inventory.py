@@ -25,6 +25,7 @@ from scripts.public_palace_smoke_evidence import (
     load_public_problem_notebook_crosscheck,
     load_public_simulation_goal_audit,
     load_public_simulation_helper_node_inventory,
+    public_cad_mesh_identity_handoff_table,
     public_gsim_boundary_review_crosscheck_table,
     public_interface_preset_candidate_review_table,
     public_interface_preset_source_review_table,
@@ -85,6 +86,20 @@ gsim_boundary_review = public_gsim_boundary_review_crosscheck_table()
 display(gsim_boundary_review)
 
 # %% [markdown]
+# ## CAD/mesh identity handoff
+#
+# CAD/mesh identity evidence stays notebook-visible as consumer evidence. The
+# table consumes generated `mesh_manifest.json`, `palace_index_map.json`, and
+# `config.json` artifacts for the public Driven, Eigenmode, and Electrostatic
+# fixtures; upstream physical-name grammar and backend equivalence remain owned
+# by `meshwell`, while Palace index/report lookup remains owned by `gsim`.
+
+# %%
+cad_mesh_identity_handoff = public_cad_mesh_identity_handoff_table()
+
+display(cad_mesh_identity_handoff)
+
+# %% [markdown]
 # ## Interface preset source review
 #
 # MA/MS/SA candidate values stay in a source-review queue until accepted public
@@ -124,20 +139,15 @@ display(
         "helper_node_count": len(load_public_simulation_helper_node_inventory()),
         "crosscheck_row_count": len(load_public_problem_notebook_crosscheck()),
         "goal_audit_row_count": len(load_public_simulation_goal_audit()),
-        "gsim_boundary_review_row_count": len(
-            load_public_gsim_boundary_review_crosscheck()
-        ),
+        "gsim_boundary_review_row_count": len(load_public_gsim_boundary_review_crosscheck()),
+        "cad_mesh_identity_problem_count": len(cad_mesh_identity_handoff),
         "interface_preset_source_count": len(interface_preset_queue["sources"]),
-        "interface_preset_candidate_count": len(
-            interface_preset_queue["candidate_records"]
-        ),
+        "interface_preset_candidate_count": len(interface_preset_queue["candidate_records"]),
         "thin_film_proxy_interface_count": len(thin_film_proxy_interfaces),
-        "coverage_status_counts": problem_notebook_crosscheck[
-            "coverage_status"
-        ].value_counts(sort=False).to_dict(),
-        "goal_status_counts": goal_audit["current_status"]
+        "coverage_status_counts": problem_notebook_crosscheck["coverage_status"]
         .value_counts(sort=False)
         .to_dict(),
+        "goal_status_counts": goal_audit["current_status"].value_counts(sort=False).to_dict(),
         "boundary_group_counts": gsim_boundary_review["boundary_group"]
         .value_counts(sort=False)
         .to_dict(),
@@ -147,8 +157,6 @@ display(
         "ecosystem_home_counts": helper_node_inventory["gdsfactory_home"]
         .value_counts(sort=False)
         .to_dict(),
-        "issue_counts": helper_node_inventory["next_issue"]
-        .value_counts(sort=False)
-        .to_dict(),
+        "issue_counts": helper_node_inventory["next_issue"].value_counts(sort=False).to_dict(),
     }
 )
