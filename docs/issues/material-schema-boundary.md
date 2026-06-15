@@ -109,6 +109,12 @@ Verified local changes:
   can flow through the `gsim` material-kind classifier using OrPen's public
   material-kind map and generated-name alias map before Palace config and
   report loading, without introducing public default MA/MS/SA values;
+- public Eigenmode workflow tests now prove the same path against a real
+  generated public resonator mesh manifest: the generated `air___silicon`
+  interface classifies through public `air -> vacuum` and `silicon -> Si`
+  aliases, resolves `AlOx_native_generic` through the public material overlay,
+  and loads interface material provenance through the reusable report/index-map
+  path;
 - public Driven, Eigenmode, and Electrostatic workflow examples intentionally
   continue to pass only `get_gsim_material_overlay()` into generated configs:
   those examples should not wire `get_gsim_material_kind_map()` into automatic

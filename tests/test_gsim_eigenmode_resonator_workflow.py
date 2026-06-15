@@ -12,7 +12,12 @@ from material_overlay_assertions import (
 
 import orpen_sc_pdk
 from orpen_sc_pdk.cells import resonator
-from orpen_sc_pdk.materials import get_gsim_material_overlay
+from orpen_sc_pdk.materials import (
+    get_gsim_material_kind_alias_map,
+    get_gsim_material_kind_map,
+    get_gsim_material_overlay,
+    validate_interface_preset_records,
+)
 
 
 def _public_resonator_eigenmode_sim(output_dir: Path):
@@ -132,6 +137,79 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
     assert len(absorbing_rows) == 1
     assert absorbing_rows[0]["index"] == surface_flux[0]["Index"]
     assert absorbing_rows[0]["attributes"] == surface_flux[0]["Attributes"]
+
+
+def test_public_resonator_generated_interface_classifies_with_public_aliases(
+    tmp_path: Path,
+) -> None:
+    """Caller-supplied presets can classify real generated interface names."""
+
+    output_dir = tmp_path / "palace-sim"
+    sim, mesh_result = _public_resonator_eigenmode_sim(output_dir)
+
+    from gsim.palace import load_dielectric_interface_summary
+    from gsim.palace.mesh import (
+        build_dielectric_interface_specs_from_material_kinds,
+        build_postprocessing_config_from_manifest,
+    )
+
+    records = {
+        "public_sa_example": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public test fixture only",
+        }
+    }
+    specs = build_dielectric_interface_specs_from_material_kinds(
+        mesh_result.manifest,
+        material_kind_by_name=get_gsim_material_kind_map(),
+        material_name_aliases=get_gsim_material_kind_alias_map(),
+        presets=validate_interface_preset_records(records),
+        preset_by_interface_type={"SA": "public_sa_example"},
+    )
+    postprocessing = build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        dielectric_interfaces=specs,
+    )
+    config_path = sim.write_config(
+        postprocessing=postprocessing,
+        material_overlay=get_gsim_material_overlay(),
+    )
+
+    config = json.loads(Path(config_path).read_text())
+    dielectric_rows = config["Boundaries"]["Postprocessing"]["Dielectric"]
+    interface_entry = next(
+        entry for entry in mesh_result.manifest.entries if entry.name == "air___silicon"
+    )
+
+    assert len(specs) == 1
+    assert specs[0].interface_type == "SA"
+    assert specs[0].entry_names == ("air___silicon",)
+    assert specs[0].material_name == "AlOx_native_generic"
+    assert dielectric_rows == [
+        {
+            "Index": 1,
+            "Attributes": list(interface_entry.attributes),
+            "Type": "SA",
+            "Thickness": 0.003,
+            "Permittivity": 10.0,
+            "LossTan": 0.0,
+        }
+    ]
+
+    summary = load_dielectric_interface_summary(
+        {
+            "config.json": config_path,
+            "palace_index_map.json": output_dir / "palace_index_map.json",
+        }
+    )
+    row = summary.set_index("surface_index").loc[1]
+    assert row["source_name"] == "air___silicon"
+    assert row["interface_type"] == "SA"
+    assert row["interface_material_name"] == "AlOx_native_generic"
+    assert row["matched_material_name"] == "AlOx_native_generic"
+    assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 
 
 def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(

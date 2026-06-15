@@ -41,6 +41,10 @@ Current public notebook:
   as manifest-level helpers, and generated `air`/`silicon` material names can
   classify through the public alias map; public problem-type examples still
   wait for source-backed public preset records and default-selection policy;
+- the public resonator Eigenmode fixture now proves the generated
+  `air___silicon` interface can be classified with OrPen's public
+  material-kind and alias helpers when the caller supplies an explicit test
+  preset;
 - the same notebook exposes an opt-in local Palace smoke cell for Driven,
   Eigenmode, and Electrostatic public fixtures; normal docs builds display a
   skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or

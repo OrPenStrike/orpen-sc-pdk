@@ -218,6 +218,12 @@ Verified local changes:
   Electrostatic fixture builders for mesh/config summaries and opt-in local
   Palace smoke execution, while normal docs builds display a skip reason
   instead of invoking a local solver.
+- validation after the generated-interface classification slice: the public
+  resonator Eigenmode fixture now uses its real generated
+  `mesh_manifest.json` interface row, OrPen's public material-kind map,
+  OrPen's generated-name alias map, and a caller-supplied public test preset
+  to emit a configured `SA` dielectric interface row and load the joined
+  material provenance through `gsim.palace.load_dielectric_interface_summary()`.
 
 Remaining implementation slices:
 
@@ -225,7 +231,8 @@ Remaining implementation slices:
   after source-backed public interface presets and default-selection rules are
   accepted; the public alias map already lets `air`/`silicon`-style `gsim`
   volume names classify through public `vacuum`/`Si` material records without
-  private lookup tables;
+  private lookup tables, and the real generated resonator manifest is now
+  tested with caller-supplied presets;
 - add richer dielectric-interface provenance and source-backed preset
   validation before making MA/MS/SA defaults part of public PDK material data.
 

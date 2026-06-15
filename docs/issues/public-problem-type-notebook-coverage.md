@@ -82,6 +82,10 @@ Verified local changes:
   alias map covers generated `air`/`silicon` material names; the public PDK
   still has no source-backed default interface preset records or
   default-selection policy for automatic classification;
+- the public resonator Eigenmode fixture now proves its real generated
+  `air___silicon` interface can be classified with OrPen's public material-kind
+  and alias helpers plus a caller-supplied test preset, then joined back through
+  `gsim.palace.load_dielectric_interface_summary()`;
 - the public simulation workflow notebook now also writes synthetic public
   Eigenmode and Electrostatic report artifacts, loads them through reusable
   `gsim` report bundles, and displays curated domain-loss, surface-loss, and
