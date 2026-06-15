@@ -109,7 +109,7 @@ Verified local changes:
   coarse solves with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or
   `PALACE_EXECUTABLE`;
 - `gsim` commit `c72f0d3` adds first-class Magnetostatic config-surface support:
-  public `MagnetostaticSim`, center-selected `CurrentSourceConfig` sources,
+  public `MagnetostaticSim.add_current_source(...)` source intent,
   `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
   `Boundaries.SurfaceCurrent`, `Boundaries.PMC`, magnetic `SurfaceFlux`, and
   source-name rows in `palace_index_map.json`;

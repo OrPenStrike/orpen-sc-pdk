@@ -123,8 +123,8 @@ Verified local changes:
   those common material values into Palace `Domains.Materials` without adding
   solver-specific material parsing to the PDK.
 - `gsim` commit `c72f0d3` adds first-class Magnetostatic config-surface support
-  in the same Palace ownership boundary: public `MagnetostaticSim`,
-  center-selected `CurrentSourceConfig` sources, generated
+  in the same Palace ownership boundary: public
+  `MagnetostaticSim.add_current_source(...)` source intent, generated
   `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
   `Boundaries.SurfaceCurrent`, `Boundaries.PMC`, magnetic `SurfaceFlux`, and
   source-name rows in `palace_index_map.json`.

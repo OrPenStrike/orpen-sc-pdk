@@ -41,7 +41,7 @@
     "private_anchor": "simulations/specs/palace/configs/templates/magnetostatic_base.jsonc; ncuas_designs/simulations/palace/config/problems.py; ncuas_designs/simulations/runtime.py; tests/palace/test_mapping.py",
     "why_helper_exists": "Mutual/self-inductance workflows need exact current-source attributes and London-depth material fields rather than fuzzy physical-name inference.",
     "gdsfactory_home": "gsim",
-    "public_api_or_artifact": "MagnetostaticSim; center-selected CurrentSourceConfig; vector Direction; CoordinateSystem; multielement SurfaceCurrent; magnetic SurfaceFlux; load_postprocessing_index_map()",
+    "public_api_or_artifact": "MagnetostaticSim.add_current_source(...); vector Direction; CoordinateSystem; multielement SurfaceCurrent; magnetic SurfaceFlux; load_postprocessing_index_map()",
     "public_status": "implemented_public_config_fixture_pending_report_loader",
     "promotion_gate": "report_loader_requires_confirmed_palace_output_contract",
     "missing_evidence": "exact Magnetostatic Palace CSV/output schema and a representative public output bundle",
