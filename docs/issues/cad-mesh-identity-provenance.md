@@ -204,11 +204,14 @@ Verified local changes:
   interface material source/validity/frequency in
   `palace_material_resolution.json`, and loads that provenance back through
   `load_dielectric_interface_summary()`.
+- validation after the public notebook smoke-exposure slice: the public
+  simulation workflow notebook reuses the same Driven, Eigenmode, and
+  Electrostatic fixture builders for mesh/config summaries and opt-in local
+  Palace smoke execution, while normal docs builds display a skip reason
+  instead of invoking a local solver.
 
 Remaining implementation slices:
 
-- expose these opt-in solver smokes in publication-safe notebook/example form
-  without making normal docs builds depend on local Palace;
 - add richer dielectric-interface provenance and preset validation before
   making MA/MS/SA defaults part of public PDK material data.
 

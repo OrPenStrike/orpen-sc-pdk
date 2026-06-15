@@ -80,6 +80,11 @@ Verified local changes:
   Eigenmode and Electrostatic report artifacts, loads them through reusable
   `gsim` report bundles, and displays curated domain-loss, surface-loss, and
   loss-budget tables through a notebook-local presentation helper;
+- the same public simulation workflow notebook now exposes an opt-in local
+  Palace smoke cell for Driven, Eigenmode, and Electrostatic public fixtures;
+  the default docs path reports a skip reason, while local users can enable the
+  coarse solves with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or
+  `PALACE_EXECUTABLE`;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - optional local Palace validation passed with
@@ -98,13 +103,16 @@ Verified local changes:
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
 - Ruff check and format-check passed for all three executable fixtures.
+- direct notebook-source execution passed and confirmed the default local
+  Palace smoke cell skip path without requiring a local solver.
 - `just docs` converts and executes the public simulation workflow notebook as
   part of the docs build.
 
 Remaining slices:
 
-- expose the opt-in solver smoke paths in publication-safe notebook/example
-  form without making normal docs builds depend on local Palace;
+- no remaining public problem-type notebook coverage slice is currently tracked
+  here; future extensions should stay public-fixture based and keep normal docs
+  builds independent of local Palace.
 
 Acceptance checks:
 

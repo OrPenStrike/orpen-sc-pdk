@@ -27,6 +27,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -50,6 +51,7 @@ from orpen_sc_pdk.cells import (
     martinis2022_differential_ribbon_capacitor,
     resonator,
 )
+from orpen_sc_pdk.materials import get_gsim_material_overlay
 
 orpen_sc_pdk.activate()
 
@@ -67,6 +69,227 @@ def _artifact_status(output_dir: Path) -> dict[str, bool]:
     return {
         name: (output_dir / name).exists()
         for name in ("palace.msh", "config.json", "mesh_manifest.json", "palace_index_map.json")
+    }
+
+
+def _public_driven_cpw_sim(output_dir: Path):
+    component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
+
+    sim = DrivenSim()
+    sim.set_output_dir(output_dir)
+    sim.set_geometry(component)
+    sim.set_stack(
+        include_substrate=True,
+        substrate_thickness=20,
+        add_oxide_dielectric=False,
+        add_passivation_dielectric=False,
+    )
+    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
+    sim.add_cpw_port("o1", layer="D0_TOP_M1", s_width=10, gap_width=6, length=10)
+    sim.add_cpw_port(
+        "o2",
+        layer="D0_TOP_M1",
+        s_width=10,
+        gap_width=6,
+        length=10,
+        excited=False,
+    )
+    sim.set_driven(fmin=4e9, fmax=8e9, num_points=3, excitation_port="o1")
+    sim.mesh(
+        preset="coarse",
+        refined_mesh_size=20,
+        max_mesh_size=200,
+        margin_x=40,
+        margin_y=40,
+        planar_conductors=True,
+        auto_size=False,
+    )
+    return sim, sim._last_mesh_result
+
+
+def _driven_postprocessing(mesh_result) -> dict:
+    return build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        surface_flux=(
+            SurfaceFluxSpec(
+                role="port_surface",
+                flux_type="Power",
+                two_sided=None,
+            ),
+        ),
+    )
+
+
+def _public_eigenmode_resonator_sim(output_dir: Path):
+    component = resonator(
+        length=1200,
+        meanders=2,
+        coupling_length=120,
+        hanger_straight_length=80,
+        cpw_radius=30,
+        bend_npoints=8,
+    )
+
+    sim = EigenmodeSim()
+    sim.set_output_dir(output_dir)
+    sim.set_geometry(component)
+    sim.set_stack(
+        include_substrate=True,
+        substrate_thickness=20,
+        add_oxide_dielectric=False,
+        add_passivation_dielectric=False,
+    )
+    sim.set_airbox(margin_x=50, margin_y=50, z_above=50, z_below=10)
+    sim.set_eigenmode(num_modes=2, target=6e9)
+    sim.mesh(
+        preset="coarse",
+        refined_mesh_size=20,
+        max_mesh_size=200,
+        margin_x=50,
+        margin_y=50,
+        planar_conductors=True,
+        auto_size=False,
+    )
+    return sim, sim._last_mesh_result
+
+
+def _eigenmode_postprocessing(mesh_result) -> dict:
+    return build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        surface_flux=(
+            SurfaceFluxSpec(
+                role="boundary_surface",
+                entry_names=("absorbing",),
+                flux_type="Power",
+                two_sided=None,
+            ),
+        ),
+    )
+
+
+def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
+    component = martinis2022_differential_ribbon_capacitor(
+        a_um=20,
+        b_um=35,
+        ell_r_um=160,
+    )
+    positive_port = component.ports["o_mesh_positive_electrode"]
+    negative_port = component.ports["o_mesh_negative_electrode"]
+    positive_center = tuple(float(value) for value in positive_port.center)
+    negative_center = tuple(float(value) for value in negative_port.center)
+
+    sim = ElectrostaticSim()
+    sim.set_output_dir(output_dir)
+    sim.set_geometry(component)
+    sim.set_stack(
+        include_substrate=True,
+        substrate_thickness=20,
+        add_oxide_dielectric=False,
+        add_passivation_dielectric=False,
+    )
+    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
+    sim.add_terminal("positive", layer="D0_TOP_M1", center=positive_center)
+    sim.add_terminal("negative", layer="D0_TOP_M1", center=negative_center)
+    sim.set_electrostatic(save_fields=0)
+    sim.mesh(
+        preset="coarse",
+        refined_mesh_size=20,
+        max_mesh_size=200,
+        margin_x=40,
+        margin_y=40,
+        planar_conductors=True,
+        auto_size=False,
+    )
+    return sim, sim._last_mesh_result
+
+
+def _electrostatic_postprocessing(mesh_result) -> dict:
+    return build_postprocessing_config_from_manifest(mesh_result.manifest)
+
+
+def _local_palace_run_settings() -> tuple[dict, str | None]:
+    if os.environ.get("ORPEN_RUN_LOCAL_PALACE_SMOKE") != "1":
+        return {}, "set ORPEN_RUN_LOCAL_PALACE_SMOKE=1 to run local Palace smokes"
+
+    palace_sif = os.environ.get("PALACE_SIF")
+    palace_executable = os.environ.get("PALACE_EXECUTABLE")
+    if not palace_sif and not palace_executable:
+        return {}, "set PALACE_SIF or PALACE_EXECUTABLE for local Palace smokes"
+
+    executable_mode = os.environ.get("PALACE_EXECUTABLE_MODE", "wrapper")
+    if executable_mode not in {"wrapper", "binary"}:
+        msg = "PALACE_EXECUTABLE_MODE must be 'wrapper' or 'binary'"
+        raise ValueError(msg)
+
+    run_kwargs = {
+        "use_apptainer": palace_sif is not None,
+        "num_processes": int(os.environ.get("PALACE_NP", "1")),
+        "num_threads": int(os.environ.get("PALACE_NT", "1")),
+        "verbose": False,
+    }
+    if palace_sif is not None:
+        run_kwargs["palace_sif_path"] = palace_sif
+    else:
+        run_kwargs["palace_executable"] = palace_executable
+        run_kwargs["executable_mode"] = executable_mode
+        run_kwargs["serial"] = os.environ.get("PALACE_SERIAL") == "1"
+    return run_kwargs, None
+
+
+def _run_driven_local_smoke(output_dir: Path, run_kwargs: dict) -> dict:
+    sim, mesh_result = _public_driven_cpw_sim(output_dir)
+    sim.write_config(
+        postprocessing=_driven_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+    )
+
+    results = sim.run_local(**run_kwargs)
+    return {
+        "problem_type": "Driven",
+        "port_names": list(results.port_names),
+        "frequency_points": int(len(results.freq)),
+        "has_port_s": "port-S.csv" in results.files,
+        "port_s_bytes": int(results.files["port-S.csv"].stat().st_size),
+    }
+
+
+def _run_eigenmode_local_smoke(output_dir: Path, run_kwargs: dict) -> dict:
+    sim, mesh_result = _public_eigenmode_resonator_sim(output_dir)
+    sim.write_config(
+        postprocessing=_eigenmode_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+    )
+
+    results = sim.run_local(**run_kwargs)
+    report = load_eigenmode_report(results)
+    return {
+        "problem_type": "Eigenmode",
+        "mode_count": int(report.eigenmodes.n_modes),
+        "min_frequency_ghz": float(report.eigenmodes.freq_real_ghz.min()),
+        "domain_energy_rows": int(len(report.domain_energy)),
+        "eig_bytes": int(results["eig.csv"].stat().st_size),
+    }
+
+
+def _run_electrostatic_local_smoke(output_dir: Path, run_kwargs: dict) -> dict:
+    sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
+    sim.write_config(
+        postprocessing=_electrostatic_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
+    )
+
+    results = sim.run_local(**run_kwargs)
+    report = load_electrostatic_report(results)
+    return {
+        "problem_type": "Electrostatic",
+        "terminal_names": list(report.capacitance.terminal_names),
+        "matrix_shape": list(report.capacitance.dataframe.shape),
+        "has_mutual_matrix": report.mutual_capacitance is not None,
+        "has_inverse_matrix": report.inverse_capacitance is not None,
+        "terminal_c_bytes": int(results["terminal-C.csv"].stat().st_size),
     }
 
 
@@ -346,49 +569,12 @@ def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Pa
 # %%
 with tempfile.TemporaryDirectory() as temp_dir:
     output_dir = Path(temp_dir) / "driven-cpw"
-    component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
-
-    sim = DrivenSim()
-    sim.set_output_dir(output_dir)
-    sim.set_geometry(component)
-    sim.set_stack(
-        include_substrate=True,
-        substrate_thickness=20,
-        add_oxide_dielectric=False,
-        add_passivation_dielectric=False,
+    sim, mesh_result = _public_driven_cpw_sim(output_dir)
+    config_path = sim.write_config(
+        postprocessing=_driven_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
     )
-    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
-    sim.add_cpw_port("o1", layer="D0_TOP_M1", s_width=10, gap_width=6, length=10)
-    sim.add_cpw_port(
-        "o2",
-        layer="D0_TOP_M1",
-        s_width=10,
-        gap_width=6,
-        length=10,
-        excited=False,
-    )
-    sim.set_driven(fmin=4e9, fmax=8e9, num_points=3, excitation_port="o1")
-    sim.mesh(
-        preset="coarse",
-        refined_mesh_size=20,
-        max_mesh_size=200,
-        margin_x=40,
-        margin_y=40,
-        planar_conductors=True,
-        auto_size=False,
-    )
-
-    postprocessing = build_postprocessing_config_from_manifest(
-        sim._last_mesh_result.manifest,
-        surface_flux=(
-            SurfaceFluxSpec(
-                role="port_surface",
-                flux_type="Power",
-                two_sided=None,
-            ),
-        ),
-    )
-    config_path = sim.write_config(postprocessing=postprocessing, validate_mesh=False)
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
     driven_summary = {
@@ -417,48 +603,12 @@ display(driven_summary)
 # %%
 with tempfile.TemporaryDirectory() as temp_dir:
     output_dir = Path(temp_dir) / "eigenmode-resonator"
-    component = resonator(
-        length=1200,
-        meanders=2,
-        coupling_length=120,
-        hanger_straight_length=80,
-        cpw_radius=30,
-        bend_npoints=8,
+    sim, mesh_result = _public_eigenmode_resonator_sim(output_dir)
+    config_path = sim.write_config(
+        postprocessing=_eigenmode_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
     )
-
-    sim = EigenmodeSim()
-    sim.set_output_dir(output_dir)
-    sim.set_geometry(component)
-    sim.set_stack(
-        include_substrate=True,
-        substrate_thickness=20,
-        add_oxide_dielectric=False,
-        add_passivation_dielectric=False,
-    )
-    sim.set_airbox(margin_x=50, margin_y=50, z_above=50, z_below=10)
-    sim.set_eigenmode(num_modes=2, target=6e9)
-    sim.mesh(
-        preset="coarse",
-        refined_mesh_size=20,
-        max_mesh_size=200,
-        margin_x=50,
-        margin_y=50,
-        planar_conductors=True,
-        auto_size=False,
-    )
-
-    postprocessing = build_postprocessing_config_from_manifest(
-        sim._last_mesh_result.manifest,
-        surface_flux=(
-            SurfaceFluxSpec(
-                role="boundary_surface",
-                entry_names=("absorbing",),
-                flux_type="Power",
-                two_sided=None,
-            ),
-        ),
-    )
-    config_path = sim.write_config(postprocessing=postprocessing, validate_mesh=False)
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
     eigenmode_summary = {
@@ -487,41 +637,12 @@ display(eigenmode_summary)
 # %%
 with tempfile.TemporaryDirectory() as temp_dir:
     output_dir = Path(temp_dir) / "electrostatic-capacitor"
-    component = martinis2022_differential_ribbon_capacitor(
-        a_um=20,
-        b_um=35,
-        ell_r_um=160,
+    sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
+    config_path = sim.write_config(
+        postprocessing=_electrostatic_postprocessing(mesh_result),
+        validate_mesh=False,
+        material_overlay=get_gsim_material_overlay(),
     )
-    positive_port = component.ports["o_mesh_positive_electrode"]
-    negative_port = component.ports["o_mesh_negative_electrode"]
-    positive_center = tuple(float(value) for value in positive_port.center)
-    negative_center = tuple(float(value) for value in negative_port.center)
-
-    sim = ElectrostaticSim()
-    sim.set_output_dir(output_dir)
-    sim.set_geometry(component)
-    sim.set_stack(
-        include_substrate=True,
-        substrate_thickness=20,
-        add_oxide_dielectric=False,
-        add_passivation_dielectric=False,
-    )
-    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
-    sim.add_terminal("positive", layer="D0_TOP_M1", center=positive_center)
-    sim.add_terminal("negative", layer="D0_TOP_M1", center=negative_center)
-    sim.set_electrostatic(save_fields=0)
-    sim.mesh(
-        preset="coarse",
-        refined_mesh_size=20,
-        max_mesh_size=200,
-        margin_x=40,
-        margin_y=40,
-        planar_conductors=True,
-        auto_size=False,
-    )
-
-    postprocessing = build_postprocessing_config_from_manifest(sim._last_mesh_result.manifest)
-    config_path = sim.write_config(postprocessing=postprocessing, validate_mesh=False)
     config = _load_json(config_path)
     index_map = _load_json(output_dir / "palace_index_map.json")
     electrostatic_summary = {
@@ -673,10 +794,38 @@ display(
 )
 
 # %% [markdown]
+# ## Optional local Palace smoke solves
+#
+# The next cell is intentionally opt-in. Normal docs builds display a skip
+# reason instead of invoking a solver. To run the public coarse solves locally,
+# set `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and either `PALACE_SIF` or
+# `PALACE_EXECUTABLE`. For direct development binaries that do not accept
+# wrapper launcher flags, also set `PALACE_EXECUTABLE_MODE=binary`.
+
+# %%
+with tempfile.TemporaryDirectory() as temp_dir:
+    output_root = Path(temp_dir) / "local-palace-smokes"
+    run_kwargs, skip_reason = _local_palace_run_settings()
+    local_smoke_summary = {
+        "enabled": skip_reason is None,
+        "skip_reason": skip_reason,
+        "problems": [],
+    }
+
+    if skip_reason is None:
+        local_smoke_summary["problems"] = [
+            _run_driven_local_smoke(output_root / "driven-cpw", run_kwargs),
+            _run_eigenmode_local_smoke(output_root / "eigenmode-resonator", run_kwargs),
+            _run_electrostatic_local_smoke(output_root / "electrostatic-capacitor", run_kwargs),
+        ]
+
+display(local_smoke_summary)
+
+# %% [markdown]
 # ## Local solve boundary
 #
 # These examples prove public geometry, material/layer metadata, automatic
 # Palace config generation, mesh physical-name manifests, index-map artifacts,
-# and reusable report display tables. A full Palace solve is intentionally
-# outside the default docs build; run it locally from the generated `palace.msh`
-# and `config.json` when a Palace binary is available.
+# reusable report display tables, and opt-in local solver smoke execution. A
+# full Palace solve is intentionally outside the default docs build; enable the
+# local smoke cell when a Palace binary or SIF is available.

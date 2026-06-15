@@ -35,7 +35,11 @@ Current public notebook:
   report bundles through `gsim.palace.load_eigenmode_report()` and
   `gsim.palace.load_electrostatic_report()`, then displays curated
   domain-loss, surface-loss, and loss-budget tables through a notebook-local
-  presentation helper instead of raw report displays.
+  presentation helper instead of raw report displays;
+- the same notebook exposes an opt-in local Palace smoke cell for Driven,
+  Eigenmode, and Electrostatic public fixtures; normal docs builds display a
+  skip reason unless `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` and a Palace SIF or
+  executable path is configured.
 
 Current executable smoke coverage:
 
@@ -67,6 +71,9 @@ Current executable smoke coverage:
 - publication-safe notebook output now includes reusable Eigenmode and
   Electrostatic loss-budget table displays from synthetic public artifacts,
   keeping normal docs builds independent of local Palace.
+- publication-safe notebook output now includes a guarded local solver smoke
+  entrypoint that reuses the public fixture builders and keeps normal docs
+  builds independent of local Palace.
 
 Acceptance direction:
 
