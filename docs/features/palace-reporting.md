@@ -73,7 +73,9 @@ Current public baseline:
   Palace outputs through the same `gsim` Driven/Eigenmode/Electrostatic report
   bundles when local solver execution is enabled, while its default dry-run
   evidence records generated artifact status through
-  `gsim.palace.load_palace_run_summary()` and solver skip reasons;
+  `gsim.palace.load_palace_run_summary()` and solver skip reasons; successful
+  local solver runs also surface sanitized `gsim` runtime metadata through the
+  same summary API;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

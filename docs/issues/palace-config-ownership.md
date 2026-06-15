@@ -81,6 +81,11 @@ Verified local changes:
   `load_palace_run_summary()` API, including core handoff artifact status,
   result-file status, compact config summaries, mesh-manifest role counts,
   index-map section counts, material-resolution counts, and optional checksums.
+- `gsim` commit `4bd1d20` extends successful local `run_local()` executions
+  with `palace_run_metadata.json`, recording sanitized launcher information,
+  process/thread resources, elapsed seconds, redacted command shape, and output
+  file byte counts; the same `load_palace_run_summary()` API exposes the
+  sidecar as `runtime`.
 
 Remaining slices:
 

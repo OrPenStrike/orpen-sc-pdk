@@ -107,7 +107,8 @@ Current executable smoke coverage:
   summaries.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
-  turns the same script into an opt-in local Palace smoke replay.
+  turns the same script into an opt-in local Palace smoke replay, including
+  sanitized `gsim` runtime metadata when `run_local()` completes.
 
 Known gaps and non-goals:
 

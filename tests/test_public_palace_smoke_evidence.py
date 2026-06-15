@@ -39,6 +39,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert run_summary["index_map"]["present"] is True
         assert run_summary["index_map"]["entry_count"] > 0
         assert run_summary["missing_artifacts"] == []
+        assert run_summary["runtime"]["present"] is False
 
         for artifact_name in (
             "palace.msh",

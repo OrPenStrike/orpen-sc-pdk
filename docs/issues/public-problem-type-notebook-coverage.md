@@ -115,7 +115,9 @@ Verified local changes:
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
-  Driven/Eigenmode/Electrostatic report summaries;
+  Driven/Eigenmode/Electrostatic report summaries; successful local solver
+  execution also exposes the sanitized `palace_run_metadata.json` sidecar
+  through the same run-summary bundle;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - optional local Palace validation passed with
