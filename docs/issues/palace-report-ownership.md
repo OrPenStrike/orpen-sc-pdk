@@ -103,14 +103,26 @@ Verified local changes:
   stack material name, matched material record, model source, validity status,
   and resolution frequency; `orpen-sc-pdk` material-overlay fixtures verify the
   public `Si` model source is visible through the reusable report loader.
+- `gsim` commit `fbb19d1`: adds `ElectrostaticReport` and
+  `load_electrostatic_report()` as a thin composition layer over terminal
+  capacitance matrices, terminal matrix history/pass summaries,
+  `palace_index_map.json`, `config.json`, `domain-E.csv`, and `surface-Q.csv`.
+- Electrostatic domain/surface loss reports now reuse the same effective
+  domain material and configured interface provenance as Eigenmode reports;
+  source-indexed Palace samples remain separate, and gamma/T1 columns are
+  derived only when callers pass an explicit `frequency_ghz`.
+- `orpen-sc-pdk` public material-overlay fixtures now verify that a synthetic
+  public Electrostatic artifact bundle can derive inverse-Q, equivalent Q, and
+  optional frequency-gated T1-ready loss budgets through
+  `gsim.palace.load_electrostatic_report()`.
+- The optional public Electrostatic local-Palace smoke now also reloads real
+  solver terminal matrices through `gsim.palace.load_electrostatic_report()`
+  instead of only the primitive terminal-matrix loader.
 
 Remaining slices:
 
 - add richer dielectric-interface provenance and public preset validation
   before treating MA/MS/SA defaults as part of the PDK contract;
-- promote Electrostatic domain/surface loss and optional frequency-gated T1
-  reporting into reusable `gsim` loaders instead of leaving Electrostatic as
-  matrix-only in the public report surface;
 - keep native masked Surface EPR as a Palace-source/upstream capability rather
   than a Python replay in the public PDK.
 

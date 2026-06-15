@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 
 import pytest
 
@@ -330,3 +331,165 @@ def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:
     assert budget_row["total_inverse_q_sum"] == pytest.approx(1.5e-6)
     assert budget_row["q_total"] == pytest.approx(1.0 / 1.5e-6)
     assert budget_row["domain_vs_eig_relative_error"] == pytest.approx(0.0)
+
+
+def test_gsim_electrostatic_report_derives_public_loss_budget(tmp_path) -> None:
+    pytest.importorskip("gsim")
+    from gsim.palace import load_electrostatic_report
+
+    terminal_c_path = tmp_path / "terminal-C.csv"
+    terminal_c_path.write_text(
+        "i, C[i][1] (F), C[i][2] (F)\n"
+        "1.00e+00, 1.0e-15, -2.0e-15\n"
+        "2.00e+00, -2.0e-15, 4.0e-15\n"
+    )
+    domain_e_path = tmp_path / "domain-E.csv"
+    domain_e_path.write_text(
+        "i, E_elec[1] (J), p_elec[1]\n"
+        "1, 1.0, 0.25\n"
+        "2, 1.0, 0.125\n"
+    )
+    surface_q_path = tmp_path / "surface-Q.csv"
+    surface_q_path.write_text(
+        "i, p_surf[2], Q_surf[2]\n"
+        "1, 0.125, 1.0e6\n"
+        "2, 0.25, 2.0e6\n"
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "Domains": {
+                    "Materials": [
+                        {
+                            "Attributes": [10],
+                            "Name": "Si",
+                            "Permittivity": 11.45,
+                            "LossTan": 2.0e-6,
+                        }
+                    ]
+                },
+                "Boundaries": {
+                    "Postprocessing": {
+                        "Dielectric": [
+                            {
+                                "Index": 2,
+                                "Attributes": [20],
+                                "Type": "SA",
+                                "Thickness": 0.003,
+                                "Permittivity": 4.0,
+                                "LossTan": 0.0017,
+                            }
+                        ]
+                    }
+                },
+            }
+        )
+    )
+    index_map_path = tmp_path / "palace_index_map.json"
+    index_map_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "entries": [
+                    {
+                        "section": "Boundaries.Terminal",
+                        "index": 1,
+                        "entry_name": "positive_electrode",
+                        "role": "pec_surface",
+                        "attributes": [11],
+                        "physical_names": ["D0_TOP_M1@positive"],
+                        "dimension": 2,
+                        "terminal_name": "positive",
+                    },
+                    {
+                        "section": "Boundaries.Terminal",
+                        "index": 2,
+                        "entry_name": "negative_electrode",
+                        "role": "pec_surface",
+                        "attributes": [12],
+                        "physical_names": ["D0_TOP_M1@negative"],
+                        "dimension": 2,
+                        "terminal_name": "negative",
+                    },
+                    {
+                        "section": "Domains.Postprocessing.Energy",
+                        "index": 1,
+                        "entry_name": "substrate",
+                        "role": "dielectric_volume",
+                        "attributes": [10],
+                        "physical_names": ["D1_SUBSTRATE"],
+                        "dimension": 3,
+                    },
+                    {
+                        "section": "Boundaries.Postprocessing.Dielectric",
+                        "index": 2,
+                        "entry_name": "sa_interface",
+                        "role": "boundary_surface",
+                        "attributes": [20],
+                        "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                        "dimension": 2,
+                        "Type": "SA",
+                    },
+                ],
+            }
+        )
+    )
+    material_resolution_path = tmp_path / "palace_material_resolution.json"
+    material_resolution_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "materials": [
+                    {
+                        "material_row_index": 1,
+                        "material_attribute": 10,
+                        "material_attributes": [10],
+                        "volume_name": "substrate",
+                        "stack_material_name": "Si",
+                        "matched_material_name": "Si",
+                        "evaluation_frequency_hz": 5.0e9,
+                        "evaluation_frequency_ghz": 5.0,
+                        "model_type": "constant",
+                        "model_source": "orpen-sc-pdk tech.material_properties",
+                        "within_validity": True,
+                        "validity_note": None,
+                    }
+                ],
+            }
+        )
+    )
+
+    source = {
+        "terminal-C.csv": terminal_c_path,
+        "domain-E.csv": domain_e_path,
+        "surface-Q.csv": surface_q_path,
+        "config.json": config_path,
+        "palace_index_map.json": index_map_path,
+        "palace_material_resolution.json": material_resolution_path,
+    }
+    report = load_electrostatic_report(source)
+
+    assert report.capacitance.terminal_names == ("positive", "negative")
+    assert report.mutual_capacitance is None
+    assert report.inverse_capacitance is None
+    material_row = report.domain_materials.set_index("material_attribute").loc[10]
+    assert material_row["source_name"] == "D1_SUBSTRATE"
+    assert (
+        material_row["material_model_source"]
+        == "orpen-sc-pdk tech.material_properties"
+    )
+    assert "t1_us" not in report.loss_budget.columns
+
+    budget = report.loss_budget.set_index("source_index")
+    assert budget.loc[1, "domain_inverse_q_sum"] == pytest.approx(5.0e-7)
+    assert budget.loc[1, "surface_inverse_q_sum"] == pytest.approx(1.0e-6)
+    assert budget.loc[1, "total_inverse_q_sum"] == pytest.approx(1.5e-6)
+    assert budget.loc[2, "total_inverse_q_sum"] == pytest.approx(7.5e-7)
+
+    report_with_t1 = load_electrostatic_report(source, frequency_ghz=5.0)
+    budget_with_t1 = report_with_t1.loss_budget.set_index("source_index")
+    assert budget_with_t1.loc[1, "gamma_hz"] == pytest.approx(5.0e9 * 1.5e-6)
+    assert budget_with_t1.loc[1, "t1_us"] == pytest.approx(
+        1.0e6 / (2.0 * math.pi * 5.0e9 * 1.5e-6)
+    )

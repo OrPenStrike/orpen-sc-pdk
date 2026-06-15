@@ -193,6 +193,11 @@ Verified local changes:
   Palace configs write `palace_material_resolution.json`, and
   `gsim.palace.load_domain_material_summary()` can join public PDK material
   source and validity metadata back to Palace material attributes.
+- validation after the Electrostatic report slice: public synthetic
+  Electrostatic artifacts preserve terminal, domain, surface, material, and
+  interface provenance through `gsim.palace.load_electrostatic_report()`, and
+  source-indexed loss budgets remain separated instead of being collapsed into
+  one mode-like row.
 
 Remaining implementation slices:
 

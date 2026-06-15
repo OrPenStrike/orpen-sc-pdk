@@ -70,6 +70,9 @@ Verified local changes:
   `terminal-Cm.csv`, and `terminal-Cinv.csv` through public
   `gsim.palace.load_terminal_matrix()` and verifies that terminal labels resolve
   to `positive`/`negative` through `palace_index_map.json`;
+- the optional electrostatic smoke now also loads the same real solver
+  matrices through public `gsim.palace.load_electrostatic_report()`, keeping the
+  composed report path aligned with the primitive matrix loader;
 - `notebooks/src/public_simulation_workflows.py` is a publication-safe Jupytext
   notebook source that runs public Driven, Eigenmode, and Electrostatic
   mesh/config/artifact handoffs and displays scrubbed summaries only;
@@ -83,6 +86,10 @@ Verified local changes:
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_eigenmode_resonator_workflow.py -q`;
 - the same optional Eigenmode validation now exercises
   `gsim.palace.load_eigenmode_report()` against real local solver output;
+- public synthetic Electrostatic report validation now exercises
+  `gsim.palace.load_electrostatic_report()` with terminal matrices,
+  domain/surface EPR reports, config/material/interface provenance, separated
+  source-index budgets, and explicit-frequency T1 derivation;
 - direct macOS development binaries may also require local dynamic-library
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
@@ -94,9 +101,9 @@ Remaining slices:
 
 - expose the opt-in solver smoke paths in publication-safe notebook/example
   form without making normal docs builds depend on local Palace;
-- extend reusable reporting beyond raw Palace tables and effective material
-  joins into publication-safe notebook examples that display the `gsim`
-  domain/surface loss budget tables without depending on private layouts.
+- extend publication-safe notebook examples so they display the reusable `gsim`
+  Eigenmode and Electrostatic domain/surface loss budget tables without
+  depending on private layouts.
 
 Acceptance checks:
 

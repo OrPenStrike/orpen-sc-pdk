@@ -52,6 +52,13 @@ Current public baseline:
   `surface_loss`, and `loss_budget` tables, using effective domain material
   loss tangent, Palace `Q_surf`, configured interface metadata, and mode
   frequency for gamma/T1 columns;
+- local `gsim` commit `fbb19d1` adds `ElectrostaticReport` and
+  `load_electrostatic_report()`, composing terminal capacitance matrices,
+  terminal matrix pass summaries, optional indexed `domain-E.csv` and
+  `surface-Q.csv` reports, config/material/interface provenance, and
+  source bookkeeping;
+- Electrostatic report loss budgets preserve Palace `i`/source samples and
+  only derive gamma/T1 columns when callers pass an explicit `frequency_ghz`;
 - `orpen-sc-pdk` remains a consumer that can generate public fixtures and
   examples, not the owner of Palace report parsing.
 

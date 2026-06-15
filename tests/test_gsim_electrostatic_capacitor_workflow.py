@@ -134,7 +134,7 @@ def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
     output_dir = tmp_path / "palace-smoke"
     sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
 
-    from gsim.palace import load_terminal_matrix
+    from gsim.palace import load_electrostatic_report, load_terminal_matrix
     from gsim.palace.mesh import build_postprocessing_config_from_manifest
 
     postprocessing = build_postprocessing_config_from_manifest(mesh_result.manifest)
@@ -176,3 +176,10 @@ def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
         assert len(long_frame) == 4
         assert set(long_frame["row_terminal"]) == {"positive", "negative"}
         assert set(long_frame["column_terminal"]) == {"positive", "negative"}
+
+    report = load_electrostatic_report(results)
+    assert report.capacitance.terminal_names == ("positive", "negative")
+    assert report.mutual_capacitance is not None
+    assert report.inverse_capacitance is not None
+    assert report.capacitance.dataframe.shape == (2, 2)
+    assert not report.capacitance.to_long_dataframe().empty

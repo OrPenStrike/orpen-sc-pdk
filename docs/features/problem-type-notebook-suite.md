@@ -54,6 +54,11 @@ Current executable smoke coverage:
 - Eigenmode report loading now has a reusable public bundle that composes final
   modes, AMR history, pass summaries, optional indexed EPR tables, index-map
   provenance, and source bookkeeping without importing private notebook parsers.
+- Electrostatic report loading now has a reusable public bundle that composes
+  terminal matrices, terminal matrix pass summaries, optional indexed
+  domain/surface EPR tables, config/material/interface provenance, source
+  bookkeeping, source-indexed loss budgets, and explicit-frequency T1
+  derivation without importing private notebook parsers.
 
 Acceptance direction:
 

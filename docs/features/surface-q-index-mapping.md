@@ -39,6 +39,10 @@ Current public baseline:
   tables from `surface-Q.csv`, configured interface metadata, and mode
   frequency, so gamma/T1 columns are available when the Eigenmode frequency is
   known;
+- local `gsim` commit `fbb19d1` reuses the same surface-Q/interface mapping in
+  `load_electrostatic_report()`, preserving Electrostatic source-index samples
+  and deriving gamma/T1 columns only from an explicit caller-provided
+  `frequency_ghz`;
 - automatic public interface presets are still not part of the PDK material
   contract.
 
