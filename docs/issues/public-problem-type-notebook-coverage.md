@@ -261,6 +261,12 @@ Verified local changes:
 - Ruff check and format-check passed for the executable fixtures.
 - direct notebook-source execution passed and confirmed the default local
   Palace smoke cell skip path without requiring a local solver.
+- local executed-notebook review output was generated under the ignored path
+  `build/notebook-review/public_simulation_workflows_executed.ipynb` with
+  `uv run --group docs python -m jupyter nbconvert --execute --to notebook --output-dir build/notebook-review --output public_simulation_workflows_executed.ipynb notebooks/public_simulation_workflows.ipynb`;
+  the artifact has 25 cells, 12 output-bearing cells, 38 output objects, and
+  includes the helper-node matrix plus Magnetostatic source/index-map output
+  from the current public `gsim` API surface.
 - `just docs` converts and executes the public simulation workflow notebook as
   part of the docs build.
 
@@ -284,8 +290,9 @@ Remaining slices:
   instead of replaying it inside `orpen-sc-pdk`;
 - future extensions should stay public-fixture based and keep normal docs
   builds independent of local Palace.
-- keep the generated evidence bundle ignored under `build/`; it is local
-  review evidence, not a committed public artifact.
+- keep the generated evidence bundle and executed-notebook review artifact
+  ignored under `build/`; they are local review evidence, not committed public
+  artifacts.
 
 Acceptance checks:
 
