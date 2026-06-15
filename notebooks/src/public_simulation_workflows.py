@@ -17,8 +17,10 @@
 # importing private layouts, private notebooks, saved private outputs, or
 # private run folders.
 #
-# The cells stop at local mesh/config generation. A full Palace solve can be
-# run from the generated `config.json` and `palace.msh` when a Palace binary is
+# The geometry cells stop at local mesh/config generation. The report cells use
+# synthetic public Palace artifacts to exercise reusable report loaders without
+# requiring a local solver during the docs build. A full Palace solve can be run
+# from the generated `config.json` and `palace.msh` when a Palace binary is
 # available.
 
 # %%
@@ -28,7 +30,14 @@ import json
 import tempfile
 from pathlib import Path
 
-from gsim.palace import DrivenSim, EigenmodeSim, ElectrostaticSim
+import pandas as pd
+from gsim.palace import (
+    DrivenSim,
+    EigenmodeSim,
+    ElectrostaticSim,
+    load_eigenmode_report,
+    load_electrostatic_report,
+)
 from gsim.palace.mesh import (
     SurfaceFluxSpec,
     build_postprocessing_config_from_manifest,
@@ -49,10 +58,281 @@ def _load_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def _write_json(path: Path, data: dict) -> Path:
+    path.write_text(json.dumps(data, indent=2))
+    return path
+
+
 def _artifact_status(output_dir: Path) -> dict[str, bool]:
     return {
         name: (output_dir / name).exists()
         for name in ("palace.msh", "config.json", "mesh_manifest.json", "palace_index_map.json")
+    }
+
+
+def _display_report_table(
+    title: str,
+    frame: pd.DataFrame,
+    columns: tuple[str, ...],
+    max_rows: int = 8,
+) -> pd.DataFrame:
+    """Display a publication-safe subset of a reusable `gsim` report table."""
+
+    selected_columns = [column for column in columns if column in frame.columns]
+    preview = (
+        frame.loc[:, selected_columns].head(max_rows).copy() if selected_columns else pd.DataFrame()
+    )
+    display(
+        {
+            "table": title,
+            "rows": int(len(frame)),
+            "shown_columns": selected_columns,
+        }
+    )
+    display(preview)
+    return preview
+
+
+def _public_report_material_resolution() -> dict:
+    return {
+        "schema_version": 1,
+        "materials": [
+            {
+                "material_row_index": 1,
+                "material_attribute": 10,
+                "material_attributes": [10],
+                "volume_name": "substrate",
+                "stack_material_name": "Si",
+                "matched_material_name": "Si",
+                "evaluation_frequency_hz": 5.0e9,
+                "evaluation_frequency_ghz": 5.0,
+                "model_type": "constant",
+                "model_source": "orpen-sc-pdk tech.material_properties",
+                "within_validity": True,
+                "validity_note": None,
+                "effective_material": {
+                    "permittivity": 11.45,
+                    "loss_tangent": 2.0e-6,
+                },
+                "palace_material": {
+                    "Attributes": [10],
+                    "Name": "Si",
+                    "Permittivity": 11.45,
+                    "LossTan": 2.0e-6,
+                },
+            }
+        ],
+        "interfaces": [
+            {
+                "interface_row_index": 1,
+                "surface_index": 2,
+                "surface_attributes": [20],
+                "interface_type": "SA",
+                "interface_material_name": "AlOx_native_generic",
+                "matched_material_name": "AlOx_native_generic",
+                "evaluation_frequency_hz": 5.0e9,
+                "evaluation_frequency_ghz": 5.0,
+                "model_type": "constant",
+                "model_source": "orpen-sc-pdk tech.material_properties",
+                "within_validity": True,
+                "validity_note": None,
+                "effective_material": {
+                    "permittivity": 10.0,
+                    "loss_tangent": 0.0017,
+                },
+                "palace_interface": {
+                    "Index": 2,
+                    "Attributes": [20],
+                    "Type": "SA",
+                    "Thickness": 0.003,
+                    "Permittivity": 10.0,
+                    "LossTan": 0.0017,
+                },
+            }
+        ],
+    }
+
+
+def _write_public_eigenmode_report_fixture(output_dir: Path) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    eig_path = output_dir / "eig.csv"
+    eig_path.write_text(
+        "m, Re{f} (GHz), Im{f} (GHz), Q, Error (Bkwd.), Error (Abs.)\n"
+        "1, 5.0, 0.0, 2.0e6, 0.0, 0.0\n"
+    )
+    domain_e_path = output_dir / "domain-E.csv"
+    domain_e_path.write_text("m, E_elec[1] (J), p_elec[1]\n1, 1.0, 0.25\n")
+    surface_q_path = output_dir / "surface-Q.csv"
+    surface_q_path.write_text("m, p_surf[2], Q_surf[2]\n1, 0.125, 1.0e6\n")
+    config_path = _write_json(
+        output_dir / "config.json",
+        {
+            "Domains": {
+                "Materials": [
+                    {
+                        "Attributes": [10],
+                        "Name": "Si",
+                        "Permittivity": 11.45,
+                        "LossTan": 2.0e-6,
+                    }
+                ]
+            },
+            "Boundaries": {
+                "Postprocessing": {
+                    "Dielectric": [
+                        {
+                            "Index": 2,
+                            "Attributes": [20],
+                            "Type": "SA",
+                            "Thickness": 0.003,
+                            "Permittivity": 10.0,
+                            "LossTan": 0.0017,
+                        }
+                    ]
+                }
+            },
+        },
+    )
+    index_map_path = _write_json(
+        output_dir / "palace_index_map.json",
+        {
+            "schema_version": 1,
+            "entries": [
+                {
+                    "section": "Domains.Postprocessing.Energy",
+                    "index": 1,
+                    "entry_name": "substrate",
+                    "role": "dielectric_volume",
+                    "attributes": [10],
+                    "physical_names": ["D1_SUBSTRATE"],
+                    "dimension": 3,
+                },
+                {
+                    "section": "Boundaries.Postprocessing.Dielectric",
+                    "index": 2,
+                    "entry_name": "sa_interface",
+                    "role": "boundary_surface",
+                    "attributes": [20],
+                    "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                    "dimension": 2,
+                    "Type": "SA",
+                },
+            ],
+        },
+    )
+    material_resolution_path = _write_json(
+        output_dir / "palace_material_resolution.json",
+        _public_report_material_resolution(),
+    )
+    return {
+        "eig.csv": eig_path,
+        "domain-E.csv": domain_e_path,
+        "surface-Q.csv": surface_q_path,
+        "config.json": config_path,
+        "palace_index_map.json": index_map_path,
+        "palace_material_resolution.json": material_resolution_path,
+    }
+
+
+def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    terminal_c_path = output_dir / "terminal-C.csv"
+    terminal_c_path.write_text(
+        "i, C[i][1] (F), C[i][2] (F)\n1.00e+00, 1.0e-15, -2.0e-15\n2.00e+00, -2.0e-15, 4.0e-15\n"
+    )
+    domain_e_path = output_dir / "domain-E.csv"
+    domain_e_path.write_text("i, E_elec[1] (J), p_elec[1]\n1, 1.0, 0.25\n2, 1.0, 0.125\n")
+    surface_q_path = output_dir / "surface-Q.csv"
+    surface_q_path.write_text("i, p_surf[2], Q_surf[2]\n1, 0.125, 1.0e6\n2, 0.25, 2.0e6\n")
+    config_path = _write_json(
+        output_dir / "config.json",
+        {
+            "Domains": {
+                "Materials": [
+                    {
+                        "Attributes": [10],
+                        "Name": "Si",
+                        "Permittivity": 11.45,
+                        "LossTan": 2.0e-6,
+                    }
+                ]
+            },
+            "Boundaries": {
+                "Postprocessing": {
+                    "Dielectric": [
+                        {
+                            "Index": 2,
+                            "Attributes": [20],
+                            "Type": "SA",
+                            "Thickness": 0.003,
+                            "Permittivity": 10.0,
+                            "LossTan": 0.0017,
+                        }
+                    ]
+                }
+            },
+        },
+    )
+    index_map_path = _write_json(
+        output_dir / "palace_index_map.json",
+        {
+            "schema_version": 1,
+            "entries": [
+                {
+                    "section": "Boundaries.Terminal",
+                    "index": 1,
+                    "entry_name": "positive_electrode",
+                    "role": "pec_surface",
+                    "attributes": [11],
+                    "physical_names": ["D0_TOP_M1@positive"],
+                    "dimension": 2,
+                    "terminal_name": "positive",
+                },
+                {
+                    "section": "Boundaries.Terminal",
+                    "index": 2,
+                    "entry_name": "negative_electrode",
+                    "role": "pec_surface",
+                    "attributes": [12],
+                    "physical_names": ["D0_TOP_M1@negative"],
+                    "dimension": 2,
+                    "terminal_name": "negative",
+                },
+                {
+                    "section": "Domains.Postprocessing.Energy",
+                    "index": 1,
+                    "entry_name": "substrate",
+                    "role": "dielectric_volume",
+                    "attributes": [10],
+                    "physical_names": ["D1_SUBSTRATE"],
+                    "dimension": 3,
+                },
+                {
+                    "section": "Boundaries.Postprocessing.Dielectric",
+                    "index": 2,
+                    "entry_name": "sa_interface",
+                    "role": "boundary_surface",
+                    "attributes": [20],
+                    "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                    "dimension": 2,
+                    "Type": "SA",
+                },
+            ],
+        },
+    )
+    material_resolution_path = _write_json(
+        output_dir / "palace_material_resolution.json",
+        _public_report_material_resolution(),
+    )
+    return {
+        "terminal-C.csv": terminal_c_path,
+        "domain-E.csv": domain_e_path,
+        "surface-Q.csv": surface_q_path,
+        "config.json": config_path,
+        "palace_index_map.json": index_map_path,
+        "palace_material_resolution.json": material_resolution_path,
     }
 
 
@@ -267,10 +547,136 @@ with tempfile.TemporaryDirectory() as temp_dir:
 display(electrostatic_summary)
 
 # %% [markdown]
+# ## Reusable report table displays
+#
+# The report examples use synthetic public Palace artifacts so the docs build
+# can exercise the same `gsim` report loaders without requiring a local Palace
+# executable or publishing private solver output. The display helper keeps the
+# notebook presentation layer separate from `gsim` report parsing.
+
+# %%
+with tempfile.TemporaryDirectory() as temp_dir:
+    source = _write_public_eigenmode_report_fixture(Path(temp_dir) / "eigenmode-report")
+    eigenmode_report = load_eigenmode_report(source)
+
+    eigenmode_loss_budget = _display_report_table(
+        "Eigenmode loss budget",
+        eigenmode_report.loss_budget,
+        (
+            "mode_index",
+            "frequency_ghz",
+            "domain_inverse_q_sum",
+            "surface_inverse_q_sum",
+            "total_inverse_q_sum",
+            "q_total",
+            "t1_us",
+        ),
+    )
+    eigenmode_domain_loss = _display_report_table(
+        "Eigenmode domain loss",
+        eigenmode_report.domain_loss,
+        (
+            "mode_index",
+            "domain_index",
+            "source_name",
+            "material_name",
+            "matched_material_name",
+            "material_model_source",
+            "p_elec",
+            "loss_tangent",
+            "inverse_q",
+        ),
+    )
+    eigenmode_surface_loss = _display_report_table(
+        "Eigenmode surface loss",
+        eigenmode_report.surface_loss,
+        (
+            "mode_index",
+            "surface_index",
+            "source_name",
+            "interface_type",
+            "interface_material_name",
+            "matched_material_name",
+            "material_model_source",
+            "p_surf",
+            "loss_tangent",
+            "inverse_q",
+        ),
+    )
+
+display(
+    {
+        "eigenmode_loss_budget_rows": len(eigenmode_loss_budget),
+        "eigenmode_domain_loss_rows": len(eigenmode_domain_loss),
+        "eigenmode_surface_loss_rows": len(eigenmode_surface_loss),
+    }
+)
+
+# %%
+with tempfile.TemporaryDirectory() as temp_dir:
+    source = _write_public_electrostatic_report_fixture(Path(temp_dir) / "electrostatic-report")
+    electrostatic_report = load_electrostatic_report(source, frequency_ghz=5.0)
+
+    electrostatic_loss_budget = _display_report_table(
+        "Electrostatic loss budget",
+        electrostatic_report.loss_budget,
+        (
+            "source_index",
+            "domain_inverse_q_sum",
+            "surface_inverse_q_sum",
+            "total_inverse_q_sum",
+            "q_total",
+            "gamma_hz",
+            "t1_us",
+        ),
+    )
+    electrostatic_domain_loss = _display_report_table(
+        "Electrostatic domain loss",
+        electrostatic_report.domain_loss,
+        (
+            "source_index",
+            "domain_index",
+            "source_name",
+            "material_name",
+            "matched_material_name",
+            "material_model_source",
+            "p_elec",
+            "loss_tangent",
+            "inverse_q",
+            "t1_us",
+        ),
+    )
+    electrostatic_surface_loss = _display_report_table(
+        "Electrostatic surface loss",
+        electrostatic_report.surface_loss,
+        (
+            "source_index",
+            "surface_index",
+            "source_name",
+            "interface_type",
+            "interface_material_name",
+            "matched_material_name",
+            "material_model_source",
+            "p_surf",
+            "loss_tangent",
+            "inverse_q",
+            "t1_us",
+        ),
+    )
+
+display(
+    {
+        "electrostatic_loss_budget_rows": len(electrostatic_loss_budget),
+        "electrostatic_domain_loss_rows": len(electrostatic_domain_loss),
+        "electrostatic_surface_loss_rows": len(electrostatic_surface_loss),
+    }
+)
+
+# %% [markdown]
 # ## Local solve boundary
 #
 # These examples prove public geometry, material/layer metadata, automatic
-# Palace config generation, mesh physical-name manifests, and index-map
-# artifacts. A full Palace solve is intentionally outside the default docs
-# build; run it locally from the generated `palace.msh` and `config.json` when
-# a Palace binary is available.
+# Palace config generation, mesh physical-name manifests, index-map artifacts,
+# and reusable report display tables. A full Palace solve is intentionally
+# outside the default docs build; run it locally from the generated `palace.msh`
+# and `config.json` when a Palace binary is available.

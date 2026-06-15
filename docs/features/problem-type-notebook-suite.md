@@ -30,7 +30,12 @@ Current public notebook:
 
 - {doc}`../notebooks/public_simulation_workflows` runs public Driven,
   Eigenmode, and Electrostatic mesh/config/artifact handoffs with local `gsim`
-  and public `orpen-sc-pdk` cells only.
+  and public `orpen-sc-pdk` cells only;
+- the same notebook loads synthetic public Eigenmode and Electrostatic Palace
+  report bundles through `gsim.palace.load_eigenmode_report()` and
+  `gsim.palace.load_electrostatic_report()`, then displays curated
+  domain-loss, surface-loss, and loss-budget tables through a notebook-local
+  presentation helper instead of raw report displays.
 
 Current executable smoke coverage:
 
@@ -59,6 +64,9 @@ Current executable smoke coverage:
   domain/surface EPR tables, config/material/interface provenance, source
   bookkeeping, source-indexed loss budgets, and explicit-frequency T1
   derivation without importing private notebook parsers.
+- publication-safe notebook output now includes reusable Eigenmode and
+  Electrostatic loss-budget table displays from synthetic public artifacts,
+  keeping normal docs builds independent of local Palace.
 
 Acceptance direction:
 

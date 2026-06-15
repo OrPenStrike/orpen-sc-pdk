@@ -76,6 +76,10 @@ Verified local changes:
 - `notebooks/src/public_simulation_workflows.py` is a publication-safe Jupytext
   notebook source that runs public Driven, Eigenmode, and Electrostatic
   mesh/config/artifact handoffs and displays scrubbed summaries only;
+- the public simulation workflow notebook now also writes synthetic public
+  Eigenmode and Electrostatic report artifacts, loads them through reusable
+  `gsim` report bundles, and displays curated domain-loss, surface-loss, and
+  loss-budget tables through a notebook-local presentation helper;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
 - optional local Palace validation passed with
@@ -101,9 +105,6 @@ Remaining slices:
 
 - expose the opt-in solver smoke paths in publication-safe notebook/example
   form without making normal docs builds depend on local Palace;
-- extend publication-safe notebook examples so they display the reusable `gsim`
-  Eigenmode and Electrostatic domain/surface loss budget tables without
-  depending on private layouts.
 
 Acceptance checks:
 

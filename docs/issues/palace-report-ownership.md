@@ -126,6 +126,10 @@ Verified local changes:
   `AlOx_native_generic` can reach a Palace dielectric interface row through the
   reusable `gsim` interface material path without making MA/MS/SA defaults part
   of the PDK contract.
+- `orpen-sc-pdk` public simulation notebooks now load synthetic public
+  Eigenmode/Electrostatic report bundles through `gsim` and display curated
+  domain-loss, surface-loss, and loss-budget tables without importing private
+  runs or moving report parsing into the PDK.
 
 Remaining slices:
 
