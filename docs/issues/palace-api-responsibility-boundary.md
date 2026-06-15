@@ -79,6 +79,7 @@ Current review ledger:
 | Source config root API demotion (`gsim` commit `699ff6e`) | Reviewed, API-clean | `CurrentSourceConfig` and `CurrentSourceElementConfig` are no longer imported or re-exported from root `gsim.palace`. They remain in the owner module `gsim.palace.models`, while notebook-facing Magnetostatic workflows use `MagnetostaticSim.add_current_source(...)` with dict/keyword source intent. Independent review found no OrPen/NCUAS root-import dependency, and this avoids making locally added source-intent dataclasses broader public API than the simulation class requires. |
 | Port helper root API demotion (`gsim` commit `cf4204d`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports port config/lowering symbols: `CPWPortConfig`, `PortConfig`, `TerminalConfig`, `WavePortConfig`, `PalacePort`, `PortGeometry`, `PortType`, `configure_*_port()`, and `extract_ports()`. Notebook-facing workflows should continue through simulation-class methods such as `add_port()`, `add_cpw_port()`, `add_wave_port()`, and `add_terminal()`. Advanced port authoring remains documented from `gsim.palace.ports` and `gsim.palace.models`, matching the responsibility boundary for port geometry/extraction behavior. Local downstream search found no OrPen/NCUAS direct root-import dependency for these symbols. |
 | Mesh artifact root API demotion (`gsim` commit `c52fb00`) | Reviewed, API-clean | `gsim.palace.__init__` now keeps root mesh-generation controls (`MeshConfig`, `generate_mesh`) but no longer imports or re-exports mesh artifact/reportability details: `MeshResult`, `DielectricInterfaceSelector`, `DielectricInterfaceSpec`, `DielectricInterfaceType`, `DielectricMaterialKind`, and the material-kind interface spec builders. Those symbols remain available from `gsim.palace.mesh`, which is the owner module already used by OrPen notebooks, evidence scripts, and tests. This preserves the boundary that manifest/reportability visibility belongs to mesh artifacts, not to broader root Palace API or `MeshConfig` knobs. |
+| Config model root API demotion (`gsim` commit `05b362a`) | Reviewed, API-clean | `gsim.palace.__init__` no longer imports or re-exports raw config/lowering models: `DrivenConfig`, `EigenmodeConfig`, `ElectrostaticConfig`, `MagnetostaticConfig`, `GeometryConfig`, `MaterialConfig`, `NumericalConfig`, `PECBlockConfig`, and `TransientConfig`. These remain public from `gsim.palace.models`, which is the owner module for problem/numerical/material config contracts. Root `gsim.palace` keeps notebook-facing problem classes and the `MeshConfig` mesh-generation control, plus `SimulationResult`/`ValidationResult` for now because public methods return them. Local search found no OrPen/NCUAS direct root-import dependency for the demoted models. |
 
 Open API-surface follow-ups:
 
@@ -87,11 +88,9 @@ Open API-surface follow-ups:
   (`MATERIALS_DB`, `Stack`, `StackLayer`, stack extraction/printing helpers,
   `plot_*`, `print_job_summary`, `run_simulation`) before treating them as
   part of the Palace public API;
-- demote raw config/model exports (`DrivenConfig`, `EigenmodeConfig`,
-  `ElectrostaticConfig`, `MagnetostaticConfig`, `GeometryConfig`,
-  `MaterialConfig`, `NumericalConfig`, `PECBlockConfig`, `TransientConfig`,
-  `SimulationResult`, `ValidationResult`) unless notebook users directly
-  construct them rather than using the problem-specific `set_*()` helpers;
+- decide whether `SimulationResult` and `ValidationResult` should remain root
+  because public simulation methods return them, or move them to
+  `gsim.palace.models` after a separate return-type/public-typing review;
 - finish the remaining `gsim.palace.mesh` package-root review for advanced
   manifest fixture symbols (`MeshPhysicalGroup`, `MeshRole`,
   `build_mesh_manifest`) and type aliases that may belong only in
