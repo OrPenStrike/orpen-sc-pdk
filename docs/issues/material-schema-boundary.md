@@ -66,6 +66,12 @@ Verified local changes:
   interface preset maps, exact manifest entry or physical-name selectors,
   parsed interface-pair selectors, ordered duplicate MA/MS entries on one
   boundary, and default rejection of exterior/non-interface boundaries;
+- `gsim` commit `34f2a4d`: adds
+  `build_dielectric_interface_specs_from_material_kinds()` for caller-supplied
+  material-kind maps, generic `conductor/vacuum -> MA`,
+  `conductor/dielectric -> MS`, and `dielectric/vacuum -> SA` classification,
+  exterior `None`/`boundary` skipping, conductive aliases, and optional
+  kind-pair overrides for duplicate MA/MS specs on one boundary;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
@@ -88,6 +94,9 @@ Verified local changes:
   the public material overlay, strip non-Palace handoff keys from
   `config.json`, and load interface material provenance through the reusable
   report/index-map path;
+- public tests now also prove the same caller-supplied interface preset records
+  can flow through the `gsim` material-kind classifier before Palace config and
+  report loading, without introducing public default MA/MS/SA values;
 - read-only NCUAS audit confirms the private repo already has MA/MS/SA
   classification, thin-film MA+MS duplicate-spec behavior, preset lookup,
   `materials.json` numeric interface-loss values, notebook-local override
@@ -102,8 +111,9 @@ Remaining slices:
   grows to include aliases, provenance, conditions, loss, conductivity,
   London-depth, or surface/interface presets;
 - populate public interface preset records only after MA/MS/SA thickness, loss
-  tangent, and automatic-selection values have source-backed public records;
-- design the later public automatic-selection contract separately from private
+  tangent, material-kind data, and automatic-selection values have source-backed
+  public records;
+- design the later public default-selection policy separately from private
   notebook-local MA/MS/SA heuristics.
 
 Related feature:

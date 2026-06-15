@@ -59,6 +59,11 @@ Current public baseline:
   preset maps can target exact manifest entry names, physical group names, or
   parsed interface pairs and produce ordered `DielectricInterfaceSpec` records
   without baking private layer names or MA/MS/SA values into `gsim`;
+- `gsim` commit `34f2a4d` adds
+  `build_dielectric_interface_specs_from_material_kinds()`, so caller-owned
+  material-kind maps can classify parsed manifest interfaces into generic
+  `MA`, `MS`, and `SA` specs while skipping exterior boundaries and non-loss
+  material-kind pairs;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -67,6 +72,9 @@ Current public baseline:
 - public material-overlay tests now verify `AlOx_native_generic` can be used as
   a dielectric-interface material reference while interface thickness and
   MA/MS/SA default selection remain explicit caller choices;
+- public material-overlay tests now also verify a caller-supplied, source-backed
+  interface preset record can flow through the `gsim` material-kind classifier
+  and then through reusable Palace config/material-resolution/report loading;
 - `orpen-sc-pdk` now exposes an empty-by-default
   `tech.interface_preset_records` table plus
   `get_interface_preset_records()`,
@@ -84,9 +92,9 @@ Remaining slices:
 - add a validated material-record schema and aliases table once the public
   material contract grows beyond the current minimal records;
 - populate public interface preset records only after source-backed public
-  MA/MS/SA values and automatic-selection rules are accepted into the PDK
-  contract; until then, keep selection caller-supplied through the `gsim`
-  assignment helper.
+  MA/MS/SA values, material-kind records, and automatic-selection rules are
+  accepted into the PDK contract; until then, keep selection caller-supplied
+  through the `gsim` assignment/classification helpers.
 
 Related issue:
 

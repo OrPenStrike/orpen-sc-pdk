@@ -446,6 +446,88 @@ def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
     assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 
 
+def test_gsim_material_kind_classifier_accepts_public_interface_records(tmp_path) -> None:
+    pytest.importorskip("gsim")
+    from gsim.common.stack import LayerStack
+    from gsim.palace import load_dielectric_interface_summary
+    from gsim.palace.mesh import (
+        build_dielectric_interface_specs_from_material_kinds,
+        build_mesh_manifest,
+        build_postprocessing_config_from_manifest,
+    )
+    from gsim.palace.mesh.config_generator import generate_palace_config
+
+    records = {
+        "public_ms_example": {
+            "interface_type": "MS",
+            "thickness": 0.002,
+            "material_name": "AlOx_native_generic",
+            "source": "public example only",
+        }
+    }
+    groups = {
+        "volumes": {"Si": {"phys_group": 1}},
+        "conductor_surfaces": {},
+        "pec_surfaces": {},
+        "port_surfaces": {},
+        "boundary_surfaces": {"Al___Si": {"phys_group": 70}},
+    }
+    manifest = build_mesh_manifest(groups)
+    specs = build_dielectric_interface_specs_from_material_kinds(
+        manifest,
+        material_kind_by_name={"Al": "superconductor", "Si": "dielectric"},
+        presets=validate_interface_preset_records(records),
+        preset_by_interface_type={"MS": "public_ms_example"},
+    )
+    postprocessing = build_postprocessing_config_from_manifest(
+        manifest,
+        dielectric_interfaces=specs,
+    )
+
+    assert postprocessing.boundaries["Dielectric"] == [
+        {
+            "Index": 1,
+            "Attributes": [70],
+            "Type": "MS",
+            "Thickness": 0.002,
+            "LossTan": 0.0,
+            "_MaterialName": "AlOx_native_generic",
+        }
+    ]
+
+    config_path = generate_palace_config(
+        groups=groups,
+        ports=[],
+        port_info=[],
+        stack=LayerStack(materials={"Si": {"permittivity": 11.45}}),
+        output_path=tmp_path,
+        model_name="palace",
+        fmax=5e9,
+        absorbing_boundary=False,
+        boundary_postprocessing_config=postprocessing.boundaries,
+        material_overlay=get_gsim_material_overlay(),
+    )
+    postprocessing.index_map.write_json(tmp_path / "palace_index_map.json")
+
+    interface = json.loads(config_path.read_text())["Boundaries"]["Postprocessing"]["Dielectric"][0]
+    assert "_MaterialName" not in interface
+    assert interface["Type"] == "MS"
+    assert interface["Permittivity"] == pytest.approx(10.0)
+    assert interface["LossTan"] == pytest.approx(0.0)
+
+    summary = load_dielectric_interface_summary(
+        {
+            "config.json": config_path,
+            "palace_index_map.json": tmp_path / "palace_index_map.json",
+        }
+    )
+    row = summary.set_index("surface_index").loc[1]
+    assert row["source_name"] == "Al___Si"
+    assert row["interface_type"] == "MS"
+    assert row["interface_material_name"] == "AlOx_native_generic"
+    assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
+
+
 def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.palace import load_eigenmode_report

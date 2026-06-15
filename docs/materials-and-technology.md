@@ -55,6 +55,9 @@ The current public bridge is intentionally small:
   `gsim.palace.mesh.DielectricInterfaceSpec` tuples from caller-supplied preset
   maps and exact manifest entry names, physical group names, or parsed
   interface pairs without hard-coding private process values.
+- local `gsim` can also classify parsed manifest interfaces from caller-supplied
+  material-kind maps into generic `MA`, `MS`, and `SA` specs while skipping
+  exterior boundaries and non-loss material-kind pairs.
 - local `gsim` can derive reusable domain/surface loss budgets from those
   loaded artifacts, including inverse-Q, equivalent Q, gamma, and T1 columns
   when mode frequency is available.
@@ -91,6 +94,9 @@ should be:
 7. Use `gsim` assignment helpers for caller-supplied physical-name or
    interface-pair selection; automatic public selection policy belongs in a
    later source-backed PDK contract.
+8. Use `gsim` material-kind classification when the caller can provide public
+   material-kind data, but keep default public MA/MS/SA preset values out of the
+   PDK until those records are source-backed.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the
