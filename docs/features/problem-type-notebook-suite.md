@@ -137,6 +137,10 @@ Current executable smoke coverage:
   `gsim.palace.write_palace_sweep_resource_index()` to emit sweep-level point
   records, resource records, and benchmark JSONL indexes under
   `metadata/records/`.
+- the same evidence path now resolves named public Slurm dry-run profiles
+  through `gsim.palace.resolve_palace_slurm_profile()`, keeping profile/resource
+  normalization in `gsim` while leaving real site catalogs outside the public
+  PDK fixture.
 - default evidence generation is dry-run and solver-free; setting
   `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`
   turns the same script into an opt-in local Palace smoke replay, including

@@ -166,6 +166,35 @@ def _solver_env(environ: Mapping[str, str]) -> tuple[dict[str, Any], dict[str, A
     }
 
 
+def _public_slurm_profile_catalog(profile_name: str) -> dict[str, dict[str, Any]]:
+    return {
+        profile_name: {
+            "source": "caller-supplied public fixture",
+            "resources": {
+                "account": "public_alloc",
+                "partition": "public_cpu",
+                "wall_time": "00:10:00",
+                "nodes": 1,
+                "ntasks_per_node": 1,
+                "cpus_per_task": 1,
+            },
+        }
+    }
+
+
+def _public_slurm_resource_overrides(
+    *,
+    num_processes: int,
+    num_threads: int,
+) -> dict[str, int]:
+    overrides: dict[str, int] = {}
+    if num_processes != 1:
+        overrides["ntasks_per_node"] = num_processes
+    if num_threads != 1:
+        overrides["cpus_per_task"] = num_threads
+    return overrides
+
+
 def _public_driven_cpw_sim(output_dir: Path):
     from gsim.palace import DrivenSim
 
@@ -374,9 +403,9 @@ def _build_problem_evidence(
     solver_skip_reason: str | None,
 ) -> dict[str, Any]:
     from gsim.palace import (
-        PalaceSlurmResourceSpec,
         PalaceSlurmSbatchSpec,
         load_palace_run_summary,
+        resolve_palace_slurm_profile,
         write_palace_resource_record,
         write_palace_resource_record_from_log,
         write_palace_run_handoff_archive_manifest,
@@ -392,24 +421,22 @@ def _build_problem_evidence(
     )
     num_processes = int(run_kwargs.get("num_processes", 1) or 1)
     num_threads = int(run_kwargs.get("num_threads", 1) or 1)
+    slurm_profile = resolve_palace_slurm_profile(
+        _public_slurm_profile_catalog("public-slurm-dry-run"),
+        "public-slurm-dry-run",
+        resource_overrides=_public_slurm_resource_overrides(
+            num_processes=num_processes,
+            num_threads=num_threads,
+        ),
+    )
     write_palace_slurm_sbatch_handoff(
         output_dir,
         PalaceSlurmSbatchSpec(
             job_name=f"palace_{problem_key}",
-            resources=PalaceSlurmResourceSpec(
-                account="public_alloc",
-                partition="public_cpu",
-                wall_time="00:10:00",
-                nodes=1,
-                ntasks_per_node=num_processes,
-                cpus_per_task=num_threads,
-            ),
+            resources=slurm_profile.resources,
             petsc_options=(),
         ),
-        profile={
-            "name": "public-slurm-dry-run",
-            "source": "caller-supplied public fixture",
-        },
+        profile=slurm_profile.profile,
         metadata={
             "fixture": fixture_name,
             "problem_type": problem_type,
@@ -475,10 +502,10 @@ def _build_sweep_evidence(
     problems: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
     from gsim.palace import (
-        PalaceSlurmResourceSpec,
         PalaceSlurmSweepArraySpec,
         PalaceSweepPointSpec,
         load_palace_sweep_summary,
+        resolve_palace_slurm_profile,
         write_palace_slurm_sweep_array_handoff,
         write_palace_sweep_handoff_archive_manifest,
         write_palace_sweep_points,
@@ -505,25 +532,19 @@ def _build_sweep_evidence(
         points,
         sweep_id="public_palace_problem_type_smoke",
     )
+    slurm_profile = resolve_palace_slurm_profile(
+        _public_slurm_profile_catalog("public-slurm-sweep-dry-run"),
+        "public-slurm-sweep-dry-run",
+    )
     write_palace_slurm_sweep_array_handoff(
         output_root,
         PalaceSlurmSweepArraySpec(
             job_name="palace_public_problem_smoke",
-            resources=PalaceSlurmResourceSpec(
-                account="public_alloc",
-                partition="public_cpu",
-                wall_time="00:10:00",
-                nodes=1,
-                ntasks_per_node=1,
-                cpus_per_task=1,
-            ),
+            resources=slurm_profile.resources,
             max_parallel=len(points),
             petsc_options=(),
         ),
-        profile={
-            "name": "public-slurm-sweep-dry-run",
-            "source": "caller-supplied public fixture",
-        },
+        profile=slurm_profile.profile,
         metadata={
             "workflow": "public-palace-smoke-evidence",
             "point_count": len(points),

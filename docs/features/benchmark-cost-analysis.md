@@ -82,13 +82,18 @@ Current public baseline:
   `metadata/records/sweep_benchmark_index.jsonl`, and
   `metadata/records/sweep_resource_index.json` from the same explicit
   `points.json` sweep summary;
+- local `gsim` commit `d93830f` adds
+  `resolve_palace_slurm_profile()` plus `PalaceSlurmProfileSpec`, resolving
+  caller-supplied named Slurm profiles into `PalaceSlurmResourceSpec` with
+  validated resource overrides while keeping bundled private site catalogs and
+  submission out of `gsim`;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
   generated handoff archive manifest status, synthetic public log-derived
   resource-record status, sanitized synthetic Slurm scheduler fields, table
-  sidecars, a public problem-type sweep-summary smoke, and generated
-  sweep-level resource/benchmark index files in the ignored local evidence
-  bundle.
+  sidecars, resolved public Slurm dry-run profiles, a public problem-type
+  sweep-summary smoke, and generated sweep-level resource/benchmark index files
+  in the ignored local evidence bundle.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output
@@ -96,8 +101,8 @@ Current public baseline:
 - NCUAS already has a richer private run-stage layer for Slurm/Sbatch handoff,
   handoff archives, site/profile resources, and post-run records; the public
   migration path is to extend the same `gsim` run-summary and sweep-summary
-  schemas with optional handoff/archive/resource sidecars, not to expose private
-  benchmark values or duplicate runtime code in the PDK.
+  schemas with optional handoff/archive/resource/profile sidecars, not to expose
+  private benchmark values or duplicate runtime code in the PDK.
 
 Acceptance direction:
 

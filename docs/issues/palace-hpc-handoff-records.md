@@ -23,8 +23,8 @@ Problem:
   metadata, run summaries, report loaders, point-local sweep summaries,
   Slurm/Sbatch dry-run handoff sidecars, archive manifests, resource-record
   sidecars, sanitized Palace log-derived resource tables, and sanitized Slurm
-  scheduler/allocation parsing, but it does not yet resolve real site/profile
-  catalogs or model full benchmark campaign costs;
+  scheduler/allocation parsing, and caller-supplied profile resolution, but it
+  does not yet ship real site catalogs or model full benchmark campaign costs;
 - `gplugins` still has older direct Palace helpers, but extending those into
   cluster handoff would create a second public Palace runtime.
 
@@ -100,13 +100,19 @@ Current local evidence:
   point-record CSV, resource-record CSV, benchmark JSONL, and compact index
   JSON files from explicit `points.json` metadata and the existing
   `load_palace_sweep_summary()` surface;
+- local `gsim` commit `d93830f` adds `PalaceSlurmProfileSpec` and
+  `resolve_palace_slurm_profile()`, resolving caller-supplied named Slurm
+  profiles into `PalaceSlurmResourceSpec` plus handoff-ready profile metadata.
+  Resource overrides are validated against the public resource spec; private
+  site catalogs and submission remain caller-owned;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
   plus generated archive manifests and synthetic public log-derived
   resource-record sidecars plus sanitized synthetic Slurm snapshot sidecars
-  through the `gsim` renderers, then reads them back through the normal
-  run/sweep summary surfaces and writes reusable sweep-level
-  resource/benchmark index files;
+  through the `gsim` renderers, resolves named public dry-run profiles through
+  the `gsim` profile resolver, then reads the sidecars back through the normal
+  run/sweep summary surfaces and writes reusable sweep-level resource/benchmark
+  index files;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
   renderers, generated archive manifests, and a generic post-run resource
   sidecar, but no cluster campaign submission or archive packaging;
@@ -121,8 +127,8 @@ Current local evidence:
 
 Remaining slices:
 
-- resolve real site/profile resources outside public fixture code, then feed
-  the resolved resources into the generic `gsim` Slurm handoff API;
+- mount real site/profile catalogs from private consumers, then validate those
+  profiles against the generic `gsim` Slurm handoff API;
 - add richer benchmark campaign and cost-modeling helpers without committing
   private archives or private benchmark values;
 - only after dry-run schemas are stable, add local private-layout validation on

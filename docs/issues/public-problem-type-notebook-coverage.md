@@ -150,6 +150,9 @@ Verified local changes:
   `metadata/records/sweep_benchmark_index.jsonl`, and
   `metadata/records/sweep_resource_index.json` from the same three public
   problem fixtures;
+- `gsim` commit `d93830f` adds caller-supplied Slurm profile resolution, and
+  the public evidence runner now resolves the run and sweep dry-run profiles
+  through that public `gsim` API instead of constructing resource specs inline;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
