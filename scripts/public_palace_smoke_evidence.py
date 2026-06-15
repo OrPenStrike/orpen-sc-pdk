@@ -611,14 +611,13 @@ def _public_magnetostatic_cpw_sim(output_dir: Path):
     return sim, sim._last_mesh_result
 
 
-def _magnetostatic_postprocessing(mesh_result: Any) -> dict[str, Any]:
-    from gsim.palace.mesh import (
-        PostprocessingConfig,
-        build_postprocessing_config_from_manifest,
-    )
+def _magnetostatic_postprocessing(mesh_result: Any) -> Any:
+    from gsim.palace.mesh import build_postprocessing_config_from_manifest
 
-    base = build_postprocessing_config_from_manifest(mesh_result.manifest)
-    return PostprocessingConfig(domains=base.domains, index_map=base.index_map)
+    return build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        include_empty_sections=False,
+    )
 
 
 def _magnetostatic_report_summary(_output_dir: Path) -> dict[str, Any]:

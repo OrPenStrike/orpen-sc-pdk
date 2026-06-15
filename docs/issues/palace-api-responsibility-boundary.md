@@ -56,13 +56,14 @@ Current review ledger:
 | `gsim` commit `883fb78` multielement magnetostatic current sources | Reviewed, fixed by `gsim` commit `bc78ad4` | Ownership split was mostly right: `CurrentSourceConfig` / `CurrentSourceElementConfig` owns source intent and the config generator owns `SurfaceCurrent` JSON lowering. Review found Palace-contract and API-surface issues: `CoordinateSystem` must be vector-direction only, parent `direction` on multielement sources must not be silently ignored, overlapping element selectors must be rejected, and the JSON helper `palace_direction()` should not be public model API. Local `gsim` commit `bc78ad4` moves direction lowering into a private config-generator helper and adds validation/tests for those cases. |
 | `orpen-sc-pdk` commit `e54b677` multielement magnetostatic public fixture/docs | Reviewed, mostly clean with API follow-ups | OrPen remains a consumer of `gsim` source/config/index-map surfaces and does not own Palace attribute mapping. Review found stale notebook-coverage wording, now updated to mention `883fb78`, vector direction, and multielement return-source evidence. API docs now avoid member-expanding raw `tech` records; remaining OrPen API-narrowing follow-ups are top-level `helper`/`logger`/empty `models` and demo-style cells in the PDK registry. |
 | OrPen material-permeability provenance slice | Reviewed, API-clean | The slice adds public unit permeability values to material records and displays the generated provenance column through `get_gsim_material_overlay()`, `palace_material_resolution.json`, and `gsim.palace.load_domain_material_summary()`. It does not widen top-level imports, change `MeshConfig`, or move material lowering/report parsing into OrPen. |
+| Manifest postprocessing API cleanup slice (`gsim` commit `a736193`) | Reviewed, API-clean | `gsim.palace.mesh.build_postprocessing_config_from_manifest()` now owns omission of empty Palace postprocessing sections, so public OrPen notebook/evidence code avoids importing and reconstructing `PostprocessingConfig` only to preserve Magnetostatic solver-owned `SurfaceFlux` rows. Independent boundary review found no blockers: this remains a mesh artifact/reportability helper, does not widen top-level `gsim.palace`, and does not add `MeshConfig` knobs. |
 
 Open API-surface follow-ups:
 
 - review `gsim.palace.mesh.__all__` for low-level manifest/index-map builders
   that may be advanced submodule APIs rather than top-level notebook APIs;
-- split `gsim` Palace API docs so mesh generation controls are separate from
-  mesh artifacts, manifests, postprocessing index maps, and reportability;
+- keep `gsim` Palace API docs split between mesh generation controls and mesh
+  artifacts, manifests, postprocessing index maps, and reportability;
 - keep OrPen API docs focused on copy-returning material helpers and avoid
   member-expanding raw mutable `tech.material_properties`,
   `material_alias_records`, and `interface_preset_records`;

@@ -51,7 +51,6 @@ from gsim.palace import (
     write_palace_slurm_sbatch_handoff,
 )
 from gsim.palace.mesh import (
-    PostprocessingConfig,
     SurfaceFluxSpec,
     build_dielectric_interface_specs_from_material_kinds,
     build_postprocessing_config_from_manifest,
@@ -503,9 +502,11 @@ def _public_magnetostatic_cpw_sim(output_dir: Path):
     return sim, sim._last_mesh_result
 
 
-def _magnetostatic_postprocessing(mesh_result) -> dict:
-    base = build_postprocessing_config_from_manifest(mesh_result.manifest)
-    return PostprocessingConfig(domains=base.domains, index_map=base.index_map)
+def _magnetostatic_postprocessing(mesh_result):
+    return build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        include_empty_sections=False,
+    )
 
 
 def _local_palace_run_settings() -> tuple[dict, str | None]:
