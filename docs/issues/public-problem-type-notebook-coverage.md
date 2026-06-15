@@ -76,6 +76,10 @@ Verified local changes:
 - `notebooks/src/public_simulation_workflows.py` is a publication-safe Jupytext
   notebook source that runs public Driven, Eigenmode, and Electrostatic
   mesh/config/artifact handoffs and displays scrubbed summaries only;
+- the public workflow notebook and fixtures intentionally do not add
+  material-kind-driven MA/MS/SA interface postprocessing yet; generated public
+  mesh fixtures do not currently expose classifiable interface identities, and
+  the public PDK still has no source-backed default interface preset records;
 - the public simulation workflow notebook now also writes synthetic public
   Eigenmode and Electrostatic report artifacts, loads them through reusable
   `gsim` report bundles, and displays curated domain-loss, surface-loss, and
@@ -110,8 +114,10 @@ Verified local changes:
 
 Remaining slices:
 
-- no remaining public problem-type notebook coverage slice is currently tracked
-  here; future extensions should stay public-fixture based and keep normal docs
+- wire material-kind interface classification into public workflow examples
+  only after generated mesh manifests expose public interface identities and
+  source-backed public interface preset records exist;
+- future extensions should stay public-fixture based and keep normal docs
   builds independent of local Palace.
 
 Acceptance checks:

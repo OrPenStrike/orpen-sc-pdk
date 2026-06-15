@@ -103,6 +103,11 @@ Verified local changes:
   can flow through the `gsim` material-kind classifier using OrPen's public
   material-kind map before Palace config and report loading, without
   introducing public default MA/MS/SA values;
+- public Driven, Eigenmode, and Electrostatic workflow examples intentionally
+  continue to pass only `get_gsim_material_overlay()` into generated configs:
+  those examples should not wire `get_gsim_material_kind_map()` into automatic
+  interface postprocessing until source-backed public presets and generated
+  mesh interface identities both exist;
 - read-only NCUAS audit confirms the private repo already has MA/MS/SA
   classification, thin-film MA+MS duplicate-spec behavior, preset lookup,
   `materials.json` numeric interface-loss values, notebook-local override

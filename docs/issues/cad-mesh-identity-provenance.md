@@ -61,6 +61,12 @@ Local prototype status:
   `palace_material_resolution.json` and joins it into domain material reports,
   so material attributes can be traced to stack material names, matched public
   material records, model sources, validity status, and resolution frequency.
+- the public material-kind classifier path is available at the manifest
+  boundary, but generated public Driven/Eigenmode/Electrostatic mesh fixtures
+  currently emit domain, conductor, port, terminal, absorbing-boundary, and
+  refinement identities rather than classifiable `interface_of` rows; therefore
+  workflow examples must not imply public MA/MS/SA interface defaults until
+  generated mesh physical groups preserve those interface identities.
 
 Verified local changes:
 
@@ -212,8 +218,12 @@ Verified local changes:
 
 Remaining implementation slices:
 
-- add richer dielectric-interface provenance and preset validation before
-  making MA/MS/SA defaults part of public PDK material data.
+- make generated public meshes preserve classifiable interface physical names
+  when the CAD/XAO path produces conductor/dielectric and dielectric/vacuum
+  boundaries, then feed those manifest identities into `gsim` material-kind
+  classification;
+- add richer dielectric-interface provenance and source-backed preset
+  validation before making MA/MS/SA defaults part of public PDK material data.
 
 Acceptance checks:
 
