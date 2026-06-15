@@ -9,11 +9,14 @@ import orpen_sc_pdk
 from orpen_sc_pdk import tech
 from orpen_sc_pdk.materials import (
     get_gsim_dielectric_interface_preset_kwargs,
+    get_gsim_material_kind_alias_map,
     get_gsim_material_kind_map,
     get_gsim_material_overlay,
     get_interface_preset_records,
+    get_material_alias_records,
     get_material_records,
     validate_interface_preset_records,
+    validate_material_alias_records,
     validate_material_kind_records,
     write_gsim_material_overlay,
 )
@@ -29,9 +32,23 @@ def test_material_records_are_public_copy() -> None:
     assert tech.material_properties["Si"]["relative_permittivity"] == pytest.approx(11.45)
 
 
+def test_material_alias_records_are_public_copy() -> None:
+    aliases = get_material_alias_records()
+
+    assert aliases == {
+        "air": "vacuum",
+        "silicon": "Si",
+    }
+
+    aliases["air"] = "Si"
+    assert tech.material_alias_records["air"] == "vacuum"
+
+
 def test_public_import_surface_exposes_material_overlay_helpers() -> None:
     assert orpen_sc_pdk.get_material_records()["vacuum"]["relative_permittivity"] == 1.0
     assert orpen_sc_pdk.get_gsim_material_kind_map()["vacuum"] == "vacuum"
+    assert orpen_sc_pdk.get_material_alias_records()["air"] == "vacuum"
+    assert orpen_sc_pdk.get_gsim_material_kind_alias_map()["silicon"] == "Si"
     assert "materials" in orpen_sc_pdk.get_gsim_material_overlay()
     assert orpen_sc_pdk.get_interface_preset_records() == {}
 
@@ -51,6 +68,21 @@ def test_gsim_material_kind_map_is_public_explicit_copy() -> None:
 
     kind_map["Si"] = "vacuum"
     assert get_gsim_material_kind_map()["Si"] == "dielectric"
+
+
+def test_gsim_material_kind_alias_map_targets_public_materials() -> None:
+    alias_map = get_gsim_material_kind_alias_map()
+    kind_map = get_gsim_material_kind_map()
+
+    assert alias_map == {
+        "air": "vacuum",
+        "silicon": "Si",
+    }
+    assert all(target in kind_map for target in alias_map.values())
+    assert set(alias_map).isdisjoint(tech.material_properties)
+
+    alias_map["air"] = "Si"
+    assert get_gsim_material_kind_alias_map()["air"] == "vacuum"
 
 
 def test_gsim_material_kind_map_covers_public_layer_stack_materials() -> None:
@@ -78,6 +110,21 @@ def test_gsim_material_kind_map_covers_public_layer_stack_materials() -> None:
 def test_gsim_material_kind_map_validates_records(records, match) -> None:
     with pytest.raises(ValueError, match=match):
         validate_material_kind_records(records)
+
+
+@pytest.mark.parametrize(
+    ("records", "match"),
+    [
+        ({"air": "missing"}, "Unknown material alias target"),
+        ({"": "Si"}, "Material aliases"),
+        ({None: "Si"}, "Material aliases"),
+        ({"air": ""}, "Material aliases"),
+        ({"air": None}, "Material aliases"),
+    ],
+)
+def test_gsim_material_kind_alias_map_validates_records(records, match) -> None:
+    with pytest.raises(ValueError, match=match):
+        validate_material_alias_records(records)
 
 
 def test_gsim_material_overlay_maps_finite_dielectrics() -> None:
@@ -575,6 +622,97 @@ def test_gsim_material_kind_classifier_accepts_public_interface_records(tmp_path
     row = summary.set_index("surface_index").loc[1]
     assert row["source_name"] == "Al___Si"
     assert row["interface_type"] == "MS"
+    assert row["interface_material_name"] == "AlOx_native_generic"
+    assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
+
+
+def test_gsim_material_kind_classifier_accepts_public_generated_aliases(tmp_path) -> None:
+    pytest.importorskip("gsim")
+    from gsim.common.stack import LayerStack
+    from gsim.palace import load_dielectric_interface_summary
+    from gsim.palace.mesh import (
+        build_dielectric_interface_specs_from_material_kinds,
+        build_mesh_manifest,
+        build_postprocessing_config_from_manifest,
+    )
+    from gsim.palace.mesh.config_generator import generate_palace_config
+
+    records = {
+        "public_sa_example": {
+            "interface_type": "SA",
+            "thickness": 0.003,
+            "material_name": "AlOx_native_generic",
+            "source": "public example only",
+        }
+    }
+    groups = {
+        "volumes": {
+            "silicon": {"phys_group": 1},
+            "air": {"phys_group": 2},
+        },
+        "conductor_surfaces": {},
+        "pec_surfaces": {},
+        "port_surfaces": {},
+        "boundary_surfaces": {"air___silicon": {"phys_group": 70}},
+    }
+    manifest = build_mesh_manifest(groups)
+    specs = build_dielectric_interface_specs_from_material_kinds(
+        manifest,
+        material_kind_by_name=get_gsim_material_kind_map(),
+        material_name_aliases=get_gsim_material_kind_alias_map(),
+        presets=validate_interface_preset_records(records),
+        preset_by_interface_type={"SA": "public_sa_example"},
+    )
+    postprocessing = build_postprocessing_config_from_manifest(
+        manifest,
+        dielectric_interfaces=specs,
+    )
+
+    assert postprocessing.boundaries["Dielectric"] == [
+        {
+            "Index": 1,
+            "Attributes": [70],
+            "Type": "SA",
+            "Thickness": 0.003,
+            "LossTan": 0.0,
+            "_MaterialName": "AlOx_native_generic",
+        }
+    ]
+
+    config_path = generate_palace_config(
+        groups=groups,
+        ports=[],
+        port_info=[],
+        stack=LayerStack(
+            materials={
+                "silicon": {"permittivity": 11.9},
+                "air": {"permittivity": 1.0},
+            }
+        ),
+        output_path=tmp_path,
+        model_name="palace",
+        fmax=5e9,
+        absorbing_boundary=False,
+        boundary_postprocessing_config=postprocessing.boundaries,
+        material_overlay=get_gsim_material_overlay(),
+    )
+    postprocessing.index_map.write_json(tmp_path / "palace_index_map.json")
+
+    interface = json.loads(config_path.read_text())["Boundaries"]["Postprocessing"]["Dielectric"][0]
+    assert "_MaterialName" not in interface
+    assert interface["Type"] == "SA"
+    assert interface["Permittivity"] == pytest.approx(10.0)
+    assert interface["LossTan"] == pytest.approx(0.0)
+
+    summary = load_dielectric_interface_summary(
+        {
+            "config.json": config_path,
+            "palace_index_map.json": tmp_path / "palace_index_map.json",
+        }
+    )
+    row = summary.set_index("surface_index").loc[1]
+    assert row["source_name"] == "air___silicon"
+    assert row["interface_type"] == "SA"
     assert row["interface_material_name"] == "AlOx_native_generic"
     assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
 

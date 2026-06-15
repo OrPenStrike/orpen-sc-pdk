@@ -78,9 +78,10 @@ Verified local changes:
   mesh/config/artifact handoffs and displays scrubbed summaries only;
 - the public workflow notebook and fixtures intentionally do not add
   material-kind-driven MA/MS/SA interface postprocessing yet; generated public
-  mesh fixtures now expose classifiable interface identities, but the public
-  PDK still has no source-backed default interface preset records or material
-  alias policy for automatic classification;
+  mesh fixtures now expose classifiable interface identities, and the public
+  alias map covers generated `air`/`silicon` material names; the public PDK
+  still has no source-backed default interface preset records or
+  default-selection policy for automatic classification;
 - the public simulation workflow notebook now also writes synthetic public
   Eigenmode and Electrostatic report artifacts, loads them through reusable
   `gsim` report bundles, and displays curated domain-loss, surface-loss, and
@@ -116,8 +117,8 @@ Verified local changes:
 Remaining slices:
 
 - wire material-kind interface classification into public workflow examples
-  only after source-backed public interface preset records and material-name
-  alias policy exist;
+  only after source-backed public interface preset records and default-selection
+  policy exist;
 - future extensions should stay public-fixture based and keep normal docs
   builds independent of local Palace.
 

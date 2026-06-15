@@ -37,6 +37,12 @@ The current public bridge is intentionally small:
 - `orpen_sc_pdk.materials.get_gsim_material_kind_map()` returns the public
   material-name-to-kind map expected by `gsim` dielectric-interface
   classification helpers;
+- `orpen_sc_pdk.materials.get_material_alias_records()` returns public aliases
+  from generated or external material names to public material records;
+- `orpen_sc_pdk.materials.validate_material_alias_records()` validates that
+  each alias target is a public material with an explicit `material_kind`;
+- `orpen_sc_pdk.materials.get_gsim_material_kind_alias_map()` returns those
+  aliases for `gsim` dielectric-interface classification helpers;
 - `orpen_sc_pdk.materials.get_interface_preset_records()` returns a copy of
   public dielectric-interface preset records, currently empty by default;
 - `orpen_sc_pdk.materials.validate_interface_preset_records()` validates
@@ -61,18 +67,20 @@ The current public bridge is intentionally small:
   maps and exact manifest entry names, physical group names, or parsed
   interface pairs without hard-coding private process values.
 - local `gsim` can also classify parsed manifest interfaces from caller-supplied
-  material-kind maps into generic `MA`, `MS`, and `SA` specs while skipping
-  exterior boundaries and non-loss material-kind pairs.
+  material-kind maps and material-name aliases into generic `MA`, `MS`, and
+  `SA` specs while skipping exterior boundaries and non-loss material-kind
+  pairs.
 - local `gsim` can derive reusable domain/surface loss budgets from those
   loaded artifacts, including inverse-Q, equivalent Q, gamma, and T1 columns
   when mode frequency is available.
 
 Finite public dielectric records are exported as constant material models.
 The generic `material_kind` labels are separate classifier inputs and are not
-written into the `gsim` material overlay. Conductor-like records currently represented by
-`relative_permittivity = inf` are preserved as material-role metadata until
-explicit conductivity, surface impedance, or London-depth values are part of
-the public material record.
+written into the `gsim` material overlay. Public material-name aliases are also
+classifier inputs, not duplicate material records or overlay entries.
+Conductor-like records currently represented by `relative_permittivity = inf`
+are preserved as material-role metadata until explicit conductivity, surface
+impedance, or London-depth values are part of the public material record.
 
 ## Existing Ecosystem Material DB
 
@@ -101,8 +109,11 @@ should be:
    interface-pair selection; automatic public selection policy belongs in a
    later source-backed PDK contract.
 8. Use the PDK's explicit public material-kind map with `gsim`
-   material-kind classification, but keep default public MA/MS/SA preset values
-   out of the PDK until those records are source-backed.
+   material-kind classification, passing the public material-name alias map
+   when generated names such as `air` and `silicon` need to resolve to public
+   `vacuum` and `Si` records.
+9. Keep default public MA/MS/SA preset values out of the PDK until those
+   records are source-backed.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the

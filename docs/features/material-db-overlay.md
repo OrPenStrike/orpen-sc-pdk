@@ -69,6 +69,11 @@ Current public baseline:
   `validate_material_kind_records()` and exported as
   `get_gsim_material_kind_map()` for `gsim` interface classification without
   exposing private process values or preset-selection policy;
+- `orpen-sc-pdk` now exposes `tech.material_alias_records`,
+  `get_material_alias_records()`, `validate_material_alias_records()`, and
+  `get_gsim_material_kind_alias_map()` so generated material names such as
+  `air` and `silicon` can be classified through public `vacuum` and `Si`
+  records without becoming duplicate material records or overlay entries;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -79,8 +84,8 @@ Current public baseline:
   MA/MS/SA default selection remain explicit caller choices;
 - public material-overlay tests now also verify a caller-supplied, source-backed
   interface preset record can flow through the `gsim` material-kind classifier
-  using OrPen's public material-kind map, and then through reusable Palace
-  config/material-resolution/report loading;
+  using OrPen's public material-kind map and generated-name alias map, and then
+  through reusable Palace config/material-resolution/report loading;
 - `orpen-sc-pdk` now exposes an empty-by-default
   `tech.interface_preset_records` table plus
   `get_interface_preset_records()`,
@@ -95,9 +100,9 @@ Current public baseline:
 
 Remaining slices:
 
-- add a validated material-record schema and aliases table once the public
-  material contract grows beyond explicit material kinds and current minimal
-  electromagnetic records;
+- add a broader validated material-record schema once the public material
+  contract grows beyond explicit material kinds, generated-name aliases, and
+  current minimal electromagnetic records;
 - populate public interface preset records only after source-backed public
   MA/MS/SA values and automatic-selection rules are accepted into the PDK
   contract; until then, keep selection caller-supplied through the `gsim`

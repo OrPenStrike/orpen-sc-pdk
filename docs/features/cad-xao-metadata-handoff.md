@@ -51,8 +51,9 @@ Acceptance direction:
 - surface-Q and EPR reports can use the same index map as Palace config
   generation;
 - material-kind interface classification consumes generated manifest interface
-  identities only after public material-kind aliases and source-backed presets
-  are supplied by the caller or PDK contract;
+  identities when the caller supplies public material-kind aliases and
+  source-backed presets; the current public alias map covers generated
+  `air`/`silicon` names, while preset defaults remain a later PDK contract;
 - the implementation builds on meshwell physical-name and interface-tag
   conventions rather than copying private CAD/XAO code.
 

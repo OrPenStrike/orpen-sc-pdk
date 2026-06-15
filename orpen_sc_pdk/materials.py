@@ -9,7 +9,11 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from orpen_sc_pdk.tech import interface_preset_records, material_properties
+from orpen_sc_pdk.tech import (
+    interface_preset_records,
+    material_alias_records,
+    material_properties,
+)
 
 _OVERLAY_SOURCE = "orpen-sc-pdk tech.material_properties"
 _INTERFACE_PRESET_SOURCE = "orpen-sc-pdk tech.interface_preset_records"
@@ -29,6 +33,12 @@ def get_material_records() -> dict[str, dict[str, Any]]:
     return copy.deepcopy(material_properties)
 
 
+def get_material_alias_records() -> dict[str, str]:
+    """Return public aliases for generated or external material names."""
+
+    return dict(material_alias_records)
+
+
 def validate_material_kind_records(
     records: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, str]:
@@ -42,12 +52,46 @@ def validate_material_kind_records(
     return normalized
 
 
+def validate_material_alias_records(
+    records: Mapping[str, str] | None = None,
+    *,
+    material_records: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, str]:
+    """Validate aliases from generated material names to public PDK names."""
+
+    source_records = material_alias_records if records is None else records
+    public_material_names = set(validate_material_kind_records(material_records))
+    normalized: dict[str, str] = {}
+    for alias, target in source_records.items():
+        alias_name = _material_alias_name(alias)
+        target_name = _material_alias_name(target)
+        if target_name not in public_material_names:
+            msg = (
+                f"Unknown material alias target: alias {alias_name!r} targets "
+                f"unknown public material "
+                f"{target_name!r}."
+            )
+            raise ValueError(msg)
+        normalized[alias_name] = target_name
+    return normalized
+
+
 def get_gsim_material_kind_map(
     records: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, str]:
     """Return ``material_kind_by_name`` input for gsim interface classification."""
 
     return dict(validate_material_kind_records(records))
+
+
+def get_gsim_material_kind_alias_map(
+    records: Mapping[str, str] | None = None,
+    *,
+    material_records: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, str]:
+    """Return aliases accepted by gsim material-kind interface classification."""
+
+    return dict(validate_material_alias_records(records, material_records=material_records))
 
 
 def get_interface_preset_records() -> dict[str, dict[str, Any]]:
@@ -151,6 +195,13 @@ def _to_gsim_material_entry(record: dict[str, Any]) -> dict[str, Any]:
 def _material_name(name: Any) -> str:
     if not isinstance(name, str) or not name:
         msg = "Material names must be non-empty strings."
+        raise ValueError(msg)
+    return name
+
+
+def _material_alias_name(name: Any) -> str:
+    if not isinstance(name, str) or not name:
+        msg = "Material aliases must be non-empty strings."
         raise ValueError(msg)
     return name
 

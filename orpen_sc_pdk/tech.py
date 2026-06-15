@@ -99,6 +99,11 @@ material_properties = {
     "AlOx_native_generic": {"relative_permittivity": 10.0, "material_kind": "dielectric"},
 }
 
+material_alias_records = {
+    "air": "vacuum",
+    "silicon": "Si",
+}
+
 interface_preset_records = {}
 
 SUBSTRATE_THICKNESS_UM = 500.0
@@ -732,6 +737,7 @@ __all__ = [
     "josephson_junction_cross_section_wide",
     "launcher_cross_section_big",
     "interface_preset_records",
+    "material_alias_records",
     "material_properties",
     "microstrip",
     "route_astar",

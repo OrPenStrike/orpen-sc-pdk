@@ -221,9 +221,11 @@ Verified local changes:
 
 Remaining implementation slices:
 
-- align generated mesh interface names with public PDK material-kind aliases so
-  `air`/`silicon`-style `gsim` volume names and public `vacuum`/`Si` material
-  names can be classified without private lookup tables;
+- wire generated mesh interface classification into public workflows only
+  after source-backed public interface presets and default-selection rules are
+  accepted; the public alias map already lets `air`/`silicon`-style `gsim`
+  volume names classify through public `vacuum`/`Si` material records without
+  private lookup tables;
 - add richer dielectric-interface provenance and source-backed preset
   validation before making MA/MS/SA defaults part of public PDK material data.
 

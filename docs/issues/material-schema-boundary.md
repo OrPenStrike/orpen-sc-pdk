@@ -77,6 +77,12 @@ Verified local changes:
   `get_gsim_material_kind_map()`, giving `gsim` classifier callers a public
   material-name-to-kind map without exporting preset defaults or copying
   private process constants;
+- `orpen-sc-pdk` now records public generated-name aliases in
+  `tech.material_alias_records` and exposes
+  `get_material_alias_records()`, `validate_material_alias_records()`, and
+  `get_gsim_material_kind_alias_map()`, so generated `air`/`silicon` names can
+  classify through public `vacuum`/`Si` records without becoming duplicate
+  material records or overlay entries;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
@@ -101,13 +107,13 @@ Verified local changes:
   report/index-map path;
 - public tests now also prove the same caller-supplied interface preset records
   can flow through the `gsim` material-kind classifier using OrPen's public
-  material-kind map before Palace config and report loading, without
-  introducing public default MA/MS/SA values;
+  material-kind map and generated-name alias map before Palace config and
+  report loading, without introducing public default MA/MS/SA values;
 - public Driven, Eigenmode, and Electrostatic workflow examples intentionally
   continue to pass only `get_gsim_material_overlay()` into generated configs:
   those examples should not wire `get_gsim_material_kind_map()` into automatic
   interface postprocessing until source-backed public presets and a public
-  material-name alias policy exist;
+  default-selection policy exist;
 - read-only NCUAS audit confirms the private repo already has MA/MS/SA
   classification, thin-film MA+MS duplicate-spec behavior, preset lookup,
   `materials.json` numeric interface-loss values, notebook-local override
@@ -119,9 +125,9 @@ Verified local changes:
 Remaining slices:
 
 - introduce a broader validated public material-record schema when the current
-  dict grows beyond explicit material kinds and minimal EM fields to include
-  aliases, provenance, conditions, loss, conductivity, London-depth, or
-  surface/interface presets;
+  dict grows beyond explicit material kinds, generated-name aliases, and
+  minimal EM fields to include provenance, conditions, loss, conductivity,
+  London-depth, or surface/interface presets;
 - populate public interface preset records only after MA/MS/SA thickness, loss
   tangent, material-kind data, and automatic-selection values have source-backed
   public records;
