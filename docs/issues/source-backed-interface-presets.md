@@ -59,6 +59,10 @@ Verified local changes:
   review rows for CPW `MA`/`MS`/`SA` taxonomy, assumed/scaled Wenner-style
   records, fitted Woods-style interface-loss candidates, transmon validation
   targets, and uncertainty-aware CPW interpretation.
+- the public helper-node inventory and notebook coverage matrix now record the
+  source-backed preset promotion gate explicitly: public workflows stay
+  caller-supplied until accepted MA/MS/SA preset records, process scope, and
+  default-selection rules are approved.
 
 Remaining slices:
 

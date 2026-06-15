@@ -177,6 +177,10 @@ Verified local changes:
   solver reports and Magnetostatic reports as skipped until a report loader is
   added, instead of fabricating physics outputs; local solver replay can fill
   the same columns from supported `gsim` report loaders;
+- the public helper-node inventory now exposes promotion gates and missing
+  evidence in both the notebook matrix and JSON evidence, so Magnetostatic
+  remains visibly blocked on an exact Palace output contract instead of being
+  marked as a report-backed workflow prematurely;
 - `gsim` commit `452b3d4` adds sanitized Palace log parsing into reusable
   resource records, and the public evidence runner now uses a synthetic public
   Palace log fixture per problem type to write AMR pass, stage timing, stage

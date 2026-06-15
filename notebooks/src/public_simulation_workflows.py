@@ -117,6 +117,8 @@ def _helper_node_inventory_table() -> pd.DataFrame:
         "gdsfactory_home",
         "public_api_or_artifact",
         "public_status",
+        "promotion_gate",
+        "missing_evidence",
         "next_issue",
     ]
     return pd.DataFrame(rows).loc[:, columns]

@@ -43,7 +43,9 @@ Current public notebook:
   private helper node exists, which private notebook/helper anchors motivated
   the row, which GDSFactory ecosystem repo should own the public equivalent,
   which `gsim`/OrPen API or artifact currently covers it, and which issue owns
-  the next slice;
+  the next slice; rows now also show the promotion gate and missing evidence
+  that must be resolved before a pending helper becomes a public default or
+  report-backed workflow;
 - the same notebook loads synthetic public Driven, Eigenmode, and Electrostatic
   Palace report bundles through `gsim.palace.load_driven_report()`,
   `gsim.palace.load_eigenmode_report()`, and

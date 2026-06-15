@@ -77,8 +77,17 @@ def _assert_helper_node_inventory(evidence: dict) -> None:
     assert (
         magnetostatic["public_status"] == "implemented_public_config_fixture_pending_report_loader"
     )
+    assert (
+        magnetostatic["promotion_gate"]
+        == "report_loader_requires_confirmed_palace_output_contract"
+    )
+    assert "Magnetostatic Palace CSV/output schema" in magnetostatic["missing_evidence"]
     assert "MagnetostaticSim" in magnetostatic["public_api_or_artifact"]
     assert "SurfaceCurrent" in magnetostatic["private_capability"]
+
+    interface = by_node["Dielectric interface MA/MS/SA classification"]
+    assert interface["promotion_gate"] == "source_backed_public_default_policy_required"
+    assert "accepted public MA/MS/SA preset records" in interface["missing_evidence"]
 
     for row in rows:
         assert row["node"]
@@ -89,6 +98,8 @@ def _assert_helper_node_inventory(evidence: dict) -> None:
             "orpen-sc-pdk + gsim",
             "meshwell + gsim",
         }
+        assert row["promotion_gate"]
+        assert row["missing_evidence"]
         assert row["next_issue"]
 
 

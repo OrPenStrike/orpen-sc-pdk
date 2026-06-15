@@ -7,6 +7,8 @@
     "gdsfactory_home": "gsim",
     "public_api_or_artifact": "DrivenSim; write_config(hints=...); load_driven_report(); load_postprocessing_index_map(); load_domain_material_summary()",
     "public_status": "implemented_public_fixture",
+    "promotion_gate": "none",
+    "missing_evidence": "none",
     "next_issue": "public-problem-type-notebook-coverage"
   },
   {
@@ -17,6 +19,8 @@
     "gdsfactory_home": "gsim",
     "public_api_or_artifact": "EigenmodeSim; build_postprocessing_config_from_manifest(); load_eigenmode_report(); summarize_loss_budget()",
     "public_status": "implemented_public_fixture",
+    "promotion_gate": "none",
+    "missing_evidence": "none",
     "next_issue": "public-problem-type-notebook-coverage"
   },
   {
@@ -27,6 +31,8 @@
     "gdsfactory_home": "gsim",
     "public_api_or_artifact": "ElectrostaticSim; center-selected terminals; load_terminal_matrix(); load_electrostatic_report()",
     "public_status": "implemented_public_fixture",
+    "promotion_gate": "none",
+    "missing_evidence": "none",
     "next_issue": "public-problem-type-notebook-coverage"
   },
   {
@@ -37,6 +43,8 @@
     "gdsfactory_home": "gsim",
     "public_api_or_artifact": "MagnetostaticSim; center-selected CurrentSourceConfig; vector Direction; CoordinateSystem; multielement SurfaceCurrent; magnetic SurfaceFlux; load_postprocessing_index_map()",
     "public_status": "implemented_public_config_fixture_pending_report_loader",
+    "promotion_gate": "report_loader_requires_confirmed_palace_output_contract",
+    "missing_evidence": "exact Magnetostatic Palace CSV/output schema and a representative public output bundle",
     "next_issue": "public-problem-type-notebook-coverage"
   },
   {
@@ -47,6 +55,8 @@
     "gdsfactory_home": "orpen-sc-pdk + gsim",
     "public_api_or_artifact": "get_gsim_material_overlay(); palace_material_resolution.json; load_domain_material_summary()",
     "public_status": "implemented_public_fixture",
+    "promotion_gate": "london_depth_schema_required_for_superconducting_fields",
+    "missing_evidence": "source-bearing LondonDepth records, units/process validity, gsim config emission, and report provenance columns",
     "next_issue": "material-schema-boundary"
   },
   {
@@ -57,6 +67,8 @@
     "gdsfactory_home": "orpen-sc-pdk + gsim",
     "public_api_or_artifact": "get_gsim_material_kind_map(); build_dielectric_interface_specs_from_material_kinds(); load_dielectric_interface_summary()",
     "public_status": "implemented_with_caller_supplied_test_preset_pending_source_policy",
+    "promotion_gate": "source_backed_public_default_policy_required",
+    "missing_evidence": "accepted public MA/MS/SA preset records, process scope, and default-selection rules",
     "next_issue": "source-backed-interface-presets"
   },
   {
@@ -67,6 +79,8 @@
     "gdsfactory_home": "gsim",
     "public_api_or_artifact": "palace_index_map.json; PostprocessingIndexMap; load_postprocessing_index_map()",
     "public_status": "implemented_public_fixture",
+    "promotion_gate": "none",
+    "missing_evidence": "none",
     "next_issue": "cad-mesh-identity-provenance"
   },
   {
@@ -77,6 +91,8 @@
     "gdsfactory_home": "meshwell + gsim",
     "public_api_or_artifact": "mesh_manifest.json; palace_index_map.json; load_palace_run_summary()",
     "public_status": "implemented_public_fixture_without_replicating_private_meshing_strategy",
+    "promotion_gate": "meshwell_physical_name_contract_alignment",
+    "missing_evidence": "upstream meshwell physical-name/interface-tag contract and backend equivalence tests",
     "next_issue": "cad-mesh-identity-provenance"
   },
   {
@@ -87,6 +103,8 @@
     "gdsfactory_home": "gsim",
     "public_api_or_artifact": "load_palace_slurm_profile_catalog(); write_palace_slurm_sbatch_handoff(); write_palace_sweep_resource_index()",
     "public_status": "implemented_public_dry_run_fixture",
+    "promotion_gate": "private_hpc_validation_required",
+    "missing_evidence": "site-owned profile catalogs, real Slurm/HPC validation, and private allocation policy outside the PDK",
     "next_issue": "palace-hpc-handoff-records"
   },
   {
@@ -97,6 +115,8 @@
     "gdsfactory_home": "gsim",
     "public_api_or_artifact": "write_palace_sweep_points(); load_palace_sweep_summary(include_report_metrics=True)",
     "public_status": "implemented_public_dry_run_fixture",
+    "promotion_gate": "campaign_cost_modeling_later",
+    "missing_evidence": "richer public campaign/cost model and real run-resource aggregation beyond dry-run evidence",
     "next_issue": "palace-hpc-handoff-records"
   }
 ]
