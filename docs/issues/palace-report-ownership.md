@@ -86,6 +86,10 @@ Verified local changes:
 - optional local Eigenmode Palace validation passed after the report-bundle
   wiring with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`, a direct local Palace binary,
   and `gsim.palace.load_eigenmode_report()`.
+- the public local evidence runner now replays Driven, Eigenmode, and
+  Electrostatic fixtures against a direct `palace-arm64.bin` development
+  binary and records loaded `gsim` report summaries for each problem type in
+  the ignored `public_palace_smoke_evidence.json` bundle.
 - `gsim` commit `0197b64`: adds `load_domain_material_summary()` and
   `EigenmodeReport.domain_materials`, so effective Palace `Domains.Materials`
   rows can be loaded from `config.json` and joined to domain physical names

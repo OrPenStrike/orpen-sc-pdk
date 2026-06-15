@@ -73,6 +73,10 @@ Current executable smoke coverage:
 - the smoke path accepts either a Palace SIF (`PALACE_SIF`) or a direct local
   executable (`PALACE_EXECUTABLE`), with `PALACE_EXECUTABLE_MODE=binary` for
   development binaries that do not accept wrapper launcher flags;
+- the direct-binary path has been replayed locally for all three public
+  fixtures with one process and one thread; macOS development builds may also
+  need `DYLD_LIBRARY_PATH=<palace-build>/lib:<palace-build>/lib64` when the
+  binary carries stale rpaths;
 - the Electrostatic smoke verifies both non-empty solver matrix outputs and the
   `gsim.palace.load_terminal_matrix()` report-loader round trip through
   `palace_index_map.json`;

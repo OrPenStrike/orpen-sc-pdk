@@ -183,6 +183,11 @@ Verified local changes:
   eigenmode fixture passed both the default skip path and the opt-in local
   Palace solve, including positive eigenfrequency rows and final-source
   visibility from the public Eigenmode loader.
+- validation after the direct-binary local replay: Driven, Eigenmode, and
+  Electrostatic public fixtures all passed opt-in local Palace coarse solves
+  against `palace-arm64.bin` with corrected dynamic-library loader paths,
+  proving the generated mesh manifest, index map, and config artifacts can feed
+  real solver output without copying private CAD/XAO helpers.
 - validation after the Eigenmode report bundle slice: `gsim` result, manifest,
   and workflow tests passed; Ruff check/format passed; targeted Pyright passed
   for the changed results public surface.

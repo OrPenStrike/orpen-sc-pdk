@@ -141,12 +141,27 @@ Verified local changes:
   through the same run-summary bundle;
 - validation passed with
   `uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py tests/test_gsim_eigenmode_resonator_workflow.py tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
-- optional local Palace validation passed with
-  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_electrostatic_capacitor_workflow.py -q`;
+- optional local Palace validation passed on the public fixtures with a direct
+  macOS development binary using
+  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=<palace-build>/bin/palace-arm64.bin PALACE_EXECUTABLE_MODE=binary PALACE_NP=1 PALACE_NT=1 DYLD_LIBRARY_PATH=<palace-build>/lib:<palace-build>/lib64 uv run --group ecosystem-dev python -m pytest <workflow-test> -q`;
+- the direct binary path was required for this local build: the wrapper launcher
+  reached `mpirun` and failed to resolve `@rpath/libceed.dylib` because the
+  binary still carried stale build rpaths, while `palace-arm64.bin --version`
+  succeeded with the corrected loader path;
+- optional local Electrostatic Palace validation passed with
+  `tests/test_gsim_electrostatic_capacitor_workflow.py -q`
+  (`2 passed`, public material validity-range warnings only);
 - optional local Driven Palace validation passed with
-  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_driven_cpw_workflow.py -q`;
+  `tests/test_gsim_driven_cpw_workflow.py -q`
+  (`2 passed`, public material validity-range warnings only);
 - optional local Eigenmode Palace validation passed with
-  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1 PALACE_EXECUTABLE=/path/to/palace PALACE_EXECUTABLE_MODE=binary uv run --group ecosystem-dev python -m pytest tests/test_gsim_eigenmode_resonator_workflow.py -q`;
+  `tests/test_gsim_eigenmode_resonator_workflow.py -q`
+  (`3 passed`, public material validity-range warnings only);
+- the unified local evidence runner also passed with the same direct-binary
+  environment and wrote the ignored
+  `build/public-palace-smoke-evidence/public_palace_smoke_evidence.json`
+  bundle; the bundle reports loaded Driven, Eigenmode, and Electrostatic
+  `gsim` report summaries plus sanitized `palace_run_metadata.json` sidecars;
 - the same optional Eigenmode validation now exercises
   `gsim.palace.load_eigenmode_report()` against real local solver output;
 - public synthetic Electrostatic report validation now exercises

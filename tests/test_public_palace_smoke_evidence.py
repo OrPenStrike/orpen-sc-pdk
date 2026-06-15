@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from scripts.public_palace_smoke_evidence import (
     EVIDENCE_FILENAME,
+    _driven_report_summary,
     build_public_palace_smoke_evidence,
 )
 
@@ -109,3 +111,36 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         "negative",
         "positive",
     ]
+
+
+def test_driven_report_summary_uses_sparams_public_keys(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    import gsim.palace
+
+    class FakeSParams:
+        port_names = ("o1", "o2")
+        freq = (4e9, 6e9, 8e9)
+
+        def keys(self) -> list[tuple[str, str]]:
+            return [("o1", "o1"), ("o2", "o1")]
+
+        @property
+        def data(self):
+            raise AssertionError("Use SParams.keys(), not private data storage")
+
+    report = SimpleNamespace(
+        sparams=FakeSParams(),
+        port_epr=(),
+        index_map=(),
+        sources=None,
+    )
+    monkeypatch.setattr(gsim.palace, "load_driven_report", lambda _path: report)
+
+    summary = _driven_report_summary(tmp_path)
+
+    assert summary["status"] == "loaded"
+    assert summary["port_names"] == ["o1", "o2"]
+    assert summary["frequency_points"] == 3
+    assert summary["s_parameter_count"] == 2

@@ -42,6 +42,10 @@ Current public baseline:
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime summary fields, and a
   public problem-type sweep-summary smoke in the ignored local evidence bundle.
+- the public evidence bundle can now be replayed with local direct-binary
+  Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
+  point records sanitized command shape, return code, elapsed seconds, output
+  counts, and report-loader status through the same `gsim` run-summary schema.
 
 Acceptance direction:
 

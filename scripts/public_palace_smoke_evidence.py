@@ -186,7 +186,7 @@ def _driven_report_summary(output_dir: Path) -> dict[str, Any]:
         "status": "loaded",
         "port_names": list(report.sparams.port_names),
         "frequency_points": int(len(report.sparams.freq)),
-        "s_parameter_count": int(len(report.sparams.data)),
+        "s_parameter_count": int(len(report.sparams.keys())),
         "port_epr_rows": int(len(report.port_epr)),
         "index_map_rows": int(len(report.index_map)),
         "sources": _source_summary(report.sources),
