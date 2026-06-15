@@ -19,69 +19,37 @@ Acceptance direction:
 - generated reports avoid private paths and benchmark data from private layouts
   by default.
 
-Current public baseline:
+Current implemented baseline:
 
-- local `gsim` exposes `load_postprocessing_index_map()` and
-  `load_indexed_csv()` as the first reusable report-loading surface;
-- indexed Palace CSV columns can be annotated from `palace_index_map.json`
-  without reading private mesh files or notebook-local physical-name maps;
-- electrostatic terminal matrices can be loaded through `load_terminal_matrix()`
-  with terminal labels resolved from `Boundaries.Terminal` index-map rows;
-- electrostatic terminal matrix AMR histories can be summarized through
-  `load_terminal_matrix_history()` and `summarize_terminal_matrix_history()`;
-- indexed Palace EPR reports can be reshaped into summary frames through
-  `load_domain_energy_summary()`, `load_surface_q_summary()`,
-  `summarize_surface_q_by_interface()`, and `load_port_epr_summary()`;
-- effective Palace domain material rows can be loaded through
-  `load_domain_material_summary()` and joined from `config.json` material
-  attributes to `palace_index_map.json` domain physical names;
-- local `gsim` commit `61d7d66` adds generated
-  `palace_material_resolution.json` sidecars and extends domain material
-  summaries with stack material, matched material record, model source,
-  validity, and resolution-frequency provenance;
-- local `gsim` commit `1da6783` extends material-resolution provenance to
-  dielectric interface rows, so Palace reports can explain which public
-  material overlay entry supplied interface permittivity/loss fields;
-- configured dielectric interface postprocessing rows can be loaded through
-  `load_dielectric_interface_summary()` and joined from
-  `Boundaries.Postprocessing.Dielectric` config rows to index-map physical
-  names;
-- composed Eigenmode reports expose those rows through
-  `EigenmodeReport.domain_materials` and
-  `EigenmodeReport.dielectric_interfaces`;
-- local `gsim` commit `f12312c` adds `summarize_domain_loss()`,
-  `summarize_surface_loss()`, and `summarize_loss_budget()`;
-- composed Eigenmode reports now expose derived `domain_loss`,
-  `surface_loss`, and `loss_budget` tables, using effective domain material
-  loss tangent, Palace `Q_surf`, configured interface metadata, and mode
-  frequency for gamma/T1 columns;
-- local `gsim` commit `fbb19d1` adds `ElectrostaticReport` and
-  `load_electrostatic_report()`, composing terminal capacitance matrices,
-  terminal matrix pass summaries, optional indexed `domain-E.csv` and
-  `surface-Q.csv` reports, config/material/interface provenance, and
-  source bookkeeping;
-- Electrostatic report loss budgets preserve Palace `i`/source samples and
-  only derive gamma/T1 columns when callers pass an explicit `frequency_ghz`;
-- local `gsim` commit `e8632bc` adds `DrivenReport` and
-  `load_driven_report()`, composing required `port-S.csv`, optional
-  `port-EPR.csv`, index-map provenance, config material/interface provenance,
-  and source bookkeeping;
-- `orpen-sc-pdk` public notebooks now demonstrate these report bundles with
-  synthetic public Driven/Eigenmode/Electrostatic artifacts and curated display
-  tables, keeping report parsing in `gsim` and notebook presentation downstream;
-- `scripts/public_palace_smoke_evidence.py` can also load real opt-in local
-  Palace outputs through the same `gsim` Driven/Eigenmode/Electrostatic report
-  bundles when local solver execution is enabled, while its default dry-run
-  evidence records generated artifact status through
-  `gsim.palace.results.load_palace_run_summary()` and solver skip reasons; successful
-  local solver runs also surface sanitized `gsim` runtime metadata through the
-  same summary API;
-- local `gsim` commit `f2dbe7f` lets reusable sweep summaries optionally add
-  compact report-derived metrics from those same Driven/Eigenmode/Electrostatic
-  loaders, so sweep rows can expose physics/report status without moving parser
-  ownership into downstream PDK examples;
-- `orpen-sc-pdk` remains a consumer that can generate public fixtures and
-  examples, not the owner of Palace report parsing.
+- `gsim.palace.load_postprocessing_index_map()` is the root public loader for
+  generated `palace_index_map.json` artifacts used directly by public notebooks
+  and smoke evidence.
+- Lower-level indexed CSV, eigenmode pass-history, terminal matrix history,
+  port-EPR, and interface aggregation helpers live in
+  `gsim.palace.results`, for example `load_indexed_csv()`,
+  `load_eigenmodes()`, `load_eigenmode_history()`,
+  `load_terminal_matrix_history()`, `load_port_epr_summary()`, and
+  `summarize_surface_q_by_interface()`.
+- Root `gsim.palace` keeps notebook-facing report and provenance loaders:
+  `load_driven_report()`, `load_eigenmode_report()`,
+  `load_electrostatic_report()`, `load_terminal_matrix()`,
+  `load_domain_material_summary()`,
+  `load_dielectric_interface_summary()`, and the loss-summary helpers used by
+  public fixtures.
+- Driven reports compose required `port-S.csv`, optional `port-EPR.csv`,
+  index-map provenance, config material/interface provenance, and source
+  bookkeeping.
+- Eigenmode reports compose final `eig.csv`, AMR history, pass summaries,
+  `palace_index_map.json`, optional EPR report families, material/interface
+  provenance, and loss-budget tables.
+- Electrostatic reports compose terminal capacitance matrices, terminal matrix
+  pass summaries, optional indexed `domain-E.csv` and `surface-Q.csv` reports,
+  material/interface provenance, and frequency-gated loss-budget rows.
+- Runtime summaries, sweep records, resource records, and handoff evidence are
+  reusable workflow APIs under `gsim.palace.results` or
+  `gsim.palace.handoff`, not root problem-report APIs.
+- `orpen-sc-pdk` remains a consumer that generates public fixtures, notebooks,
+  and display tables; it does not own Palace report parsing.
 
 Related issues:
 

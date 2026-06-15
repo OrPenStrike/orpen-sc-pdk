@@ -26,11 +26,11 @@ Proposed path:
 Verified local changes:
 
 - `gsim` commit `5caa2db`: adds `load_postprocessing_index_map()` and
-  `load_indexed_csv()` to the public `gsim.palace` surface;
-- `load_indexed_csv()` can load indexed Palace CSV files, infer standard
-  sections for `domain-E.csv`, `surface-Q.csv`, and `port-EPR.csv`, rename
-  indexed columns with physical names from `palace_index_map.json`, and expose
-  JSON-friendly column provenance rows;
+  `load_indexed_csv()` as the first reusable indexed-report loaders;
+- `gsim.palace.results.load_indexed_csv()` can load indexed Palace CSV files,
+  infer standard sections for `domain-E.csv`, `surface-Q.csv`, and
+  `port-EPR.csv`, rename indexed columns with physical names from
+  `palace_index_map.json`, and expose JSON-friendly column provenance rows;
 - focused `gsim` tests cover directory sources, results-dict sources,
   domain-energy mapping, surface-Q mapping, unmapped index preservation, Ruff,
   and targeted Pyright.
@@ -40,17 +40,18 @@ Verified local changes:
   `terminal-Cinv.csv`, label rows/columns from `Boundaries.Terminal` rows in
   `palace_index_map.json`, preserve SI values, expose display-scaled matrices,
   and emit long-form terminal-pair rows for report tables.
-- `gsim` commit `3c0dad9`: adds `load_terminal_matrix_history()` and
-  `summarize_terminal_matrix_history()` so electrostatic AMR pass matrices can
-  be loaded, final-pass duplicates can be dropped, and convergence deltas can be
-  summarized without notebook-local parsing.
+- `gsim` commit `3c0dad9`: adds
+  `gsim.palace.results.load_terminal_matrix_history()` and
+  `gsim.palace.results.summarize_terminal_matrix_history()` so electrostatic
+  AMR pass matrices can be loaded, final-pass duplicates can be dropped, and
+  convergence deltas can be summarized without notebook-local parsing.
 - `gsim` commit `76b383a`: adds indexed EPR summary helpers on top of
   `load_indexed_csv()`;
 - `load_domain_energy_summary()`, `load_surface_q_summary()`,
-  `summarize_surface_q_by_interface()`, and `load_port_epr_summary()` reshape
-  `domain-E.csv`, `surface-Q.csv`, and `port-EPR.csv` into public-safe report
-  frames with index-map provenance, interface totals, and port participation
-  fractions.
+  `gsim.palace.results.summarize_surface_q_by_interface()`, and
+  `gsim.palace.results.load_port_epr_summary()` reshape `domain-E.csv`,
+  `surface-Q.csv`, and `port-EPR.csv` into public-safe report frames with
+  index-map provenance, interface totals, and port participation fractions.
 - `orpen-sc-pdk` now validates `load_terminal_matrix()` against a real optional
   local Palace Electrostatic coarse solve, so the public fixture proves
   generated terminal matrix CSVs can be loaded back with `positive`/`negative`
@@ -68,9 +69,9 @@ Verified local changes:
 - `orpen-sc-pdk` now validates the public Eigenmode resonator fixture against a
   real optional local Palace coarse solve, proving `eig.csv` and `domain-E.csv`
   are produced for a public resonator.
-- `gsim` now exposes `load_eigenmodes()`, `load_eigenmode_history()`, and
-  `summarize_eigenmode_history()` so Eigenmode `eig.csv` outputs have stable
-  normalized fields, notebook-facing aliases, source visibility, and
+- `gsim.palace.results` exposes `load_eigenmodes()`,
+  `load_eigenmode_history()`, and `summarize_eigenmode_history()` so Eigenmode
+  `eig.csv` outputs have stable normalized fields, source visibility, and
   HFSS-style pass summaries instead of notebook-local parsing.
 - `gsim` commit `ca471b4`: adds `EigenmodeReport` and
   `load_eigenmode_report()` as a thin composition layer over final
@@ -141,6 +142,11 @@ Verified local changes:
   Driven/Eigenmode/Electrostatic report bundles through `gsim` and display
   curated S-parameter, port-EPR, domain-loss, surface-loss, and loss-budget
   tables without importing private runs or moving report parsing into the PDK.
+- `gsim` commit `809b881` keeps `SParams`, `load_sparams()`, and
+  `load_fields()` on the root notebook-facing `gsim.palace` surface, while
+  `SParam`, `get_port_map()`, `load_indexed_csv()`, eigenmode history loaders,
+  terminal matrix history loaders, port-EPR summary loaders, and indexed CSV
+  provenance dataclasses live under `gsim.palace.results`.
 
 Remaining slices:
 
