@@ -370,31 +370,27 @@ def _build_sweep_evidence(
     output_root: Path,
     problems: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    from gsim.palace import load_palace_sweep_summary
+    from gsim.palace import (
+        PalaceSweepPointSpec,
+        load_palace_sweep_summary,
+        write_palace_sweep_points,
+    )
 
     points = [
-        {
-            "point_slug": problem_key,
-            "parameters": {
+        PalaceSweepPointSpec(
+            point_slug=problem_key,
+            parameters={
                 "problem_type": problem["problem_type"],
                 "fixture": problem["fixture"],
             },
-            "run_dir": problem["output_dir"],
-        }
+            run_dir=problem["output_dir"],
+        )
         for problem_key, problem in sorted(problems.items())
     ]
-    points_path = output_root / "points.json"
-    points_path.write_text(
-        json.dumps(
-            {
-                "schema_version": 1,
-                "sweep_id": "public_palace_problem_type_smoke",
-                "points": points,
-            },
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n"
+    write_palace_sweep_points(
+        output_root,
+        points,
+        sweep_id="public_palace_problem_type_smoke",
     )
     return _relative_sweep_summary(
         load_palace_sweep_summary(

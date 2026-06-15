@@ -105,9 +105,10 @@ Current executable smoke coverage:
   mesh-manifest summaries, Palace index-map summaries, material-resolution
   sidecar presence, and either solver skip reasons or parsed `gsim` report
   summaries.
-- the same evidence script writes a public `points.json` table for those three
-  fixtures and consumes `gsim.palace.load_palace_sweep_summary()` so sweep
-  identity starts from explicit point metadata rather than folder scans.
+- the same evidence script uses `gsim.palace.write_palace_sweep_points()` to
+  write a public `points.json` table for those three fixtures, then consumes
+  `gsim.palace.load_palace_sweep_summary()` so sweep identity starts from
+  explicit point metadata rather than folder scans or PDK-local JSON assembly.
 - the same sweep summary now exposes table-ready `point_records`, giving each
   public problem fixture a normalized row with point parameters, generated
   artifact status, runtime sidecar status, result-file counts, and compact

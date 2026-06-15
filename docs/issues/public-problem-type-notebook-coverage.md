@@ -116,6 +116,10 @@ Verified local changes:
   `gsim.palace.load_palace_sweep_summary()`, and the public evidence runner now
   writes `points.json` for the three problem fixtures and records a
   `sweep_summary` built from that reusable API;
+- `gsim` commit `1d9390f` adds `write_palace_sweep_points()`, and the public
+  evidence runner now delegates `points.json` generation to that reusable
+  `gsim` writer instead of hand-assembling the sweep metadata schema in
+  `orpen-sc-pdk`;
 - `gsim` commit `f5eb728` extends that reusable sweep summary with
   `point_records`/`to_point_records()`/`to_dataframe()`, and the public evidence
   test now verifies table-ready rows for the three public Driven, Eigenmode, and
