@@ -42,12 +42,12 @@ this repo.
 | CPW Resonator | Interdigital Capacitor | Martinis 2022 Ribbon Capacitor |
 | :---: | :---: | :---: |
 | `resonator` | `interdigital_capacitor` | `martinis2022_differential_ribbon_capacitor` |
-| ![CPW resonator](docs/_static/images/components/resonator.svg) | ![Interdigital capacitor](docs/_static/images/components/interdigital_capacitor.svg) | ![Martinis ribbon capacitor](docs/_static/images/components/martinis2022_differential_ribbon_capacitor.svg) |
+| <img src="docs/_static/images/components/resonator.svg" alt="CPW resonator" width="260"> | <img src="docs/_static/images/components/interdigital_capacitor.svg" alt="Interdigital capacitor" width="260"> | <img src="docs/_static/images/components/martinis2022_differential_ribbon_capacitor.svg" alt="Martinis ribbon capacitor" width="260"> |
 
 | Launcher | Indium Ground Field |
 | :---: | :---: |
 | `launcher` | `indium_ground` |
-| ![Launcher](docs/_static/images/components/launcher.svg) | ![Indium ground field](docs/_static/images/components/indium_ground.svg) |
+| <img src="docs/_static/images/components/launcher.svg" alt="Launcher" width="260"> | <img src="docs/_static/images/components/indium_ground.svg" alt="Indium ground field" width="260"> |
 
 ### Public Flip-Chip And Routing Layouts
 
@@ -56,10 +56,15 @@ qubit-oriented examples; OrPen SC PDK keeps private qubit IP out of the public
 repo and uses public resonator geometry for open routing and flip-chip
 demonstrations.
 
-| Flip-Chip Distance | Resonator Keepout Routing | Global Keepout Routing |
-| :---: | :---: | :---: |
-| `sim_flip_chip_distance` | `sim_flip_chip_distance_keepout_routing_demo` | `sim_flip_chip_distance_keepout_global_routing_demo` |
-| ![Flip-chip distance layout](docs/_static/images/components/sim_flip_chip_distance.svg) | ![Resonator keepout routing demo](docs/_static/images/components/sim_flip_chip_distance_keepout_routing_demo.svg) | ![Global keepout routing demo](docs/_static/images/components/sim_flip_chip_distance_keepout_global_routing_demo.svg) |
+| Flip-Chip Distance | Global Purcell Filter Demo Chip |
+| :---: | :---: |
+| `sim_flip_chip_distance` | `global_purcell_filter_demo_chip` |
+| <img src="docs/_static/images/components/sim_flip_chip_distance.svg" alt="Flip-chip distance layout" width="320"> | <img src="docs/_static/images/components/global_purcell_filter_demo_chip.svg" alt="Global Purcell Filter Demo Chip" width="320"> |
+
+| Resonator Keepout Routing | Global Keepout Routing |
+| :---: | :---: |
+| `sim_flip_chip_distance_keepout_routing_demo` | `sim_flip_chip_distance_keepout_global_routing_demo` |
+| <img src="docs/_static/images/components/sim_flip_chip_distance_keepout_routing_demo.svg" alt="Resonator keepout routing demo" width="320"> | <img src="docs/_static/images/components/sim_flip_chip_distance_keepout_global_routing_demo.svg" alt="Global keepout routing demo" width="320"> |
 
 ## Quick Start
 

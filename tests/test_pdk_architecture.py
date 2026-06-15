@@ -11,6 +11,7 @@ from orpen_sc_pdk.helper import layer_views_to_tuples
 def test_orpen_style_public_import_surface() -> None:
     assert orpen_sc_pdk.PATH == config.PATH
     assert cells.cpw_straight
+    assert cells.global_purcell_filter_demo_chip
     assert cells.interdigital_capacitor
     assert cells.launcher
     assert cells.martinis2022_differential_ribbon_capacitor
@@ -36,6 +37,7 @@ def test_pdk_registry_contains_public_cells() -> None:
         "bend_euler",
         "cpw_straight",
         "dicing_edge",
+        "global_purcell_filter_demo_chip",
         "interdigital_capacitor",
         "launcher",
         "manhattan_style_junction",
@@ -129,6 +131,7 @@ def test_gdsfactory_get_component_works_after_activation() -> None:
     orpen_sc_pdk.activate()
 
     assert gf.get_component("cpw_straight").name.startswith("cpw_straight")
+    assert gf.get_component("global_purcell_filter_demo_chip").ports
     assert gf.get_component("launcher").ports
     assert gf.get_component("interdigital_capacitor").ports
     assert gf.get_component("martinis2022_differential_ribbon_capacitor").ports

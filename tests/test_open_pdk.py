@@ -4,6 +4,7 @@ import orpen_sc_pdk
 from orpen_sc_pdk.cells import (
     cpw_straight,
     dicing_edge,
+    global_purcell_filter_demo_chip,
     interdigital_capacitor,
     launcher,
     martinis2022_differential_ribbon_capacitor,
@@ -23,6 +24,7 @@ def test_pdk_activates_and_builds_public_cells() -> None:
     assert "D0_TOP_M1" in LAYER_STACK.layers
     assert (LAYER.D1_D2_INDIUM_BUMP.layer, LAYER.D1_D2_INDIUM_BUMP.datatype) == (41, 0)
     assert cpw_straight().ports
+    assert global_purcell_filter_demo_chip().ports
     assert launcher().ports
     assert interdigital_capacitor().ports
     assert martinis2022_differential_ribbon_capacitor().ports

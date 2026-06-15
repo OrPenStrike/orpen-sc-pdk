@@ -12,6 +12,7 @@ from orpen_sc_pdk.cells.indium import indium_bump, indium_ground
 from orpen_sc_pdk.cells.junction import manhattan_style_junction
 from orpen_sc_pdk.cells.martinis import martinis2022_differential_ribbon_capacitor
 from orpen_sc_pdk.cells.primitives import bend_circular, bend_euler, straight
+from orpen_sc_pdk.cells.purcell import global_purcell_filter_demo_chip
 from orpen_sc_pdk.cells.resonator import resonator
 from orpen_sc_pdk.cells.resonator_hanger import resonator_hanger
 from orpen_sc_pdk.cells.resonator_meander import resonator_meander
@@ -34,6 +35,7 @@ __all__ = [
     "cpw_straight",
     "bend_euler",
     "dicing_edge",
+    "global_purcell_filter_demo_chip",
     "interdigital_capacitor",
     "launcher",
     "manhattan_style_junction",
