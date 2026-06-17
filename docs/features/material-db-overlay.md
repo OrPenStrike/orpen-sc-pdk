@@ -33,11 +33,15 @@ Current public baseline:
 - `gsim` commit `49be250` adds `material_overlay=` to Palace config generation
   and high-level `write_config()`, so public PDK overlays can affect effective
   Palace `Domains.Materials` without mutating `LayerStack.materials`;
-- `gsim` commit `0197b64` adds `load_domain_material_summary()` and wires
+- `gsim` commit `0197b64` adds
+  `gsim.palace.resolve.derived.materials.load_domain_material_summary()` and
+  wires
   `EigenmodeReport.domain_materials`, so effective Palace material rows can be
   loaded from `config.json` and joined to domain physical names through
   `palace_index_map.json`;
-- `gsim` commit `bbd74fe` adds `load_dielectric_interface_summary()` and wires
+- `gsim` commit `bbd74fe` adds
+  `gsim.palace.resolve.derived.materials.load_dielectric_interface_summary()`
+  and wires
   `EigenmodeReport.dielectric_interfaces`, so configured
   `Boundaries.Postprocessing.Dielectric` interface parameters can be joined to
   index-map physical names;
@@ -45,7 +49,7 @@ Current public baseline:
   the existing report joins, deriving inverse-Q, equivalent Q, gamma, and T1
   columns without moving report parsing into the PDK;
 - `gsim` commit `61d7d66` adds material-resolution provenance sidecars for
-  generated Palace configs and extends `load_domain_material_summary()` so
+  generated Palace configs and extends the domain-material summary path so
   reports can show the stack material name, matched material record, model
   source, validity status, and resolution frequency used for each Palace
   material attribute;
@@ -53,7 +57,7 @@ Current public baseline:
   material overlay entry, resolves that reference before writing Palace
   `config.json`, strips the non-Palace handoff key, records interface material
   provenance in `palace_material_resolution.json`, and exposes that provenance
-  through `load_dielectric_interface_summary()`;
+  through the dielectric-interface summary path;
 - `gsim` commit `667cd21` adds
   `build_dielectric_interface_specs_from_assignments()`, so caller-owned
   preset maps can target exact manifest entry names, physical group names, or
@@ -123,13 +127,16 @@ Current public baseline:
   maps and generated-name aliases with `gsim` material-kind classification to
   emit separate caller-supplied `MA` and `MS` dielectric-interface rows for
   public `Al___air` and `Al___silicon` interface names, then reloads the
-  generated rows through `gsim.palace.load_dielectric_interface_summary()`;
+  generated rows through
+  `gsim.palace.resolve.derived.materials.load_dielectric_interface_summary()`;
 - local `gsim` now carries caller-supplied interface preset name/source
   metadata through `palace_index_map.json`, dielectric-interface summaries, and
   surface-loss summaries; `orpen-sc-pdk` passes its validated preset source
   strings into that path without adding non-Palace fields to `config.json`;
-- public evidence and notebook cells now load generated domain material rows
-  through `gsim.palace.load_domain_material_summary()`, proving
+- public evidence and report-backed notebook cells now load generated domain
+  material rows through report-owned `domain_materials` and the
+  `gsim.palace.resolve.derived.materials.load_domain_material_summary()` owner
+  path, proving
   `palace_material_resolution.json` can explain stack material name, matched
   material record, model source, validity status, resolution frequency,
   permittivity, permeability, loss, and conductivity for Driven, Eigenmode,

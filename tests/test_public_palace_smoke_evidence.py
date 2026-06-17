@@ -1199,7 +1199,7 @@ def test_public_palace_smoke_evidence_solver_gate_skips_magnetostatic(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from gsim.palace.base import PalaceSimMixin
+    from gsim.palace.base import PalaceSimBase
 
     run_local_outputs: list[str] = []
 
@@ -1208,7 +1208,7 @@ def test_public_palace_smoke_evidence_solver_gate_skips_magnetostatic(
         run_local_outputs.append(output_dir.name)
         return {}
 
-    monkeypatch.setattr(PalaceSimMixin, "run_local", fake_run_local)
+    monkeypatch.setattr(PalaceSimBase, "run_local", fake_run_local)
     monkeypatch.setattr(
         smoke_evidence,
         "_driven_report_summary",
@@ -1297,11 +1297,23 @@ def test_driven_report_summary_uses_sparams_public_keys(
 
     report = SimpleNamespace(
         sparams=FakeSParams(),
-        port_epr=(),
+        domain_energy=(),
+        surface_q=(),
+        loss_budget=(),
         index_map=(),
         sources=None,
     )
-    monkeypatch.setattr(gsim.palace, "load_driven_report", lambda _path: report)
+
+    class FakeResolved:
+        def load_report(self, *, require_report: bool = False):
+            assert require_report is True
+            return SimpleNamespace(require_report=lambda: report)
+
+    monkeypatch.setattr(
+        gsim.palace,
+        "resolve_palace_result",
+        lambda _path, *, problem_type: FakeResolved(),
+    )
 
     summary = _driven_report_summary(tmp_path)
 

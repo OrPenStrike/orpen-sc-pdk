@@ -58,9 +58,9 @@ Current local evidence:
   `palace_handoff_metadata.json` discovery in `load_palace_run_summary()`,
   `PalaceSweepPointSpec.handoff_metadata_path`, and flat sweep point handoff
   fields for status, profile, script presence, and archive presence;
-- local `gsim` commit `d4f226a` adds `PalaceSlurmResourceSpec`,
-  `PalaceSlurmSbatchSpec`, and `write_palace_slurm_sbatch_handoff()` for
-  generic Slurm/Sbatch dry-run script rendering. The API accepts explicit
+- local `gsim` adds Slurm resource/profile models and the notebook-facing
+  `sim.write_slurm_sbatch_handoff(...)` Run Stage method for generic
+  Slurm/Sbatch dry-run script rendering. The API accepts explicit
   caller-supplied resources/profile metadata, writes `run_palace.sbatch`, and
   updates `palace_handoff_metadata.json`; it does not submit jobs, package
   archives, or resolve private site profiles;
@@ -122,8 +122,8 @@ Current local evidence:
   dropping generated `Solver.Linear` or problem-type solver settings;
 - public OrPen evidence now writes dry-run handoff sidecars for Driven,
   Eigenmode, and Electrostatic fixtures plus a sweep-level Slurm array script
-  plus generated archive manifests and synthetic public log-derived
-  resource-record sidecars plus sanitized synthetic Slurm snapshot sidecars
+  plus generated archive manifests and handoff archives, and synthetic public
+  log-derived resource-record sidecars plus sanitized synthetic Slurm snapshot sidecars
   through the `gsim` renderers, loads
   `scripts/fixtures/public_slurm_profiles.json`, resolves named public dry-run
   profiles through the `gsim` profile resolver, forwards launcher hints into
@@ -132,8 +132,8 @@ Current local evidence:
   normal run/sweep summary surfaces and writes reusable sweep-level
   resource/benchmark index files;
 - `gsim` has point-local sweep summary readers/writers, dry-run Slurm script
-  renderers, generated archive manifests, and a generic post-run resource
-  sidecar, but no cluster campaign submission or archive packaging;
+  renderers, generated archive manifests, handoff archive packaging, and a
+  generic post-run resource sidecar, but no cluster campaign submission;
 - `gplugins` has direct Palace wrapper functions that generate config, call a
   `palace` executable from `PATH`, and parse raw CSV output, but those helpers
   do not expose the richer `gsim` run-summary/report surfaces;

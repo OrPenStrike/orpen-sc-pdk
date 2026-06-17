@@ -43,22 +43,22 @@ Current public baseline:
   `write_palace_handoff_metadata()` and exposes them through
   `load_palace_run_summary().handoff` plus table-ready sweep point handoff
   fields;
-- local `gsim` commit `d4f226a` adds a generic Slurm/Sbatch dry-run handoff
-  renderer, `write_palace_slurm_sbatch_handoff()`, which writes
-  `run_palace.sbatch` and updates the same `palace_handoff_metadata.json`
-  summary surface without submitting jobs or resolving private profile
-  catalogs;
+- local `gsim` adds a generic Slurm/Sbatch dry-run handoff renderer behind the
+  notebook-facing `sim.write_slurm_sbatch_handoff(...)` Run Stage method. The
+  method writes `run_palace.sbatch` and updates the same
+  `palace_handoff_metadata.json` summary surface without submitting jobs or
+  resolving private profile catalogs;
 - local `gsim` commit `c2c5383` adds a generic Slurm array dry-run handoff
   renderer, `write_palace_slurm_sweep_array_handoff()`, which derives
   `points.csv` from existing `points.json`, writes `run_sweep_array.sbatch`,
   and exposes sweep-level handoff status through
   `load_palace_sweep_summary().handoff`;
-- local `gsim` commit `0ab7628` adds generated handoff archive manifests
-  through `write_palace_run_handoff_archive_manifest()` and
-  `write_palace_sweep_handoff_archive_manifest()`. These writers record the
-  reviewable files that would be packaged for a single run or sweep, expose the
-  manifest through the existing handoff summary `archive.manifest_path`, and do
-  not create archives or submit jobs;
+- local `gsim` adds generated handoff archive manifests and tar.gz packaging
+  behind `sim.generate_handoff_package(...)` for single-run notebook workflows.
+  The generated manifest records reviewable archive contents, exposes the
+  manifest through the existing handoff summary `archive.manifest_path`, creates
+  the outbound tar.gz when requested by the run-folder pipeline, and does not
+  submit jobs;
 - local `gsim` commit `7febb33` adds a generic post-run
   `palace_resource_record.json` sidecar through
   `write_palace_resource_record()`, exposes compact resource status through
@@ -101,13 +101,19 @@ Current public baseline:
   generated `Solver.Linear` or problem-type solver block;
 - `orpen-sc-pdk` keeps benchmark evidence publication-safe by recording only
   public fixture artifact status, solver skip/runtime/handoff summary fields,
-  generated handoff archive manifest status, synthetic public log-derived
+  generated handoff archive/manifest status, synthetic public log-derived
   resource-record status, sanitized synthetic Slurm scheduler fields, table
   sidecars, resolved public Slurm dry-run profiles loaded from
   `scripts/fixtures/public_slurm_profiles.json` including launcher/solver
   hints and generated `Solver.Device` checks, a public problem-type
   sweep-summary smoke, and generated sweep-level resource/benchmark index files
   in the ignored local evidence bundle.
+- notebook-facing handoff uses `orpen_sc_pdk.simulation` for public F1/Nano4
+  profile values, writes `config.json`, writes `run_palace.sbatch` through
+  `sim.write_slurm_sbatch_handoff(...)`, then packages the run folder so the
+  handoff archive can be copied to a public HPC system. Placeholder accounts
+  such as `public_alloc` must be replaced with a real user allocation before
+  submitting.
 - the public evidence bundle can now be replayed with local direct-binary
   Palace execution for Driven, Eigenmode, and Electrostatic fixtures; each
   point records sanitized command shape, return code, elapsed seconds, output

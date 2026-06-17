@@ -2,7 +2,7 @@
   {
     "objective_requirement": "Inventory the NCUAS simulation helper system and why each helper exists.",
     "current_status": "covered_current",
-    "current_evidence": "scripts/fixtures/public_simulation_helper_nodes.json; notebooks/src/public_simulation_inventory.py helper-node inventory table",
+    "current_evidence": "scripts/fixtures/public_simulation_helper_nodes.json records the helper-node inventory table",
     "remaining_gap": "none for the current public Palace inventory surface",
     "next_issue": "public-problem-type-notebook-coverage"
   },
@@ -44,21 +44,21 @@
   {
     "objective_requirement": "Preserve Material Parameters Usage and Automatic Palace Configuration Generation.",
     "current_status": "covered_current",
-    "current_evidence": "public fixtures pass get_gsim_material_overlay(); generated configs emit material-resolution provenance; public notebooks display load_domain_material_summary() rows",
+    "current_evidence": "public fixtures pass get_gsim_material_overlay(); generated configs emit material-resolution provenance; public notebooks display report.domain_materials rows",
     "remaining_gap": "London-depth and richer superconducting material fields remain future source-backed schema work",
     "next_issue": "material-schema-boundary"
   },
   {
     "objective_requirement": "Keep MA/MS/SA dielectric-interface preset promotion source-backed and notebook-visible without publishing defaults prematurely.",
     "current_status": "covered_current",
-    "current_evidence": "scripts/fixtures/public_interface_preset_review_queue.json records public sources, candidate rows, owner repo, gsim handoff, and promotion gates; public_interface_preset_promotion_gate_evidence.json records missing acceptance decisions and empty tech.interface_preset_records status; scripts/public_palace_smoke_evidence.py builds public thin-film sheet proxy MA/MS evidence; notebooks/src/public_simulation_inventory.py displays source, candidate, promotion-gate, and proxy review tables",
+    "current_evidence": "scripts/fixtures/public_interface_preset_review_queue.json records public sources, candidate rows, owner repo, gsim handoff, and promotion gates; public_interface_preset_promotion_gate_evidence.json records missing acceptance decisions and empty tech.interface_preset_records status; scripts/public_palace_smoke_evidence.py builds public thin-film sheet proxy MA/MS evidence",
     "remaining_gap": "accepted public preset IDs, OrPen process scope, and default-selection rules are still required before tech.interface_preset_records can be populated",
     "next_issue": "source-backed-interface-presets"
   },
   {
     "objective_requirement": "Keep public API and responsibility boundaries compatible with gsim/gplugins review expectations.",
     "current_status": "covered_current",
-    "current_evidence": "docs/issues/palace-api-responsibility-boundary.md records reviewed gsim/OrPen slices; scripts/fixtures/public_gsim_boundary_review_crosscheck.json maps the current local gsim Palace branch commits to boundary-review groups; public_gsim_boundary_review_coverage_evidence.json compares that fixture with the sibling local gsim commit range; notebooks/src/public_simulation_inventory.py displays the raw cross-check and coverage status",
+    "current_evidence": "docs/issues/palace-api-responsibility-boundary.md records reviewed gsim/OrPen slices; scripts/fixtures/public_gsim_boundary_review_crosscheck.json maps the current local gsim Palace branch commits to boundary-review groups; public_gsim_boundary_review_coverage_evidence.json compares that fixture with the sibling local gsim commit range",
     "remaining_gap": "every future upstreamable slice still needs an independent boundary review before local branch promotion",
     "next_issue": "palace-api-responsibility-boundary"
   },

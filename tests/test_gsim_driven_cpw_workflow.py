@@ -1,3 +1,5 @@
+"""Driven CPW integration checks for public OrPen-to-gsim Palace workflows."""
+
 from __future__ import annotations
 
 import json
@@ -10,9 +12,9 @@ from material_overlay_assertions import (
     assert_public_si_overlay_material,
 )
 
-import orpen_sc_pdk
 from orpen_sc_pdk.cells import cpw_straight
 from orpen_sc_pdk.materials import get_gsim_material_overlay
+from orpen_sc_pdk.pdk import PDK
 
 
 def _public_cpw_driven_sim(output_dir: Path):
@@ -21,7 +23,7 @@ def _public_cpw_driven_sim(output_dir: Path):
 
     from gsim.palace import DrivenSim
 
-    orpen_sc_pdk.activate()
+    PDK.activate()
     component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
 
     sim = DrivenSim()
@@ -45,7 +47,7 @@ def _public_cpw_driven_sim(output_dir: Path):
     )
     sim.set_driven(fmin=4e9, fmax=8e9, num_points=3, excitation_port="o1")
 
-    sim.mesh(
+    mesh_result = sim.mesh(
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
@@ -54,7 +56,6 @@ def _public_cpw_driven_sim(output_dir: Path):
         planar_conductors=True,
         auto_size=False,
     )
-    mesh_result = sim._last_mesh_result
 
     return sim, mesh_result
 
@@ -159,7 +160,7 @@ def test_public_cpw_driven_optional_local_palace_coarse_smoke(
     output_dir = tmp_path / "palace-smoke"
     sim, mesh_result = _public_cpw_driven_sim(output_dir)
 
-    from gsim.palace import SParams, load_driven_report
+    from gsim.palace import SParams, resolve_palace_result
     from gsim.palace.mesh import (
         SurfaceFluxSpec,
         build_postprocessing_config_from_manifest,
@@ -197,7 +198,11 @@ def test_public_cpw_driven_optional_local_palace_coarse_smoke(
         run_kwargs["serial"] = os.environ.get("PALACE_SERIAL") == "1"
 
     results = sim.run_local(**run_kwargs)
-    report = load_driven_report(output_dir)
+    report = (
+        resolve_palace_result(output_dir, problem_type="Driven")
+        .load_report(require_report=True)
+        .require_report()
+    )
 
     assert isinstance(results, SParams)
     assert isinstance(report, DrivenReport)

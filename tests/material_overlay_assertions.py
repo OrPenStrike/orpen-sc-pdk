@@ -28,7 +28,7 @@ def assert_public_si_effective_material(
     """Assert gsim can load effective public Si material rows from artifacts."""
     pytest.importorskip("gsim")
     import pandas as pd
-    from gsim.palace import load_domain_material_summary
+    from gsim.palace.resolve.derived.materials import load_domain_material_summary
 
     substrate_attrs = _public_si_substrate_attributes(manifest)
     assert substrate_attrs

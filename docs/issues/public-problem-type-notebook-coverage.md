@@ -21,8 +21,8 @@ Proposed path:
   output;
 - build a magnetostatic CPW fixture with named current sources and generated
   config/index-map evidence while report parsing remains pending;
-- keep notebooks thin: component metadata, `gsim` call, coarse local Palace
-  execution when available, and report loading.
+- keep notebooks thin: component metadata, visible `gsim` calls, handoff-package
+  generation, explicit completed-run folder selection, and report loading.
 
 Verified local changes:
 
@@ -78,19 +78,29 @@ Verified local changes:
   composed report path aligned with the primitive matrix loader;
 - `notebooks/src/public_driven_workflow.py` is a publication-safe Jupytext
   notebook source that runs the public Driven CPW mesh/config/artifact handoff,
-  displays material and index provenance, loads synthetic public S-parameter
-  and port-EPR report rows, and keeps the optional local Palace smoke path
-  solver-gated;
+  writes a Slurm handoff archive, and resolves either the new run folder or a
+  user-selected completed run folder through `NOTEBOOK_ANALYSIS_RUN_ROOT`;
 - `notebooks/src/public_eigenmode_workflow.py` is a publication-safe Jupytext
   notebook source that runs the public Eigenmode resonator
-  mesh/config/artifact handoff, displays material and index provenance, loads
-  synthetic public loss-budget report rows, and keeps the optional local Palace
-  smoke path solver-gated;
+  mesh/config/artifact handoff, writes a Slurm handoff archive, and resolves
+  either the new run folder or a user-selected completed run folder through
+  `NOTEBOOK_ANALYSIS_RUN_ROOT`;
 - `notebooks/src/public_electrostatic_workflow.py` is a publication-safe
   Jupytext notebook source that runs the public Electrostatic same-layer
-  capacitor mesh/config/artifact handoff, displays terminal/material/index
-  provenance, loads synthetic public capacitance and loss-budget report rows,
-  and keeps the optional local Palace smoke path solver-gated;
+  capacitor mesh/config/artifact handoff, writes a Slurm handoff archive, and
+  resolves either the new run folder or a user-selected completed run folder
+  through `NOTEBOOK_ANALYSIS_RUN_ROOT`;
+- `notebooks/src/public_driven_local_workflow.py`,
+  `notebooks/src/public_eigenmode_local_workflow.py`, and
+  `notebooks/src/public_electrostatic_local_workflow.py` are publication-safe
+  Jupytext notebook sources for direct local Palace execution. They reuse the
+  same public fixtures and Resolve/Report path, write config into the canonical
+  run folder, and call `sim.run_local(...)` only when
+  `PALACE_RUN_LOCAL = True`;
+- setting `NOTEBOOK_ANALYSIS_RUN_ROOT` disables notebook Run Stage preparation
+  through `NOTEBOOK_PREPARE_RUN_STAGE`, so users can run the notebook from a
+  clean kernel to review an existing completed run folder without creating a new
+  handoff folder or archive;
 - the public problem-type notebooks and fixtures intentionally do not add
   material-kind-driven MA/MS/SA interface postprocessing yet; generated public
   mesh fixtures now expose classifiable interface identities, and the public
@@ -107,18 +117,13 @@ Verified local changes:
   than private notebook parsing or automatic public defaults;
 - the public notebook index now links
   `notebooks/public_driven_workflow`,
-  `notebooks/public_eigenmode_workflow`, and
-  `notebooks/public_electrostatic_workflow` directly as publication-safe
+  `notebooks/public_eigenmode_workflow`,
+  `notebooks/public_electrostatic_workflow`,
+  `notebooks/public_driven_local_workflow`,
+  `notebooks/public_eigenmode_local_workflow`, and
+  `notebooks/public_electrostatic_local_workflow` directly as publication-safe
   Driven/Eigenmode/Electrostatic workflow notebooks instead of routing all
   problem types through one combined notebook;
-- `notebooks/src/public_simulation_inventory.py` is a publication-safe
-  inventory notebook that displays the helper-node matrix and representative
-  NCUAS notebook cross-check through public wrapper functions instead of
-  notebook-local helper definitions;
-- the same inventory notebook now displays
-  `scripts/fixtures/public_simulation_goal_audit.json`, separating current
-  covered evidence from opt-in local Palace replay, user-deferred Magnetostatic
-  report/HPC scope, and owner-pending AEDT/Q2D work;
 - `scripts/fixtures/public_problem_notebook_crosscheck.json` records the
   Driven, Eigenmode, and Electrostatic representative private notebooks, their
   public OrPen notebook counterparts, the owner decision, separated reusable
@@ -137,40 +142,22 @@ Verified local changes:
   notebook-visible problem fixtures from runtime, cloud, handoff, resource,
   and API-documentation support commits that are covered through reusable
   `gsim` evidence surfaces or owner-module import rules;
-- `notebooks/src/public_simulation_inventory.py` displays the same local
-  `gsim` boundary-review cross-check and groups it by boundary group and
-  review status, so review can inspect commit coverage from notebook outputs
-  without treating every hash as a directly executed notebook feature;
 - `scripts/public_palace_smoke_evidence.py` now writes
   `public_gsim_boundary_review_coverage_evidence.json`, comparing the
   commit-by-commit review fixture with the sibling local `gsim` branch range so
   missing, extra, duplicate, and invalid review rows become testable evidence;
-- `notebooks/src/public_simulation_inventory.py` displays the same coverage
-  status, branch/head/range counts, empty missing/extra/duplicate lists, and
-  deferred Magnetostatic-report/HPC-private-validation scope beside the raw
-  commit review table;
-- the same inventory notebook now displays the public MA/MS/SA source-review
-  queue from `scripts/fixtures/public_interface_preset_review_queue.json`,
-  keeping candidate values notebook-visible as promotion-gate evidence without
-  adding automatic public defaults or private preset names;
-- the same inventory notebook now displays public thin-film sheet proxy
-  evidence from `scripts/public_palace_smoke_evidence.py`: public material-kind
-  data and `gsim` postprocessing builders emit separate caller-supplied `MA`
-  and `MS` dielectric-interface rows for public `Al___air` and `Al___silicon`
-  interface names without notebook-local default policy;
 - `tests/test_public_problem_notebook_style.py` now checks every public
   Jupytext notebook source for notebook-local function definitions and private
   `_...()` helper calls, and rejects links to the old combined simulation
   workflow notebook;
-- the public problem-type notebooks write synthetic public Driven, Eigenmode,
-  and Electrostatic report artifacts, load them through reusable `gsim` report
-  bundles, and display curated S-parameter, port-EPR, capacitance, domain-loss,
-  surface-loss, and loss-budget tables through notebook-facing public wrapper
-  helpers in `scripts/public_palace_smoke_evidence.py`;
-- the public problem-type notebooks expose opt-in local Palace smoke cells for
-  Driven, Eigenmode, and Electrostatic public fixtures; the default docs path
-  reports a skip reason, while local users can enable the coarse solves with
-  `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus `PALACE_SIF` or `PALACE_EXECUTABLE`;
+- the public problem-type notebooks no longer write synthetic report artifacts
+  under the run folder. Default docs execution displays handoff, resolve, and
+  missing-report status; completed solver outputs are reviewed by setting
+  `NOTEBOOK_ANALYSIS_RUN_ROOT` and rerunning the Resolve and Report cells;
+- the public problem-type notebooks no longer expose local Palace smoke cells.
+  Driven, Eigenmode, and Electrostatic local solver proof remains in
+  pytest/evidence paths where `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` can opt into the
+  coarse solves without becoming notebook UI;
 - `gsim` commit `c72f0d3` adds first-class Magnetostatic config-surface support:
   public `MagnetostaticSim.add_current_source(...)` source intent,
   `Problem.Type == "Magnetostatic"`, `Solver.Magnetostatic`,
@@ -275,10 +262,14 @@ Verified local changes:
   high-level `sim.write_config(hints=...)`, and the public evidence runner now
   verifies generated Driven, Eigenmode, Electrostatic, and Magnetostatic
   `config.json` files carry the resolved public profile `Solver.Device`;
-- the public problem-type notebooks use the public dry-run profile helper to
-  pass generated `Solver` config hints into each `sim.write_config(...)` call;
-  Slurm script previews and sweep-array handoff evidence remain in the public
-  JSON evidence runner;
+- the public problem-type notebooks select Public PDK F1/Nano4 profiles through
+  `orpen_sc_pdk.simulation`, pass generated `Solver` config hints into each
+  `sim.write_config(...)` call, write `run_palace.sbatch` through
+  `sim.write_slurm_sbatch_handoff(...)`, and then package the run folder with
+  `sim.generate_handoff_package(...)` so the handoff `.tar.gz` contains the
+  Slurm script. Notebook examples use a public placeholder account such as
+  `public_alloc`; users must replace it with an allocation they can submit
+  against;
 - when the same script is run with `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` plus a
   local Palace SIF or executable, the JSON evidence keeps the same `gsim`
   run-summary bundle and switches from solver skip rows to parsed `gsim`
@@ -324,8 +315,8 @@ Verified local changes:
   paths outside public docs and CI defaults;
 - Ruff check and format-check passed for the executable fixtures.
 - direct notebook execution passed for the split Driven, Eigenmode, and
-  Electrostatic notebooks and confirmed the default local Palace smoke skip
-  path without requiring a local solver.
+  Electrostatic notebooks and confirmed the default handoff/resolve status path
+  without requiring a local solver.
 - local executed-notebook review output is generated under the ignored path
   `build/notebook-review/` for `notebooks/public_driven_workflow.ipynb`,
   `notebooks/public_eigenmode_workflow.ipynb`, and
@@ -361,7 +352,8 @@ Acceptance checks:
 
 - notebooks import `orpen_sc_pdk` and `gsim`, not private layout modules;
 - notebooks can run with public fixtures and no private paths;
-- saved outputs are scrubbed or synthetic unless cleared for publication;
+- saved outputs are scrubbed unless cleared for publication; notebooks do not
+  generate synthetic report fixtures;
 - tests verify notebook execution or equivalent scripts for all four public
   problem fixtures.
 

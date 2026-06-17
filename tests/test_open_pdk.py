@@ -1,6 +1,9 @@
+"""Smoke tests for activating the public OrPen PDK and building public cells."""
+
 from pathlib import Path
 
-import orpen_sc_pdk
+import gdsfactory as gf
+
 from orpen_sc_pdk.cells import (
     cpw_straight,
     dicing_edge,
@@ -10,13 +13,14 @@ from orpen_sc_pdk.cells import (
     resonator,
     taper,
 )
+from orpen_sc_pdk.pdk import PDK
 from orpen_sc_pdk.tech import LAYER, LAYER_STACK
 
 
 def test_pdk_activates_and_builds_public_cells() -> None:
-    pdk = orpen_sc_pdk.activate()
+    PDK.activate()
 
-    assert pdk.name == "orpen_sc_pdk"
+    assert gf.get_active_pdk().name == "orpen_sc_pdk"
     assert "D0_TOP_M1" in LAYER_STACK.layers
     assert (LAYER.D1_D2_INDIUM_BUMP.layer, LAYER.D1_D2_INDIUM_BUMP.datatype) == (41, 0)
     assert cpw_straight().ports

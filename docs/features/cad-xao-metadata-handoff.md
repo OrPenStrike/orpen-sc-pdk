@@ -34,14 +34,16 @@ Current prototype baseline:
 - `gsim.palace.mesh` exposes a `MeshManifest` built from mesh physical groups;
 - manifest entries preserve role, physical names, entity tags, inferred
   dimension, source, and parsed interface/exterior identity;
-- `gsim.palace.load_postprocessing_index_map()` reloads
+- `gsim.palace.resolve.loaders.index_maps.load_postprocessing_index_map()`
+  reloads
   `palace_index_map.json` into the reusable
   `gsim.palace.mesh.postprocessing.PostprocessingIndexMap` schema, which can
   resolve Palace postprocessing section/index values back to physical names and
   attributes;
 - both the mesh manifest and Palace index map can be written as JSON artifacts;
-- public OrPen notebook/evidence fixtures now reload `palace_index_map.json`
-  through `gsim.palace.load_postprocessing_index_map()` and display forward
+- public OrPen evidence fixtures now reload `palace_index_map.json` through
+  `gsim.palace.resolve.loaders.index_maps.load_postprocessing_index_map()` and
+  display forward
   `section/index -> physical name`, reverse `physical name -> indices`, and
   attribute lookup rows for Driven, Eigenmode, and Electrostatic workflows.
 - `public_cad_mesh_identity_handoff_evidence.json` records the same

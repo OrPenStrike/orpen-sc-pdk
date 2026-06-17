@@ -1,26 +1,34 @@
+"""Architecture checks for the public OrPen PDK import and registry surface."""
+
 from __future__ import annotations
+
+from importlib import import_module
 
 import gdsfactory as gf
 from gdsfactory.technology import LayerViews
 
-import orpen_sc_pdk
-import orpen_sc_pdk.models as models
-from orpen_sc_pdk import PDK, cells, config, tech
+from orpen_sc_pdk.config import PATH
 from orpen_sc_pdk.helper import layer_views_to_tuples
+from orpen_sc_pdk.pdk import PDK
+from orpen_sc_pdk.tech import LAYER, LAYER_VIEWS
+
+cells = import_module("orpen_sc_pdk.cells")
+package = import_module("orpen_sc_pdk")
+model_exports = import_module("orpen_sc_pdk.models").__all__
 
 
 def test_orpen_style_public_import_surface() -> None:
-    assert orpen_sc_pdk.PATH == config.PATH
+    assert package.PATH == PATH
     assert cells.cpw_straight
     assert cells.interdigital_capacitor
     assert cells.launcher
     assert cells.martinis2022_differential_ribbon_capacitor
     assert cells.resonator
     assert cells.taper
-    assert (tech.LAYER.D0_TOP_M1_DRAW.layer, tech.LAYER.D0_TOP_M1_DRAW.datatype) == (1, 0)
-    assert (tech.LAYER.D1_D2_UNDER_BUMP.layer, tech.LAYER.D1_D2_UNDER_BUMP.datatype) == (41, 1)
-    assert models.__all__ == []
-    assert {"helper", "logger", "models"}.isdisjoint(orpen_sc_pdk.__all__)
+    assert (LAYER.D0_TOP_M1_DRAW.layer, LAYER.D0_TOP_M1_DRAW.datatype) == (1, 0)
+    assert (LAYER.D1_D2_UNDER_BUMP.layer, LAYER.D1_D2_UNDER_BUMP.datatype) == (41, 1)
+    assert model_exports == []
+    assert {"helper", "logger", "models"}.isdisjoint(package.__all__)
 
 
 def test_pdk_registry_contains_public_cells() -> None:
@@ -113,27 +121,25 @@ def test_pdk_registry_contains_public_cpw_cross_sections() -> None:
 
 
 def test_layer_yaml_matches_public_layer_map() -> None:
-    assert config.PATH.lyp_yaml.exists()
-    assert config.PATH.lyp.exists()
-    assert config.PATH.lyt.exists()
+    assert PATH.lyp_yaml.exists()
+    assert PATH.lyp.exists()
+    assert PATH.lyt.exists()
 
-    layer_views = LayerViews(config.PATH.lyp_yaml)
+    layer_views = LayerViews(PATH.lyp_yaml)
     layers_from_yaml = layer_views_to_tuples(layer_views)
     layers_defined = {
-        str(layer_enum): (layer_enum.layer, layer_enum.datatype) for layer_enum in tech.LAYER
+        str(layer_enum): (layer_enum.layer, layer_enum.datatype) for layer_enum in LAYER
     }
 
     assert layers_from_yaml == layers_defined
 
 
 def test_pdk_uses_yaml_layer_views() -> None:
-    assert layer_views_to_tuples(tech.LAYER_VIEWS) == layer_views_to_tuples(
-        LayerViews(config.PATH.lyp_yaml)
-    )
+    assert layer_views_to_tuples(LAYER_VIEWS) == layer_views_to_tuples(LayerViews(PATH.lyp_yaml))
 
 
 def test_gdsfactory_get_component_works_after_activation() -> None:
-    orpen_sc_pdk.activate()
+    PDK.activate()
 
     assert gf.get_component("cpw_straight").name.startswith("cpw_straight")
     assert gf.get_component("launcher").ports
@@ -144,7 +150,7 @@ def test_gdsfactory_get_component_works_after_activation() -> None:
 
 
 def test_public_samples_hold_demo_cells_after_registry_cleanup() -> None:
-    samples = orpen_sc_pdk.get_sample_functions()
+    samples = package.get_sample_functions()
 
     assert set(samples) == {
         "orpen_sc_pdk.samples.simulation_demos.global_purcell_filter_demo_chip",
@@ -152,6 +158,4 @@ def test_public_samples_hold_demo_cells_after_registry_cleanup() -> None:
         "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_global_routing_demo",
         "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_routing_demo",
     }
-    assert samples[
-        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance"
-    ]().ports
+    assert samples["orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance"]().ports

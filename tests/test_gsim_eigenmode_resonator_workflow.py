@@ -1,3 +1,5 @@
+"""Eigenmode resonator checks for public OrPen-to-gsim Palace workflows."""
+
 from __future__ import annotations
 
 import json
@@ -10,7 +12,6 @@ from material_overlay_assertions import (
     assert_public_si_overlay_material,
 )
 
-import orpen_sc_pdk
 from orpen_sc_pdk.cells import resonator
 from orpen_sc_pdk.materials import (
     get_gsim_material_kind_alias_map,
@@ -18,6 +19,7 @@ from orpen_sc_pdk.materials import (
     get_gsim_material_overlay,
     validate_interface_preset_records,
 )
+from orpen_sc_pdk.pdk import PDK
 
 
 def _public_resonator_eigenmode_sim(output_dir: Path):
@@ -26,7 +28,7 @@ def _public_resonator_eigenmode_sim(output_dir: Path):
 
     from gsim.palace import EigenmodeSim
 
-    orpen_sc_pdk.activate()
+    PDK.activate()
     component = resonator(
         length=1200,
         meanders=2,
@@ -48,7 +50,7 @@ def _public_resonator_eigenmode_sim(output_dir: Path):
     sim.set_airbox(margin_x=50, margin_y=50, z_above=50, z_below=10)
     sim.set_eigenmode(num_modes=2, target=6e9)
 
-    sim.mesh(
+    mesh_result = sim.mesh(
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
@@ -57,7 +59,6 @@ def _public_resonator_eigenmode_sim(output_dir: Path):
         planar_conductors=True,
         auto_size=False,
     )
-    mesh_result = sim._last_mesh_result
 
     return sim, mesh_result
 
@@ -147,11 +148,11 @@ def test_public_resonator_generated_interface_classifies_with_public_aliases(
     output_dir = tmp_path / "palace-sim"
     sim, mesh_result = _public_resonator_eigenmode_sim(output_dir)
 
-    from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
         build_dielectric_interface_specs_from_material_kinds,
         build_postprocessing_config_from_manifest,
     )
+    from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
     records = {
         "public_sa_example": {
@@ -260,14 +261,18 @@ def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(
 
     results = sim.run_local(**run_kwargs)
 
-    from gsim.palace import load_eigenmode_report
+    from gsim.palace import resolve_palace_result
 
     eig_path = results.get("eig.csv")
     assert eig_path is not None
     assert eig_path.stat().st_size > 0
     assert results["domain-E.csv"].stat().st_size > 0
 
-    report = load_eigenmode_report(results)
+    report = (
+        resolve_palace_result(results, problem_type="Eigenmode")
+        .load_report(require_report=True)
+        .require_report()
+    )
     assert report.eigenmodes.n_modes >= 1
     assert report.eigenmodes.freq_real_ghz.min() > 0
     assert report.eigenmodes.q.min() > 0

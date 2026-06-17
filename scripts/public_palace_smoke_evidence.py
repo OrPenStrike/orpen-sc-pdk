@@ -1,3 +1,12 @@
+"""Publication-safe Palace workflow evidence for OrPen public notebooks.
+
+This script owns reusable fixture/evidence generation used by tests and
+documentation inventory pages. It may build public OrPen cells and inspect
+generated Palace artifacts, but public problem notebooks must keep their main
+Geometry -> LayerStack -> Mesh -> Config -> Solver workflow visible instead of
+importing these builders as notebook setup wrappers.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -11,13 +20,13 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
-import orpen_sc_pdk
 from orpen_sc_pdk.cells import (
     cpw_straight,
     martinis2022_differential_ribbon_capacitor,
     resonator,
 )
 from orpen_sc_pdk.materials import get_gsim_material_overlay
+from orpen_sc_pdk.pdk import PDK
 
 DEFAULT_OUTPUT_DIR = Path("build/public-palace-smoke-evidence")
 EVIDENCE_FILENAME = "public_palace_smoke_evidence.json"
@@ -542,19 +551,19 @@ def build_public_meshwell_handoff_contract_gate_evidence(
             evidence_status="covered_gsim_consumer_parser",
         ),
         _source_contract_row(
-            contract_item="gsim public postprocessing index-map result loader",
+            contract_item="gsim postprocessing index-map primitive loader",
             owner_repo="gsim",
             repo_path=gsim_path,
-            relative_path="src/gsim/palace/results.py",
+            relative_path="src/gsim/palace/resolve/loaders/index_maps.py",
             required_signals=(
                 "def load_postprocessing_index_map",
                 "palace_index_map.json",
                 "PostprocessingIndexMap",
-                "_optional_str_pair",
+                "resolve_indexed_csv_source",
             ),
             current_signal=(
-                "gsim exposes a notebook-facing loader for generated "
-                "palace_index_map.json artifacts"
+                "gsim keeps palace_index_map.json parsing in the Resolve "
+                "primitive-loader owner module"
             ),
             remaining_gap=current_handoff_fixture_gap,
             evidence_status="covered_gsim_consumer_parser",
@@ -870,7 +879,7 @@ def _frame_records(rows: Any, columns: Sequence[str]) -> list[dict[str, Any]]:
 
 
 def _config_generation_evidence(source: Path) -> dict[str, Any]:
-    from gsim.palace import load_domain_material_summary
+    from gsim.palace.resolve.derived.materials import load_domain_material_summary
 
     config = json.loads((source / "config.json").read_text())
     material_resolution_path = source / "palace_material_resolution.json"
@@ -963,7 +972,7 @@ def _config_generation_evidence(source: Path) -> dict[str, Any]:
 
 
 def _index_map_lookup_evidence(source: Path) -> dict[str, Any]:
-    from gsim.palace import load_postprocessing_index_map
+    from gsim.palace.resolve.loaders.index_maps import load_postprocessing_index_map
 
     index_map = load_postprocessing_index_map(source)
     lookup_rows: list[dict[str, Any]] = []
@@ -1197,7 +1206,7 @@ def _public_slurm_resource_overrides(
 def _public_driven_cpw_sim(output_dir: Path):
     from gsim.palace import DrivenSim
 
-    orpen_sc_pdk.activate()
+    PDK.activate()
     component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
 
     sim = DrivenSim()
@@ -1248,15 +1257,21 @@ def _driven_postprocessing(mesh_result: Any) -> dict[str, Any]:
 
 
 def _driven_report_summary(output_dir: Path) -> dict[str, Any]:
-    from gsim.palace import load_driven_report
+    from gsim.palace import resolve_palace_result
 
-    report = load_driven_report(output_dir)
+    report = (
+        resolve_palace_result(output_dir, problem_type="Driven")
+        .load_report(require_report=True)
+        .require_report()
+    )
     return {
         "status": "loaded",
         "port_names": list(report.sparams.port_names),
         "frequency_points": int(len(report.sparams.freq)),
         "s_parameter_count": int(len(report.sparams.keys())),
-        "port_epr_rows": int(len(report.port_epr)),
+        "domain_energy_rows": int(len(report.domain_energy)),
+        "surface_q_rows": int(len(report.surface_q)),
+        "loss_budget_rows": int(len(report.loss_budget)),
         "index_map_rows": int(len(report.index_map)),
         "sources": _source_summary(report.sources),
     }
@@ -1265,7 +1280,7 @@ def _driven_report_summary(output_dir: Path) -> dict[str, Any]:
 def _public_eigenmode_resonator_sim(output_dir: Path):
     from gsim.palace import EigenmodeSim
 
-    orpen_sc_pdk.activate()
+    PDK.activate()
     component = resonator(
         length=1200,
         meanders=2,
@@ -1315,9 +1330,13 @@ def _eigenmode_postprocessing(mesh_result: Any) -> dict[str, Any]:
 
 
 def _eigenmode_report_summary(output_dir: Path) -> dict[str, Any]:
-    from gsim.palace import load_eigenmode_report
+    from gsim.palace import resolve_palace_result
 
-    report = load_eigenmode_report(output_dir)
+    report = (
+        resolve_palace_result(output_dir, problem_type="Eigenmode")
+        .load_report(require_report=True)
+        .require_report()
+    )
     return {
         "status": "loaded",
         "mode_count": int(report.eigenmodes.n_modes),
@@ -1333,7 +1352,7 @@ def _eigenmode_report_summary(output_dir: Path) -> dict[str, Any]:
 def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
     from gsim.palace import ElectrostaticSim
 
-    orpen_sc_pdk.activate()
+    PDK.activate()
     component = martinis2022_differential_ribbon_capacitor(
         a_um=20,
         b_um=35,
@@ -1376,9 +1395,13 @@ def _electrostatic_postprocessing(mesh_result: Any) -> dict[str, Any]:
 
 
 def _electrostatic_report_summary(output_dir: Path) -> dict[str, Any]:
-    from gsim.palace import load_electrostatic_report
+    from gsim.palace import resolve_palace_result
 
-    report = load_electrostatic_report(output_dir)
+    report = (
+        resolve_palace_result(output_dir, problem_type="Electrostatic")
+        .load_report(require_report=True)
+        .require_report()
+    )
     return {
         "status": "loaded",
         "terminal_names": list(report.capacitance.terminal_names),
@@ -1479,8 +1502,14 @@ def _write_public_driven_report_fixture(output_dir: Path) -> dict[str, Path]:
         "6.0, -12.0, -50.0, -2.0, -95.0\n"
         "8.0, -16.0, -55.0, -4.0, -100.0\n"
     )
-    port_epr_path = output_dir / "port-EPR.csv"
-    port_epr_path.write_text("m, p[3], p[4]\n1, 0.60, 0.40\n")
+    domain_e_path = output_dir / "domain-E.csv"
+    domain_e_path.write_text(
+        "f (GHz), E_elec[1] (J), p_elec[1]\n4.0, 1.0, 0.20\n6.0, 1.0, 0.25\n8.0, 1.0, 0.22\n"
+    )
+    surface_q_path = output_dir / "surface-Q.csv"
+    surface_q_path.write_text(
+        "f (GHz), p_surf[2], Q_surf[2]\n4.0, 0.10, 1.0e6\n6.0, 0.12, 1.2e6\n8.0, 0.11, 1.1e6\n"
+    )
     config_path = _write_public_report_json(
         output_dir / "config.json",
         {
@@ -1493,7 +1522,21 @@ def _write_public_driven_report_fixture(output_dir: Path) -> dict[str, Path]:
                         "LossTan": 2.0e-6,
                     }
                 ]
-            }
+            },
+            "Boundaries": {
+                "Postprocessing": {
+                    "Dielectric": [
+                        {
+                            "Index": 2,
+                            "Attributes": [20],
+                            "Type": "SA",
+                            "Thickness": 0.003,
+                            "Permittivity": 10.0,
+                            "LossTan": 0.0017,
+                        }
+                    ]
+                }
+            },
         },
     )
     index_map_path = _write_public_report_json(
@@ -1509,6 +1552,16 @@ def _write_public_driven_report_fixture(output_dir: Path) -> dict[str, Path]:
                     "attributes": [10],
                     "physical_names": ["D1_SUBSTRATE"],
                     "dimension": 3,
+                },
+                {
+                    "section": "Boundaries.Postprocessing.Dielectric",
+                    "index": 2,
+                    "entry_name": "sa_interface",
+                    "role": "boundary_surface",
+                    "attributes": [20],
+                    "physical_names": ["SA:D1_SUBSTRATE___OUTER_VACUUM"],
+                    "dimension": 2,
+                    "Type": "SA",
                 },
                 {
                     "section": "Boundaries.Postprocessing.SurfaceFlux",
@@ -1541,7 +1594,8 @@ def _write_public_driven_report_fixture(output_dir: Path) -> dict[str, Path]:
     )
     return {
         "port-S.csv": port_s_path,
-        "port-EPR.csv": port_epr_path,
+        "domain-E.csv": domain_e_path,
+        "surface-Q.csv": surface_q_path,
         "port_information.json": port_info_path,
         "config.json": config_path,
         "palace_index_map.json": index_map_path,
@@ -1732,31 +1786,7 @@ def _write_public_electrostatic_report_fixture(output_dir: Path) -> dict[str, Pa
     }
 
 
-def build_public_driven_cpw_sim(output_dir: str | Path) -> tuple[Any, Any]:
-    """Build the public Driven CPW fixture and return the sim plus mesh result."""
-
-    return _public_driven_cpw_sim(Path(output_dir))
-
-
-def build_public_driven_postprocessing(mesh_result: Any) -> dict[str, Any]:
-    """Build Driven postprocessing from the generated mesh manifest."""
-
-    return _driven_postprocessing(mesh_result)
-
-
-def build_public_eigenmode_resonator_sim(output_dir: str | Path) -> tuple[Any, Any]:
-    """Build the public Eigenmode resonator fixture and return the sim plus mesh result."""
-
-    return _public_eigenmode_resonator_sim(Path(output_dir))
-
-
-def build_public_eigenmode_postprocessing(mesh_result: Any) -> dict[str, Any]:
-    """Build Eigenmode postprocessing from the generated mesh manifest."""
-
-    return _eigenmode_postprocessing(mesh_result)
-
-
-def build_public_eigenmode_interface_postprocessing(mesh_result: Any) -> dict[str, Any]:
+def _public_eigenmode_interface_postprocessing(mesh_result: Any) -> dict[str, Any]:
     """Build caller-supplied Eigenmode dielectric-interface postprocessing."""
 
     from gsim.palace.mesh import (
@@ -1789,18 +1819,6 @@ def build_public_eigenmode_interface_postprocessing(mesh_result: Any) -> dict[st
         mesh_result.manifest,
         dielectric_interfaces=dielectric_interfaces,
     )
-
-
-def build_public_electrostatic_capacitor_sim(output_dir: str | Path) -> tuple[Any, Any]:
-    """Build the public Electrostatic capacitor fixture and return the sim plus mesh result."""
-
-    return _public_same_layer_capacitor_electrostatic_sim(Path(output_dir))
-
-
-def build_public_electrostatic_postprocessing(mesh_result: Any) -> dict[str, Any]:
-    """Build Electrostatic postprocessing from the generated mesh manifest."""
-
-    return _electrostatic_postprocessing(mesh_result)
 
 
 def load_public_json(path: str | Path) -> dict[str, Any]:
@@ -2159,13 +2177,13 @@ def build_public_thin_film_sheet_proxy_interface_evidence(
     """Build public evidence for caller-supplied thin-film MA/MS proxy specs."""
 
     from gsim.common.stack import LayerStack
-    from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
         build_dielectric_interface_specs_from_material_kinds,
         build_postprocessing_config_from_manifest,
     )
     from gsim.palace.mesh.config_generator import generate_palace_config
     from gsim.palace.mesh.manifest import build_mesh_manifest
+    from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
     from orpen_sc_pdk.materials import (
         get_gsim_material_kind_alias_map,
@@ -2322,7 +2340,7 @@ def public_thin_film_sheet_proxy_interface_table(
 def public_domain_material_table(output_dir: str | Path) -> Any:
     """Load the public domain-material provenance table for a generated config."""
 
-    from gsim.palace import load_domain_material_summary
+    from gsim.palace.resolve.derived.materials import load_domain_material_summary
 
     frame = load_domain_material_summary(Path(output_dir))
     columns = [
@@ -2350,7 +2368,7 @@ def public_index_map_lookup_table(
     """Load section/index lookup rows from the public Palace index map."""
 
     import pandas as pd
-    from gsim.palace import load_postprocessing_index_map
+    from gsim.palace.resolve.loaders.index_maps import load_postprocessing_index_map
 
     index_map = load_postprocessing_index_map(Path(output_dir))
     rows: list[dict[str, Any]] = []
@@ -2476,23 +2494,29 @@ def run_public_driven_local_smoke(
 ) -> dict[str, Any]:
     """Run the public Driven fixture through a configured local Palace executable."""
 
-    from gsim.palace import load_driven_report
+    from gsim.palace import resolve_palace_result
 
     output_dir = Path(output_dir)
-    sim, mesh_result = build_public_driven_cpw_sim(output_dir)
+    sim, mesh_result = _public_driven_cpw_sim(output_dir)
     sim.write_config(
-        postprocessing=build_public_driven_postprocessing(mesh_result),
+        postprocessing=_driven_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
         hints=public_solver_config_hints(),
     )
     results = sim.run_local(**dict(run_kwargs))
-    report = load_driven_report(output_dir)
+    report = (
+        resolve_palace_result(output_dir, problem_type="Driven")
+        .load_report(require_report=True)
+        .require_report()
+    )
     return {
         "problem_type": "Driven",
         "port_names": list(report.sparams.port_names),
         "frequency_points": int(len(report.sparams.freq)),
-        "port_epr_rows": int(len(report.port_epr)),
+        "domain_energy_rows": int(len(report.domain_energy)),
+        "surface_q_rows": int(len(report.surface_q)),
+        "loss_budget_rows": int(len(report.loss_budget)),
         "source_rows": int(len(report.sources)),
         "has_port_s": "port-S.csv" in results.files,
         "port_s_bytes": int(results.files["port-S.csv"].stat().st_size),
@@ -2510,19 +2534,23 @@ def run_public_eigenmode_local_smoke(
 ) -> dict[str, Any]:
     """Run the public Eigenmode fixture through a configured local Palace executable."""
 
-    from gsim.palace import load_eigenmode_report
+    from gsim.palace import resolve_palace_result
 
     output_dir = Path(output_dir)
-    sim, mesh_result = build_public_eigenmode_resonator_sim(output_dir)
+    sim, mesh_result = _public_eigenmode_resonator_sim(output_dir)
     _apply_public_eigenmode_local_smoke_profile(sim)
     sim.write_config(
-        postprocessing=build_public_eigenmode_postprocessing(mesh_result),
+        postprocessing=_eigenmode_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
         hints=public_solver_config_hints(),
     )
     results = sim.run_local(**dict(run_kwargs))
-    report = load_eigenmode_report(results)
+    report = (
+        resolve_palace_result(results, problem_type="Eigenmode")
+        .load_report(require_report=True)
+        .require_report()
+    )
     return {
         "problem_type": "Eigenmode",
         "mode_count": int(report.eigenmodes.n_modes),
@@ -2538,18 +2566,22 @@ def run_public_electrostatic_local_smoke(
 ) -> dict[str, Any]:
     """Run the public Electrostatic fixture through a configured local Palace executable."""
 
-    from gsim.palace import load_electrostatic_report
+    from gsim.palace import resolve_palace_result
 
     output_dir = Path(output_dir)
-    sim, mesh_result = build_public_electrostatic_capacitor_sim(output_dir)
+    sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
     sim.write_config(
-        postprocessing=build_public_electrostatic_postprocessing(mesh_result),
+        postprocessing=_electrostatic_postprocessing(mesh_result),
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
         hints=public_solver_config_hints(),
     )
     results = sim.run_local(**dict(run_kwargs))
-    report = load_electrostatic_report(results)
+    report = (
+        resolve_palace_result(results, problem_type="Electrostatic")
+        .load_report(require_report=True)
+        .require_report()
+    )
     return {
         "problem_type": "Electrostatic",
         "terminal_names": list(report.capacitance.terminal_names),
@@ -3256,7 +3288,7 @@ def build_public_palace_smoke_evidence(
     environ = os.environ if environ is None else environ
     run_kwargs, solver = _solver_env(environ)
 
-    orpen_sc_pdk.activate()
+    PDK.activate()
     problems = {
         spec["problem_key"]: _build_problem_evidence(
             output_root=output_root,

@@ -1,3 +1,5 @@
+"""Electrostatic capacitor checks for public OrPen-to-gsim Palace workflows."""
+
 from __future__ import annotations
 
 import json
@@ -10,9 +12,9 @@ from material_overlay_assertions import (
     assert_public_si_overlay_material,
 )
 
-import orpen_sc_pdk
 from orpen_sc_pdk.cells import martinis2022_differential_ribbon_capacitor
 from orpen_sc_pdk.materials import get_gsim_material_overlay
+from orpen_sc_pdk.pdk import PDK
 
 
 def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
@@ -21,7 +23,7 @@ def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
 
     from gsim.palace import ElectrostaticSim
 
-    orpen_sc_pdk.activate()
+    PDK.activate()
     component = martinis2022_differential_ribbon_capacitor(
         a_um=20,
         b_um=35,
@@ -48,7 +50,7 @@ def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
     sim.add_terminal("negative", layer="D0_TOP_M1", center=negative_center)
     sim.set_electrostatic(save_fields=0)
 
-    sim.mesh(
+    mesh_result = sim.mesh(
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
@@ -57,7 +59,6 @@ def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
         planar_conductors=True,
         auto_size=False,
     )
-    mesh_result = sim._last_mesh_result
 
     return sim, mesh_result
 
@@ -134,7 +135,7 @@ def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
     output_dir = tmp_path / "palace-smoke"
     sim, mesh_result = _public_same_layer_capacitor_electrostatic_sim(output_dir)
 
-    from gsim.palace import load_electrostatic_report, load_terminal_matrix
+    from gsim.palace import resolve_palace_result
     from gsim.palace.mesh import build_postprocessing_config_from_manifest
 
     postprocessing = build_postprocessing_config_from_manifest(mesh_result.manifest)
@@ -165,8 +166,18 @@ def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
         assert path is not None
         assert Path(path).stat().st_size > 0
 
-    for matrix_kind in ("C", "Cm", "Cinv"):
-        matrix = load_terminal_matrix(results, matrix_kind)
+    report = (
+        resolve_palace_result(results, problem_type="Electrostatic")
+        .load_report(require_report=True)
+        .require_report()
+    )
+    matrices = {
+        "C": report.capacitance,
+        "Cm": report.mutual_capacitance,
+        "Cinv": report.inverse_capacitance,
+    }
+    for matrix_kind, matrix in matrices.items():
+        assert matrix is not None, matrix_kind
         assert matrix.terminal_names == ("positive", "negative")
         assert matrix.dataframe.shape == (2, 2)
         assert matrix.dataframe.notna().all().all()
@@ -177,7 +188,6 @@ def test_public_same_layer_capacitor_optional_local_palace_coarse_smoke(
         assert set(long_frame["row_terminal"]) == {"positive", "negative"}
         assert set(long_frame["column_terminal"]) == {"positive", "negative"}
 
-    report = load_electrostatic_report(results)
     assert report.capacitance.terminal_names == ("positive", "negative")
     assert report.mutual_capacitance is not None
     assert report.inverse_capacitance is not None

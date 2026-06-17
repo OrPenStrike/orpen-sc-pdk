@@ -30,7 +30,8 @@ Acceptance direction:
 Current public baseline:
 
 - local `gsim` commit `bbd74fe` adds
-  `load_dielectric_interface_summary()`, which joins
+  `gsim.palace.resolve.derived.materials.load_dielectric_interface_summary()`,
+  which joins
   `Boundaries.Postprocessing.Dielectric` config rows back to
   `palace_index_map.json` physical names;
 - composed Eigenmode reports expose those configured interface rows through
@@ -40,17 +41,19 @@ Current public baseline:
   frequency, so gamma/T1 columns are available when the Eigenmode frequency is
   known;
 - local `gsim` commit `fbb19d1` reuses the same surface-Q/interface mapping in
-  `load_electrostatic_report()`, preserving Electrostatic source-index samples
-  and deriving gamma/T1 columns only from an explicit caller-provided
-  `frequency_ghz`;
+  the Electrostatic report path reached through
+  `resolve_palace_result(...).load_report()`, preserving Electrostatic
+  source-index samples and deriving gamma/T1 columns only from an explicit
+  caller-provided `frequency_ghz`;
 - local `gsim` commit `1da6783` adds material-overlay resolution provenance for
   dielectric interface rows, so surface-loss reports can show whether the
   interface permittivity/loss fields came from a public PDK material record;
 - public OrPen evidence and notebook fixtures now exercise the index-map contract
-  directly with `gsim.palace.load_postprocessing_index_map()`, showing forward
-  Palace section/index lookup, reverse physical-name lookup, and attribute lookup
-  for Driven port surfaces, Eigenmode absorbing/surface rows, and Electrostatic
-  terminal rows;
+  through
+  `gsim.palace.resolve.loaders.index_maps.load_postprocessing_index_map()`,
+  showing forward Palace section/index lookup, reverse physical-name lookup,
+  and attribute lookup for Driven port surfaces, Eigenmode absorbing/surface
+  rows, and Electrostatic terminal rows;
 - automatic public interface presets are still not part of the PDK material
   contract.
 

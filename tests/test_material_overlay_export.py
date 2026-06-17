@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import json
 import math
+from importlib import import_module
 
 import pytest
 
-import orpen_sc_pdk
-from orpen_sc_pdk import tech
 from orpen_sc_pdk.materials import (
     get_gsim_dielectric_interface_preset_kwargs,
     get_gsim_material_kind_alias_map,
@@ -20,6 +19,12 @@ from orpen_sc_pdk.materials import (
     validate_material_kind_records,
     write_gsim_material_overlay,
 )
+from orpen_sc_pdk.tech import (
+    LAYER_STACK,
+    interface_preset_records,
+    material_alias_records,
+    material_properties,
+)
 
 
 def test_material_records_are_public_copy() -> None:
@@ -31,8 +36,8 @@ def test_material_records_are_public_copy() -> None:
 
     records["Si"]["relative_permittivity"] = 1.0
     records["Si"]["permeability"] = 2.0
-    assert tech.material_properties["Si"]["relative_permittivity"] == pytest.approx(11.45)
-    assert tech.material_properties["Si"]["permeability"] == pytest.approx(1.0)
+    assert material_properties["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert material_properties["Si"]["permeability"] == pytest.approx(1.0)
 
 
 def test_material_alias_records_are_public_copy() -> None:
@@ -44,21 +49,23 @@ def test_material_alias_records_are_public_copy() -> None:
     }
 
     aliases["air"] = "Si"
-    assert tech.material_alias_records["air"] == "vacuum"
+    assert material_alias_records["air"] == "vacuum"
 
 
 def test_public_import_surface_exposes_material_overlay_helpers() -> None:
-    assert orpen_sc_pdk.get_material_records()["vacuum"]["relative_permittivity"] == 1.0
-    assert orpen_sc_pdk.get_material_records()["vacuum"]["permeability"] == 1.0
-    assert orpen_sc_pdk.get_gsim_material_kind_map()["vacuum"] == "vacuum"
-    assert orpen_sc_pdk.get_material_alias_records()["air"] == "vacuum"
-    assert orpen_sc_pdk.get_gsim_material_kind_alias_map()["silicon"] == "Si"
-    assert "materials" in orpen_sc_pdk.get_gsim_material_overlay()
-    assert orpen_sc_pdk.get_gsim_material_overlay()["material_aliases"] == {
+    package = import_module("orpen_sc_pdk")
+
+    assert package.get_material_records()["vacuum"]["relative_permittivity"] == 1.0
+    assert package.get_material_records()["vacuum"]["permeability"] == 1.0
+    assert package.get_gsim_material_kind_map()["vacuum"] == "vacuum"
+    assert package.get_material_alias_records()["air"] == "vacuum"
+    assert package.get_gsim_material_kind_alias_map()["silicon"] == "Si"
+    assert "materials" in package.get_gsim_material_overlay()
+    assert package.get_gsim_material_overlay()["material_aliases"] == {
         "air": "vacuum",
         "silicon": "Si",
     }
-    assert orpen_sc_pdk.get_interface_preset_records() == {}
+    assert package.get_interface_preset_records() == {}
 
 
 def test_gsim_material_kind_map_is_public_explicit_copy() -> None:
@@ -87,7 +94,7 @@ def test_gsim_material_kind_alias_map_targets_public_materials() -> None:
         "silicon": "Si",
     }
     assert all(target in kind_map for target in alias_map.values())
-    assert set(alias_map).isdisjoint(tech.material_properties)
+    assert set(alias_map).isdisjoint(material_properties)
 
     alias_map["air"] = "Si"
     assert get_gsim_material_kind_alias_map()["air"] == "vacuum"
@@ -96,11 +103,11 @@ def test_gsim_material_kind_alias_map_targets_public_materials() -> None:
 def test_gsim_material_kind_map_covers_public_layer_stack_materials() -> None:
     kind_map = get_gsim_material_kind_map()
     layer_stack_materials = {
-        layer.material for layer in tech.LAYER_STACK.layers.values() if layer.material
+        layer.material for layer in LAYER_STACK.layers.values() if layer.material
     }
 
     assert layer_stack_materials <= set(kind_map)
-    assert tech.interface_preset_records == {}
+    assert interface_preset_records == {}
 
 
 @pytest.mark.parametrize(
@@ -219,7 +226,7 @@ def test_interface_preset_records_are_public_copy_and_empty_by_default() -> None
         "thickness": 0.003,
         "material_name": "AlOx_native_generic",
     }
-    assert tech.interface_preset_records == {}
+    assert interface_preset_records == {}
 
 
 def test_interface_preset_schema_validates_caller_supplied_record() -> None:
@@ -305,7 +312,7 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.common.stack import LayerStack
     from gsim.palace.mesh.config_generator import generate_palace_config
-    from gsim.palace.results import load_domain_material_summary
+    from gsim.palace.resolve.derived.materials import load_domain_material_summary
 
     groups = {
         "volumes": {
@@ -392,7 +399,7 @@ def test_gsim_palace_config_accepts_public_material_overlay(tmp_path) -> None:
                         "physical_names": ["AIRBOX"],
                         "dimension": 3,
                         "metadata": {"material": "vacuum"},
-                    }
+                    },
                 ],
             }
         )
@@ -425,7 +432,7 @@ def test_gsim_dielectric_interface_summary_loads_public_interface_config(
     tmp_path,
 ) -> None:
     pytest.importorskip("gsim")
-    from gsim.palace import load_dielectric_interface_summary
+    from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
     config_path = tmp_path / "config.json"
     config_path.write_text(
@@ -484,8 +491,8 @@ def test_gsim_dielectric_interface_summary_loads_public_interface_config(
 def test_gsim_resolves_public_interface_material_overlay(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.common.stack import LayerStack
-    from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh.config_generator import generate_palace_config
+    from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
     groups = {
         "volumes": {"Si": {"phys_group": 1}},
@@ -558,7 +565,6 @@ def test_gsim_resolves_public_interface_material_overlay(tmp_path) -> None:
 def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.common.stack import LayerStack
-    from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
         MeshManifest,
         build_postprocessing_config_from_manifest,
@@ -566,6 +572,7 @@ def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
     from gsim.palace.mesh.config_generator import generate_palace_config
     from gsim.palace.mesh.manifest import MeshPhysicalGroup
     from gsim.palace.mesh.postprocessing import DielectricInterfaceSpec
+    from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
     records = {
         "public_sa_example": {
@@ -641,13 +648,13 @@ def test_gsim_accepts_public_interface_preset_kwargs(tmp_path) -> None:
 def test_gsim_material_kind_classifier_accepts_public_interface_records(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.common.stack import LayerStack
-    from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
         build_dielectric_interface_specs_from_material_kinds,
         build_postprocessing_config_from_manifest,
     )
     from gsim.palace.mesh.config_generator import generate_palace_config
     from gsim.palace.mesh.manifest import build_mesh_manifest
+    from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
     records = {
         "public_ms_example": {
@@ -725,13 +732,13 @@ def test_gsim_material_kind_classifier_accepts_public_interface_records(tmp_path
 def test_gsim_material_kind_classifier_accepts_public_generated_aliases(tmp_path) -> None:
     pytest.importorskip("gsim")
     from gsim.common.stack import LayerStack
-    from gsim.palace import load_dielectric_interface_summary
     from gsim.palace.mesh import (
         build_dielectric_interface_specs_from_material_kinds,
         build_postprocessing_config_from_manifest,
     )
     from gsim.palace.mesh.config_generator import generate_palace_config
     from gsim.palace.mesh.manifest import build_mesh_manifest
+    from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
     records = {
         "public_sa_example": {
@@ -817,7 +824,7 @@ def test_gsim_material_kind_classifier_accepts_public_generated_aliases(tmp_path
 
 def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:
     pytest.importorskip("gsim")
-    from gsim.palace import load_eigenmode_report
+    from gsim.palace import resolve_palace_result
 
     eig_path = tmp_path / "eig.csv"
     eig_path.write_text(
@@ -889,14 +896,19 @@ def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:
         )
     )
 
-    report = load_eigenmode_report(
-        {
-            "eig.csv": eig_path,
-            "domain-E.csv": domain_e_path,
-            "surface-Q.csv": surface_q_path,
-            "config.json": config_path,
-            "palace_index_map.json": index_map_path,
-        }
+    report = (
+        resolve_palace_result(
+            {
+                "eig.csv": eig_path,
+                "domain-E.csv": domain_e_path,
+                "surface-Q.csv": surface_q_path,
+                "config.json": config_path,
+                "palace_index_map.json": index_map_path,
+            },
+            problem_type="Eigenmode",
+        )
+        .load_report(require_report=True)
+        .require_report()
     )
 
     domain_row = report.domain_loss.set_index("domain_index").loc[1]
@@ -925,7 +937,7 @@ def test_gsim_eigenmode_report_derives_public_loss_budget(tmp_path) -> None:
 
 def test_gsim_electrostatic_report_derives_public_loss_budget(tmp_path) -> None:
     pytest.importorskip("gsim")
-    from gsim.palace import load_electrostatic_report
+    from gsim.palace import resolve_palace_result
 
     terminal_c_path = tmp_path / "terminal-C.csv"
     terminal_c_path.write_text(
@@ -1048,7 +1060,11 @@ def test_gsim_electrostatic_report_derives_public_loss_budget(tmp_path) -> None:
         "palace_index_map.json": index_map_path,
         "palace_material_resolution.json": material_resolution_path,
     }
-    report = load_electrostatic_report(source)
+    report = (
+        resolve_palace_result(source, problem_type="Electrostatic")
+        .load_report(require_report=True)
+        .require_report()
+    )
 
     assert report.capacitance.terminal_names == ("positive", "negative")
     assert report.mutual_capacitance is None
@@ -1064,7 +1080,11 @@ def test_gsim_electrostatic_report_derives_public_loss_budget(tmp_path) -> None:
     assert budget.loc[1, "total_inverse_q_sum"] == pytest.approx(1.5e-6)
     assert budget.loc[2, "total_inverse_q_sum"] == pytest.approx(7.5e-7)
 
-    report_with_t1 = load_electrostatic_report(source, frequency_ghz=5.0)
+    report_with_t1 = (
+        resolve_palace_result(source, problem_type="Electrostatic")
+        .load_report(frequency_ghz=5.0, require_report=True)
+        .require_report()
+    )
     budget_with_t1 = report_with_t1.loss_budget.set_index("source_index")
     assert budget_with_t1.loc[1, "gamma_hz"] == pytest.approx(5.0e9 * 1.5e-6)
     assert budget_with_t1.loc[1, "t1_us"] == pytest.approx(1.0e6 / (2.0 * math.pi * 5.0e9 * 1.5e-6))

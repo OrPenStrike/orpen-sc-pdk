@@ -22,65 +22,60 @@ Notebook Items
 .. grid:: 1 1 2 3
     :gutter: 3
 
-    .. grid-item-card:: NB-001 Public PDK Quickstart
-
-        :doc:`notebooks/public_pdk_quickstart`
-
-        Activates the open PDK, builds public demo components, and inspects the
-        public PDK registry.
-
-    .. grid-item-card:: NB-002 Public Driven Workflow
+    .. grid-item-card:: NB-001 Public Driven Workflow
 
         :doc:`notebooks/public_driven_workflow`
 
-        Builds the public CPW Driven fixture, generated Palace mesh/config
-        artifacts, material/index provenance tables, synthetic report displays,
-        and an opt-in local solver smoke.
+        Builds the public CPW Driven fixture, writes the Palace run folder,
+        generates ``run_palace.sbatch``, and packages the run folder with
+        ``sim.generate_handoff_package()`` for manual Slurm submission.
 
-    .. grid-item-card:: NB-003 Public Eigenmode Workflow
+    .. grid-item-card:: NB-002 Public Eigenmode Workflow
 
         :doc:`notebooks/public_eigenmode_workflow`
 
         Builds the public resonator Eigenmode fixture, generated Palace
-        mesh/config artifacts, caller-supplied interface classification,
-        synthetic report displays, and an opt-in local solver smoke.
+        mesh/config artifacts, ``run_palace.sbatch``, and a handoff archive
+        for manual Slurm submission.
 
-    .. grid-item-card:: NB-004 Public Electrostatic Workflow
+    .. grid-item-card:: NB-003 Public Electrostatic Workflow
 
         :doc:`notebooks/public_electrostatic_workflow`
 
         Builds the public same-layer capacitor Electrostatic fixture, generated
-        Palace mesh/config artifacts, terminal provenance, synthetic report
-        displays, and an opt-in local solver smoke.
+        Palace mesh/config artifacts, ``run_palace.sbatch``, and a handoff
+        archive for manual Slurm submission.
 
-    .. grid-item-card:: NB-005 Public Simulation Inventory
+    .. grid-item-card:: NB-004 Public Driven Local Workflow
 
-        :doc:`notebooks/public_simulation_inventory`
+        :doc:`notebooks/public_driven_local_workflow`
 
-        Displays the public/private simulation notebook cross-check,
-        helper-node inventory, goal-level audit status, ecosystem home, and
-        issue ownership without embedding private workflow code.
+        Builds the public CPW Driven fixture and exposes a direct
+        ``sim.run_local()`` Run Stage. Set ``PALACE_RUN_LOCAL = True`` after
+        configuring local Palace runtime commands.
 
-    .. grid-item-card:: NB-006 Reference Qubit Workflow
+    .. grid-item-card:: NB-005 Public Eigenmode Local Workflow
 
-        Status: private source pending.
+        :doc:`notebooks/public_eigenmode_local_workflow`
 
-        The public version should document the workflow shape while keeping the
-        private qubit layout in the private layout repo.
+        Builds the public resonator Eigenmode fixture and exposes a direct
+        ``sim.run_local()`` Run Stage. The default docs-safe run only prepares
+        artifacts and reports missing solver outputs.
 
-    .. grid-item-card:: NB-007 Circular Qubit V3 Workflow
+    .. grid-item-card:: NB-006 Public Electrostatic Local Workflow
 
-        Status: private source pending.
+        :doc:`notebooks/public_electrostatic_local_workflow`
 
-        The public version should become available only after a publication-safe
-        public surface exists.
+        Builds the public same-layer capacitor Electrostatic fixture and exposes
+        a direct ``sim.run_local()`` Run Stage for local Palace execution.
 
 .. toctree::
     :maxdepth: 1
     :hidden:
 
-    notebooks/public_pdk_quickstart
     notebooks/public_driven_workflow
     notebooks/public_eigenmode_workflow
     notebooks/public_electrostatic_workflow
-    notebooks/public_simulation_inventory
+    notebooks/public_driven_local_workflow
+    notebooks/public_eigenmode_local_workflow
+    notebooks/public_electrostatic_local_workflow

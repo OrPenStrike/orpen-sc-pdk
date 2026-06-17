@@ -9,31 +9,34 @@
 # ---
 
 # %% [markdown]
-# # Public Driven CPW workflow
+# # Public Eigenmode resonator local workflow
 #
-# This notebook demonstrates the public OrPen PDK Driven Palace workflow using
-# the same visible chain as the reusable `gsim` examples: geometry, layer stack,
-# mesh, config, solver handoff, report loading, and display views.
+# This notebook demonstrates the public OrPen PDK Eigenmode Palace workflow
+# using local `sim.run_local()` execution. It keeps private layouts out of scope
+# while writing raw Palace outputs into the run folder for Resolve/Report review.
 
 # %%
 from __future__ import annotations
 
+import os
 import warnings
 from datetime import date
 from pathlib import Path
 
 from gsim.palace import (
-    DrivenSim,
+    EigenmodeSim,
     resolve_palace_result,
 )
-from gsim.palace.mesh import SurfaceFluxSpec, build_postprocessing_config_from_manifest
+from gsim.palace.mesh import (
+    SurfaceFluxSpec,
+    build_postprocessing_config_from_manifest,
+)
 from IPython.display import display
 
-from orpen_sc_pdk.cells import cpw_straight
+from orpen_sc_pdk.cells import resonator
 from orpen_sc_pdk.config import PATH
 from orpen_sc_pdk.materials import get_gsim_material_overlay
 from orpen_sc_pdk.pdk import PDK
-from orpen_sc_pdk.simulation import resolve_public_palace_run_profile
 
 warnings.filterwarnings(
     "ignore",
@@ -46,7 +49,7 @@ PDK.activate()
 
 # User-facing run-folder controls. The root is chosen in the notebook; the run
 # id follows the NCUAS date-plus-same-day-index convention.
-NOTEBOOK_ROOT = PATH.simulation / "notebooks" / "public_driven_workflow"
+NOTEBOOK_ROOT = PATH.simulation / "notebooks" / "public_eigenmode_local_workflow"
 NOTEBOOK_RUN_DATE = date.today().isoformat()
 NOTEBOOK_RUN_INDEX = 1
 NOTEBOOK_RUN_ID = f"{NOTEBOOK_RUN_DATE}-Run{NOTEBOOK_RUN_INDEX:02d}"
@@ -64,9 +67,16 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
     output_dir = NOTEBOOK_RUN_ROOT
-    component = cpw_straight(length=300, signal_width=10, gap=6, ground_width=40)
+    component = resonator(
+        length=1200,
+        meanders=2,
+        coupling_length=120,
+        hanger_straight_length=80,
+        cpw_radius=30,
+        bend_npoints=8,
+    )
 
-    sim = DrivenSim()
+    sim = EigenmodeSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
 
@@ -81,28 +91,19 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         add_oxide_dielectric=False,
         add_passivation_dielectric=False,
     )
-    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
+    sim.set_airbox(margin_x=50, margin_y=50, z_above=50, z_below=10)
 
 # %% [markdown]
 # ## Mesh
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    sim.add_cpw_port("o1", layer="D0_TOP_M1", s_width=10, gap_width=6, length=10)
-    sim.add_cpw_port(
-        "o2",
-        layer="D0_TOP_M1",
-        s_width=10,
-        gap_width=6,
-        length=10,
-        excited=False,
-    )
     mesh_result = sim.mesh(
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
-        margin_x=40,
-        margin_y=40,
+        margin_x=50,
+        margin_y=50,
         planar_conductors=True,
         auto_size=False,
     )
@@ -112,12 +113,13 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    sim.set_driven(fmin=4e9, fmax=8e9, num_points=3, excitation_port="o1")
-    postprocessing = build_postprocessing_config_from_manifest(
+    sim.set_eigenmode(num_modes=2, target=6e9)
+    surface_flux_postprocessing = build_postprocessing_config_from_manifest(
         mesh_result.manifest,
         surface_flux=(
             SurfaceFluxSpec(
-                role="port_surface",
+                role="boundary_surface",
+                entry_names=("absorbing",),
                 flux_type="Power",
                 two_sided=None,
             ),
@@ -126,50 +128,56 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     config_path = output_dir / "config.json"
 
 # %% [markdown]
-# ## Run Stage (handoff package)
+# ## Run Stage (run_local)
 
 # %%
-PALACE_HPC_PROFILE = "f1:ct112"
-PALACE_HPC_RESOURCE_OVERRIDES = {
-    "account": "public_alloc",
-    "ntasks_per_node": 4,
-    "cpus_per_task": 28,
-    "wall_time": "12:00:00",
-}
-PALACE_SBATCH_JOB_NAME = "orpen_public_driven"
+PALACE_RUN_LOCAL = False
+PALACE_USE_APPTAINER = False
+PALACE_SIF_PATH = os.environ.get("PALACE_SIF")
+PALACE_EXECUTABLE = os.environ.get("PALACE_EXECUTABLE", "palace")
+PALACE_EXECUTABLE_MODE = os.environ.get("PALACE_EXECUTABLE_MODE", "wrapper")
+PALACE_SETUP_COMMANDS = ("spack load palace",)
+PALACE_NUM_PROCESSES = int(os.environ.get("PALACE_NP", "1"))
+PALACE_NUM_THREADS = int(os.environ.get("PALACE_NT", "1"))
+PALACE_SERIAL = os.environ.get("PALACE_SERIAL", "0") == "1"
 
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    run_profile = resolve_public_palace_run_profile(
-        PALACE_HPC_PROFILE,
-        resource_overrides=PALACE_HPC_RESOURCE_OVERRIDES,
-    )
     sim.write_config(
-        postprocessing=postprocessing,
+        postprocessing=surface_flux_postprocessing,
         validate_mesh=False,
         material_overlay=get_gsim_material_overlay(),
-        hints=run_profile.to_palace_config_hints(),
         prepare_run_folder=True,
     )
-    sbatch_handoff = sim.write_slurm_sbatch_handoff(
-        run_profile,
-        job_name=PALACE_SBATCH_JOB_NAME,
-        metadata={
-            "component": component.name,
-            "problem_type": "Driven",
-            "workflow": "public_driven_workflow",
-        },
-    )
-    run_handle = sim.generate_handoff_package(
-        write_config=False,
-        profile=run_profile,
-        script_path=sbatch_handoff.script_path,
-        metadata={
-            "component": component.name,
-            "problem_type": "Driven",
-            "workflow": "public_driven_workflow",
-            "sbatch_path": sbatch_handoff.script_path.relative_to(output_dir).as_posix(),
-        },
-    )
+    local_run_summary = {
+        "problem_type": "Eigenmode",
+        "run_local": "skipped",
+        "run_folder": output_dir.as_posix(),
+        "config_path": config_path.as_posix(),
+        "setup_commands": list(PALACE_SETUP_COMMANDS),
+    }
+    if PALACE_RUN_LOCAL:
+        if PALACE_EXECUTABLE_MODE not in {"wrapper", "binary"}:
+            raise ValueError("PALACE_EXECUTABLE_MODE must be 'wrapper' or 'binary'")
+        local_run_kwargs = {
+            "use_apptainer": PALACE_USE_APPTAINER,
+            "num_processes": PALACE_NUM_PROCESSES,
+            "num_threads": PALACE_NUM_THREADS,
+            "verbose": True,
+        }
+        if PALACE_USE_APPTAINER:
+            local_run_kwargs["palace_sif_path"] = PALACE_SIF_PATH
+        else:
+            local_run_kwargs["palace_executable"] = PALACE_EXECUTABLE
+            local_run_kwargs["executable_mode"] = PALACE_EXECUTABLE_MODE
+            local_run_kwargs["serial"] = PALACE_SERIAL
+            local_run_kwargs["setup_commands"] = PALACE_SETUP_COMMANDS
+        local_results = sim.run_local(**local_run_kwargs)
+        local_run_summary.update(
+            {
+                "run_local": "completed",
+                "result_type": type(local_results).__name__,
+            }
+        )
 
 # %% [markdown]
 # ## Resolve
@@ -177,14 +185,16 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 # %%
 analysis_run_root = NOTEBOOK_ANALYSIS_RUN_ROOT
 if analysis_run_root is None:
-    if "run_handle" not in globals():
+    if "output_dir" not in globals():
         raise ValueError("Set NOTEBOOK_ANALYSIS_RUN_ROOT or enable Run Stage preparation.")
-    analysis_run_root = run_handle.run_folder
+    analysis_run_root = output_dir
 analysis_run_root = Path(analysis_run_root)
 
-resolved_result = resolve_palace_result(analysis_run_root, problem_type="Driven")
+resolved_result = resolve_palace_result(analysis_run_root, problem_type="Eigenmode")
 report_bundle = resolved_result.load_report(require_report=NOTEBOOK_REQUIRE_REPORT)
-driven_report = report_bundle.require_report() if NOTEBOOK_REQUIRE_REPORT else report_bundle.report
+eigenmode_report = (
+    report_bundle.require_report() if NOTEBOOK_REQUIRE_REPORT else report_bundle.report
+)
 
 # %% [markdown]
 # ## Visualize
@@ -198,19 +208,8 @@ run_stage_summary = {
     "report_status": report_bundle.report_status,
     "report_message": report_bundle.report_message,
 }
-if "run_handle" in globals():
-    run_stage_summary.update(
-        {
-            "problem_type": run_handle.problem_type,
-            "hpc_profile": PALACE_HPC_PROFILE,
-            "sbatch_path": None
-            if run_handle.script_path is None
-            else run_handle.script_path.as_posix(),
-            "archive_path": None
-            if run_handle.archive_path is None
-            else run_handle.archive_path.as_posix(),
-        }
-    )
+if "local_run_summary" in globals():
+    run_stage_summary.update(local_run_summary)
 if "component" in globals():
     run_stage_summary["component"] = component.name
 if "config_path" in globals() and config_path.exists():
@@ -225,7 +224,7 @@ display(run_stage_summary)
 # ## Report
 
 # %%
-if driven_report is None:
+if eigenmode_report is None:
     display(
         {
             "report_status": report_bundle.report_status,
@@ -236,17 +235,15 @@ if driven_report is None:
 else:
     display(
         {
-            "report_problem_type": driven_report.problem_type,
+            "report_problem_type": eigenmode_report.problem_type,
             "resolved_report_status": report_bundle.report_status,
-            "frequency_points": int(len(driven_report.sparams.freq)),
-            "domain_energy_rows": int(len(driven_report.domain_energy)),
-            "surface_q_rows": int(len(driven_report.surface_q)),
-            "loss_budget_rows": int(len(driven_report.loss_budget)),
-            "missing_reports": list(driven_report.missing_reports),
-            "benchmark": driven_report.benchmark.to_dataframe().to_dict("records"),
+            "mode_count": int(eigenmode_report.eigenmodes.n_modes),
+            "pass_count": int(len(eigenmode_report.pass_summary)),
+            "loss_budget_rows": int(len(eigenmode_report.loss_budget)),
+            "missing_reports": list(eigenmode_report.missing_reports),
+            "benchmark": eigenmode_report.benchmark.to_dataframe().to_dict("records"),
         }
     )
-    driven_report.show_all_results()
-    display(driven_report.sparams.visualize()["s_parameters_trace_plot"])
-    display(driven_report.loss.visualize()["loss_budget_bar_plot"])
-    display(driven_report.domain_materials)
+    eigenmode_report.show_all_results()
+    display(eigenmode_report.loss.visualize()["loss_budget_bar_plot"])
+    display(eigenmode_report.dielectric_interfaces)

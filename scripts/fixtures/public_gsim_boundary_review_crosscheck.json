@@ -65,7 +65,7 @@
     "boundary_group": "result-report-loaders",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "gsim.palace.load_terminal_matrix()",
+    "owner_surface": "gsim.palace.resolve.loaders.terminal.load_terminal_matrix()",
     "evidence_anchor": "docs/issues/palace-report-ownership.md; docs/issues/public-problem-type-notebook-coverage.md",
     "boundary_note": "Terminal matrix parsing is a reusable gsim report-loader surface exercised by public Electrostatic notebooks."
   },
@@ -95,7 +95,7 @@
     "boundary_group": "runtime-handoff-and-resource-records",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "PalaceSimMixin.run_local()",
+    "owner_surface": "gsim.palace.base.PalaceSimBase.run_local()",
     "evidence_anchor": "docs/issues/public-problem-type-notebook-coverage.md; docs/features/benchmark-cost-analysis.md",
     "boundary_note": "Local executable launch support belongs to gsim runtime workflow; OrPen only gates optional local smoke execution."
   },
@@ -115,7 +115,7 @@
     "boundary_group": "result-report-loaders",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "gsim.palace.load_eigenmode_report()",
+    "owner_surface": "gsim.palace.resolve_palace_result(...).load_report().require_report()",
     "evidence_anchor": "docs/issues/palace-report-ownership.md; docs/issues/public-problem-type-notebook-coverage.md",
     "boundary_note": "Composed Eigenmode report loading is a notebook-facing gsim API used by public OrPen examples."
   },
@@ -145,7 +145,7 @@
     "boundary_group": "material-overlay-and-interface-provenance",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "gsim.palace.load_domain_material_summary()",
+    "owner_surface": "gsim.palace.resolve.derived.materials.load_domain_material_summary()",
     "evidence_anchor": "docs/issues/material-schema-boundary.md; docs/issues/public-problem-type-notebook-coverage.md",
     "boundary_note": "Domain material provenance is a reportability loader used directly by public notebooks."
   },
@@ -155,7 +155,7 @@
     "boundary_group": "material-overlay-and-interface-provenance",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "gsim.palace.load_dielectric_interface_summary()",
+    "owner_surface": "gsim.palace.resolve.derived.materials.load_dielectric_interface_summary()",
     "evidence_anchor": "docs/issues/source-backed-interface-presets.md; docs/issues/material-schema-boundary.md",
     "boundary_note": "Configured interface summary loading belongs to gsim report/provenance loaders; OrPen keeps public presets caller-supplied until source-backed defaults exist."
   },
@@ -185,7 +185,7 @@
     "boundary_group": "result-report-loaders",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "gsim.palace.load_electrostatic_report()",
+    "owner_surface": "gsim.palace.resolve_palace_result(...).load_report().require_report()",
     "evidence_anchor": "docs/issues/palace-report-ownership.md; docs/issues/public-problem-type-notebook-coverage.md",
     "boundary_note": "Composed Electrostatic report loading is a notebook-facing gsim API used by public OrPen examples."
   },
@@ -255,7 +255,7 @@
     "boundary_group": "result-report-loaders",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "gsim.palace.load_driven_report()",
+    "owner_surface": "gsim.palace.resolve_palace_result(...).load_report().require_report()",
     "evidence_anchor": "docs/issues/palace-report-ownership.md; docs/issues/public-problem-type-notebook-coverage.md",
     "boundary_note": "Composed Driven report loading is a notebook-facing gsim API used by public OrPen examples."
   },
@@ -275,7 +275,7 @@
     "boundary_group": "runtime-handoff-and-resource-records",
     "review_status": "reviewed_grouped",
     "ecosystem_home": "gsim",
-    "owner_surface": "PalaceSimMixin.run_local() metadata sidecars",
+    "owner_surface": "gsim.palace.base.PalaceSimBase.run_local() metadata sidecars",
     "evidence_anchor": "docs/features/benchmark-cost-analysis.md; docs/issues/public-problem-type-notebook-coverage.md",
     "boundary_note": "Sanitized local runtime metadata belongs to gsim external-solver workflow; OrPen records opt-in smoke evidence only."
   },

@@ -21,24 +21,21 @@ Acceptance direction:
 
 Current implemented baseline:
 
-- `gsim.palace.load_postprocessing_index_map()` is the root public loader for
-  generated `palace_index_map.json` artifacts used directly by public notebooks
-  and smoke evidence.
-- Lower-level indexed CSV, eigenmode pass-history, terminal matrix history,
-  port-EPR, interface aggregation, and loss-summary helpers live in
-  `gsim.palace.results`, for example `load_indexed_csv()`,
-  `load_eigenmodes()`, `load_eigenmode_history()`,
-  `load_terminal_matrix_history()`, `load_port_epr_summary()`, and
-  `summarize_surface_q_by_interface()`, `summarize_domain_loss()`,
-  `summarize_surface_loss()`, and `summarize_loss_budget()`.
-- Root `gsim.palace` keeps notebook-facing report and provenance loaders:
-  `load_driven_report()`, `load_eigenmode_report()`,
-  `load_electrostatic_report()`, `load_terminal_matrix()`,
-  `load_domain_material_summary()`,
-  and `load_dielectric_interface_summary()`.
-- Driven reports compose required `port-S.csv`, optional `port-EPR.csv`,
-  index-map provenance, config material/interface provenance, and source
-  bookkeeping.
+- Root `gsim.palace` keeps the notebook-facing Resolve path:
+  `resolve_palace_result(...).load_report().require_report()`. Direct
+  problem-specific report loaders are not root public API.
+- `gsim.palace.resolve.loaders` owns primitive artifact loaders such as indexed
+  CSVs, eigenmode histories, terminal matrices, S-parameters, and
+  `palace_index_map.json`.
+- `gsim.palace.resolve.derived` owns semantic derived tables such as domain
+  material summaries, dielectric interface summaries, participation summaries,
+  and loss summaries.
+- `gsim.palace.results` owns Typed Data objects and Problem Type Reports, such
+  as `SParams`, terminal matrices, loss tables, `DrivenReport`,
+  `EigenmodeReport`, and `ElectrostaticReport`.
+- Driven reports compose required `port-S.csv`, optional frequency-sample
+  `domain-E.csv` and `surface-Q.csv` loss tables, index-map provenance, config
+  material/interface provenance, and source bookkeeping.
 - Eigenmode reports compose final `eig.csv`, AMR history, pass summaries,
   `palace_index_map.json`, optional EPR report families, material/interface
   provenance, and loss-budget tables.
