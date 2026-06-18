@@ -12,6 +12,9 @@ Local/implemented capability:
 
 - component metadata can express mesh ports, terminals, lumped ports, wave
   ports, current excitations, and Q2D conductor intent;
+- generated lumped-port solver `Direction` values belong to `gsim` and may be
+  normalized Cartesian vectors, while generated port sheets come from
+  GDSFactory port center, width, orientation, and layer;
 - runtime controls can assemble driven, eigenmode, electrostatic, and
   magnetostatic Palace problem definitions;
 - magnetostatic current-source intent can express axis or vector `Direction`,
@@ -52,9 +55,14 @@ Acceptance direction:
   supplied by the public material overlay;
 - private consumers can mount their own layouts without changing the public
   config generation contract;
+- layout-authored solver-boundary sheet ingestion is next-round work for the
+  `gsim`/meshwell handoff. OrPen should document and exercise public fixtures,
+  but should not add PDK runtime code that parses solver-boundary polygons into
+  Palace sheets.
 - Palace remains an external executable, not a Python package dependency of the
   PDK.
 
 Related issue:
 
 - {doc}`../issues/palace-config-ownership`
+- {doc}`../issues/gsim-palace-branch-integration`

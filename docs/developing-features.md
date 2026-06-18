@@ -20,7 +20,7 @@ layout/IP, private run folders, or private benchmark evidence.
 | Implemented capability | Public ecosystem home | Direction |
 |---|---|---|
 | Simulation intent attached to GDSFactory ports and component metadata | `gsim`, with public examples in `orpen-sc-pdk` | Keep component authorship in GDSFactory terms; let `gsim` translate port and terminal intent into solver inputs. |
-| Driven, eigenmode, electrostatic, and magnetostatic Palace configuration assembly | `gsim` | Extend existing Palace simulation/config generation APIs instead of creating a PDK-owned solver runtime; public evidence now records generated config counts, solver problem blocks, domain-material counts, postprocessing counts, and boundary ownership for Driven, Eigenmode, Electrostatic, and Magnetostatic fixtures through reusable `gsim` output artifacts. Magnetostatic source config now covers vector `Direction`, `CoordinateSystem`, and selector-based multielement `SurfaceCurrent.Elements` in `gsim`, with OrPen only exercising the public fixture. |
+| Driven, eigenmode, electrostatic, and magnetostatic Palace configuration assembly | `gsim` | Extend existing Palace simulation/config generation APIs instead of creating a PDK-owned solver runtime; public evidence now records generated config counts, solver problem blocks, domain-material counts, postprocessing counts, and boundary ownership for Driven, Eigenmode, Electrostatic, and Magnetostatic fixtures through reusable `gsim` output artifacts. Magnetostatic source config now covers vector `Direction`, `CoordinateSystem`, and selector-based multielement `SurfaceCurrent.Elements` in `gsim`, with OrPen only exercising the public fixture. Lumped-port `Direction` vectors and generated sheets from GDSFactory port orientation belong in `gsim`; layout-authored solver-boundary sheet ingestion remains next-round `gsim`/meshwell work, not OrPen runtime code. |
 | Material policy, material aliases, and Palace material translation | `orpen-sc-pdk` and `gsim` | PDK owns public material names, generated-name aliases, and records; `gsim` owns overlay loading, alias expansion, frequency evaluation, solver translation, and effective Palace domain/interface material report joins. Local branches now have a public material overlay export bridge, explicit public material-kind and alias exports for `gsim` interface classification, `material_aliases` metadata for `gsim` overlay resolution, and `gsim` Palace config/report integration, including generated domain and dielectric-interface material-resolution provenance sidecars. Public evidence and report-backed notebook cells now show domain-material provenance through report-owned `domain_materials` and the `gsim.palace.resolve.derived.materials.load_domain_material_summary()` owner path, including stack material, matched material, model source, validity, frequency, permittivity, permeability, loss, and conductivity rows from generated configs. |
 | Dielectric interface preset schema for MA/MS/SA-style loss records | `orpen-sc-pdk` schema with `gsim` assignment helpers | Keep public interface preset records validated, explicitly sourced, and JSON-safe in the PDK while `gsim` owns Palace `DielectricInterfaceSpec`, caller-supplied physical-name/interface-pair assignment maps, generic material-kind MA/MS/SA classification, material resolution, config emission, and report joins; OrPen now supplies generic material-name-to-kind input, generated-name aliases, a public surface-loss source-review queue, candidate Wenner/Woods value rows, notebook-visible promotion-gate evidence, explicit acceptance-decision audit rows, and public thin-film sheet proxy MA/MS evidence, while the public preset table remains intentionally empty until source-backed public records, process scope, and default-selection rules are accepted. |
 | CAD/XAO/mesh physical names and solver index provenance | `meshwell` and `gsim` | Build on meshwell physical-name and interface-tag conventions, then expose a Palace role/index manifest in `gsim`; local public evidence and notebook outputs now load `mesh_manifest.json`, `palace_index_map.json`, and `config.json` for Driven, Eigenmode, and Electrostatic fixtures, demonstrating manifest role/physical-name coverage, `section/index -> physical name`, `physical name -> indices`, attribute-to-entry lookup, port metadata, terminal metadata, and config material joins without making OrPen own the CAD/XAO grammar. The public inventory now also shows a meshwell-to-`gsim` handoff contract gate: local meshwell source/tests, formal meshwell physical-name contract text, meshwell backend-equivalence tests, `gsim` manifest/index-map consumers, and a `gsim` consumer fixture backed by a meshwell-generated MSH artifact are aligned on meshwell-style `___`/`___None` names. |
@@ -128,6 +128,18 @@ that validate the same workflow nodes as private consumers without publishing
 private layouts.
 :::
 
+:::{grid-item-card} FEAT-009 gsim Palace branch comparison
+:link: features/gsim-palace-branch-comparison
+:link-type: doc
+
+**Target:** `gsim`
+
+**Status:** prototype
+
+Track how the local Palace personal branch differs from upstream `gsim` so the
+public PDK can consume only reusable, reviewable solver capabilities.
+:::
+
 ::::
 
 ```{toctree}
@@ -141,4 +153,5 @@ features/gdsfactoryplus-discovery
 features/palace-config-generation
 features/cad-xao-metadata-handoff
 features/problem-type-notebook-suite
+features/gsim-palace-branch-comparison
 ```

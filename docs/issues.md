@@ -124,6 +124,19 @@ and exposed publicly only when notebooks or downstream packages should call the
 symbol directly.
 :::
 
+:::{grid-item-card} ISSUE-011 gsim Palace branch integration
+:link: issues/gsim-palace-branch-integration
+:link-type: doc
+
+**Repo:** `gsim`
+
+**Related features:** FEAT-006, FEAT-009
+
+The local Palace personal branch is far ahead of upstream `gsim`. Its reusable
+solver capabilities need to be split into upstream-reviewable slices before
+the public PDK treats them as accepted contracts.
+:::
+
 ::::
 
 ```{toctree}
@@ -139,4 +152,5 @@ issues/public-problem-type-notebook-coverage
 issues/source-backed-interface-presets
 issues/palace-hpc-handoff-records
 issues/palace-api-responsibility-boundary
+issues/gsim-palace-branch-integration
 ```

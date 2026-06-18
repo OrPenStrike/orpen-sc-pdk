@@ -147,6 +147,9 @@ Remaining slices:
 
 - add a public Magnetostatic report loader only after the exact Palace
   Magnetostatic CSV/output contract is confirmed;
+- define layout-authored solver-boundary sheet ingestion in `gsim`/meshwell
+  before any public fixture depends on drawn boundary-sheet polygons; OrPen
+  should not grow runtime parsing for Palace sheet ingestion;
 - extend public London-depth provenance only after those records have a
   source-backed public schema;
 - record richer dielectric interface provenance before promoting interface
@@ -165,8 +168,10 @@ Related features:
 - {doc}`../features/material-db-overlay`
 - {doc}`../features/palace-config-generation`
 - {doc}`../features/problem-type-notebook-suite`
+- {doc}`../features/gsim-palace-branch-comparison`
 
 Related issue:
 
 - {doc}`palace-hpc-handoff-records`
 - {doc}`palace-api-responsibility-boundary`
+- {doc}`gsim-palace-branch-integration`
