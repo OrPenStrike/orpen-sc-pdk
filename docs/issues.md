@@ -4,6 +4,33 @@ This page tracks ecosystem issues that matter to the `orpen-sc-pdk` workflow.
 Items may later become upstream GitHub issues or PRs. Do not add private layout
 details, benchmark values from private layouts, or private run directories here.
 
+## Priority Queue
+
+Conclusion: high-priority issues are the breakpoints. They create the base that
+later notebook and PDK PRs consume. Lower priority means "do after the owner
+contract lands", not "unimportant".
+
+| Priority | Issue | Owner repo | Breakpoint | First useful PR | Done when |
+|---|---|---|---|---|---|
+| P0 | Palace API responsibility boundary | `gsim` | Yes | shrink root/package exports and keep owner-module imports | public callers have one clear import path per responsibility |
+| P1 | CAD/mesh identity provenance | `meshwell`, `gsim` | Yes | physical-name contract plus manifest/index-map consumer | mesh physical groups can be inspected from config/report paths |
+| P2 | Material schema boundary | `gsim`, `orpen-sc-pdk` | Yes | material overlay/provenance in `gsim`, then PDK JSON demo | generated Palace material rows point back to PDK material records |
+| P3 | Palace report ownership | `gsim` | Yes | typed Driven/Eigenmode/Electrostatic report loaders and displays | public notebooks can call `resolve_palace_result(...).load_report()` and render reports |
+| P4 | Palace config ownership | `gsim` | Yes | mesh/config/postprocessing handoff objects, including ThinMetal MS Surface EPR | generated configs expose source/surface identities without PDK solver code |
+| P5 | Source-backed interface presets | `orpen-sc-pdk`, `gsim` | No | keep MS notebook-local or explicit; defer MA/SA defaults | no automatic MA/SA policy exists before public process scope is accepted |
+| P6 | Public problem-type notebook coverage | `orpen-sc-pdk` | No | basic public notebooks after `gsim` report/config contracts land | notebooks demonstrate public outcomes, not private workflow copies |
+| P7 | Palace HPC handoff and resource records | `gsim` | No | Slurm/resource/benchmark records after report/run contracts | benchmark tables are reproducible from public fixtures |
+| P8 | GDSFactory plugin boundary | `gplugins`, `gsim` | No | only if wrapper duplication remains after `gsim` owner APIs land | no second Palace runtime grows in `orpen-sc-pdk` |
+| P9 | gsim Palace branch integration | `gsim` | No | tracking issue only; split into P0-P7 PRs | personal branch stops being the review unit |
+
+Known incomplete area:
+
+| Area | Current state | Next meaningful issue/PR |
+|---|---|---|
+| Surface EPR results | MS geometry/config is usable; final report presentation is not complete. | Add report tables/plots after P3/P4, not inside the geometry helper PR. |
+| MA/SA and 3D interfaces | Deferred by design. | Start after the MS ThinMetal path is accepted and mesh-level interface banding is designed. |
+| Purcell examples | Important, but consumer-level. | Add after P1/P3 so layout-authored sheets consume accepted contracts. |
+
 ::::{grid} 1 1 2 3
 :gutter: 3
 

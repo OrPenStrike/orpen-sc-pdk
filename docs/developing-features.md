@@ -11,6 +11,44 @@ Feature status labels:
 - `integration`: mature enough to slice into an upstream-review branch.
 - `accepted`: merged or otherwise adopted by the target public repo.
 
+## PR Extraction Roadmap
+
+Conclusion: rebuild review branches from clean upstream baselines. The current
+personal branches are useful staging areas, not PR branches. Breakpoint PRs come
+first because later PDK notebooks only become meaningful after those contracts
+exist in the owner repo.
+
+Baseline used for this roadmap:
+
+| Repo | Baseline | Current personal branch signal |
+|---|---|---|
+| `gsim` | `upstream/main` | 71 local commits plus active Palace WIP |
+| `meshwell` | `upstream/main` | 1 physical-name contract commit plus thin-film WIP |
+| `orpen-sc-pdk` | `origin/main` | public docs/notebooks/material/Purcell WIP |
+
+Priority order:
+
+| Priority | PR slice | Repo | Size | Breakpoint | Result to show first | Waits for |
+|---|---|---|---|---|---|---|
+| P0 | Palace API boundary cleanup | `gsim` | M | Yes | smaller public imports; owner modules for mesh, material, run, resolve, display | none |
+| P1 | Mesh physical-name and index-map contract | `meshwell` then `gsim` | M | Yes | raw mesh physical names round-trip to manifest/index-map lookups | P0 |
+| P2 | Material overlay and provenance | `gsim` | M | Yes | PDK material overlay changes generated Palace material rows and report provenance | P0 |
+| P3 | Typed Resolve/report backbone | `gsim` | L | Yes | Driven, Eigenmode, and Electrostatic reports load real Palace outputs through one report path | P1, P2 |
+| P4 | ThinMetal Surface EPR MS geometry/config helper | `gsim` | M | Yes | two source sheets produce 50 nm, 100 nm, 200 nm, 500 nm, 1 um MS groups plus core groups without overlapping original PEC groups | P1, P3 |
+| P5 | Public material overlay demo | `orpen-sc-pdk` | S | No | resonator notebook shows PDK material JSON reaching `gsim` config/report rows | P2, P3 |
+| P6 | Public problem notebooks | `orpen-sc-pdk` | M | No | Driven, Eigenmode, and Electrostatic notebooks use public layouts and `report.show_all_results()` | P3 |
+| P7 | Martinis ribbon Surface EPR MS notebook | `orpen-sc-pdk` | S | No | handoff/local notebooks show MS-only ThinMetal groups and config rows | P4 |
+| P8 | Runtime handoff and benchmark records | `gsim` then `orpen-sc-pdk` | L | No | Slurm handoff, run metadata, wall time, memory, and benchmark tables are reproducible from public fixtures | P3 |
+| P9 | Purcell public notebooks | `orpen-sc-pdk` | M | No | layout-authored readout sheets drive public Purcell examples | P1, P3 |
+
+Not first-wave PRs:
+
+| Slice | Why it waits |
+|---|---|
+| Surface EPR result presentation and loss-budget visualization | Current geometry/config path is useful, but final report presentation is not done. Do not claim Surface EPR analysis complete until report tables and plots are reviewable. |
+| MA/SA and general 3D interface banding | The MS ThinMetal path is the small working slice. MA/SA and volume/interface banding need a separate mesh/API design. |
+| Branch-review ledgers and long comparison docs | Useful locally, but not a public feature unless the PR itself is documentation infrastructure. |
+
 ## Fast Review Conclusions
 
 | Current result | Benefit | Public notebook evidence | Scope boundary |
