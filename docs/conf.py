@@ -57,6 +57,9 @@ nb_execution_mode = "cache"
 nb_execution_timeout = -1
 nb_execution_allow_errors = False
 nb_execution_raise_on_error = True
+nb_execution_excludepatterns = [
+    "notebooks/public_*_workflow.ipynb",
+]
 nb_custom_formats = {
     ".py": ["jupytext.reads", {"fmt": "py:percent"}],
 }

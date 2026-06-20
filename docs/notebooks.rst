@@ -54,20 +54,38 @@ Notebook Items
         ``sim.run_local()`` Run Stage. Set ``PALACE_RUN_LOCAL = True`` after
         configuring local Palace runtime commands.
 
-    .. grid-item-card:: NB-005 Public Eigenmode Local Workflow
+    .. grid-item-card:: NB-005 Public Surface EPR Ribbon Capacitor Workflow
+
+        :doc:`notebooks/public_surface_epr_ribbon_capacitor_workflow`
+
+        Builds the public Martinis 2022 differential ribbon capacitor, authors
+        source-aware ThinMetal MS margin/core groups from 50 nm to 1 um,
+        enables MS-only Surface EPR postprocessing from the mesh manifest, and
+        records a paper-scale capacitance comparison target.
+
+    .. grid-item-card:: NB-006 Public Eigenmode Local Workflow
 
         :doc:`notebooks/public_eigenmode_local_workflow`
 
         Builds the public resonator Eigenmode fixture and exposes a direct
-        ``sim.run_local()`` Run Stage. The default docs-safe run only prepares
-        artifacts and reports missing solver outputs.
+        ``sim.run_local()`` Run Stage. The docs build renders this notebook but
+        does not execute result cells by default.
 
-    .. grid-item-card:: NB-006 Public Electrostatic Local Workflow
+    .. grid-item-card:: NB-007 Public Electrostatic Local Workflow
 
         :doc:`notebooks/public_electrostatic_local_workflow`
 
         Builds the public same-layer capacitor Electrostatic fixture and exposes
         a direct ``sim.run_local()`` Run Stage for local Palace execution.
+
+    .. grid-item-card:: NB-008 Public Surface EPR Ribbon Capacitor Local Workflow
+
+        :doc:`notebooks/public_surface_epr_ribbon_capacitor_local_workflow`
+
+        Builds the public Martinis 2022 differential ribbon capacitor, authors
+        source-aware ThinMetal MS margin/core groups, enables MS-only Surface
+        EPR postprocessing from the mesh manifest, and exposes a direct
+        ``sim.run_local()`` Electrostatic Run Stage.
 
 .. toctree::
     :maxdepth: 1
@@ -76,6 +94,8 @@ Notebook Items
     notebooks/public_driven_workflow
     notebooks/public_eigenmode_workflow
     notebooks/public_electrostatic_workflow
+    notebooks/public_surface_epr_ribbon_capacitor_workflow
     notebooks/public_driven_local_workflow
     notebooks/public_eigenmode_local_workflow
     notebooks/public_electrostatic_local_workflow
+    notebooks/public_surface_epr_ribbon_capacitor_local_workflow
