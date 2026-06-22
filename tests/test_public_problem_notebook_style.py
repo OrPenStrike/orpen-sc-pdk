@@ -407,7 +407,7 @@ def test_public_surface_epr_notebook_teaches_route_b_ribbon_capacitor_groups() -
     assert "add_source_surface_epr_regions(" not in source
     assert "build_source_surface_epr_dielectric_specs_from_interfaces(" not in source
     assert "build_interface_surface_catalog(mesh_result.groups)" in source
-    assert "DielectricInterfaceSpec(" in source
+    assert "build_surface_epr_dielectric_specs(" in source
     assert "build_dielectric_interface_specs_from_material_kinds(" not in source
     assert "surface_epr_catalog" in source
     assert "sim.set_simulation_layers(surface_epr_catalog)" not in source
@@ -426,7 +426,6 @@ def test_public_surface_epr_notebook_teaches_route_b_ribbon_capacitor_groups() -
     assert "inset partitioning" in source
     assert "surface_epr_margin_groups" not in source
     assert "surface_epr_core_groups" not in source
-    assert "RuntimeError" in source
     assert "source_aware_surface_epr_groups =" not in source
     assert "surface_epr_group_rows" not in source
     assert "total_source_aware_groups" not in source
@@ -438,14 +437,13 @@ def test_public_surface_epr_notebook_teaches_route_b_ribbon_capacitor_groups() -
     assert "region.name" not in source
     assert "region.kind" not in source
     assert "add_surface_epr_bands(" not in source
-    assert "build_surface_epr_dielectric_specs(" not in source
     assert "D0_TOP_SURFACE_EPR_BAND" not in source
     assert "d0_top_surface_epr" not in source
     assert '"interface_type": "MS"' in source
     assert '"interface_type": "MA"' not in source
     assert '"interface_type": "SA"' not in source
     assert "SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES = (\"martinis2022_ms\",)" in source
-    assert '"loss_channel": surface_epr_ms["interface_type"]' in source
+    assert "preset=surface_epr_ms" in source
     assert "substrate_air_surface_epr_specs" not in source
     assert '"active_loss_channels": ("MS",)' in source
     assert "SURFACE_EPR_POSTPROCESSING_STATUS" not in source
@@ -460,7 +458,7 @@ def test_public_surface_epr_local_notebook_uses_route_b_postprocessing() -> None
     assert "build_source_surface_epr_dielectric_specs_from_interfaces(" not in source
     assert "build_source_surface_epr_shell_dielectric_specs(" not in source
     assert "build_interface_surface_catalog(mesh_result.groups)" in source
-    assert "DielectricInterfaceSpec(" in source
+    assert "build_surface_epr_dielectric_specs(" in source
     assert "build_dielectric_interface_specs_from_material_kinds(" not in source
     assert "get_gsim_palace_surface_epr_layer_number" not in source
     assert "surface_epr_catalog" in source

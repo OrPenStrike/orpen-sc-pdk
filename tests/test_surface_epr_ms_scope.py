@@ -68,7 +68,7 @@ def test_surface_epr_local_notebook_uses_route_b_finite_shell() -> None:
 
     assert "SURFACE_EPR_USE_FINITE_METAL_SHELL = True" in source
     assert "SURFACE_EPR_PLANAR_CONDUCTORS = not SURFACE_EPR_USE_FINITE_METAL_SHELL" in source
-    assert "DielectricInterfaceSpec(" in source
+    assert "build_surface_epr_dielectric_specs(" in source
     assert '"finite_shell_route_b"' in source
     assert '"conductor_surface"' in source
     assert '"surface_epr_ms_bottom_entries"' in source

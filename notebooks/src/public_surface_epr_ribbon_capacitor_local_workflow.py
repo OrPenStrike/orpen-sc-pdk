@@ -39,8 +39,8 @@ from gsim.palace import (
 from gsim.palace.mesh import (
     build_interface_surface_catalog,
     build_postprocessing_config_from_manifest,
+    build_surface_epr_dielectric_specs,
 )
-from gsim.palace.mesh.postprocessing import DielectricInterfaceSpec
 from IPython.display import display
 
 from orpen_sc_pdk.cells import martinis2022_differential_ribbon_capacitor
@@ -271,85 +271,12 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         SURFACE_EPR_INTERFACE_PRESETS
     )
     surface_epr_catalog = build_interface_surface_catalog(mesh_result.groups)
-    surface_epr_ms_bottom_surfaces = tuple(
-        surface
-        for surface in surface_epr_catalog.surfaces
-        if surface.interface_type == "MS" and surface.face_kind == "bottom"
-    )
-    surface_epr_ms_bottom_split_surfaces = tuple(
-        surface
-        for surface in surface_epr_ms_bottom_surfaces
-        if not (surface.band_min_um == 0.0 and surface.band_max_um is None)
-    )
-    if not surface_epr_ms_bottom_split_surfaces:
-        raise RuntimeError("No generated MS bottom Surface EPR groups found.")
     surface_epr_ms = surface_epr_interface_presets["martinis2022_ms"]
-    surface_epr_ms_bottom_sources = tuple(
-        dict.fromkeys(
-            surface.source_id or surface.metal_body_id
-            for surface in surface_epr_ms_bottom_split_surfaces
-            if surface.source_id or surface.metal_body_id
-        )
-    )
-    surface_epr_ms_bottom_total_specs = tuple(
-        DielectricInterfaceSpec(
-            role="conductor_surface",
-            entry_names=tuple(
-                surface.physical_group_name or surface.interface_id
-                for surface in surface_epr_ms_bottom_split_surfaces
-                if (surface.source_id or surface.metal_body_id) == source_id
-            ),
-            interface_type=surface_epr_ms["interface_type"],
-            thickness=surface_epr_ms["thickness"],
-            permittivity=surface_epr_ms.get("permittivity"),
-            material_name=surface_epr_ms.get("material_name"),
-            loss_tangent=surface_epr_ms.get("loss_tangent", 0.0),
-            combine_entries=True,
-            entry_name=next(
-                (
-                    surface.physical_group_name or surface.interface_id
-                    for surface in surface_epr_ms_bottom_surfaces
-                    if (surface.source_id or surface.metal_body_id) == source_id
-                    and surface.band_min_um == 0.0
-                    and surface.band_max_um is None
-                ),
-                f"{source_id}__MS__BOTTOM__TOTAL",
-            ),
-            preset_name="martinis2022_ms",
-            preset_source=surface_epr_ms["source"],
-            metadata={
-                "loss_channel": surface_epr_ms["interface_type"],
-                "surface_epr_summary_kind": "total",
-                "surface_epr_exclude_below_um": 0.0,
-            },
-        )
-        for source_id in surface_epr_ms_bottom_sources
-    )
-    surface_epr_ms_bottom_split_specs = tuple(
-        DielectricInterfaceSpec(
-            role="conductor_surface",
-            entry_names=(surface.physical_group_name or surface.interface_id,),
-            interface_type=surface_epr_ms["interface_type"],
-            thickness=surface_epr_ms["thickness"],
-            permittivity=surface_epr_ms.get("permittivity"),
-            material_name=surface_epr_ms.get("material_name"),
-            loss_tangent=surface_epr_ms.get("loss_tangent", 0.0),
-            combine_entries=True,
-            entry_name=surface.physical_group_name or surface.interface_id,
-            preset_name="martinis2022_ms",
-            preset_source=surface_epr_ms["source"],
-            metadata={
-                "loss_channel": surface_epr_ms["interface_type"],
-                "surface_epr_summary_kind": "core"
-                if surface.band_max_um is None
-                else "band",
-                "surface_epr_exclude_below_um": surface.band_min_um,
-            },
-        )
-        for surface in surface_epr_ms_bottom_split_surfaces
-    )
-    surface_epr_dielectric_specs = (
-        surface_epr_ms_bottom_total_specs + surface_epr_ms_bottom_split_specs
+    surface_epr_dielectric_specs = build_surface_epr_dielectric_specs(
+        surface_epr_catalog.surfaces,
+        preset_name="martinis2022_ms",
+        preset=surface_epr_ms,
+        face_kind="bottom",
     )
     surface_epr_ms_bottom_entry_names = tuple(
         spec.entry_name or spec.entry_names[0] for spec in surface_epr_dielectric_specs
