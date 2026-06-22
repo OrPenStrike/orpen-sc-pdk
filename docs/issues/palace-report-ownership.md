@@ -138,10 +138,11 @@ Verified local changes:
   `AlOx_native_generic` can reach a Palace dielectric interface row through the
   reusable `gsim` interface material path without making MA/MS/SA defaults part
   of the PDK contract.
-- `orpen-sc-pdk` public simulation notebooks now load synthetic public
-  Driven/Eigenmode/Electrostatic report bundles through `gsim` and display
-  curated S-parameter, port-EPR, domain-loss, surface-loss, and loss-budget
-  tables without importing private runs or moving report parsing into the PDK.
+- `orpen-sc-pdk` public simulation notebooks now load completed
+  Driven/Eigenmode/Electrostatic run folders through
+  `resolve_palace_result(...).load_report(require_report=True).require_report()`
+  and display typed-data visualizations owned by `gsim` reports, without
+  importing private runs or moving report parsing into the PDK.
 - `gsim` commit `809b881` keeps `SParams`, `load_sparams()`, and
   `load_fields()` on the root notebook-facing `gsim.palace` surface, while
   `SParam`, `get_port_map()`, `load_indexed_csv()`, eigenmode history loaders,

@@ -9,8 +9,7 @@ Problem:
 
 - private simulation workflows use material records, material conditions,
   Palace domain/boundary material policies, and interface-loss presets;
-- public PDK material data currently starts as a small
-  `relative_permittivity` dictionary;
+- public PDK material data now lives in `orpen_sc_pdk/materials.json`;
 - `gsim` already owns reusable material overlay loading, frequency evaluation,
   and Palace translation, so the PDK should not grow a solver runtime.
 
@@ -33,9 +32,9 @@ Verified local changes:
 - `orpen-sc-pdk` now exports public material records through
   `get_material_records()`;
 - `orpen-sc-pdk` now exports `get_gsim_material_overlay()` and
-  `write_gsim_material_overlay()` so the current `tech.material_properties`
-  records can be consumed by `gsim.common.stack.load_overlay_data()` or
-  `load_overlay()` without importing private material registries;
+  `write_gsim_material_overlay()` so the public `materials.json` records can
+  be consumed by `gsim.common.stack.load_overlay_data()` or `load_overlay()`
+  without importing private material registries;
 - `gsim` commit `49be250`: adds `material_overlay=` to Palace config
   generation, keeps overlay resolution out of `LayerStack` mutation, and maps
   PDK aliases such as `Si` onto existing `gsim` material names such as
@@ -89,11 +88,10 @@ Verified local changes:
   loader rather than Palace-specific code, and lets generated `air` use
   resolved overlay material properties during Palace config generation instead
   of hard-coded built-in `gsim` vacuum fields;
-- `orpen-sc-pdk` now exports `tech.material_alias_records` through
+- `orpen-sc-pdk` now exports public material aliases through
   `get_gsim_material_overlay()["material_aliases"]`, so generated `air` and
   `silicon` domains can resolve through public `vacuum` and `Si` overlay
-  records while `tech.material_properties` remains the only public material
-  record table;
+  records from `materials.json`;
 - public `orpen-sc-pdk` tests now pass `get_gsim_material_overlay()` into
   Driven, Eigenmode, and Electrostatic `gsim` config generation, verify the
   generated substrate material block uses the public `Si` permittivity, and
@@ -106,11 +104,10 @@ Verified local changes:
 - public `orpen-sc-pdk` tests now also verify a synthetic Eigenmode artifact
   bundle can load through `gsim.palace.load_eigenmode_report()` and expose
   public domain/surface loss budget rows;
-- `orpen-sc-pdk` now exposes an empty-by-default
-  `tech.interface_preset_records` table, validates caller-supplied
-  MA/MS/SA-style records through `validate_interface_preset_records()`,
-  rejects records without explicit source/provenance strings, and adapts
-  validated records into
+- `orpen-sc-pdk` now exposes source-backed interface preset records from
+  `materials.json`, validates MA/MS/SA-style records through
+  `validate_interface_preset_records()`, rejects records without explicit
+  source/provenance strings, and adapts validated records into
   `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` keyword arguments
   through `get_gsim_dielectric_interface_preset_kwargs()`;
 - public tests now prove a caller-supplied source-backed interface preset can
@@ -129,8 +126,8 @@ Verified local changes:
   and loads interface material provenance through the reusable report/index-map
   path;
 - `notebooks/src/public_eigenmode_workflow.py` shows that generated-interface
-  classification path with a caller-supplied preset, keeping public preset
-  defaults source-gated while making the handoff visible in docs;
+  classification path with an explicitly selected PDK preset, keeping broader
+  public defaults source-gated while making the handoff visible in docs;
 - the public surface-loss paper board now lists candidate sources and extracted
   review rows for `MA`/`MS`/`SA` taxonomy, source-backed interface-loss
   extraction, transmon validation targets, and uncertainty-aware CPW
@@ -142,11 +139,11 @@ Verified local changes:
   and dielectric-interface report summaries, and OrPen passes validated
   source strings into that reusable handoff without changing Palace
   `config.json`;
-- public Driven, Eigenmode, and Electrostatic workflow examples intentionally
-  continue to pass only `get_gsim_material_overlay()` into generated configs:
-  those examples should not wire `get_gsim_material_kind_map()` into automatic
-  interface postprocessing until source-backed public presets and a public
-  default-selection policy exist;
+- public Driven and Electrostatic workflow examples intentionally continue to
+  pass only `get_gsim_material_overlay()` into generated configs; Eigenmode
+  resonator examples additionally demonstrate explicit material-kind interface
+  classification with a PDK preset, without enabling automatic default
+  selection;
 - public evidence and notebook outputs now load generated domain material
   provenance through `gsim.palace.load_domain_material_summary()`, verifying
   public Driven, Eigenmode, and Electrostatic configs expose stack material,
@@ -168,7 +165,7 @@ Verified local changes:
   shape: public `Al___air` and `Al___silicon` interfaces produce separate
   caller-supplied `MA` and `MS` specs through `gsim` material-kind
   classification and reload through the reusable dielectric-interface summary
-  path, while `tech.interface_preset_records` stays empty by default;
+  path;
 - read-only NCUAS material audit also confirms private `materials.json` and
   Palace material models include `LondonDepth`, default permeability, and
   boundary material fields, but public `gsim` currently has no London-depth
@@ -187,10 +184,10 @@ Remaining slices:
 - add public London-depth only with an explicit source-bearing schema, units and
   process validity fields, `gsim` overlay aliases, Palace config emission, and
   report/provenance columns;
-- populate public interface preset records only after MA/MS/SA thickness, loss
-  tangent, material-kind data, and automatic-selection values have selected
-  source-backed public records that satisfy the explicit source/provenance
-  schema;
+- broaden public interface preset records only after additional MA/MS/SA
+  thickness, loss tangent, material-kind data, and automatic-selection values
+  have selected source-backed public records that satisfy the explicit
+  source/provenance schema;
 - design the later public default-selection policy separately from private
   notebook-local MA/MS/SA heuristics.
 

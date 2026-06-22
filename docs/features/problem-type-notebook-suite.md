@@ -16,6 +16,10 @@ Local/implemented capability:
   reuse, convergence records, and EPR-ready postprocessing;
 - electrostatic workflows validate terminal assignment, capacitance extraction,
   package analysis, and report generation.
+- Surface EPR workflows validate Route B finite-metal shell interface groups on
+  the Martinis 2022 ribbon capacitor. Both handoff and local workflows select
+  generated MS bottom total/band/core groups and keep MA/SA out of the current
+  active public config.
 - magnetostatic workflows validate current-source ownership, generated
   `SurfaceCurrent` boundaries, vector direction/coordinate-system emission,
   multielement current-source rows, magnetic `SurfaceFlux` index rows, and
@@ -29,6 +33,8 @@ Public fixture direction:
   later extend to sweep coverage;
 - electrostatic: a public capacitor fixture with named terminals and
   capacitance/report outputs.
+- Surface EPR: a public Martinis ribbon capacitor fixture with MS-only Route B
+  finite-metal shell groups for mesh/config inspection.
 - magnetostatic: a public CPW fixture with center-selected signal and
   multielement return current sources plus generated config/index-map evidence
   while report loading waits for a confirmed Palace output contract.
@@ -51,19 +57,25 @@ Current public notebooks:
   provenance, writes a Slurm handoff archive, and resolves either the new run
   folder or a user-selected completed run folder through
   `gsim.palace.resolve_palace_result(...).load_report()`;
+- {doc}`../notebooks/public_surface_epr_ribbon_capacitor_workflow` runs the
+  public Martinis 2022 ribbon capacitor handoff with Route B finite-metal shell
+  Surface EPR groups. It activates only the MS loss channel for the current
+  public slice, using the generated MS bottom total, 50 nm band, and core
+  entries;
 - {doc}`../notebooks/public_driven_local_workflow`,
   {doc}`../notebooks/public_eigenmode_local_workflow`, and
-  {doc}`../notebooks/public_electrostatic_local_workflow` use the same public
-  fixtures and Resolve/Report path but make the Run Stage call
+  {doc}`../notebooks/public_electrostatic_local_workflow`, plus
+  {doc}`../notebooks/public_surface_epr_ribbon_capacitor_local_workflow`, use
+  the same public fixtures and Resolve/Report path but make the Run Stage call
   `sim.run_local()`. They default to `PALACE_RUN_LOCAL = False` so docs builds
   can render them without local Palace; users set it to `True` after configuring
   local runtime controls such as `PALACE_SETUP_COMMANDS`;
-- all three problem-type notebooks display report-owned typed data such as
-  `report.domain_materials`, `report.dielectric_interfaces`, `report.sparams`,
-  and `report.capacitance` when a completed run folder is selected. Normal
-  docs-safe execution displays report status and missing-artifact summaries
-  instead of fabricating report rows; primitive provenance loaders stay in their
-  Resolve owner modules for tests and evidence generation.
+- all problem-type notebooks load completed solver outputs through
+  `resolve_palace_result(...).load_report(require_report=True).require_report()`.
+  Visualization is owned by the problem report through
+  `report.show_all_results()`. The docs build renders these notebooks without
+  executing the result cells because the tracked public source tree does not
+  include Palace result CSVs;
 - all three problem-type notebooks keep the main Geometry -> LayerStack -> Mesh
   -> Config -> Run -> Resolve -> Visualize chain visible in the notebook
   source instead of hiding it in script wrappers;
@@ -150,8 +162,8 @@ Current executable smoke coverage:
   derivation without importing private notebook parsers.
 - publication-safe notebook output now includes reusable report displays when a
   completed run folder is selected through `NOTEBOOK_ANALYSIS_RUN_ROOT`; default
-  docs builds remain independent of local Palace by showing handoff and
-  missing-report status instead of synthetic report artifacts.
+  docs builds remain independent of local Palace by rendering the notebook
+  source without executing result cells or fabricating report artifacts.
 - publication-safe notebook output now includes generated Eigenmode
   interface-classification provenance with caller-owned preset values.
 - publication-safe notebooks no longer include guarded local solver smoke cells;
@@ -160,7 +172,7 @@ Current executable smoke coverage:
   Eigenmode, Electrostatic, and Magnetostatic coarse fixtures into
   `build/public-palace-smoke-evidence/` and writes
   `public_palace_smoke_evidence.json` with a reusable
-  `gsim.palace.results.load_palace_run_summary()` bundle for generated artifact status,
+  `gsim.palace.resolve.load_palace_run_summary()` bundle for generated artifact status,
   mesh-manifest summaries, Palace index-map summaries, material-resolution
   sidecar presence, and either solver skip reasons or parsed `gsim` report
   summaries.
@@ -178,9 +190,10 @@ Current executable smoke coverage:
   `helper_node_inventory`, including implemented public fixtures, shared
   material/interface/index/runtime helper nodes, and the Magnetostatic
   config-fixture/report-loader gap.
-- the same evidence script uses `gsim.palace.results.write_palace_sweep_points()` to
+- the same evidence script uses
+  `gsim.palace.resolve.sources.sidecars.write_palace_sweep_points()` to
   write a public `points.json` table for those four fixtures, then consumes
-  `gsim.palace.results.load_palace_sweep_summary()` so sweep identity starts from
+  `gsim.palace.resolve.load_palace_sweep_summary()` so sweep identity starts from
   explicit point metadata rather than folder scans or PDK-local JSON assembly.
 - the public evidence test now checks `gsim` sweep identity validation output:
   the four public problem fixtures have unique point slugs and no sweep
@@ -196,7 +209,7 @@ Current executable smoke coverage:
   from supported reusable report loaders.
 - the same dry-run evidence path now writes a synthetic public Palace log for
   each problem fixture and consumes
-  `gsim.palace.results.write_palace_resource_record_from_log()` so AMR, timing,
+  `gsim.palace.resolve.sources.resources.write_palace_resource_record_from_log()` so AMR, timing,
   memory, solver-version, wall-time, and model-size records are covered without
   exposing private scheduler or PETSc identity fields.
 - the same evidence path now writes a synthetic public Slurm `scontrol`
@@ -204,7 +217,7 @@ Current executable smoke coverage:
   writer, proving sanitized scheduler/allocation fields without retaining raw
   account, user, node, job-name, command, or work-dir values.
 - the same evidence path now calls
-  `gsim.palace.results.write_palace_sweep_resource_index()` to emit sweep-level point
+  `gsim.palace.resolve.sweeps.write_palace_sweep_resource_index()` to emit sweep-level point
   records, resource records, and benchmark JSONL indexes under
   `metadata/records/`.
 - the same evidence path resolves named public Slurm dry-run profiles from
@@ -233,6 +246,10 @@ Known gaps and non-goals:
   direction, coordinate-system, and multielement source config, but no public
   report loader yet; the shared helper-node inventory records this as
   `implemented_public_config_fixture_pending_report_loader`.
+- Surface EPR currently demonstrates Route B finite-metal shell MS-bottom
+  selection in both handoff and local workflows. MA/SA reporting, sidewall
+  inset partitioning, true metal-volume loss, and broader geodesic interface
+  banding remain separate later slices.
 - Full sweep orchestration and broader cost modeling remain later reusable
   `gsim` workflow slices; the current public baseline is explicit point
   metadata plus table-ready per-point artifact, runtime, provenance, and

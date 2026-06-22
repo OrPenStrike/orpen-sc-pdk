@@ -47,7 +47,7 @@ def assert_public_si_effective_material(
     assert all(row["permittivity"] == pytest.approx(11.45) for row in rows)
     assert all(row["material_model_type"] == "constant" for row in rows)
     assert all(
-        row["material_model_source"] == "orpen-sc-pdk tech.material_properties" for row in rows
+        row["material_model_source"] == "orpen-sc-pdk materials.json" for row in rows
     )
     assert all(pd.notna(row["domain_index"]) for row in rows)
     assert all(set(row["attributes"]).intersection(substrate_attrs) for row in rows)

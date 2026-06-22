@@ -7,8 +7,8 @@
 SCQ material records should live in the PDK. Reusable material resolution,
 frequency evaluation, and Palace material translation should live in `gsim`.
 
-The integration should preserve `materials.json` style data sources when they
-are introduced, rather than treating them as generated artifacts.
+The integration preserves `materials.json` as the public PDK material data
+source rather than treating it as a generated artifact.
 
 Acceptance direction:
 
@@ -25,8 +25,8 @@ Current public baseline:
 - `gsim` commit `20538ec` adds `load_overlay_data()` and PDK-style field
   aliases such as `relative_permittivity`, `epsilon_r`, `eps_r`, and
   `relative_permeability` to the reusable material overlay loader;
-- `orpen-sc-pdk` exposes public material records through
-  `get_material_records()`;
+- `orpen-sc-pdk` exposes public material records from
+  `orpen_sc_pdk/materials.json` through `get_material_records()`;
 - `orpen-sc-pdk` exposes `get_gsim_material_overlay()` and
   `write_gsim_material_overlay()` so public PDK material records can be handed
   to `gsim` either in memory or as strict JSON;
@@ -86,7 +86,7 @@ Current public baseline:
 - `orpen-sc-pdk` now includes `material_aliases` in
   `get_gsim_material_overlay()` and written overlay JSON, while keeping those
   aliases as metadata for `gsim` expansion rather than entries in
-  `tech.material_properties`;
+  the material records table;
 - public Driven, Eigenmode, and Electrostatic fixtures now pass
   `get_gsim_material_overlay()` into local `gsim` config generation, verify
   that the public `Si` record reaches the generated substrate material block,
@@ -99,15 +99,13 @@ Current public baseline:
   interface preset record can flow through the `gsim` material-kind classifier
   using OrPen's public material-kind map and generated-name alias map, and then
   through reusable Palace config/material-resolution/report loading;
-- `orpen-sc-pdk` now exposes an empty-by-default
-  `tech.interface_preset_records` table plus
-  `get_interface_preset_records()`,
+- `orpen-sc-pdk` exposes source-backed interface presets from
+  `materials.json` through `get_interface_preset_records()`,
   `validate_interface_preset_records()`, and
-  `get_gsim_dielectric_interface_preset_kwargs()` so caller-supplied
-  source-backed MA/MS/SA records can be validated, rejected when missing
-  explicit source/provenance, and handed to
+  `get_gsim_dielectric_interface_preset_kwargs()` so notebooks can hand
+  explicit MA/MS/SA choices to
   `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` without making
-  private defaults public;
+  `gsim` own PDK loss-channel selection;
 - `orpen-sc-pdk` now has a public surface-loss source-review queue and a
   source-backed interface preset issue, so future MA/MS/SA records have a
   documented path from public papers to PDK data instead of being copied from

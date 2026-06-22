@@ -1,5 +1,11 @@
 # ---
 # jupyter:
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+#   language_info:
+#     name: python
 #   jupytext:
 #     text_representation:
 #       extension: .py
@@ -26,7 +32,7 @@ from gsim.palace import (
     DrivenSim,
     resolve_palace_result,
 )
-from gsim.palace.mesh import SurfaceFluxSpec, build_postprocessing_config_from_manifest
+from gsim.palace.mesh import build_postprocessing_config_from_manifest
 from IPython.display import display
 
 from orpen_sc_pdk.cells import cpw_straight
@@ -54,7 +60,6 @@ NOTEBOOK_RUN_ROOT = NOTEBOOK_ROOT / NOTEBOOK_RUN_ID
 # Set this to an existing completed run folder, then rerun Resolve and Report.
 NOTEBOOK_ANALYSIS_RUN_ROOT: Path | None = None
 NOTEBOOK_PREPARE_RUN_STAGE = NOTEBOOK_ANALYSIS_RUN_ROOT is None
-NOTEBOOK_REQUIRE_REPORT = False
 if NOTEBOOK_PREPARE_RUN_STAGE:
     NOTEBOOK_RUN_ROOT.mkdir(parents=True, exist_ok=True)
 
@@ -75,13 +80,19 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    sim.set_stack(
-        include_substrate=True,
-        substrate_thickness=20,
-        add_oxide_dielectric=False,
-        add_passivation_dielectric=False,
+    sim.set_stack(PDK.get_layer_stack())
+    sim.activate_substrate(
+        layer="D0_SUBSTRATE",
+        die="D0",
+        margin_x=500.0,
+        margin_y=500.0,
     )
-    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
+    sim.activate_outer_vacuum(
+        margin_x=0.0,
+        margin_y=0.0,
+        z_above=1000.0,
+        z_below=0.0,
+    )
 
 # %% [markdown]
 # ## Mesh
@@ -101,8 +112,6 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
-        margin_x=40,
-        margin_y=40,
         planar_conductors=True,
         auto_size=False,
     )
@@ -113,17 +122,19 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
     sim.set_driven(fmin=4e9, fmax=8e9, num_points=3, excitation_port="o1")
-    postprocessing = build_postprocessing_config_from_manifest(
-        mesh_result.manifest,
-        surface_flux=(
-            SurfaceFluxSpec(
-                role="port_surface",
-                flux_type="Power",
-                two_sided=None,
-            ),
-        ),
+    sim.set_palace_version("0.16.0")
+    sim.set_refinement(
+        max_its=15,
+        tol=1e-3,
+        update_fraction=0.3,
     )
-    config_path = output_dir / "config.json"
+    sim.set_linear_solver(
+        tol=1e-8,
+        max_its=2000,
+        estimator_mg=True,
+    )
+    sim.set_output_formats(paraview=True, grid_function=False)
+    postprocessing = build_postprocessing_config_from_manifest(mesh_result.manifest)
 
 # %% [markdown]
 # ## Run Stage (handoff package)
@@ -149,6 +160,7 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         material_overlay=get_gsim_material_overlay(),
         hints=run_profile.to_palace_config_hints(),
         prepare_run_folder=True,
+        validate_schema=True,
     )
     sbatch_handoff = sim.write_slurm_sbatch_handoff(
         run_profile,
@@ -159,7 +171,7 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
             "workflow": "public_driven_workflow",
         },
     )
-    run_handle = sim.generate_handoff_package(
+    sim.generate_handoff_package(
         write_config=False,
         profile=run_profile,
         script_path=sbatch_handoff.script_path,
@@ -175,78 +187,23 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 # ## Resolve
 
 # %%
-analysis_run_root = NOTEBOOK_ANALYSIS_RUN_ROOT
-if analysis_run_root is None:
-    if "run_handle" not in globals():
-        raise ValueError("Set NOTEBOOK_ANALYSIS_RUN_ROOT or enable Run Stage preparation.")
-    analysis_run_root = run_handle.run_folder
-analysis_run_root = Path(analysis_run_root)
-
+analysis_run_root = Path(NOTEBOOK_ANALYSIS_RUN_ROOT or NOTEBOOK_RUN_ROOT)
 resolved_result = resolve_palace_result(analysis_run_root, problem_type="Driven")
-report_bundle = resolved_result.load_report(require_report=NOTEBOOK_REQUIRE_REPORT)
-driven_report = report_bundle.require_report() if NOTEBOOK_REQUIRE_REPORT else report_bundle.report
+driven_report = resolved_result.load_report(require_report=True).require_report()
 
 # %% [markdown]
 # ## Visualize
 
 # %%
-run_stage_summary = {
-    "analysis_run_folder": analysis_run_root.as_posix(),
-    "resolved_problem_type": resolved_result.problem_type,
-    "resolved_result_names": list(resolved_result.artifacts.result_names),
-    "missing_artifacts": list(resolved_result.artifacts.missing_artifacts),
-    "report_status": report_bundle.report_status,
-    "report_message": report_bundle.report_message,
-}
-if "run_handle" in globals():
-    run_stage_summary.update(
-        {
-            "problem_type": run_handle.problem_type,
-            "hpc_profile": PALACE_HPC_PROFILE,
-            "sbatch_path": None
-            if run_handle.script_path is None
-            else run_handle.script_path.as_posix(),
-            "archive_path": None
-            if run_handle.archive_path is None
-            else run_handle.archive_path.as_posix(),
-        }
-    )
-if "component" in globals():
-    run_stage_summary["component"] = component.name
-if "config_path" in globals() and config_path.exists():
-    run_stage_summary["config_path"] = config_path.as_posix()
-if "mesh_result" in globals():
-    run_stage_summary["mesh_path"] = mesh_result.mesh_path.as_posix()
-
-display(run_stage_summary)
-
+driven_report.show_all_results()
 
 # %% [markdown]
 # ## Report
 
 # %%
-if driven_report is None:
-    display(
-        {
-            "report_status": report_bundle.report_status,
-            "report_message": report_bundle.report_message,
-            "analysis_run_folder": analysis_run_root.as_posix(),
-        }
-    )
-else:
-    display(
-        {
-            "report_problem_type": driven_report.problem_type,
-            "resolved_report_status": report_bundle.report_status,
-            "frequency_points": int(len(driven_report.sparams.freq)),
-            "domain_energy_rows": int(len(driven_report.domain_energy)),
-            "surface_q_rows": int(len(driven_report.surface_q)),
-            "loss_budget_rows": int(len(driven_report.loss_budget)),
-            "missing_reports": list(driven_report.missing_reports),
-            "benchmark": driven_report.benchmark.to_dataframe().to_dict("records"),
-        }
-    )
-    driven_report.show_all_results()
-    display(driven_report.sparams.visualize()["s_parameters_trace_plot"])
-    display(driven_report.loss.visualize()["loss_budget_bar_plot"])
-    display(driven_report.domain_materials)
+display(
+    {
+        "analysis_run_folder": analysis_run_root.as_posix(),
+        "problem_type": driven_report.problem_type,
+    }
+)

@@ -1,5 +1,11 @@
 # ---
 # jupyter:
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+#   language_info:
+#     name: python
 #   jupytext:
 #     text_representation:
 #       extension: .py
@@ -28,14 +34,20 @@ from gsim.palace import (
     resolve_palace_result,
 )
 from gsim.palace.mesh import (
-    SurfaceFluxSpec,
+    build_dielectric_interface_specs_from_material_kinds,
     build_postprocessing_config_from_manifest,
 )
 from IPython.display import display
 
 from orpen_sc_pdk.cells import resonator
 from orpen_sc_pdk.config import PATH
-from orpen_sc_pdk.materials import get_gsim_material_overlay
+from orpen_sc_pdk.materials import (
+    get_gsim_material_kind_alias_map,
+    get_gsim_material_kind_map,
+    get_gsim_material_overlay,
+    get_interface_preset_records,
+    validate_interface_preset_records,
+)
 from orpen_sc_pdk.pdk import PDK
 
 warnings.filterwarnings(
@@ -57,7 +69,6 @@ NOTEBOOK_RUN_ROOT = NOTEBOOK_ROOT / NOTEBOOK_RUN_ID
 # Set this to an existing completed run folder, then rerun Resolve and Report.
 NOTEBOOK_ANALYSIS_RUN_ROOT: Path | None = None
 NOTEBOOK_PREPARE_RUN_STAGE = NOTEBOOK_ANALYSIS_RUN_ROOT is None
-NOTEBOOK_REQUIRE_REPORT = False
 if NOTEBOOK_PREPARE_RUN_STAGE:
     NOTEBOOK_RUN_ROOT.mkdir(parents=True, exist_ok=True)
 
@@ -85,13 +96,19 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    sim.set_stack(
-        include_substrate=True,
-        substrate_thickness=20,
-        add_oxide_dielectric=False,
-        add_passivation_dielectric=False,
+    sim.set_stack(PDK.get_layer_stack())
+    sim.activate_substrate(
+        layer="D0_SUBSTRATE",
+        die="D0",
+        margin_x=500.0,
+        margin_y=500.0,
     )
-    sim.set_airbox(margin_x=50, margin_y=50, z_above=50, z_below=10)
+    sim.activate_outer_vacuum(
+        margin_x=0.0,
+        margin_y=0.0,
+        z_above=1000.0,
+        z_below=0.0,
+    )
 
 # %% [markdown]
 # ## Mesh
@@ -102,11 +119,35 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
-        margin_x=50,
-        margin_y=50,
         planar_conductors=True,
         auto_size=False,
     )
+
+# %% [markdown]
+# ## Material Database Overlay
+#
+# This resonator workflow demonstrates the PDK-owned `materials.json` path:
+# OrPen exports material records and source-backed interface presets, then
+# `gsim` resolves those records while writing Palace `config.json`.
+
+# %%
+public_material_overlay = get_gsim_material_overlay()
+public_interface_presets = validate_interface_preset_records(get_interface_preset_records())
+RESONATOR_INTERFACE_PRESET_BY_TYPE = {"SA": "Woods2019_Si_SA"}
+
+display(
+    {
+        "material_database": "orpen_sc_pdk/materials.json",
+        "overlay_materials_used": {
+            name: public_material_overlay["materials"][name]
+            for name in ("Si", "vacuum", "Woods2019_Si_SA_effective")
+        },
+        "interface_presets_used": {
+            name: public_interface_presets[name]
+            for name in RESONATOR_INTERFACE_PRESET_BY_TYPE.values()
+        },
+    }
+)
 
 # %% [markdown]
 # ## Config
@@ -114,18 +155,36 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
     sim.set_eigenmode(num_modes=2, target=6e9)
-    surface_flux_postprocessing = build_postprocessing_config_from_manifest(
-        mesh_result.manifest,
-        surface_flux=(
-            SurfaceFluxSpec(
-                role="boundary_surface",
-                entry_names=("absorbing",),
-                flux_type="Power",
-                two_sided=None,
-            ),
-        ),
+    sim.set_palace_version("0.16.0")
+    sim.set_refinement(
+        max_its=15,
+        tol=1e-3,
+        update_fraction=0.3,
     )
-    config_path = output_dir / "config.json"
+    sim.set_linear_solver(
+        tol=1e-8,
+        max_its=2000,
+        estimator_mg=True,
+    )
+    sim.set_output_formats(paraview=True, grid_function=False)
+    resonator_interface_specs = build_dielectric_interface_specs_from_material_kinds(
+        mesh_result.manifest,
+        material_kind_by_name=get_gsim_material_kind_map(),
+        material_name_aliases=get_gsim_material_kind_alias_map(),
+        presets=public_interface_presets,
+        preset_by_interface_type=RESONATOR_INTERFACE_PRESET_BY_TYPE,
+        interface_types_by_kind_pair={("dielectric", "vacuum"): "SA"},
+    )
+    postprocessing = build_postprocessing_config_from_manifest(
+        mesh_result.manifest,
+        dielectric_interfaces=resonator_interface_specs,
+    )
+    display(
+        {
+            "dielectric_interface_specs": len(resonator_interface_specs),
+            "preset_by_interface_type": RESONATOR_INTERFACE_PRESET_BY_TYPE,
+        }
+    )
 
 # %% [markdown]
 # ## Run Stage (run_local)
@@ -136,25 +195,19 @@ PALACE_USE_APPTAINER = False
 PALACE_SIF_PATH = os.environ.get("PALACE_SIF")
 PALACE_EXECUTABLE = os.environ.get("PALACE_EXECUTABLE", "palace")
 PALACE_EXECUTABLE_MODE = os.environ.get("PALACE_EXECUTABLE_MODE", "wrapper")
-PALACE_SETUP_COMMANDS = ("spack load palace",)
+PALACE_SETUP_COMMANDS = ('eval "$(spack load --sh palace)"',)
 PALACE_NUM_PROCESSES = int(os.environ.get("PALACE_NP", "1"))
 PALACE_NUM_THREADS = int(os.environ.get("PALACE_NT", "1"))
 PALACE_SERIAL = os.environ.get("PALACE_SERIAL", "0") == "1"
 
 if NOTEBOOK_PREPARE_RUN_STAGE:
     sim.write_config(
-        postprocessing=surface_flux_postprocessing,
+        postprocessing=postprocessing,
         validate_mesh=False,
-        material_overlay=get_gsim_material_overlay(),
+        material_overlay=public_material_overlay,
         prepare_run_folder=True,
+        validate_schema=True,
     )
-    local_run_summary = {
-        "problem_type": "Eigenmode",
-        "run_local": "skipped",
-        "run_folder": output_dir.as_posix(),
-        "config_path": config_path.as_posix(),
-        "setup_commands": list(PALACE_SETUP_COMMANDS),
-    }
     if PALACE_RUN_LOCAL:
         if PALACE_EXECUTABLE_MODE not in {"wrapper", "binary"}:
             raise ValueError("PALACE_EXECUTABLE_MODE must be 'wrapper' or 'binary'")
@@ -171,79 +224,29 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
             local_run_kwargs["executable_mode"] = PALACE_EXECUTABLE_MODE
             local_run_kwargs["serial"] = PALACE_SERIAL
             local_run_kwargs["setup_commands"] = PALACE_SETUP_COMMANDS
-        local_results = sim.run_local(**local_run_kwargs)
-        local_run_summary.update(
-            {
-                "run_local": "completed",
-                "result_type": type(local_results).__name__,
-            }
-        )
+        sim.run_local(**local_run_kwargs)
 
 # %% [markdown]
 # ## Resolve
 
 # %%
-analysis_run_root = NOTEBOOK_ANALYSIS_RUN_ROOT
-if analysis_run_root is None:
-    if "output_dir" not in globals():
-        raise ValueError("Set NOTEBOOK_ANALYSIS_RUN_ROOT or enable Run Stage preparation.")
-    analysis_run_root = output_dir
-analysis_run_root = Path(analysis_run_root)
-
+analysis_run_root = Path(NOTEBOOK_ANALYSIS_RUN_ROOT or NOTEBOOK_RUN_ROOT)
 resolved_result = resolve_palace_result(analysis_run_root, problem_type="Eigenmode")
-report_bundle = resolved_result.load_report(require_report=NOTEBOOK_REQUIRE_REPORT)
-eigenmode_report = (
-    report_bundle.require_report() if NOTEBOOK_REQUIRE_REPORT else report_bundle.report
-)
+eigenmode_report = resolved_result.load_report(require_report=True).require_report()
 
 # %% [markdown]
 # ## Visualize
 
 # %%
-run_stage_summary = {
-    "analysis_run_folder": analysis_run_root.as_posix(),
-    "resolved_problem_type": resolved_result.problem_type,
-    "resolved_result_names": list(resolved_result.artifacts.result_names),
-    "missing_artifacts": list(resolved_result.artifacts.missing_artifacts),
-    "report_status": report_bundle.report_status,
-    "report_message": report_bundle.report_message,
-}
-if "local_run_summary" in globals():
-    run_stage_summary.update(local_run_summary)
-if "component" in globals():
-    run_stage_summary["component"] = component.name
-if "config_path" in globals() and config_path.exists():
-    run_stage_summary["config_path"] = config_path.as_posix()
-if "mesh_result" in globals():
-    run_stage_summary["mesh_path"] = mesh_result.mesh_path.as_posix()
-
-display(run_stage_summary)
-
+eigenmode_report.show_all_results()
 
 # %% [markdown]
 # ## Report
 
 # %%
-if eigenmode_report is None:
-    display(
-        {
-            "report_status": report_bundle.report_status,
-            "report_message": report_bundle.report_message,
-            "analysis_run_folder": analysis_run_root.as_posix(),
-        }
-    )
-else:
-    display(
-        {
-            "report_problem_type": eigenmode_report.problem_type,
-            "resolved_report_status": report_bundle.report_status,
-            "mode_count": int(eigenmode_report.eigenmodes.n_modes),
-            "pass_count": int(len(eigenmode_report.pass_summary)),
-            "loss_budget_rows": int(len(eigenmode_report.loss_budget)),
-            "missing_reports": list(eigenmode_report.missing_reports),
-            "benchmark": eigenmode_report.benchmark.to_dataframe().to_dict("records"),
-        }
-    )
-    eigenmode_report.show_all_results()
-    display(eigenmode_report.loss.visualize()["loss_budget_bar_plot"])
-    display(eigenmode_report.dielectric_interfaces)
+display(
+    {
+        "analysis_run_folder": analysis_run_root.as_posix(),
+        "problem_type": eigenmode_report.problem_type,
+    }
+)

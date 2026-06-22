@@ -15,11 +15,11 @@
 # ---
 
 # %% [markdown]
-# # Public Electrostatic capacitor local workflow
+# # Public Purcell Filter Eigenmode local workflow
 #
-# This notebook demonstrates the public OrPen PDK Electrostatic Palace workflow
-# using local `sim.run_local()` execution. It shows same-layer terminal selection
-# and writes raw Palace outputs into the run folder for Resolve/Report review.
+# This notebook demonstrates the same layout-authored readout launcher sheets in
+# an Eigenmode setup. The sheets are passive LumpedPort boundaries; mesh marker
+# ports remain layout metadata and do not become Palace port sheets.
 
 # %%
 from __future__ import annotations
@@ -30,16 +30,17 @@ from datetime import date
 from pathlib import Path
 
 from gsim.palace import (
-    ElectrostaticSim,
+    EigenmodeSim,
     resolve_palace_result,
 )
 from gsim.palace.mesh import build_postprocessing_config_from_manifest
 from IPython.display import display
 
-from orpen_sc_pdk.cells import martinis2022_differential_ribbon_capacitor
 from orpen_sc_pdk.config import PATH
 from orpen_sc_pdk.materials import get_gsim_material_overlay
 from orpen_sc_pdk.pdk import PDK
+from orpen_sc_pdk.samples.simulation_demos import global_purcell_filter_demo_chip
+from orpen_sc_pdk.simulation import get_gsim_palace_simulation_layer_catalog
 
 warnings.filterwarnings(
     "ignore",
@@ -50,9 +51,11 @@ warnings.filterwarnings(
 
 PDK.activate()
 
+READOUT_PORT_NAMES = ("o_lumped_readout_in", "o_lumped_readout_out")
+
 # User-facing run-folder controls. The root is chosen in the notebook; the run
 # id follows the NCUAS date-plus-same-day-index convention.
-NOTEBOOK_ROOT = PATH.simulation / "notebooks" / "public_electrostatic_local_workflow"
+NOTEBOOK_ROOT = PATH.simulation / "notebooks" / "public_purcell_eigenmode_local_workflow"
 NOTEBOOK_RUN_DATE = date.today().isoformat()
 NOTEBOOK_RUN_INDEX = 1
 NOTEBOOK_RUN_ID = f"{NOTEBOOK_RUN_DATE}-Run{NOTEBOOK_RUN_INDEX:02d}"
@@ -69,19 +72,12 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
     output_dir = NOTEBOOK_RUN_ROOT
-    component = martinis2022_differential_ribbon_capacitor(
-        a_um=20,
-        b_um=35,
-        ell_r_um=160,
-    )
-    positive_port = component.ports["o_mesh_positive_electrode"]
-    negative_port = component.ports["o_mesh_negative_electrode"]
-    positive_center = tuple(float(value) for value in positive_port.center)
-    negative_center = tuple(float(value) for value in negative_port.center)
+    component = global_purcell_filter_demo_chip()
 
-    sim = ElectrostaticSim()
+    sim = EigenmodeSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
+    sim.set_simulation_layers(get_gsim_palace_simulation_layer_catalog())
 
 # %% [markdown]
 # ## LayerStack
@@ -107,22 +103,54 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    sim.add_terminal("positive", layer="D0_TOP_M1", center=positive_center)
-    sim.add_terminal("negative", layer="D0_TOP_M1", center=negative_center)
+    sim.add_port(
+        "o_lumped_readout_in",
+        layer="D0_TOP_M1",
+        length=1.0,
+        direction=component.ports["o_lumped_readout_in"].info.get(
+            "palace_lumped_port_direction",
+            "+X",
+        ),
+        excited=False,
+        generate_sheet=False,
+    )
+    sim.add_port(
+        "o_lumped_readout_out",
+        layer="D0_TOP_M1",
+        length=1.0,
+        direction=component.ports["o_lumped_readout_out"].info.get(
+            "palace_lumped_port_direction",
+            "+X",
+        ),
+        excited=False,
+        generate_sheet=False,
+    )
     mesh_result = sim.mesh(
         preset="coarse",
-        refined_mesh_size=20,
-        max_mesh_size=200,
+        refined_mesh_size=50,
+        max_mesh_size=1000,
         planar_conductors=True,
         auto_size=False,
     )
+    port_sheet_entries = mesh_result.manifest.entries_for_role("port_surface")
+    port_sheet_physical_names = tuple(entry.name for entry in port_sheet_entries)
+    if len(port_sheet_physical_names) != len(READOUT_PORT_NAMES):
+        raise ValueError(
+            "Expected one Palace port sheet for each readout port, got "
+            f"{port_sheet_physical_names!r}."
+        )
+    port_sheet_sources = {
+        entry.name: entry.metadata.get("sheet_source") for entry in port_sheet_entries
+    }
+    if any(source != "layout-authored" for source in port_sheet_sources.values()):
+        raise ValueError(f"Expected layout-authored sheets, got {port_sheet_sources!r}.")
 
 # %% [markdown]
 # ## Config
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    sim.set_electrostatic(save_fields=0)
+    sim.set_eigenmode(num_modes=1, target=6e9)
     sim.set_palace_version("0.16.0")
     sim.set_refinement(
         max_its=15,
@@ -182,14 +210,14 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 
 # %%
 analysis_run_root = Path(NOTEBOOK_ANALYSIS_RUN_ROOT or NOTEBOOK_RUN_ROOT)
-resolved_result = resolve_palace_result(analysis_run_root, problem_type="Electrostatic")
-electrostatic_report = resolved_result.load_report(require_report=True).require_report()
+resolved_result = resolve_palace_result(analysis_run_root, problem_type="Eigenmode")
+eigenmode_report = resolved_result.load_report(require_report=True).require_report()
 
 # %% [markdown]
 # ## Visualize
 
 # %%
-electrostatic_report.show_all_results()
+eigenmode_report.show_all_results()
 
 # %% [markdown]
 # ## Report
@@ -198,6 +226,6 @@ electrostatic_report.show_all_results()
 display(
     {
         "analysis_run_folder": analysis_run_root.as_posix(),
-        "problem_type": electrostatic_report.problem_type,
+        "problem_type": eigenmode_report.problem_type,
     }
 )

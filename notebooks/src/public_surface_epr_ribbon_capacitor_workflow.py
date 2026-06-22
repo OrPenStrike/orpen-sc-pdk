@@ -18,10 +18,10 @@
 # # Public Surface EPR ribbon capacitor workflow
 #
 # This notebook demonstrates the public OrPen PDK Surface EPR workflow on the
-# Martinis 2022 differential ribbon capacitor. It uses source-aware ThinMetal
-# sheet semantics: each original source sheet gets five edge-margin groups plus
-# one core group after the last cutoff. The current public slice is MS-only;
-# MA/SA interface handling is deferred until the 3D/interface path is reviewed.
+# Martinis 2022 differential ribbon capacitor. It uses `gsim` Route B finite
+# metal shell semantics: full 3D conductor faces are lowered into PEC shell
+# surfaces, and `gsim` creates the MS bottom total/band/core groups. The current
+# public slice selects the MS channel only.
 
 # %%
 from __future__ import annotations
@@ -36,10 +36,10 @@ from gsim.palace import (
     resolve_palace_result,
 )
 from gsim.palace.mesh import (
-    add_source_surface_epr_regions,
+    build_interface_surface_catalog,
     build_postprocessing_config_from_manifest,
-    build_source_surface_epr_dielectric_specs_from_interfaces,
 )
+from gsim.palace.mesh.postprocessing import DielectricInterfaceSpec
 from IPython.display import display
 
 from orpen_sc_pdk.cells import martinis2022_differential_ribbon_capacitor
@@ -50,7 +50,6 @@ from orpen_sc_pdk.materials import (
 )
 from orpen_sc_pdk.pdk import PDK
 from orpen_sc_pdk.simulation import resolve_public_palace_run_profile
-from orpen_sc_pdk.tech import LAYER
 
 warnings.filterwarnings(
     "ignore",
@@ -148,20 +147,17 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     negative_center = tuple(float(value) for value in negative_port.center)
 
 # %% [markdown]
-# ## Source-aware Surface EPR groups
+# ## Surface EPR interface selection
 #
-# Surface EPR cutoffs are authored in nanometers for paper-facing review, then
-# converted to microns for `gsim`. Source-aware ThinMetal sheet Surface EPR
-# means each original PEC/source sheet gets one margin group per cutoff interval
-# plus one core-after-last-cutoff group. This ribbon capacitor has two source
-# sheets, five margin groups each, and two core groups.
+# `gsim` owns the full 3D interface discovery, Route B finite-metal shell
+# lowering, and inset partitioning. This notebook only selects the generated
+# MS bottom entries for Martinis-style Surface EPR postprocessing.
 
 # %%
-SURFACE_EPR_CUTOFFS_NM = [50, 100, 200, 500, 1000]
-SURFACE_EPR_CUTOFFS_UM = [cutoff_nm * 1e-3 for cutoff_nm in SURFACE_EPR_CUTOFFS_NM]
-SURFACE_EPR_SOURCE_SHEETS = (
-    "D0_TOP_M1_pec_0",
-    "D0_TOP_M1_pec_1",
+SURFACE_EPR_INSET_NM = 50
+SURFACE_EPR_INSET_MARGINS_NM = (0, 50, 100, 200, 500, 1000)
+SURFACE_EPR_INSET_MARGINS_UM = tuple(
+    margin_nm / 1000 for margin_nm in SURFACE_EPR_INSET_MARGINS_NM
 )
 MARTINIS2022_RIBBON_MS_REFERENCE_PARTICIPATION = 1.42e-4
 SURFACE_EPR_INTERFACE_PRESETS = {
@@ -173,15 +169,17 @@ SURFACE_EPR_INTERFACE_PRESETS = {
         "source": "Martinis 2022 Table 2 ribbon example",
     },
 }
-SURFACE_EPR_SOURCE_INTERFACE_PRESET_NAMES = ("martinis2022_ms",)
-SURFACE_EPR_REGION_LAYER_NUMBER = 204
+SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES = ("martinis2022_ms",)
+SURFACE_EPR_USE_FINITE_METAL_SHELL = True
+SURFACE_EPR_PLANAR_CONDUCTORS = not SURFACE_EPR_USE_FINITE_METAL_SHELL
 
 display(
     {
-        "source_sheets": SURFACE_EPR_SOURCE_SHEETS,
-        "cutoffs_nm": SURFACE_EPR_CUTOFFS_NM,
-        "cutoffs_um_for_gsim": SURFACE_EPR_CUTOFFS_UM,
-        "source_sheet_interfaces": SURFACE_EPR_SOURCE_INTERFACE_PRESET_NAMES,
+        "metal_model": "finite_shell_route_b",
+        "planar_conductors": SURFACE_EPR_PLANAR_CONDUCTORS,
+        "gsim_generated_inset_nm": SURFACE_EPR_INSET_NM,
+        "gsim_generated_inset_margins_nm": SURFACE_EPR_INSET_MARGINS_NM,
+        "active_interface_presets": SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES,
         "deferred_interfaces": ("MA", "SA"),
         "table_2_ribbon_ms_reference_participation": (
             MARTINIS2022_RIBBON_MS_REFERENCE_PARTICIPATION
@@ -189,48 +187,13 @@ display(
     }
 )
 
-if NOTEBOOK_PREPARE_RUN_STAGE:
-    surface_epr_regions, surface_epr_catalog = add_source_surface_epr_regions(
-        component,
-        source_layer=LAYER.D0_TOP_M1_DRAW,
-        region_layer_number=SURFACE_EPR_REGION_LAYER_NUMBER,
-        stack_layer="D0_TOP_M1",
-        cutoffs_um=SURFACE_EPR_CUTOFFS_UM,
-        source_names=SURFACE_EPR_SOURCE_SHEETS,
-    )
-    surface_epr_group_rows = tuple(
-        {
-            "source_sheet": region.source_name,
-            "group_kind": region.kind,
-            "group_name": region.name,
-            "lower_um": region.distance_min_um,
-            "upper_um": region.distance_max_um,
-        }
-        for region in surface_epr_regions
-    )
-    display(
-        {
-            "source_aware_surface_epr_group_names": tuple(
-                region.name for region in surface_epr_regions
-            ),
-            "margin_group_count": sum(
-                region.kind == "margin" for region in surface_epr_regions
-            ),
-            "core_group_count": sum(
-                region.kind == "core" for region in surface_epr_regions
-            ),
-            "total_source_aware_groups": len(surface_epr_regions),
-        }
-    )
-    display(surface_epr_group_rows)
-
 # %% [markdown]
 # ## Material bridge
 #
 # Surface EPR channel parameters in this Martinis ribbon notebook are filled
 # directly from Martinis 2022 Table 2. This notebook intentionally activates the
-# ThinMetal MS channel only. The PDK material overlay below is still passed to
-# `gsim` for bulk stack material resolution.
+# MS channel only. The PDK material overlay below is still passed to `gsim` for
+# bulk stack material resolution.
 
 # %%
 public_material_overlay = get_gsim_material_overlay()
@@ -254,7 +217,6 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     sim = ElectrostaticSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
-    sim.set_simulation_layers(surface_epr_catalog)
     sim.set_stack(PDK.get_layer_stack())
     sim.activate_substrate(
         layer="D0_SUBSTRATE",
@@ -280,7 +242,8 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
-        planar_conductors=True,
+        planar_conductors=SURFACE_EPR_PLANAR_CONDUCTORS,
+        surface_epr_inset_margins_um=SURFACE_EPR_INSET_MARGINS_UM,
         auto_size=False,
     )
 
@@ -292,8 +255,9 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     sim.set_electrostatic(save_fields=0)
     sim.set_palace_version("0.16.0")
     sim.set_refinement(
-        max_its=6,
+        max_its=15,
         tol=1e-3,
+        update_fraction=0.3,
     )
     sim.set_linear_solver(
         tol=1e-8,
@@ -304,35 +268,112 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     surface_epr_interface_presets = validate_interface_preset_records(
         SURFACE_EPR_INTERFACE_PRESETS
     )
-    source_aware_surface_epr_specs = (
-        build_source_surface_epr_dielectric_specs_from_interfaces(
-            regions=surface_epr_regions,
-            cutoffs_um=SURFACE_EPR_CUTOFFS_UM,
-            interfaces=tuple(
-                {
-                    **surface_epr_interface_presets[preset_name],
-                    "loss_channel": surface_epr_interface_presets[preset_name][
-                        "interface_type"
-                    ],
-                    "preset_name": preset_name,
-                    "preset_source": surface_epr_interface_presets[preset_name][
-                        "source"
-                    ],
-                }
-                for preset_name in SURFACE_EPR_SOURCE_INTERFACE_PRESET_NAMES
-            ),
+    surface_epr_catalog = build_interface_surface_catalog(mesh_result.groups)
+    surface_epr_ms_bottom_surfaces = tuple(
+        surface
+        for surface in surface_epr_catalog.surfaces
+        if surface.interface_type == "MS" and surface.face_kind == "bottom"
+    )
+    surface_epr_ms_bottom_split_surfaces = tuple(
+        surface
+        for surface in surface_epr_ms_bottom_surfaces
+        if not (surface.band_min_um == 0.0 and surface.band_max_um is None)
+    )
+    if not surface_epr_ms_bottom_split_surfaces:
+        raise RuntimeError("No generated MS bottom Surface EPR groups found.")
+    surface_epr_ms = surface_epr_interface_presets["martinis2022_ms"]
+    surface_epr_ms_bottom_sources = tuple(
+        dict.fromkeys(
+            surface.source_id or surface.metal_body_id
+            for surface in surface_epr_ms_bottom_split_surfaces
+            if surface.source_id or surface.metal_body_id
         )
+    )
+    surface_epr_ms_bottom_total_specs = tuple(
+        DielectricInterfaceSpec(
+            role="conductor_surface",
+            entry_names=tuple(
+                surface.physical_group_name or surface.interface_id
+                for surface in surface_epr_ms_bottom_split_surfaces
+                if (surface.source_id or surface.metal_body_id) == source_id
+            ),
+            interface_type=surface_epr_ms["interface_type"],
+            thickness=surface_epr_ms["thickness"],
+            permittivity=surface_epr_ms.get("permittivity"),
+            material_name=surface_epr_ms.get("material_name"),
+            loss_tangent=surface_epr_ms.get("loss_tangent", 0.0),
+            combine_entries=True,
+            entry_name=next(
+                (
+                    surface.physical_group_name or surface.interface_id
+                    for surface in surface_epr_ms_bottom_surfaces
+                    if (surface.source_id or surface.metal_body_id) == source_id
+                    and surface.band_min_um == 0.0
+                    and surface.band_max_um is None
+                ),
+                f"{source_id}__MS__BOTTOM__TOTAL",
+            ),
+            preset_name="martinis2022_ms",
+            preset_source=surface_epr_ms["source"],
+            metadata={
+                "loss_channel": surface_epr_ms["interface_type"],
+                "surface_epr_summary_kind": "total",
+                "surface_epr_exclude_below_um": 0.0,
+            },
+        )
+        for source_id in surface_epr_ms_bottom_sources
+    )
+    surface_epr_ms_bottom_split_specs = tuple(
+        DielectricInterfaceSpec(
+            role="conductor_surface",
+            entry_names=(surface.physical_group_name or surface.interface_id,),
+            interface_type=surface_epr_ms["interface_type"],
+            thickness=surface_epr_ms["thickness"],
+            permittivity=surface_epr_ms.get("permittivity"),
+            material_name=surface_epr_ms.get("material_name"),
+            loss_tangent=surface_epr_ms.get("loss_tangent", 0.0),
+            combine_entries=True,
+            entry_name=surface.physical_group_name or surface.interface_id,
+            preset_name="martinis2022_ms",
+            preset_source=surface_epr_ms["source"],
+            metadata={
+                "loss_channel": surface_epr_ms["interface_type"],
+                "surface_epr_summary_kind": "core"
+                if surface.band_max_um is None
+                else "band",
+                "surface_epr_exclude_below_um": surface.band_min_um,
+            },
+        )
+        for surface in surface_epr_ms_bottom_split_surfaces
+    )
+    surface_epr_dielectric_specs = (
+        surface_epr_ms_bottom_total_specs + surface_epr_ms_bottom_split_specs
+    )
+    surface_epr_ms_bottom_entry_names = tuple(
+        spec.entry_name or spec.entry_names[0] for spec in surface_epr_dielectric_specs
+    )
+    surface_epr_manifest_entry_names = tuple(
+        entry.name
+        for entry in mesh_result.manifest.entries
+        if entry.role == "conductor_surface"
+        and entry.metadata.get("surface_epr")
+        and entry.metadata.get("interface_type") == "MS"
+        and entry.metadata.get("face_kind") == "bottom"
     )
     display(
         {
-            "source_aware_postprocessing_rows": len(source_aware_surface_epr_specs),
+            "surface_epr_ms_bottom_entries": surface_epr_ms_bottom_entry_names,
+            "mesh_manifest_surface_epr_entries": surface_epr_manifest_entry_names,
+            "surface_epr_postprocessing_rows": len(
+                surface_epr_dielectric_specs
+            ),
             "active_loss_channels": ("MS",),
             "deferred_loss_channels": ("MA", "SA"),
         }
     )
     postprocessing = build_postprocessing_config_from_manifest(
         mesh_result.manifest,
-        dielectric_interfaces=source_aware_surface_epr_specs,
+        dielectric_interfaces=surface_epr_dielectric_specs,
     )
 
 # %% [markdown]

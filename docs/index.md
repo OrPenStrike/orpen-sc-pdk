@@ -13,10 +13,29 @@ Redirecting to {doc}`home`.
 
 ```{toctree}
 :hidden:
+:caption: Start
 
 home
-developing-features
-issues
+```
+
+```{toctree}
+:hidden:
+:caption: gsim changes
+
+gsim-changes/index
+```
+
+```{toctree}
+:hidden:
+:caption: Public PDK examples
+
+public-pdk-examples/index
 notebooks
-paper-review
+```
+
+```{toctree}
+:hidden:
+:caption: Detailed ledgers
+
+detailed-ledgers/index
 ```

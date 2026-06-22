@@ -19,15 +19,13 @@ The PDK owns:
 - cross-sections and port conventions for public examples;
 - schema/export helpers that let solver packages consume PDK materials.
 
-Current public material data exists in `orpen_sc_pdk.tech.material_properties`.
-When `materials.json` is introduced or imported, it should remain a first-class
-data source rather than a generated afterthought. It should be schema-validated
-and treated as part of the public PDK contract.
+Current public material data lives in `orpen_sc_pdk/materials.json`. The JSON
+file is a first-class PDK data source rather than a generated afterthought.
 
 The current public bridge is intentionally small:
 
 - `orpen_sc_pdk.materials.get_material_records()` returns a copy of the public
-  material records;
+  material records from `materials.json`;
 - `orpen_sc_pdk.materials.get_gsim_material_overlay()` adapts those records to
   the `gsim` material overlay mapping;
 - `orpen_sc_pdk.materials.write_gsim_material_overlay()` writes the same
@@ -44,7 +42,7 @@ The current public bridge is intentionally small:
 - `orpen_sc_pdk.materials.get_gsim_material_kind_alias_map()` returns those
   aliases for `gsim` dielectric-interface classification helpers;
 - `orpen_sc_pdk.materials.get_interface_preset_records()` returns a copy of
-  public dielectric-interface preset records, currently empty by default;
+  public dielectric-interface preset records from `materials.json`;
 - `orpen_sc_pdk.materials.validate_interface_preset_records()` validates
   caller-supplied MA/MS/SA-style records with an explicit source string,
   thickness, and either a public material name or explicit permittivity;
@@ -79,7 +77,7 @@ The generic `material_kind` labels are separate classifier inputs and are not
 written into the `gsim` material overlay. Public material-name aliases are
 exported as `material_aliases` overlay metadata for `gsim` to expand during
 material overlay loading; they are not duplicate material records in
-`tech.material_properties`.
+`materials.json`.
 Conductor-like records currently represented by `relative_permittivity = inf`
 are preserved as material-role metadata until explicit conductivity, surface
 impedance, or London-depth values are part of the public material record.
@@ -105,9 +103,8 @@ should be:
 5. Use `gsim` interface material references when a Palace dielectric interface
    should draw permittivity/loss fields from a public material record.
 6. Keep public interface preset records schema-validated in the PDK and require
-   explicit source/provenance strings for every caller-supplied preset, but do
-   not populate MA/MS/SA thickness, loss, or automatic-selection defaults until
-   source-backed public records exist.
+   explicit source/provenance strings for every preset. Presets may exist in the
+   PDK data file, but `gsim` must not automatically select loss channels.
 7. Use `gsim` assignment helpers for caller-supplied physical-name or
    interface-pair selection; automatic public selection policy belongs in a
    later source-backed PDK contract.
@@ -118,8 +115,8 @@ should be:
 9. Pass the same aliases in `get_gsim_material_overlay()` so generated domain
    material names can resolve through public PDK overlay records during Palace
    material resolution.
-10. Keep default public MA/MS/SA preset values out of the PDK until those
-   records are source-backed.
+10. Keep automatic public MA/MS/SA selection policy out of the PDK until those
+   rules are source-backed.
 
 `gplugins` also has material utilities for existing plugin workflows. Use it
 when the capability belongs to the broader plugin ecosystem rather than the

@@ -688,5 +688,25 @@
     "owner_surface": "gsim tests/palace fixture coverage",
     "evidence_anchor": "docs/issues/palace-api-responsibility-boundary.md; docs/issues/cad-mesh-identity-provenance.md",
     "boundary_note": "Test-only MSH fixture gate consumes meshwell-style physical names through gsim manifest/index-map loaders without adding a meshwell dependency or widening public API."
+  },
+  {
+    "commit": "348ca71",
+    "summary": "refactor(palace): split run resolve result pipeline",
+    "boundary_group": "runtime-handoff-and-resource-records",
+    "review_status": "reviewed_explicit",
+    "ecosystem_home": "gsim",
+    "owner_surface": "gsim.palace.run, gsim.palace.resolve, and gsim.palace.results",
+    "evidence_anchor": "docs/issues/palace-api-responsibility-boundary.md; docs/issues/palace-report-ownership.md",
+    "boundary_note": "Run stages produce Palace artifacts, Resolve owns source audit and report assembly, and results owns typed data/report semantics."
+  },
+  {
+    "commit": "2f2a471",
+    "summary": "Merge remote-tracking branch 'upstream/main' into feature/gsim-palace-postprocessing-roles",
+    "boundary_group": "upstream-merge",
+    "review_status": "reviewed_upstream_merge",
+    "ecosystem_home": "gsim",
+    "owner_surface": "gsim upstream merge commit",
+    "evidence_anchor": "docs/issues/palace-api-responsibility-boundary.md",
+    "boundary_note": "Merge commit brings upstream changes into the local gsim branch and does not add a new OrPen-owned Palace notebook contract."
   }
 ]

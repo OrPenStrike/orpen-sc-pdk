@@ -207,7 +207,7 @@ def _assert_gsim_boundary_review_crosscheck(evidence: dict) -> None:
     commits = [row["commit"] for row in rows]
     assert len(commits) == len(set(commits))
     assert commits[0] == "2ab16d7"
-    assert commits[-1] == "76f7dc0"
+    assert commits[-1] == "2f2a471"
 
     by_commit = {row["commit"]: row for row in rows}
     assert by_commit["00b2777"]["ecosystem_home"] == "gsim"
@@ -361,7 +361,7 @@ def _assert_meshwell_handoff_contract_gate(evidence: dict) -> None:
         == "covered_gsim_consumer_parser"
     )
     assert (
-        by_item["gsim public postprocessing index-map result loader"]["evidence_status"]
+        by_item["gsim postprocessing index-map primitive loader"]["evidence_status"]
         == "covered_gsim_consumer_parser"
     )
     assert (
@@ -510,8 +510,8 @@ def _assert_cad_mesh_identity_handoff_evidence(evidence: dict) -> None:
         assert problem["output_dir"] == problem_key
         assert problem["artifact_paths"] == {
             "config.json": f"{problem_key}/config.json",
-            "mesh_manifest.json": f"{problem_key}/mesh_manifest.json",
-            "palace_index_map.json": f"{problem_key}/palace_index_map.json",
+            "mesh_manifest.json": f"{problem_key}/metadata/mesh_manifest.json",
+            "palace_index_map.json": f"{problem_key}/metadata/palace_index_map.json",
         }
         assert problem["problem_type"] == config["problem_type"]
         assert config["solver_problem_block"] == problem["problem_type"]
@@ -637,8 +637,12 @@ def test_public_cad_mesh_identity_handoff_evidence_runs_standalone(
     for problem_key, problem in audit["problems"].items():
         assert problem["output_dir"] == f"identity/{problem_key}"
         assert problem["identity_status"] == "covered_public_fixture"
-        assert (tmp_path / "identity" / problem_key / "mesh_manifest.json").is_file()
-        assert (tmp_path / "identity" / problem_key / "palace_index_map.json").is_file()
+        assert (
+            tmp_path / "identity" / problem_key / "metadata" / "mesh_manifest.json"
+        ).is_file()
+        assert (
+            tmp_path / "identity" / problem_key / "metadata" / "palace_index_map.json"
+        ).is_file()
         assert (tmp_path / "identity" / problem_key / "config.json").is_file()
 
 
@@ -927,12 +931,14 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         config = json.loads((output_dir / "config.json").read_text())
         assert config["Solver"]["Device"] == "CPU"
         assert config["Solver"]["Linear"]
-        assert (output_dir / "palace_handoff_metadata.json").is_file()
-        assert (output_dir / "palace_handoff_archive_manifest.json").is_file()
-        assert (output_dir / "metadata" / "records" / "palace_resource_record.json").is_file()
-        assert (output_dir / "metadata" / "records" / "palace_amr_passes.csv").is_file()
-        assert (output_dir / "metadata" / "records" / "palace_stage_timing.csv").is_file()
-        assert (output_dir / "metadata" / "records" / "palace_stage_memory.csv").is_file()
+        assert (output_dir / "metadata" / "palace_handoff_metadata.json").is_file()
+        assert (
+            output_dir / "metadata" / "palace_handoff_archive_manifest.json"
+        ).is_file()
+        assert (output_dir / "metadata" / "palace_resource_record.json").is_file()
+        assert (output_dir / "metadata" / "palace_amr_passes.csv").is_file()
+        assert (output_dir / "metadata" / "palace_stage_timing.csv").is_file()
+        assert (output_dir / "metadata" / "palace_stage_memory.csv").is_file()
         assert (output_dir / "metadata" / "scontrol-job-public.txt").is_file()
         assert (output_dir / "logs" / "palace-public-resource.log").is_file()
         assert (output_dir / "run_palace.sbatch").is_file()
@@ -979,12 +985,12 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         )
         assert (
             run_summary["handoff"]["path"]
-            == f"{problem['output_dir']}/palace_handoff_metadata.json"
+            == f"{problem['output_dir']}/metadata/palace_handoff_metadata.json"
         )
         assert run_summary["handoff"]["script"]["path"] == "run_palace.sbatch"
         assert run_summary["handoff"]["script_present"] is True
         assert run_summary["handoff"]["archive"] == {
-            "manifest_path": "palace_handoff_archive_manifest.json"
+            "manifest_path": "metadata/palace_handoff_archive_manifest.json"
         }
         assert run_summary["handoff"]["archive_present"] is False
         assert run_summary["handoff"]["archive_manifest_present"] is True
@@ -1005,7 +1011,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert run_summary["resource"]["present"] is True
         assert run_summary["resource"]["status"] == "synthetic"
         assert run_summary["resource"]["path"] == (
-            f"{problem['output_dir']}/metadata/records/palace_resource_record.json"
+            f"{problem['output_dir']}/metadata/palace_resource_record.json"
         )
         assert run_summary["resource"]["allocation"] == {
             "cores": 1,
@@ -1056,7 +1062,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert run_summary["resource"]["tables"]["stage_timing"]["row_count"] == 8
         assert run_summary["resource"]["tables"]["stage_memory"]["row_count"] == 8
         assert run_summary["resource"]["tables"]["stage_timing"]["path"] == (
-            "metadata/records/palace_stage_timing.csv"
+            "metadata/palace_stage_timing.csv"
         )
         assert run_summary["resource"]["missing_source_count"] == 1
         assert run_summary["resource"]["metadata"] == {

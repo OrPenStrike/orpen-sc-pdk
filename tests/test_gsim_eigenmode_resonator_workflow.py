@@ -17,6 +17,7 @@ from orpen_sc_pdk.materials import (
     get_gsim_material_kind_alias_map,
     get_gsim_material_kind_map,
     get_gsim_material_overlay,
+    get_interface_preset_records,
     validate_interface_preset_records,
 )
 from orpen_sc_pdk.pdk import PDK
@@ -41,13 +42,14 @@ def _public_resonator_eigenmode_sim(output_dir: Path):
     sim = EigenmodeSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
-    sim.set_stack(
-        include_substrate=True,
-        substrate_thickness=20,
-        add_oxide_dielectric=False,
-        add_passivation_dielectric=False,
+    sim.set_stack(PDK.get_layer_stack())
+    sim.activate_substrate("D0_SUBSTRATE", die="D0", margin_x=50.0, margin_y=50.0)
+    sim.activate_outer_vacuum(
+        margin_x=50.0,
+        margin_y=50.0,
+        z_above=50.0,
+        z_below=10.0,
     )
-    sim.set_airbox(margin_x=50, margin_y=50, z_above=50, z_below=10)
     sim.set_eigenmode(num_modes=2, target=6e9)
 
     mesh_result = sim.mesh(
@@ -97,15 +99,18 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
     )
 
     config = json.loads(Path(config_path).read_text())
-    manifest = json.loads((output_dir / "mesh_manifest.json").read_text())
-    index_map = json.loads((output_dir / "palace_index_map.json").read_text())
+    metadata_dir = output_dir / "metadata"
+    manifest_path = metadata_dir / "mesh_manifest.json"
+    index_map_path = metadata_dir / "palace_index_map.json"
+    manifest = json.loads(manifest_path.read_text())
+    index_map = json.loads(index_map_path.read_text())
 
     assert (output_dir / "palace.msh").stat().st_size > 0
     assert config["Problem"]["Type"] == "Eigenmode"
     assert_public_si_overlay_material(config, manifest)
     assert_public_si_effective_material(
         config_path,
-        output_dir / "palace_index_map.json",
+        index_map_path,
         manifest,
     )
     assert config["Domains"]["Postprocessing"]["Energy"]
@@ -123,7 +128,14 @@ def test_public_resonator_eigenmode_gsim_postprocessing_artifacts(
 
     interface_entries = [entry for entry in manifest["entries"] if entry.get("interface_of")]
     assert interface_entries
-    assert any(set(entry["interface_of"]) == {"air", "silicon"} for entry in interface_entries)
+    assert any(
+        set(entry["interface_of"]) == {"D0_SUBSTRATE", "OUTER_VACUUM"}
+        for entry in interface_entries
+    )
+    assert any(
+        entry["metadata"]["interface_materials"] == {"D0_SUBSTRATE": "Si", "OUTER_VACUUM": "vacuum"}
+        for entry in interface_entries
+    )
     assert all(entry["role"] == "boundary_surface" for entry in interface_entries)
     assert all(entry["attributes"] for entry in interface_entries)
     assert all(entry["physical_names"] for entry in interface_entries)
@@ -154,20 +166,14 @@ def test_public_resonator_generated_interface_classifies_with_public_aliases(
     )
     from gsim.palace.resolve.derived.materials import load_dielectric_interface_summary
 
-    records = {
-        "public_sa_example": {
-            "interface_type": "SA",
-            "thickness": 0.003,
-            "material_name": "AlOx_native_generic",
-            "source": "public test fixture only",
-        }
-    }
+    records = get_interface_preset_records()
     specs = build_dielectric_interface_specs_from_material_kinds(
         mesh_result.manifest,
         material_kind_by_name=get_gsim_material_kind_map(),
         material_name_aliases=get_gsim_material_kind_alias_map(),
         presets=validate_interface_preset_records(records),
-        preset_by_interface_type={"SA": "public_sa_example"},
+        preset_by_interface_type={"SA": "Woods2019_Si_SA"},
+        interface_types_by_kind_pair={("dielectric", "vacuum"): "SA"},
     )
     postprocessing = build_postprocessing_config_from_manifest(
         mesh_result.manifest,
@@ -181,40 +187,42 @@ def test_public_resonator_generated_interface_classifies_with_public_aliases(
     config = json.loads(Path(config_path).read_text())
     dielectric_rows = config["Boundaries"]["Postprocessing"]["Dielectric"]
     interface_entry = next(
-        entry for entry in mesh_result.manifest.entries if entry.name == "air___silicon"
+        entry
+        for entry in mesh_result.manifest.entries
+        if entry.name == "D0_SUBSTRATE___OUTER_VACUUM"
     )
 
     assert len(specs) == 1
     assert specs[0].interface_type == "SA"
-    assert specs[0].entry_names == ("air___silicon",)
-    assert specs[0].material_name == "AlOx_native_generic"
-    assert specs[0].preset_name == "public_sa_example"
-    assert specs[0].preset_source == "public test fixture only"
+    assert specs[0].entry_names == ("D0_SUBSTRATE___OUTER_VACUUM",)
+    assert specs[0].material_name == "Woods2019_Si_SA_effective"
+    assert specs[0].preset_name == "Woods2019_Si_SA"
+    assert specs[0].preset_source == "Woods et al. 2019 CPW silicon SA fitted-loss candidate"
     assert dielectric_rows == [
         {
             "Index": 1,
             "Attributes": list(interface_entry.attributes),
             "Type": "SA",
-            "Thickness": 0.003,
-            "Permittivity": 10.0,
-            "LossTan": 0.0,
+            "Thickness": 0.002,
+            "Permittivity": 4.0,
+            "LossTan": 0.0017,
         }
     ]
 
     summary = load_dielectric_interface_summary(
         {
             "config.json": config_path,
-            "palace_index_map.json": output_dir / "palace_index_map.json",
+            "palace_index_map.json": output_dir / "metadata" / "palace_index_map.json",
         }
     )
     row = summary.set_index("surface_index").loc[1]
-    assert row["source_name"] == "air___silicon"
+    assert row["source_name"] == "D0_SUBSTRATE___OUTER_VACUUM"
     assert row["interface_type"] == "SA"
-    assert row["preset_name"] == "public_sa_example"
-    assert row["preset_source"] == "public test fixture only"
-    assert row["interface_material_name"] == "AlOx_native_generic"
-    assert row["matched_material_name"] == "AlOx_native_generic"
-    assert row["material_model_source"] == "orpen-sc-pdk tech.material_properties"
+    assert row["preset_name"] == "Woods2019_Si_SA"
+    assert row["preset_source"] == "Woods et al. 2019 CPW silicon SA fitted-loss candidate"
+    assert row["interface_material_name"] == "Woods2019_Si_SA_effective"
+    assert row["matched_material_name"] == "Woods2019_Si_SA_effective"
+    assert row["material_model_source"] == "orpen-sc-pdk materials.json"
 
 
 def test_public_resonator_eigenmode_optional_local_palace_coarse_smoke(

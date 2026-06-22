@@ -58,9 +58,9 @@ Notebook Items
 
         :doc:`notebooks/public_surface_epr_ribbon_capacitor_workflow`
 
-        Builds the public Martinis 2022 differential ribbon capacitor, authors
-        source-aware ThinMetal MS margin/core groups from 50 nm to 1 um,
-        enables MS-only Surface EPR postprocessing from the mesh manifest, and
+        Builds the public Martinis 2022 differential ribbon capacitor, uses
+        ``gsim`` Route B finite-metal shell interface groups, selects the MS
+        bottom total/band/core entries for Surface EPR postprocessing, and
         records a paper-scale capacitance comparison target.
 
     .. grid-item-card:: NB-006 Public Eigenmode Local Workflow
@@ -82,10 +82,10 @@ Notebook Items
 
         :doc:`notebooks/public_surface_epr_ribbon_capacitor_local_workflow`
 
-        Builds the public Martinis 2022 differential ribbon capacitor, authors
-        source-aware ThinMetal MS margin/core groups, enables MS-only Surface
-        EPR postprocessing from the mesh manifest, and exposes a direct
-        ``sim.run_local()`` Electrostatic Run Stage.
+        Builds the public Martinis 2022 differential ribbon capacitor, uses
+        ``gsim`` Route B finite-metal shell interface groups, selects the MS
+        bottom total/band/core entries for Surface EPR postprocessing, and
+        exposes a direct ``sim.run_local()`` Electrostatic Run Stage.
 
 .. toctree::
     :maxdepth: 1

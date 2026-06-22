@@ -1,0 +1,75 @@
+{
+  "materials": {
+    "vacuum": {
+      "relative_permittivity": 1.0,
+      "permeability": 1.0,
+      "material_kind": "vacuum"
+    },
+    "Si": {
+      "relative_permittivity": 11.45,
+      "loss_tangent": 2.6e-7,
+      "permeability": 1.0,
+      "material_kind": "dielectric"
+    },
+    "Al": {
+      "relative_permittivity": "inf",
+      "material_kind": "superconductor"
+    },
+    "Nb": {
+      "relative_permittivity": "inf",
+      "material_kind": "superconductor"
+    },
+    "TiN": {
+      "relative_permittivity": "inf",
+      "material_kind": "superconductor"
+    },
+    "In": {
+      "relative_permittivity": "inf",
+      "material_kind": "superconductor"
+    },
+    "AlOx_native_generic": {
+      "relative_permittivity": 10.0,
+      "permeability": 1.0,
+      "material_kind": "dielectric"
+    },
+    "Woods2019_Si_MS_effective": {
+      "relative_permittivity": 11.4,
+      "loss_tangent": 0.00048,
+      "material_kind": "dielectric"
+    },
+    "Woods2019_Si_SA_effective": {
+      "relative_permittivity": 4.0,
+      "loss_tangent": 0.0017,
+      "material_kind": "dielectric"
+    },
+    "Woods2019_Si_MA_effective": {
+      "relative_permittivity": 10.0,
+      "loss_tangent": 0.0033,
+      "material_kind": "dielectric"
+    }
+  },
+  "material_aliases": {
+    "air": "vacuum",
+    "silicon": "Si"
+  },
+  "interface_preset_records": {
+    "Woods2019_Si_MS": {
+      "interface_type": "MS",
+      "thickness": 0.002,
+      "material_name": "Woods2019_Si_MS_effective",
+      "source": "Woods et al. 2019 CPW silicon MS fitted-loss candidate"
+    },
+    "Woods2019_Si_SA": {
+      "interface_type": "SA",
+      "thickness": 0.002,
+      "material_name": "Woods2019_Si_SA_effective",
+      "source": "Woods et al. 2019 CPW silicon SA fitted-loss candidate"
+    },
+    "Woods2019_Si_MA": {
+      "interface_type": "MA",
+      "thickness": 0.002,
+      "material_name": "Woods2019_Si_MA_effective",
+      "source": "Woods et al. 2019 CPW silicon MA fitted-loss candidate"
+    }
+  }
+}

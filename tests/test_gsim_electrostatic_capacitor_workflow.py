@@ -39,13 +39,14 @@ def _public_same_layer_capacitor_electrostatic_sim(output_dir: Path):
     sim = ElectrostaticSim()
     sim.set_output_dir(output_dir)
     sim.set_geometry(component)
-    sim.set_stack(
-        include_substrate=True,
-        substrate_thickness=20,
-        add_oxide_dielectric=False,
-        add_passivation_dielectric=False,
+    sim.set_stack(PDK.get_layer_stack())
+    sim.activate_substrate("D0_SUBSTRATE", die="D0", margin_x=40.0, margin_y=40.0)
+    sim.activate_outer_vacuum(
+        margin_x=40.0,
+        margin_y=40.0,
+        z_above=50.0,
+        z_below=10.0,
     )
-    sim.set_airbox(margin_x=40, margin_y=40, z_above=50, z_below=10)
     sim.add_terminal("positive", layer="D0_TOP_M1", center=positive_center)
     sim.add_terminal("negative", layer="D0_TOP_M1", center=negative_center)
     sim.set_electrostatic(save_fields=0)
@@ -80,8 +81,11 @@ def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
     )
 
     config = json.loads(Path(config_path).read_text())
-    manifest = json.loads((output_dir / "mesh_manifest.json").read_text())
-    index_map = json.loads((output_dir / "palace_index_map.json").read_text())
+    metadata_dir = output_dir / "metadata"
+    manifest_path = metadata_dir / "mesh_manifest.json"
+    index_map_path = metadata_dir / "palace_index_map.json"
+    manifest = json.loads(manifest_path.read_text())
+    index_map = json.loads(index_map_path.read_text())
 
     assert (output_dir / "palace.msh").stat().st_size > 0
     assert config["Problem"]["Type"] == "Electrostatic"
@@ -89,7 +93,7 @@ def test_public_same_layer_capacitor_electrostatic_gsim_terminal_artifacts(
     assert_public_si_overlay_material(config, manifest)
     assert_public_si_effective_material(
         config_path,
-        output_dir / "palace_index_map.json",
+        index_map_path,
         manifest,
     )
 

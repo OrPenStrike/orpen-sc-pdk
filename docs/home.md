@@ -43,11 +43,11 @@ Set up the private GF+ project without publishing private layout/IP.
 :::
 
 :::{grid-item-card} Develop Ecosystem Features
-:link: developing-features
+:link: gsim-changes/index
 :link-type: doc
 
-Track reusable capability that may belong in `gsim`, `gplugins`, or this PDK.
-Use a Palace fork only when a feature must change solver-side behavior.
+Read the high-level `gsim` implementation slices before opening the detailed
+feature and issue ledgers.
 :::
 
 :::{grid-item-card} Prepare Upstream PRs
@@ -64,6 +64,14 @@ Use personal prototype work as a source for focused `features/<topic>` and
 
 Check which data may be documented publicly and which data must remain in the
 private layout repository.
+:::
+
+:::{grid-item-card} Read Public Examples
+:link: public-pdk-examples/index
+:link-type: doc
+
+Start with the public notebooks, layer catalog, and evidence fixtures that show
+how this PDK consumes `gsim`.
 :::
 
 ::::

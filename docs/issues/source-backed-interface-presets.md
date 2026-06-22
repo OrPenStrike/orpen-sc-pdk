@@ -2,17 +2,19 @@
 
 **Repo:** `orpen-sc-pdk`, `gsim`
 
-Public MA/MS/SA dielectric-interface presets need a source-selection and
-default-selection contract before they become PDK data.
+Public MA/MS/SA dielectric-interface presets may be PDK material data when
+they are source-backed. Automatic default selection still needs an explicit
+policy before notebooks or helpers infer presets for users.
 
 Problem:
 
 - private NCUAS workflows already use named MA/MS/SA interface-loss presets and
   automatic assignment helpers;
-- the public PDK now validates caller-supplied interface preset records and
-  requires explicit source/provenance strings;
-- the public PDK intentionally keeps `tech.interface_preset_records` empty
-  until source-backed values and default-selection rules are accepted;
+- the public PDK now exposes source-backed interface preset records from
+  `orpen_sc_pdk/materials.json` and validates explicit source/provenance
+  strings;
+- the public PDK still does not infer default MA/MS/SA assignment rules from
+  private workflow heuristics;
 - `gsim` already owns reusable `DielectricInterfaceSpec`, assignment,
   material-kind classification, Palace config emission, and report joins, so
   OrPen should not grow a parallel Palace runtime.
@@ -31,15 +33,15 @@ Proposed path:
 - extend `gsim` only for reusable provenance plumbing: caller-supplied
   `preset_name` and `preset_source` should survive in index maps, sidecars, and
   report summaries without writing non-Palace fields into final `config.json`;
-- add public default-selection rules only after the source table states which
-  records apply to each material-kind pair and geometry family;
-- keep public notebooks caller-supplied until those default-selection rules
+- add broader public default-selection rules only after the source table states
+  which records apply to each material-kind pair and geometry family;
+- keep public notebooks explicitly selected until those default-selection rules
   exist.
 
 Verified local changes:
 
-- `orpen-sc-pdk` exposes `tech.interface_preset_records` as an empty-by-default
-  public table;
+- `orpen-sc-pdk` exposes source-backed interface preset records through
+  `get_interface_preset_records()` from `orpen_sc_pdk/materials.json`;
 - `validate_interface_preset_records()` rejects caller-supplied records without
   explicit source/provenance strings;
 - `get_gsim_dielectric_interface_preset_kwargs()` adapts validated records into
@@ -62,10 +64,10 @@ Verified local changes:
 - `scripts/fixtures/public_interface_preset_review_queue.json` mirrors that
   public source-review queue as structured evidence, including source IDs,
   candidate roles, owner repo, `gsim` handoff path, default status, and
-  promotion gates without populating `tech.interface_preset_records`;
+  promotion gates without enabling automatic default selection;
 - the public helper-node inventory and notebook coverage matrix now record the
   source-backed preset promotion gate explicitly: public workflows stay
-  caller-supplied until accepted MA/MS/SA preset records, process scope, and
+  explicitly selected until broader MA/MS/SA process scope and
   default-selection rules are approved.
 - `notebooks/src/public_simulation_inventory.py` displays the source and
   candidate review tables, so MA/MS/SA promotion status is notebook-visible
@@ -73,9 +75,9 @@ Verified local changes:
   boundary-review evidence.
 - `scripts/public_palace_smoke_evidence.py` now writes
   `public_interface_preset_promotion_gate_evidence.json`, which records
-  candidate readiness, missing acceptance decisions, empty
-  `tech.interface_preset_records` status, and the OrPen/`gsim` owner boundary
-  before any source-backed row can become a public default.
+  candidate readiness, missing acceptance decisions, default-selection status,
+  and the OrPen/`gsim` owner boundary before any source-backed row can become
+  an inferred public default.
 - `notebooks/src/public_simulation_inventory.py` displays the same promotion
   gate table, keeping accepted-candidate ID, process scope, default-selection
   rule, and public-default decision gaps visible in notebook review.
@@ -88,13 +90,13 @@ Verified local changes:
 
 Remaining slices:
 
-- add accepted-candidate tests after the candidate IDs and process scope are
-  approved for `tech.interface_preset_records`;
+- add accepted-candidate tests after candidate IDs and process scope are
+  approved for automatic default selection;
 - decide whether any candidate should become a public PDK default or stay
   caller-selected only; the promotion gate currently records every interface
   candidate as `awaiting_public_policy`;
 - add a public default-selection map only after candidate records are accepted;
-- wire material-kind interface classification into public workflow examples
+- broaden material-kind interface classification beyond the resonator example
   only after the public default-selection map exists.
 
 Acceptance checks:

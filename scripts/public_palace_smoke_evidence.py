@@ -559,11 +559,12 @@ def build_public_meshwell_handoff_contract_gate_evidence(
                 "def load_postprocessing_index_map",
                 "palace_index_map.json",
                 "PostprocessingIndexMap",
-                "resolve_indexed_csv_source",
+                "find_postprocessing_index_map",
             ),
             current_signal=(
                 "gsim keeps palace_index_map.json parsing in the Resolve "
-                "primitive-loader owner module"
+                "primitive-loader owner module and discovers the sidecar "
+                "through the Resolve run-artifact finder"
             ),
             remaining_gap=current_handoff_fixture_gap,
             evidence_status="covered_gsim_consumer_parser",
@@ -880,12 +881,19 @@ def _frame_records(rows: Any, columns: Sequence[str]) -> list[dict[str, Any]]:
 
 def _config_generation_evidence(source: Path) -> dict[str, Any]:
     from gsim.palace.resolve.derived.materials import load_domain_material_summary
+    from gsim.palace.resolve.sources.run_artifacts import (
+        find_config_json,
+        find_material_resolution_json,
+    )
 
-    config = json.loads((source / "config.json").read_text())
-    material_resolution_path = source / "palace_material_resolution.json"
+    config_path = find_config_json(source)
+    if config_path is None:
+        raise FileNotFoundError(f"Could not find config.json for {source}")
+    config = json.loads(config_path.read_text())
+    material_resolution_path = find_material_resolution_json(source)
     material_resolution = (
         json.loads(material_resolution_path.read_text())
-        if material_resolution_path.exists()
+        if material_resolution_path is not None and material_resolution_path.exists()
         else {}
     )
     boundaries = config.get("Boundaries", {})
@@ -1036,7 +1044,12 @@ def _count_values(values: Sequence[Any]) -> dict[str, int]:
 
 
 def _manifest_identity_evidence(source: Path) -> dict[str, Any]:
-    manifest = json.loads((source / "mesh_manifest.json").read_text())
+    from gsim.palace.resolve.sources.run_artifacts import find_mesh_manifest_json
+
+    manifest_path = find_mesh_manifest_json(source)
+    if manifest_path is None:
+        raise FileNotFoundError(f"Could not find mesh_manifest.json for {source}")
+    manifest = json.loads(manifest_path.read_text())
     entries = list(manifest.get("entries", ()))
     role_names = [entry.get("role") for entry in entries]
     dimension_names = [
@@ -2518,8 +2531,8 @@ def run_public_driven_local_smoke(
         "surface_q_rows": int(len(report.surface_q)),
         "loss_budget_rows": int(len(report.loss_budget)),
         "source_rows": int(len(report.sources)),
-        "has_port_s": "port-S.csv" in results.files,
-        "port_s_bytes": int(results.files["port-S.csv"].stat().st_size),
+        "has_port_s": "port-S.csv" in results,
+        "port_s_bytes": int(results["port-S.csv"].stat().st_size),
     }
 
 
@@ -2627,6 +2640,23 @@ def _cad_mesh_identity_problem_evidence(
     terminal_names = sorted(
         {str(row["terminal_name"]) for row in lookup_rows if row.get("terminal_name") is not None}
     )
+    from gsim.palace.resolve.sources.run_artifacts import (
+        find_config_json,
+        find_mesh_manifest_json,
+        find_postprocessing_index_map,
+    )
+
+    artifact_path_candidates = {
+        "mesh_manifest.json": find_mesh_manifest_json(source),
+        "palace_index_map.json": find_postprocessing_index_map(source),
+        "config.json": find_config_json(source),
+    }
+    missing_artifacts = [
+        name for name, path in artifact_path_candidates.items() if path is None
+    ]
+    if missing_artifacts:
+        names = ", ".join(missing_artifacts)
+        raise FileNotFoundError(f"Could not find {names} for {source}")
     covered_contracts = [
         "mesh_manifest_schema",
         "mesh_manifest_roles",
@@ -2651,11 +2681,12 @@ def _cad_mesh_identity_problem_evidence(
         ),
         "artifact_paths": {
             name: (
-                _relative_path(source / name, relative_to)
+                _relative_path(path, relative_to)
                 if relative_to is not None
-                else (source / name).as_posix()
+                else path.as_posix()
             )
-            for name in ("mesh_manifest.json", "palace_index_map.json", "config.json")
+            for name, path in artifact_path_candidates.items()
+            if path is not None
         },
         "mesh_manifest": manifest,
         "index_map": {
@@ -2898,8 +2929,8 @@ def _build_problem_evidence(
         write_palace_run_handoff_archive_manifest,
         write_palace_slurm_sbatch_handoff,
     )
-    from gsim.palace.results import (
-        load_palace_run_summary,
+    from gsim.palace.resolve import load_palace_run_summary
+    from gsim.palace.resolve.sources.resources import (
         write_palace_resource_record,
         write_palace_resource_record_from_log,
     )
@@ -3011,12 +3042,9 @@ def _build_sweep_evidence(
         write_palace_slurm_sweep_array_handoff,
         write_palace_sweep_handoff_archive_manifest,
     )
-    from gsim.palace.results import (
-        PalaceSweepPointSpec,
-        load_palace_sweep_summary,
-        write_palace_sweep_points,
-        write_palace_sweep_resource_index,
-    )
+    from gsim.palace.resolve import PalaceSweepPointSpec, load_palace_sweep_summary
+    from gsim.palace.resolve.sources.sidecars import write_palace_sweep_points
+    from gsim.palace.resolve.sweeps import write_palace_sweep_resource_index
 
     points = [
         PalaceSweepPointSpec(
@@ -3026,9 +3054,11 @@ def _build_sweep_evidence(
                 "fixture": problem["fixture"],
             },
             run_dir=problem["output_dir"],
-            handoff_metadata_path=(f"{problem['output_dir']}/palace_handoff_metadata.json"),
+            handoff_metadata_path=(
+                f"{problem['output_dir']}/metadata/palace_handoff_metadata.json"
+            ),
             resource_record_path=(
-                f"{problem['output_dir']}/metadata/records/palace_resource_record.json"
+                f"{problem['output_dir']}/metadata/palace_resource_record.json"
             ),
         )
         for problem_key, problem in sorted(problems.items())

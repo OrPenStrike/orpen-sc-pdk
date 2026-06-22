@@ -16,7 +16,7 @@ contract lands", not "unimportant".
 | P1 | CAD/mesh identity provenance | `meshwell`, `gsim` | Yes | physical-name contract plus manifest/index-map consumer | mesh physical groups can be inspected from config/report paths |
 | P2 | Material schema boundary | `gsim`, `orpen-sc-pdk` | Yes | material overlay/provenance in `gsim`, then PDK JSON demo | generated Palace material rows point back to PDK material records |
 | P3 | Palace report ownership | `gsim` | Yes | typed Driven/Eigenmode/Electrostatic report loaders and displays | public notebooks can call `resolve_palace_result(...).load_report()` and render reports |
-| P4 | Palace config ownership | `gsim` | Yes | mesh/config/postprocessing handoff objects, including ThinMetal MS Surface EPR | generated configs expose source/surface identities without PDK solver code |
+| P4 | Palace config ownership | `gsim` | Yes | mesh/config/postprocessing handoff objects, including Route B Surface EPR interface groups | generated configs expose interface identities without PDK solver code |
 | P5 | Source-backed interface presets | `orpen-sc-pdk`, `gsim` | No | keep MS notebook-local or explicit; defer MA/SA defaults | no automatic MA/SA policy exists before public process scope is accepted |
 | P6 | Public problem-type notebook coverage | `orpen-sc-pdk` | No | basic public notebooks after `gsim` report/config contracts land | notebooks demonstrate public outcomes, not private workflow copies |
 | P7 | Palace HPC handoff and resource records | `gsim` | No | Slurm/resource/benchmark records after report/run contracts | benchmark tables are reproducible from public fixtures |
@@ -28,7 +28,7 @@ Known incomplete area:
 | Area | Current state | Next meaningful issue/PR |
 |---|---|---|
 | Surface EPR results | MS geometry/config is usable; final report presentation is not complete. | Add report tables/plots after P3/P4, not inside the geometry helper PR. |
-| MA/SA and 3D interfaces | Deferred by design. | Start after the MS ThinMetal path is accepted and mesh-level interface banding is designed. |
+| MA/SA reporting and non-planar geodesic inset bands | Deferred by design. | Start after the Route B MS-bottom notebook slice is validated from generated mesh/interface groups. |
 | Purcell examples | Important, but consumer-level. | Add after P1/P3 so layout-authored sheets consume accepted contracts. |
 
 ::::{grid} 1 1 2 3

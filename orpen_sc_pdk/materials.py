@@ -6,16 +6,12 @@ import copy
 import json
 import math
 from collections.abc import Mapping
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-from orpen_sc_pdk.tech import (
-    interface_preset_records,
-    material_alias_records,
-    material_properties,
-)
-
-_OVERLAY_SOURCE = "orpen-sc-pdk tech.material_properties"
+_OVERLAY_SOURCE = "orpen-sc-pdk materials.json"
+_MATERIAL_DB_RESOURCE = "materials.json"
 _INTERFACE_TYPES = {"MA", "MS", "SA"}
 _MATERIAL_KINDS = {
     "conductor",
@@ -29,13 +25,13 @@ _MATERIAL_KINDS = {
 
 def get_material_records() -> dict[str, dict[str, Any]]:
     """Return a copy of public PDK material records."""
-    return copy.deepcopy(material_properties)
+    return copy.deepcopy(_material_database()["materials"])
 
 
 def get_material_alias_records() -> dict[str, str]:
     """Return public aliases for generated or external material names."""
 
-    return dict(material_alias_records)
+    return dict(_material_database()["material_aliases"])
 
 
 def validate_material_kind_records(
@@ -43,7 +39,7 @@ def validate_material_kind_records(
 ) -> dict[str, str]:
     """Return normalized generic material kinds for public material records."""
 
-    source_records = material_properties if records is None else records
+    source_records = get_material_records() if records is None else records
     normalized: dict[str, str] = {}
     for name, record in source_records.items():
         material_name = _material_name(name)
@@ -58,7 +54,7 @@ def validate_material_alias_records(
 ) -> dict[str, str]:
     """Validate aliases from generated material names to public PDK names."""
 
-    source_records = material_alias_records if records is None else records
+    source_records = get_material_alias_records() if records is None else records
     public_material_names = set(validate_material_kind_records(material_records))
     normalized: dict[str, str] = {}
     for alias, target in source_records.items():
@@ -95,7 +91,7 @@ def get_gsim_material_kind_alias_map(
 
 def get_interface_preset_records() -> dict[str, dict[str, Any]]:
     """Return a copy of public dielectric-interface preset records."""
-    return copy.deepcopy(interface_preset_records)
+    return copy.deepcopy(_material_database()["interface_preset_records"])
 
 
 def validate_interface_preset_records(
@@ -107,7 +103,7 @@ def validate_interface_preset_records(
     owner of Palace postprocessing, material resolution, and report parsing.
     """
 
-    source_records = interface_preset_records if records is None else records
+    source_records = get_interface_preset_records() if records is None else records
     normalized: dict[str, dict[str, Any]] = {}
     for name, record in source_records.items():
         normalized[str(name)] = _normalize_interface_preset_record(str(name), record)
@@ -169,6 +165,11 @@ def write_gsim_material_overlay(path: str | Path) -> Path:
         json.dumps(get_gsim_material_overlay(), indent=2, sort_keys=True, allow_nan=False) + "\n"
     )
     return output_path
+
+
+def _material_database() -> dict[str, Any]:
+    database_path = files("orpen_sc_pdk").joinpath(_MATERIAL_DB_RESOURCE)
+    return json.loads(database_path.read_text())
 
 
 def _to_gsim_material_entry(record: dict[str, Any]) -> dict[str, Any]:

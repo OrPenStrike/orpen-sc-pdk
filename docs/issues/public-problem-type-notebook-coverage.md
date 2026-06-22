@@ -37,9 +37,9 @@ Verified local changes:
   be loaded back through `gsim.palace.load_domain_material_summary()`;
 - the same driven fixture now includes an optional local Palace coarse-solve
   smoke test guarded by `ORPEN_RUN_LOCAL_PALACE_SMOKE=1`; it verifies that
-  `run_local()` returns public `gsim.palace.SParams`, resolves `o1`/`o2` port
-  labels, preserves a non-empty `port-S.csv` result file, and can reload the
-  same public output directory through `gsim.palace.load_driven_report()`;
+  `run_local()` preserves a non-empty raw `port-S.csv` result file, and that
+  Resolve/report loading turns the same public output directory into a typed
+  Driven report with `o1`/`o2` port labels;
 - eigenmode now has an executable public fixture in
   `tests/test_gsim_eigenmode_resonator_workflow.py`: it builds the public
   `resonator` cell, runs local `gsim` `EigenmodeSim` coarse meshing, writes
@@ -151,9 +151,12 @@ Verified local changes:
   `_...()` helper calls, and rejects links to the old combined simulation
   workflow notebook;
 - the public problem-type notebooks no longer write synthetic report artifacts
-  under the run folder. Default docs execution displays handoff, resolve, and
-  missing-report status; completed solver outputs are reviewed by setting
-  `NOTEBOOK_ANALYSIS_RUN_ROOT` and rerunning the Resolve and Report cells;
+  under the run folder and no longer use missing-artifact summaries as their
+  main output. They require a completed Palace run folder, load it through
+  `resolve_palace_result(...).load_report(require_report=True).require_report()`,
+  and hand visualization to `report.show_all_results()`. The docs build
+  converts and renders these notebooks without executing their result cells
+  because tracked public docs do not carry solver-produced report CSVs;
 - the public problem-type notebooks no longer expose local Palace smoke cells.
   Driven, Eigenmode, and Electrostatic local solver proof remains in
   pytest/evidence paths where `ORPEN_RUN_LOCAL_PALACE_SMOKE=1` can opt into the
@@ -177,7 +180,7 @@ Verified local changes:
 - `scripts/public_palace_smoke_evidence.py` now regenerates four public
   problem fixtures under `build/public-palace-smoke-evidence/` and writes
   `public_palace_smoke_evidence.json`; the default dry-run path consumes
-  `gsim.palace.results.load_palace_run_summary()` and records non-empty `palace.msh`,
+  `gsim.palace.resolve.load_palace_run_summary()` and records non-empty `palace.msh`,
   `config.json`, `mesh_manifest.json`, `palace_index_map.json`, and
   `palace_material_resolution.json` artifacts for Driven, Eigenmode,
   Electrostatic, and Magnetostatic fixtures without requiring Palace;
@@ -205,7 +208,7 @@ Verified local changes:
   implemented public fixtures, shared material/interface/index/runtime nodes,
   and the Magnetostatic config-fixture/report-loader gap;
 - `gsim` commit `652fcec` adds
-  `gsim.palace.results.load_palace_sweep_summary()`, and the public evidence runner now
+  `gsim.palace.resolve.load_palace_sweep_summary()`, and the public evidence runner now
   writes `points.json` for the four problem fixtures and records a
   `sweep_summary` built from that reusable API;
 - `gsim` commit `1d9390f` adds `write_palace_sweep_points()`, and the public
@@ -314,15 +317,16 @@ Verified local changes:
   loader variables such as `DYLD_LIBRARY_PATH`; keep those machine-specific
   paths outside public docs and CI defaults;
 - Ruff check and format-check passed for the executable fixtures.
-- direct notebook execution passed for the split Driven, Eigenmode, and
-  Electrostatic notebooks and confirmed the default handoff/resolve status path
-  without requiring a local solver.
+- direct notebook execution is no longer the default docs gate for the split
+  Driven, Eigenmode, and Electrostatic notebooks because their public main path
+  now requires real Palace result CSVs instead of missing-report summaries.
 - local executed-notebook review output is generated under the ignored path
   `build/notebook-review/` for `notebooks/public_driven_workflow.ipynb`,
   `notebooks/public_eigenmode_workflow.ipynb`, and
   `notebooks/public_electrostatic_workflow.ipynb`.
-- `just docs` converts and executes the split public problem-type notebooks as
-  part of the docs build.
+- `just docs` converts the split public problem-type notebooks and renders them
+  in the docs build, while Sphinx excludes those notebooks from default
+  execution.
 
 Remaining slices:
 
