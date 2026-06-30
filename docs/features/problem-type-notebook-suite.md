@@ -16,10 +16,10 @@ Local/implemented capability:
   reuse, convergence records, and EPR-ready postprocessing;
 - electrostatic workflows validate terminal assignment, capacitance extraction,
   package analysis, and report generation.
-- Surface EPR workflows validate Route B finite-metal shell interface groups on
-  the Martinis 2022 ribbon capacitor. Both handoff and local workflows select
-  generated MS bottom total/band/core groups and keep MA/SA out of the current
-  active public config.
+- Surface EPR workflows validate the Martinis 2022 ribbon capacitor across
+  A/B/C representations. Route C keeps the 3D metal volume and validates
+  generated MA/MS/SA child inset physical groups plus logical total
+  postprocessing rows.
 - magnetostatic workflows validate current-source ownership, generated
   `SurfaceCurrent` boundaries, vector direction/coordinate-system emission,
   multielement current-source rows, magnetic `SurfaceFlux` index rows, and
@@ -33,8 +33,10 @@ Public fixture direction:
   later extend to sweep coverage;
 - electrostatic: a public capacitor fixture with named terminals and
   capacitance/report outputs.
-- Surface EPR: a public Martinis ribbon capacitor fixture with MS-only Route B
-  finite-metal shell groups for mesh/config inspection.
+- Surface EPR: public Martinis ribbon capacitor fixtures for A/B/C
+  representation presentations, with retained-volume Route C child inset mesh
+  validation and interface-preset selection delegated to `gsim` through
+  `sim.set_surface_epr(...)`.
 - magnetostatic: a public CPW fixture with center-selected signal and
   multielement return current sources plus generated config/index-map evidence
   while report loading waits for a confirmed Palace output contract.
@@ -57,15 +59,19 @@ Current public notebooks:
   provenance, writes a Slurm handoff archive, and resolves either the new run
   folder or a user-selected completed run folder through
   `gsim.palace.resolve_palace_result(...).load_report()`;
-- {doc}`../notebooks/public_surface_epr_ribbon_capacitor_workflow` runs the
-  public Martinis 2022 ribbon capacitor handoff with Route B finite-metal shell
-  Surface EPR groups. It activates only the MS loss channel for the current
-  public slice, using the generated MS bottom total, 50 nm band, and core
-  entries;
+- {doc}`../notebooks/public_surface_epr_ribbon_capacitor_representation_a_workflow`,
+  {doc}`../notebooks/public_surface_epr_ribbon_capacitor_workflow`, and
+  {doc}`../notebooks/public_surface_epr_ribbon_capacitor_representation_c_workflow`
+  run independent public Martinis 2022 ribbon capacitor handoff presentations
+  for Surface EPR representations A, B, and C. A and handoff B use the MS bottom
+  public slice; the C notebook activates public MS/MA/SA rows through
+  `sim.set_surface_epr(...)` and validates generated child inset physical
+  groups, logical total rows, BBox sanity, and Palace handoff readiness from the
+  retained-volume mesh;
 - {doc}`../notebooks/public_driven_local_workflow`,
   {doc}`../notebooks/public_eigenmode_local_workflow`, and
   {doc}`../notebooks/public_electrostatic_local_workflow`, plus
-  {doc}`../notebooks/public_surface_epr_ribbon_capacitor_local_workflow`, use
+  {doc}`../notebooks/public_surface_epr_ribbon_capacitor_representation_b_local_workflow`, use
   the same public fixtures and Resolve/Report path but make the Run Stage call
   `sim.run_local()`. They default to `PALACE_RUN_LOCAL = False` so docs builds
   can render them without local Palace; users set it to `True` after configuring
@@ -76,7 +82,7 @@ Current public notebooks:
   `report.show_all_results()`. The docs build renders these notebooks without
   executing the result cells because the tracked public source tree does not
   include Palace result CSVs;
-- all three problem-type notebooks keep the main Geometry -> LayerStack -> Mesh
+- all public problem notebooks keep the main Geometry -> LayerStack -> Mesh
   -> Config -> Run -> Resolve -> Visualize chain visible in the notebook
   source instead of hiding it in script wrappers;
 - all three problem-type notebooks configure public Palace HPC handoff in the
@@ -247,9 +253,10 @@ Known gaps and non-goals:
   report loader yet; the shared helper-node inventory records this as
   `implemented_public_config_fixture_pending_report_loader`.
 - Surface EPR currently demonstrates Route B finite-metal shell MS-bottom
-  selection in both handoff and local workflows. MA/SA reporting, sidewall
-  inset partitioning, true metal-volume loss, and broader geodesic interface
-  banding remain separate later slices.
+  selection in the handoff workflow, local Route B MS/MA/SA comparison rows,
+  and Route C retained-volume child inset mesh validation for MA/MS/SA logical
+  totals. Calibrated MA/SA process-default policy and true metal-volume loss
+  remain separate later slices.
 - Full sweep orchestration and broader cost modeling remain later reusable
   `gsim` workflow slices; the current public baseline is explicit point
   metadata plus table-ready per-point artifact, runtime, provenance, and

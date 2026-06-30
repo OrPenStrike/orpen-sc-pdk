@@ -15,13 +15,14 @@
 # ---
 
 # %% [markdown]
-# # Public Surface EPR ribbon capacitor workflow
+# # Public Surface EPR ribbon capacitor representation C workflow
 #
-# This notebook demonstrates the public OrPen PDK Surface EPR workflow on the
-# Martinis 2022 differential ribbon capacitor. It uses `gsim` Route B finite
-# metal shell semantics: full 3D conductor faces are lowered into PEC shell
-# surfaces, and `gsim` creates the MS bottom total/band/core groups. The current
-# public slice selects the MS channel only.
+# This notebook demonstrates Surface EPR representation C on the public OrPen
+# PDK Martinis 2022 differential ribbon capacitor. It keeps notebook
+# responsibility to public example/profile selection while `gsim` owns interface
+# discovery, inset partitioning, and Palace postprocessing through
+# `sim.set_surface_epr(...)`. This C-route notebook validates generated
+# MS/MA/SA child inset physical groups and logical total postprocessing rows.
 
 # %%
 from __future__ import annotations
@@ -58,7 +59,11 @@ PDK.activate()
 
 # User-facing run-folder controls. The root is chosen in the notebook; the run
 # id follows the NCUAS date-plus-same-day-index convention.
-NOTEBOOK_ROOT = PATH.simulation / "notebooks" / "public_surface_epr_ribbon_capacitor_workflow"
+NOTEBOOK_ROOT = (
+    PATH.simulation
+    / "notebooks"
+    / ("public_surface_epr_ribbon_capacitor_representation_c_workflow")
+)
 NOTEBOOK_RUN_DATE = date.today().isoformat()
 NOTEBOOK_RUN_INDEX = 1
 NOTEBOOK_RUN_ID = f"{NOTEBOOK_RUN_DATE}-Run{NOTEBOOK_RUN_INDEX:02d}"
@@ -132,17 +137,14 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         b_um=MARTINIS_RIBBON_B_UM,
         ell_r_um=MARTINIS_NOTEBOOK_LENGTH_UM,
     ).copy()
-    positive_port = component.ports["o_mesh_positive_electrode"]
-    negative_port = component.ports["o_mesh_negative_electrode"]
-    positive_center = tuple(float(value) for value in positive_port.center)
-    negative_center = tuple(float(value) for value in negative_port.center)
-
 # %% [markdown]
 # ## Surface EPR interface selection
 #
-# `gsim` owns the full 3D interface discovery, Route B finite-metal shell
-# lowering, SA seed splitting, and inset partitioning. This notebook selects
-# the public MS/MA/SA material presets for handoff postprocessing.
+# `gsim` owns Surface EPR interface discovery, inset partitioning, and Palace
+# postprocessing. This notebook selects representation C, validates the
+# generated MS/MA/SA child physical groups, and activates public MS/MA/SA
+# presets for Surface EPR postprocessing. `TOTAL` rows are logical aggregates
+# built by `gsim`, not overlapping mesh physical groups.
 
 # %%
 SURFACE_EPR_INSET_NM = 50
@@ -166,14 +168,17 @@ SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES = (
     "Woods2019_Si_MA",
     "Woods2019_Si_SA",
 )
+SURFACE_EPR_RETAIN_3D_METAL_VOLUME = True
 SURFACE_EPR_PLANAR_CONDUCTORS = False
 
 display(
     {
-        "metal_model": "finite_shell_route_b",
+        "surface_epr_representation": "C",
+        "retains_3d_metal_volume": SURFACE_EPR_RETAIN_3D_METAL_VOLUME,
         "planar_conductors": SURFACE_EPR_PLANAR_CONDUCTORS,
         "gsim_generated_inset_nm": SURFACE_EPR_INSET_NM,
         "gsim_generated_inset_margins_nm": SURFACE_EPR_INSET_MARGINS_NM,
+        "validated_mesh_interface_types": ("MA", "MS", "SA"),
         "active_interface_presets": SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES,
         "active_loss_channels": ("MA", "MS", "SA"),
         "table_2_ribbon_ms_reference_participation": (
@@ -224,7 +229,7 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     )
     surface_epr_interface_presets = validate_interface_preset_records(SURFACE_EPR_INTERFACE_PRESETS)
     sim.set_surface_epr(
-        representation="B",
+        representation="C",
         inset_margins_um=SURFACE_EPR_INSET_MARGINS_UM,
         interfaces={
             "MS": {
@@ -250,14 +255,43 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    sim.add_terminal("positive", layer="D0_TOP_M1", center=positive_center)
-    sim.add_terminal("negative", layer="D0_TOP_M1", center=negative_center)
+    sim.add_terminal(
+        "positive",
+        layer="D0_TOP_M1",
+        port_name="o_mesh_positive_electrode",
+        physical_label="positive",
+    )
+    sim.add_terminal(
+        "negative",
+        layer="D0_TOP_M1",
+        port_name="o_mesh_negative_electrode",
+        physical_label="negative",
+    )
     mesh_result = sim.mesh(
         preset="coarse",
         refined_mesh_size=20,
         max_mesh_size=200,
         planar_conductors=SURFACE_EPR_PLANAR_CONDUCTORS,
         auto_size=False,
+    )
+    route_c_generated_group_examples = tuple(
+        entry.name
+        for entry in mesh_result.manifest.entries
+        if entry.metadata.get("surface_epr")
+        and entry.metadata.get("representation") == "C"
+        and entry.metadata.get("surface_epr_summary_kind") != "total"
+    )[:8]
+    display(
+        {
+            "surface_epr_representation": "C",
+            "terminal_labels": {
+                "positive": "o_mesh_positive_electrode",
+                "negative": "o_mesh_negative_electrode",
+            },
+            "validated_mesh_interface_types": ("MA", "MS", "SA"),
+            "generated_child_physical_group_examples": route_c_generated_group_examples,
+            "mesh_file": (output_dir / "palace.msh").relative_to(output_dir).as_posix(),
+        }
     )
 
 # %% [markdown]
@@ -282,14 +316,25 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     surface_epr_manifest_entry_names = tuple(
         entry.name
         for entry in mesh_result.manifest.entries
-        if entry.metadata.get("surface_epr") and entry.metadata.get("representation") == "B"
+        if entry.metadata.get("surface_epr")
+        and entry.metadata.get("representation") == "C"
+        and entry.metadata.get("surface_epr_summary_kind") == "total"
+    )
+    surface_epr_child_entry_names = tuple(
+        entry.name
+        for entry in mesh_result.manifest.entries
+        if entry.metadata.get("surface_epr")
+        and entry.metadata.get("representation") == "C"
+        and entry.metadata.get("surface_epr_summary_kind") != "total"
     )
     display(
         {
             "surface_epr_interfaces": ("MS bottom", "MA top", "MA sidewall", "SA top"),
-            "mesh_manifest_surface_epr_entries": surface_epr_manifest_entry_names,
+            "logical_total_surface_epr_entries": surface_epr_manifest_entry_names,
+            "child_surface_epr_entry_count": len(surface_epr_child_entry_names),
             "solver_order": 3,
             "active_loss_channels": ("MA", "MS", "SA"),
+            "validated_mesh_interface_types": ("MA", "MS", "SA"),
         }
     )
 
@@ -312,7 +357,7 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         PALACE_HPC_PROFILE,
         resource_overrides=PALACE_HPC_RESOURCE_OVERRIDES,
     )
-    sim.write_config(
+    palace_config_file = sim.write_config(
         validate_mesh=False,
         material_overlay=public_material_overlay,
         hints=run_profile.to_palace_config_hints(),
@@ -322,7 +367,7 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     handoff_metadata = {
         "component": component.name,
         "problem_type": "Electrostatic",
-        "workflow": "public_surface_epr_ribbon_capacitor_workflow",
+        "workflow": "public_surface_epr_ribbon_capacitor_representation_c_workflow",
     }
     sbatch_handoff = sim.write_slurm_sbatch_handoff(
         run_profile,
@@ -337,6 +382,15 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
             **handoff_metadata,
             "sbatch_path": sbatch_handoff.script_path.relative_to(output_dir).as_posix(),
         },
+    )
+    display(
+        {
+            "palace_config_file": palace_config_file.relative_to(output_dir).as_posix(),
+            "palace_handoff_script": sbatch_handoff.script_path.relative_to(output_dir).as_posix(),
+            "palace_run_command": (
+                f"sbatch {sbatch_handoff.script_path.relative_to(output_dir).as_posix()}"
+            ),
+        }
     )
 
 # %% [markdown]

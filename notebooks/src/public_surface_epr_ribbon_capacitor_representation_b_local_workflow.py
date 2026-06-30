@@ -15,18 +15,19 @@
 # ---
 
 # %% [markdown]
-# # Public Surface EPR ribbon capacitor workflow
+# # Public Surface EPR ribbon capacitor representation B local workflow
 #
 # This notebook demonstrates the public OrPen PDK Surface EPR workflow on the
-# Martinis 2022 differential ribbon capacitor. It uses `gsim` Route B finite
-# metal shell semantics: full 3D conductor faces are lowered into PEC shell
-# surfaces, and `gsim` creates the MS bottom total/band/core groups. The current
-# public slice selects the MS channel only.
+# Martinis 2022 differential ribbon capacitor. It exercises the Route B
+# finite-metal shell path and exposes a direct `sim.run_local()` Run Stage. The
+# notebook selects MS/MA/SA presets while `gsim` owns shell lowering, SA seed
+# splitting, cumulative inset postprocessing, and report rendering.
 
 # %%
 from __future__ import annotations
 
 import math
+import os
 import warnings
 from datetime import date
 from pathlib import Path
@@ -45,7 +46,6 @@ from orpen_sc_pdk.materials import (
     validate_interface_preset_records,
 )
 from orpen_sc_pdk.pdk import PDK
-from orpen_sc_pdk.simulation import resolve_public_palace_run_profile
 
 warnings.filterwarnings(
     "ignore",
@@ -58,7 +58,11 @@ PDK.activate()
 
 # User-facing run-folder controls. The root is chosen in the notebook; the run
 # id follows the NCUAS date-plus-same-day-index convention.
-NOTEBOOK_ROOT = PATH.simulation / "notebooks" / "public_surface_epr_ribbon_capacitor_workflow"
+NOTEBOOK_ROOT = (
+    PATH.simulation
+    / "notebooks"
+    / ("public_surface_epr_ribbon_capacitor_representation_b_local_workflow")
+)
 NOTEBOOK_RUN_DATE = date.today().isoformat()
 NOTEBOOK_RUN_INDEX = 1
 NOTEBOOK_RUN_ID = f"{NOTEBOOK_RUN_DATE}-Run{NOTEBOOK_RUN_INDEX:02d}"
@@ -140,9 +144,9 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 # %% [markdown]
 # ## Surface EPR interface selection
 #
-# `gsim` owns the full 3D interface discovery, Route B finite-metal shell
-# lowering, SA seed splitting, and inset partitioning. This notebook selects
-# the public MS/MA/SA material presets for handoff postprocessing.
+# `gsim` owns full 3D interface discovery, Route B finite-metal shell lowering,
+# SA seed splitting, and inset partitioning. This notebook only selects the
+# public MS/MA/SA material presets for local postprocessing.
 
 # %%
 SURFACE_EPR_INSET_NM = 50
@@ -170,10 +174,10 @@ SURFACE_EPR_PLANAR_CONDUCTORS = False
 
 display(
     {
-        "metal_model": "finite_shell_route_b",
-        "planar_conductors": SURFACE_EPR_PLANAR_CONDUCTORS,
         "gsim_generated_inset_nm": SURFACE_EPR_INSET_NM,
         "gsim_generated_inset_margins_nm": SURFACE_EPR_INSET_MARGINS_NM,
+        "metal_model": "finite_shell_route_b",
+        "planar_conductors": SURFACE_EPR_PLANAR_CONDUCTORS,
         "active_interface_presets": SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES,
         "active_loss_channels": ("MA", "MS", "SA"),
         "table_2_ribbon_ms_reference_participation": (
@@ -185,8 +189,8 @@ display(
 # %% [markdown]
 # ## Material bridge
 #
-# Surface EPR channel parameters use the Martinis Table 2 MS ribbon value and
-# public Woods2019 MA/SA candidate presets from the PDK material database. The
+# Surface EPR channel parameters in this Martinis ribbon notebook are filled
+# from Martinis 2022 Table 2 for MS and public Woods2019 presets for MA/SA. The
 # PDK material overlay below is still passed to `gsim` for bulk stack material
 # resolution.
 
@@ -267,7 +271,6 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 if NOTEBOOK_PREPARE_RUN_STAGE:
     sim.set_electrostatic(save_fields=0)
     sim.set_palace_version("0.16.0")
-    sim.set_numerical(order=3)
     sim.set_refinement(
         max_its=15,
         tol=1e-3,
@@ -288,56 +291,48 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         {
             "surface_epr_interfaces": ("MS bottom", "MA top", "MA sidewall", "SA top"),
             "mesh_manifest_surface_epr_entries": surface_epr_manifest_entry_names,
-            "solver_order": 3,
             "active_loss_channels": ("MA", "MS", "SA"),
         }
     )
 
 # %% [markdown]
-# ## Run Stage (handoff package)
+# ## Run Stage (run_local)
 
 # %%
-PALACE_HPC_PROFILE = "f1:ct112"
-PALACE_HPC_RESOURCE_OVERRIDES = {
-    "account": "public_alloc",
-    "ntasks_per_node": 4,
-    "cpus_per_task": 28,
-    "memory_mb": 524288,
-    "wall_time": "12:00:00",
-}
-PALACE_SBATCH_JOB_NAME = "orpen_public_surface_epr"
+PALACE_RUN_LOCAL = False
+PALACE_USE_APPTAINER = False
+PALACE_SIF_PATH = os.environ.get("PALACE_SIF")
+PALACE_EXECUTABLE = os.environ.get("PALACE_EXECUTABLE", "palace")
+PALACE_EXECUTABLE_MODE = os.environ.get("PALACE_EXECUTABLE_MODE", "wrapper")
+PALACE_SETUP_COMMANDS = ('eval "$(spack load --sh palace)"',)
+PALACE_NUM_PROCESSES = int(os.environ.get("PALACE_NP", "1"))
+PALACE_NUM_THREADS = int(os.environ.get("PALACE_NT", "1"))
+PALACE_SERIAL = os.environ.get("PALACE_SERIAL", "0") == "1"
 
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    run_profile = resolve_public_palace_run_profile(
-        PALACE_HPC_PROFILE,
-        resource_overrides=PALACE_HPC_RESOURCE_OVERRIDES,
-    )
     sim.write_config(
         validate_mesh=False,
         material_overlay=public_material_overlay,
-        hints=run_profile.to_palace_config_hints(),
         prepare_run_folder=True,
         validate_schema=True,
     )
-    handoff_metadata = {
-        "component": component.name,
-        "problem_type": "Electrostatic",
-        "workflow": "public_surface_epr_ribbon_capacitor_workflow",
-    }
-    sbatch_handoff = sim.write_slurm_sbatch_handoff(
-        run_profile,
-        job_name=PALACE_SBATCH_JOB_NAME,
-        metadata=handoff_metadata,
-    )
-    sim.generate_handoff_package(
-        write_config=False,
-        profile=run_profile,
-        script_path=sbatch_handoff.script_path,
-        metadata={
-            **handoff_metadata,
-            "sbatch_path": sbatch_handoff.script_path.relative_to(output_dir).as_posix(),
-        },
-    )
+    if PALACE_RUN_LOCAL:
+        if PALACE_EXECUTABLE_MODE not in {"wrapper", "binary"}:
+            raise ValueError("PALACE_EXECUTABLE_MODE must be 'wrapper' or 'binary'")
+        local_run_kwargs = {
+            "use_apptainer": PALACE_USE_APPTAINER,
+            "num_processes": PALACE_NUM_PROCESSES,
+            "num_threads": PALACE_NUM_THREADS,
+            "verbose": True,
+        }
+        if PALACE_USE_APPTAINER:
+            local_run_kwargs["palace_sif_path"] = PALACE_SIF_PATH
+        else:
+            local_run_kwargs["palace_executable"] = PALACE_EXECUTABLE
+            local_run_kwargs["executable_mode"] = PALACE_EXECUTABLE_MODE
+            local_run_kwargs["serial"] = PALACE_SERIAL
+            local_run_kwargs["setup_commands"] = PALACE_SETUP_COMMANDS
+        sim.run_local(**local_run_kwargs)
 
 # %% [markdown]
 # ## Resolve

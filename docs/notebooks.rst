@@ -59,11 +59,18 @@ Notebook Items
         :doc:`notebooks/public_surface_epr_ribbon_capacitor_workflow`
 
         Builds the public Martinis 2022 differential ribbon capacitor, uses
-        ``gsim`` Route B finite-metal shell interface groups, selects the MS
-        bottom total/band/core entries for Surface EPR postprocessing, and
+        ``gsim`` representation B Surface EPR, selects the MS bottom entries
+        through ``sim.set_surface_epr(...)``, and
         records a paper-scale capacitance comparison target.
 
-    .. grid-item-card:: NB-006 Public Eigenmode Local Workflow
+    .. grid-item-card:: NB-006 Public Surface EPR Ribbon Capacitor Representation A Workflow
+
+        :doc:`notebooks/public_surface_epr_ribbon_capacitor_representation_a_workflow`
+
+        Builds the same public Martinis 2022 differential ribbon capacitor and
+        presents representation A as an independent Surface EPR workflow.
+
+    .. grid-item-card:: NB-007 Public Eigenmode Local Workflow
 
         :doc:`notebooks/public_eigenmode_local_workflow`
 
@@ -71,21 +78,38 @@ Notebook Items
         ``sim.run_local()`` Run Stage. The docs build renders this notebook but
         does not execute result cells by default.
 
-    .. grid-item-card:: NB-007 Public Electrostatic Local Workflow
+    .. grid-item-card:: NB-008 Public Electrostatic Local Workflow
 
         :doc:`notebooks/public_electrostatic_local_workflow`
 
         Builds the public same-layer capacitor Electrostatic fixture and exposes
         a direct ``sim.run_local()`` Run Stage for local Palace execution.
 
-    .. grid-item-card:: NB-008 Public Surface EPR Ribbon Capacitor Local Workflow
+    .. grid-item-card:: NB-009 Public Surface EPR Ribbon Capacitor Representation B Local Workflow
 
-        :doc:`notebooks/public_surface_epr_ribbon_capacitor_local_workflow`
+        :doc:`notebooks/public_surface_epr_ribbon_capacitor_representation_b_local_workflow`
 
         Builds the public Martinis 2022 differential ribbon capacitor, uses
-        ``gsim`` Route B finite-metal shell interface groups, selects the MS
-        bottom total/band/core entries for Surface EPR postprocessing, and
+        ``gsim`` representation B Surface EPR, selects the MS bottom entries
+        through ``sim.set_surface_epr(...)``, and
         exposes a direct ``sim.run_local()`` Electrostatic Run Stage.
+
+    .. grid-item-card:: NB-010 Public Surface EPR Ribbon Capacitor Representation C Workflow
+
+        :doc:`notebooks/public_surface_epr_ribbon_capacitor_representation_c_workflow`
+
+        Builds the same public Martinis 2022 differential ribbon capacitor and
+        presents representation C as an independent Surface EPR workflow with
+        retained-volume MA/MS/SA total physical-group and BBox validation.
+
+    .. grid-item-card:: NB-011 Inset Surface EPR Demo
+
+        :doc:`notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_a_local`
+
+        Groups six Martinis 2022 ribbon notebooks under
+        ``Inset_Surface_EPR_Demo``: A/B/C local runs and A/B/C F1 handoff
+        packages. The demo keeps material parameters, inset margins, solver
+        order, and refinement controls aligned across routes.
 
 .. toctree::
     :maxdepth: 1
@@ -95,7 +119,15 @@ Notebook Items
     notebooks/public_eigenmode_workflow
     notebooks/public_electrostatic_workflow
     notebooks/public_surface_epr_ribbon_capacitor_workflow
+    notebooks/public_surface_epr_ribbon_capacitor_representation_a_workflow
     notebooks/public_driven_local_workflow
     notebooks/public_eigenmode_local_workflow
     notebooks/public_electrostatic_local_workflow
-    notebooks/public_surface_epr_ribbon_capacitor_local_workflow
+    notebooks/public_surface_epr_ribbon_capacitor_representation_b_local_workflow
+    notebooks/public_surface_epr_ribbon_capacitor_representation_c_workflow
+    notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_a_local
+    notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_a_hpc_handoff
+    notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_b_local
+    notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_b_hpc_handoff
+    notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_c_local
+    notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_c_hpc_handoff
