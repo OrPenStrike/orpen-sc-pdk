@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from importlib import import_module
+from importlib.util import find_spec
 
 import gdsfactory as gf
 from gdsfactory.technology import LayerViews
@@ -51,6 +52,33 @@ def test_pdk_registry_contains_public_cells() -> None:
     }
 
     assert set(PDK.cells) == expected
+
+
+def test_public_chip_demos_live_in_one_module_per_chip() -> None:
+    chips = import_module("orpen_sc_pdk.cells.chips")
+    chip_modules = {
+        "global_purcell_filter_demo_chip": (
+            "orpen_sc_pdk.cells.chips.global_purcell_filter_demo_chip"
+        ),
+        "resonator_with_indium_bumps": ("orpen_sc_pdk.cells.chips.resonator_with_indium_bumps"),
+        "sim_flip_chip_distance": "orpen_sc_pdk.cells.chips.sim_flip_chip_distance",
+        "sim_flip_chip_distance_keepout_global_routing_demo": (
+            "orpen_sc_pdk.cells.chips.sim_flip_chip_distance_keepout_global_routing_demo"
+        ),
+        "sim_flip_chip_distance_keepout_routing_demo": (
+            "orpen_sc_pdk.cells.chips.sim_flip_chip_distance_keepout_routing_demo"
+        ),
+        "small_airbridge_chip": "orpen_sc_pdk.cells.chips.small_airbridge_chip",
+    }
+
+    assert set(chips.__all__) == set(chip_modules)
+    for name, module_name in chip_modules.items():
+        module = import_module(module_name)
+        assert getattr(chips, name) is getattr(module, name)
+
+    assert find_spec("orpen_sc_pdk.cells.flip_chip") is None
+    assert find_spec("orpen_sc_pdk.cells.purcell") is None
+    assert find_spec("orpen_sc_pdk.cells.chips.resonators_with_flip_chip") is None
 
 
 def test_pdk_registry_removed_misleading_cell_names() -> None:
@@ -154,8 +182,43 @@ def test_public_samples_hold_demo_cells_after_registry_cleanup() -> None:
 
     assert set(samples) == {
         "orpen_sc_pdk.samples.simulation_demos.global_purcell_filter_demo_chip",
+        "orpen_sc_pdk.samples.simulation_demos.resonator_with_indium_bumps",
         "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance",
         "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_global_routing_demo",
         "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_routing_demo",
+        "orpen_sc_pdk.samples.simulation_demos.small_airbridge_chip",
     }
+    resonator_coupon = samples[
+        "orpen_sc_pdk.samples.simulation_demos.resonator_with_indium_bumps"
+    ]()
+    resonator_flat = resonator_coupon.copy()
+    resonator_flat.flatten()
+    resonator_polygons = resonator_flat.get_polygons(merge=False, by="tuple")
+    assert resonator_coupon.ports
+    assert resonator_coupon.size_info.width < 2500
+    assert resonator_coupon.size_info.height < 2500
+    assert (
+        len(resonator_polygons[(LAYER.D0_D1_INDIUM_BUMP.layer, LAYER.D0_D1_INDIUM_BUMP.datatype)])
+        > 100
+    )
+    assert (
+        len(resonator_polygons[(LAYER.D0_D1_UNDER_BUMP.layer, LAYER.D0_D1_UNDER_BUMP.datatype)])
+        > 100
+    )
+    assert (
+        len(resonator_polygons[(LAYER.D1_BOTTOM_M1_ETCH.layer, LAYER.D1_BOTTOM_M1_ETCH.datatype)])
+        == 1
+    )
+    assert (
+        len(resonator_polygons.get((LAYER.D0_TOP_AB_DRAW.layer, LAYER.D0_TOP_AB_DRAW.datatype), []))
+        == 0
+    )
+
+    airbridge_chip = samples["orpen_sc_pdk.samples.simulation_demos.small_airbridge_chip"]()
+    airbridge_flat = airbridge_chip.copy()
+    airbridge_flat.flatten()
+    airbridge_polygons = airbridge_flat.get_polygons(merge=False, by="tuple")
+    assert {port.name for port in airbridge_chip.ports} == {"o_left", "o_right"}
+    assert len(airbridge_polygons[(LAYER.D0_TOP_AB_DRAW.layer, LAYER.D0_TOP_AB_DRAW.datatype)]) == 3
+    assert len(airbridge_polygons[(LAYER.D0_TOP_AB_VIA.layer, LAYER.D0_TOP_AB_VIA.datatype)]) == 6
     assert samples["orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance"]().ports

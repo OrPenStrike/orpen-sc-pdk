@@ -11,12 +11,14 @@ HANDOFF_NOTEBOOKS = (
     NOTEBOOK_SOURCE_DIR / "public_eigenmode_workflow.py",
     NOTEBOOK_SOURCE_DIR / "public_electrostatic_workflow.py",
     NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_workflow.py",
+    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_representation_a_workflow.py",
+    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_representation_c_workflow.py",
 )
 LOCAL_NOTEBOOKS = (
     NOTEBOOK_SOURCE_DIR / "public_driven_local_workflow.py",
     NOTEBOOK_SOURCE_DIR / "public_eigenmode_local_workflow.py",
     NOTEBOOK_SOURCE_DIR / "public_electrostatic_local_workflow.py",
-    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_local_workflow.py",
+    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_representation_b_local_workflow.py",
     NOTEBOOK_SOURCE_DIR / "public_purcell_driven_local_workflow.py",
     NOTEBOOK_SOURCE_DIR / "public_purcell_eigenmode_local_workflow.py",
 )
@@ -26,12 +28,15 @@ PURCELL_LOCAL_NOTEBOOKS = (
     NOTEBOOK_SOURCE_DIR / "public_purcell_driven_local_workflow.py",
     NOTEBOOK_SOURCE_DIR / "public_purcell_eigenmode_local_workflow.py",
 )
-SURFACE_EPR_NOTEBOOK = (
-    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_workflow.py"
-)
+SURFACE_EPR_NOTEBOOK = NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_workflow.py"
 SURFACE_EPR_LOCAL_NOTEBOOK = (
-    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_local_workflow.py"
+    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_representation_b_local_workflow.py"
 )
+SURFACE_EPR_REPRESENTATION_NOTEBOOKS = {
+    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_representation_a_workflow.py": "A",
+    SURFACE_EPR_NOTEBOOK: "B",
+    NOTEBOOK_SOURCE_DIR / "public_surface_epr_ribbon_capacitor_representation_c_workflow.py": "C",
+}
 
 
 def _is_private_name(name: str) -> bool:
@@ -275,7 +280,9 @@ def test_public_problem_notebooks_use_explicit_date_index_run_folders() -> None:
     for notebook in PROBLEM_NOTEBOOKS:
         source = notebook.read_text()
         assert "from orpen_sc_pdk.config import PATH" in source
-        assert 'NOTEBOOK_ROOT = PATH.simulation / "notebooks"' in source
+        assert "NOTEBOOK_ROOT =" in source
+        assert "PATH.simulation" in source
+        assert '/ "notebooks"' in source
         assert "NOTEBOOK_RUN_DATE = date.today().isoformat()" in source
         assert "NOTEBOOK_RUN_INDEX =" in source
         assert 'NOTEBOOK_RUN_ID = f"{NOTEBOOK_RUN_DATE}-Run{NOTEBOOK_RUN_INDEX:02d}"' in source
@@ -295,8 +302,7 @@ def test_public_problem_notebooks_configure_public_hpc_handoff_in_run_cell() -> 
         simulation_imports = {
             alias.name
             for node in ast.walk(tree)
-            if isinstance(node, ast.ImportFrom)
-            and node.module == "orpen_sc_pdk.simulation"
+            if isinstance(node, ast.ImportFrom) and node.module == "orpen_sc_pdk.simulation"
             for alias in node.names
         }
         assert "resolve_public_palace_run_profile" in simulation_imports
@@ -360,8 +366,7 @@ def test_public_purcell_notebooks_only_add_readout_lumped_ports() -> None:
                 (
                     keyword.value.value
                     for keyword in call.keywords
-                    if keyword.arg == "excited"
-                    and isinstance(keyword.value, ast.Constant)
+                    if keyword.arg == "excited" and isinstance(keyword.value, ast.Constant)
                 ),
                 True,
             )
@@ -406,10 +411,11 @@ def test_public_surface_epr_notebook_teaches_route_b_ribbon_capacitor_groups() -
     assert "get_gsim_palace_surface_epr_layer_number" not in source
     assert "add_source_surface_epr_regions(" not in source
     assert "build_source_surface_epr_dielectric_specs_from_interfaces(" not in source
-    assert "build_interface_surface_catalog(mesh_result.groups)" in source
-    assert "build_surface_epr_dielectric_specs(" in source
+    assert "build_interface_surface_catalog(mesh_result.groups)" not in source
+    assert "build_surface_epr_dielectric_specs(" not in source
+    assert "build_postprocessing_config_from_manifest(" not in source
     assert "build_dielectric_interface_specs_from_material_kinds(" not in source
-    assert "surface_epr_catalog" in source
+    assert "surface_epr_catalog" not in source
     assert "sim.set_simulation_layers(surface_epr_catalog)" not in source
     assert ast.literal_eval(assignments["SURFACE_EPR_INSET_NM"]) == 50
     assert ast.literal_eval(assignments["SURFACE_EPR_INSET_MARGINS_NM"]) == (
@@ -429,9 +435,9 @@ def test_public_surface_epr_notebook_teaches_route_b_ribbon_capacitor_groups() -
     assert "source_aware_surface_epr_groups =" not in source
     assert "surface_epr_group_rows" not in source
     assert "total_source_aware_groups" not in source
-    assert "surface_epr_dielectric_specs" in source
-    assert "dielectric_interfaces=surface_epr_dielectric_specs" in source
-    assert "surface_epr_ms_bottom_entries" in source
+    assert "surface_epr_dielectric_specs" not in source
+    assert "dielectric_interfaces=surface_epr_dielectric_specs" not in source
+    assert "surface_epr_interfaces" in source
     assert "D0_TOP_M1_pec_0" not in source
     assert "D0_TOP_M1_pec_1" not in source
     assert "region.name" not in source
@@ -440,12 +446,27 @@ def test_public_surface_epr_notebook_teaches_route_b_ribbon_capacitor_groups() -
     assert "D0_TOP_SURFACE_EPR_BAND" not in source
     assert "d0_top_surface_epr" not in source
     assert '"interface_type": "MS"' in source
-    assert '"interface_type": "MA"' not in source
-    assert '"interface_type": "SA"' not in source
-    assert "SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES = (\"martinis2022_ms\",)" in source
-    assert "preset=surface_epr_ms" in source
+    assert "Woods2019_Si_MA" in source
+    assert "Woods2019_Si_SA" in source
+    assert ast.literal_eval(assignments["SURFACE_EPR_ACTIVE_INTERFACE_PRESET_NAMES"]) == (
+        "martinis2022_ms",
+        "Woods2019_Si_MA",
+        "Woods2019_Si_SA",
+    )
+    assert "sim.set_surface_epr(" in source
+    assert 'representation="B"' in source
+    assert "inset_margins_um=SURFACE_EPR_INSET_MARGINS_UM" in source
+    assert '"preset_name": "martinis2022_ms"' in source
+    assert '"preset_name": "Woods2019_Si_MA"' in source
+    assert '"preset_name": "Woods2019_Si_SA"' in source
+    assert '"face_kind": "bottom"' in source
+    assert '"face_kind": ("top", "sidewall")' in source
+    assert "postprocessing=postprocessing" not in source
     assert "substrate_air_surface_epr_specs" not in source
-    assert '"active_loss_channels": ("MS",)' in source
+    assert "sim.set_numerical(order=3)" in source
+    assert '"solver_order": 3' in source
+    assert '"active_loss_channels": ("MA", "MS", "SA")' in source
+    assert '"memory_mb": 524288' in source
     assert "SURFACE_EPR_POSTPROCESSING_STATUS" not in source
     assert "TODO: consume the corrected gsim Surface EPR API here" not in source
     assert "paper_reference_capacitance_ff" in source
@@ -457,20 +478,34 @@ def test_public_surface_epr_local_notebook_uses_route_b_postprocessing() -> None
     assert "add_source_surface_epr_regions(" not in source
     assert "build_source_surface_epr_dielectric_specs_from_interfaces(" not in source
     assert "build_source_surface_epr_shell_dielectric_specs(" not in source
-    assert "build_interface_surface_catalog(mesh_result.groups)" in source
-    assert "build_surface_epr_dielectric_specs(" in source
+    assert "build_interface_surface_catalog(mesh_result.groups)" not in source
+    assert "build_surface_epr_dielectric_specs(" not in source
+    assert "build_postprocessing_config_from_manifest(" not in source
     assert "build_dielectric_interface_specs_from_material_kinds(" not in source
     assert "get_gsim_palace_surface_epr_layer_number" not in source
-    assert "surface_epr_catalog" in source
+    assert "surface_epr_catalog" not in source
     assert "sim.set_simulation_layers(surface_epr_catalog)" not in source
-    assert "dielectric_interfaces=surface_epr_dielectric_specs" in source
-    assert "SURFACE_EPR_USE_FINITE_METAL_SHELL = True" in source
+    assert "dielectric_interfaces=surface_epr_dielectric_specs" not in source
+    assert "SURFACE_EPR_USE_FINITE_METAL_SHELL" not in source
+    assert "SURFACE_EPR_PLANAR_CONDUCTORS = False" in source
+    assert "planar_conductors=True" not in source
     assert "planar_conductors=SURFACE_EPR_PLANAR_CONDUCTORS" in source
-    assert "surface_epr_inset_margins_um=SURFACE_EPR_INSET_MARGINS_UM" in source
-    assert '"surface_epr_ms_bottom_entries"' in source
+    assert "inset_margins_um=SURFACE_EPR_INSET_MARGINS_UM" in source
+    assert "sim.set_surface_epr(" in source
+    assert 'representation="B"' in source
+    assert '"preset_name": "martinis2022_ms"' in source
+    assert '"preset_name": "Woods2019_Si_MA"' in source
+    assert '"preset_name": "Woods2019_Si_SA"' in source
+    assert '"face_kind": "bottom"' in source
+    assert '"face_kind": ("top", "sidewall")' in source
+    assert '"face_kind": "top"' in source
+    assert "postprocessing=postprocessing" not in source
+    assert '"surface_epr_interfaces"' in source
     assert '"mesh_manifest_surface_epr_entries"' in source
     assert "substrate_air_surface_epr_specs" not in source
-    assert '"active_loss_channels": ("MS",)' in source
+    assert '"surface_epr_interfaces": ("MS bottom", "MA top", "MA sidewall", "SA top")' in source
+    assert '"active_loss_channels": ("MA", "MS", "SA")' in source
+    assert "deferred_loss_channels" not in source
     assert "SURFACE_EPR_POSTPROCESSING_STATUS" not in source
     assert "TODO: consume the corrected gsim Surface EPR API here" not in source
     assert "# ## Run Stage (run_local)" in source
@@ -479,6 +514,40 @@ def test_public_surface_epr_local_notebook_uses_route_b_postprocessing() -> None
     assert "resolve_public_palace_run_profile" not in source
     assert "sim.write_slurm_sbatch_handoff(" not in source
     assert "sim.generate_handoff_package(" not in source
+
+
+def test_public_surface_epr_representation_notebooks_use_setter_api() -> None:
+    for notebook, representation in SURFACE_EPR_REPRESENTATION_NOTEBOOKS.items():
+        source = notebook.read_text()
+
+        assert "martinis2022_differential_ribbon_capacitor" in source
+        assert "build_interface_surface_catalog(" not in source
+        assert "build_surface_epr_dielectric_specs(" not in source
+        assert "build_postprocessing_config_from_manifest(" not in source
+        assert "postprocessing=postprocessing" not in source
+        assert "SURFACE_EPR_USE_FINITE_METAL_SHELL" not in source
+        assert "SURFACE_EPR_PLANAR_CONDUCTORS = False" in source
+        assert "planar_conductors=True" not in source
+        assert "sim.set_surface_epr(" in source
+        assert f'representation="{representation}"' in source
+        assert "inset_margins_um=SURFACE_EPR_INSET_MARGINS_UM" in source
+        assert '"preset_name": "martinis2022_ms"' in source
+        assert '"face_kind": "bottom"' in source
+        if representation == "C":
+            assert '"validated_mesh_interface_types": ("MA", "MS", "SA")' in source
+            assert "SURFACE_EPR_RETAIN_3D_METAL_VOLUME = True" in source
+            assert "SURFACE_EPR_PLANAR_CONDUCTORS = False" in source
+            assert "generated_child_physical_group_examples" in source
+            assert "sim.set_numerical(order=3)" in source
+            assert '"memory_mb": 524288' in source
+            assert '"active_loss_channels": ("MA", "MS", "SA")' in source
+            assert '"deferred_route_c_inset": "requires shared-face fragmentation"' not in source
+        elif representation == "A":
+            assert '"active_loss_channels": ("MS",)' in source
+        else:
+            assert '"active_loss_channels": ("MA", "MS", "SA")' in source
+            assert "sim.set_numerical(order=3)" in source
+            assert '"memory_mb": 524288' in source
 
 
 def test_public_problem_notebooks_do_not_write_synthetic_report_fixtures() -> None:
