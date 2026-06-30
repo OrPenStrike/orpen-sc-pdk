@@ -1,4 +1,4 @@
-"""Public Purcell-filter demo chips ported with AI assistance using GDSFactory+ MCP."""
+"""Global Purcell-filter demo chip cell."""
 
 from math import pi
 
