@@ -59,6 +59,7 @@ nb_execution_allow_errors = False
 nb_execution_raise_on_error = True
 nb_execution_excludepatterns = [
     "notebooks/public_*_workflow.ipynb",
+    "notebooks/SGB_Geometry_Tutorials/*.ipynb",
 ]
 nb_custom_formats = {
     ".py": ["jupytext.reads", {"fmt": "py:percent"}],

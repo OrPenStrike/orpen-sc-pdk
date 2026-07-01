@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "schema": "semantic_geometry_stack_v1",
+    "units": "um",
+    "source": "build/simulation/notebooks/SGB_Geometry_Tutorials/resonator/route_<a|b|c>/gds/resonator.gds"
+  },
+  "solution_regions": {
+    "AIR": {
+      "role": "solution_region",
+      "material_id": "AIR",
+      "geometry_kind": "domain",
+      "geometry": {
+        "domain": "D0_To_Outer_Air",
+        "padding_um": 200.0,
+        "z_min_um": 0.0,
+        "z_max_um": 500.0
+      }
+    },
+    "D0_Substrate": {
+      "role": "solution_region",
+      "material_id": "silicon",
+      "geometry_kind": "domain",
+      "geometry": {
+        "domain": "D0_Substrate",
+        "padding_um": 200.0,
+        "z_min_um": -500.0,
+        "z_max_um": 0.0
+      }
+    }
+  },
+  "layers": [
+    {
+      "layer": 1,
+      "datatype": 0,
+      "semantic_id": "D0_TOP_M1_Resonator",
+      "role": "metal",
+      "material_id": "aluminum",
+      "part_role": "face_metal",
+      "net_id": "signal",
+      "geometry_kind": "layout_extrusion",
+      "geometry": {
+        "z_um": 0.0,
+        "thickness_um": 0.2,
+        "geometry_source": "gds_polygon",
+        "selector_point_um": [0.0, 0.0]
+      },
+      "route_representations": {
+        "A": "surface_sheet",
+        "B": "cutout_boundary_shell",
+        "C": "material_volume"
+      }
+    },
+    {
+      "layer": 1,
+      "datatype": 1,
+      "semantic_id": "D0_TOP_M1_ETCH_MASK",
+      "role": "layout_mask",
+      "material_id": "AIR",
+      "geometry_kind": "interface_recognition_mask",
+      "geometry": {
+        "geometry_source": "gds_polygon",
+        "mask_role": "ground_cutout"
+      }
+    },
+    {
+      "layer": 110,
+      "datatype": 0,
+      "semantic_id": "D0_TOP_M1_GROUND",
+      "role": "metal",
+      "material_id": "aluminum",
+      "part_role": "face_metal",
+      "net_id": "GND",
+      "geometry_kind": "derived_ground_plane",
+      "geometry": {
+        "z_um": 0.0,
+        "thickness_um": 0.2,
+        "geometry_source": "die_face_minus_ground_mask",
+        "plane_bounds_ref": "D0_Substrate",
+        "mask_layer": [110, 0]
+      },
+      "route_representations": {
+        "A": "surface_sheet",
+        "B": "cutout_boundary_shell",
+        "C": "material_volume"
+      }
+    }
+  ]
+}

@@ -111,6 +111,14 @@ Notebook Items
         packages. The demo keeps material parameters, inset margins, solver
         order, and refinement controls aligned across routes.
 
+    .. grid-item-card:: NB-012 Public SGB Geometry Tutorials
+
+        :doc:`notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_a`
+
+        Groups twelve public GDS + stack geometry notebooks: four geometries
+        split across routes A/B/C, with each notebook checking exactly one
+        geometry-route contract before any optional XAO build.
+
 .. toctree::
     :maxdepth: 1
     :hidden:
@@ -131,3 +139,15 @@ Notebook Items
     notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_b_hpc_handoff
     notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_c_local
     notebooks/Inset_Surface_EPR_Demo/martinis2022_ribbon_route_c_hpc_handoff
+    notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_a
+    notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_b
+    notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_c
+    notebooks/SGB_Geometry_Tutorials/resonator_route_a
+    notebooks/SGB_Geometry_Tutorials/resonator_route_b
+    notebooks/SGB_Geometry_Tutorials/resonator_route_c
+    notebooks/SGB_Geometry_Tutorials/resonator_with_indium_bumps_route_a
+    notebooks/SGB_Geometry_Tutorials/resonator_with_indium_bumps_route_b
+    notebooks/SGB_Geometry_Tutorials/resonator_with_indium_bumps_route_c
+    notebooks/SGB_Geometry_Tutorials/sim_flip_chip_distance_route_a
+    notebooks/SGB_Geometry_Tutorials/sim_flip_chip_distance_route_b
+    notebooks/SGB_Geometry_Tutorials/sim_flip_chip_distance_route_c

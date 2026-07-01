@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "schema": "semantic_geometry_stack_v1",
+    "units": "um",
+    "source": "build/simulation/notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon/route_<a|b|c>/gds/martinis2022_ribbon.gds"
+  },
+  "solution_regions": {
+    "AIR": {
+      "role": "solution_region",
+      "material_id": "AIR",
+      "geometry_kind": "domain",
+      "geometry": {
+        "domain": "D0_To_Outer_Air",
+        "padding_um": 100.0,
+        "z_min_um": 0.0,
+        "z_max_um": 200.0
+      }
+    },
+    "D0_Substrate": {
+      "role": "solution_region",
+      "material_id": "silicon",
+      "geometry_kind": "domain",
+      "geometry": {
+        "domain": "D0_Substrate",
+        "padding_um": 100.0,
+        "z_min_um": -500.0,
+        "z_max_um": 0.0
+      }
+    }
+  },
+  "layers": [
+    {
+      "layer": 1,
+      "datatype": 0,
+      "semantic_id": "Left_Ribbon",
+      "role": "metal",
+      "material_id": "aluminum",
+      "part_role": "face_metal",
+      "net_id": "left_electrode",
+      "geometry_kind": "layout_extrusion",
+      "geometry": {
+        "z_um": 0.0,
+        "thickness_um": 0.2,
+        "geometry_source": "gds_polygon",
+        "selector_point_um": [-75.0, 0.0]
+      },
+      "route_representations": {
+        "A": "surface_sheet",
+        "B": "cutout_boundary_shell",
+        "C": "material_volume"
+      }
+    },
+    {
+      "layer": 1,
+      "datatype": 0,
+      "semantic_id": "Right_Ribbon",
+      "role": "metal",
+      "material_id": "aluminum",
+      "part_role": "face_metal",
+      "net_id": "right_electrode",
+      "geometry_kind": "layout_extrusion",
+      "geometry": {
+        "z_um": 0.0,
+        "thickness_um": 0.2,
+        "geometry_source": "gds_polygon",
+        "selector_point_um": [75.0, 0.0]
+      },
+      "route_representations": {
+        "A": "surface_sheet",
+        "B": "cutout_boundary_shell",
+        "C": "material_volume"
+      }
+    }
+  ]
+}
