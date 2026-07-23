@@ -41,7 +41,7 @@ def _base_figure(parameters: dict, title: str):
         1,
         2,
         figsize=(15, 7.8),
-        gridspec_kw={"width_ratios": [4.3, 1.5]},
+        gridspec_kw={"width_ratios": [4.0, 2.0]},
         constrained_layout=True,
     )
     fig.suptitle(title, fontsize=19, fontweight="bold", color=INK)
@@ -55,13 +55,42 @@ def _base_figure(parameters: dict, title: str):
 
     clearance = float(parameters["upper_ground_clearance_width_um"])
     metal = float(parameters["metal_thickness_um"])
-    ax.add_patch(Rectangle((-48, 8 - metal), 48 - clearance / 2, metal, color=GROUND, ec=INK))
-    ax.add_patch(
-        Rectangle((clearance / 2, 8 - metal), 48 - clearance / 2, metal, color=GROUND, ec=INK)
-    )
-    _hdim(ax, -clearance / 2, clearance / 2, 6.65, f"clearance = {clearance:g} µm")
+    if clearance == 0.0:
+        ax.add_patch(Rectangle((-48, 8 - metal), 96, metal, color=GROUND, ec=INK))
+    else:
+        ax.add_patch(
+            Rectangle(
+                (-48, 8 - metal),
+                48 - clearance / 2,
+                metal,
+                color=GROUND,
+                ec=INK,
+            )
+        )
+        ax.add_patch(
+            Rectangle(
+                (clearance / 2, 8 - metal),
+                48 - clearance / 2,
+                metal,
+                color=GROUND,
+                ec=INK,
+            )
+        )
+        _hdim(
+            ax,
+            -clearance / 2,
+            clearance / 2,
+            6.65,
+            f"clearance = {clearance:g} µm",
+        )
     _vdim(ax, 43, 0, float(parameters["flip_chip_gap_height_um"]), "h = 8 µm")
-    ax.text(33, 8.55, "D1 bottom Ground Plane", ha="center", color=INK)
+    ax.text(
+        26,
+        8.55,
+        ("D1 bottom Ground Plane (continuous)" if clearance == 0.0 else "D1 bottom Ground Plane"),
+        ha="center",
+        color=INK,
+    )
     ax.text(
         -47,
         -2.8,
@@ -96,7 +125,11 @@ def _dimension_table(table_ax, parameters: dict, *, include_d: bool, impedance_r
             ("Flip-chip height, h", f"{parameters['flip_chip_gap_height_um']:g} µm"),
             (
                 "Upper-ground excavation",
-                f"{parameters['upper_ground_clearance_width_um']:g} µm",
+                (
+                    "None (continuous)"
+                    if parameters["upper_ground_clearance_width_um"] == 0.0
+                    else f"{parameters['upper_ground_clearance_width_um']:g} µm"
+                ),
             ),
             ("Metal thickness, t", f"{parameters['metal_thickness_um']:g} µm"),
             ("Outer ground per side", f"{parameters['ground_width_um']:g} µm"),
@@ -109,10 +142,10 @@ def _dimension_table(table_ax, parameters: dict, *, include_d: bool, impedance_r
         cellLoc="left",
         colLoc="left",
         loc="center",
-        colWidths=(0.66, 0.34),
+        colWidths=(0.58, 0.42),
     )
     table.auto_set_font_size(False)
-    table.set_fontsize(10.5)
+    table.set_fontsize(10)
     table.scale(1, 1.75)
     for (row, _), cell in table.get_celld().items():
         cell.set_edgecolor("#c7d0d5")
