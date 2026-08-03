@@ -11,8 +11,36 @@
       "permeability": 1.0,
       "material_kind": "dielectric"
     },
+    "sapphire_EFG": {
+      "relative_permittivity": [
+        9.27,
+        9.27,
+        11.35
+      ],
+      "loss_tangent": 6.3e-8,
+      "permeability": 1.0,
+      "material_axes": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "material_kind": "dielectric"
+    },
     "Al": {
       "relative_permittivity": "inf",
+      "conductivity": 35000000.0,
       "material_kind": "superconductor"
     },
     "Nb": {

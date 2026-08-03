@@ -1,6 +1,6 @@
 """Primitive AEDT package models for public handoff contracts.
 
-This module owns the typed data model for host-side AEDT package generation:
+This module owns the typed data model for notebook-side AEDT package generation:
 recipe vocabulary, runtime policy, material context, case specs, package specs,
 and package result records. It does not import the package writer or generated
 runtime facade; implementation modules depend on these primitives, not the
@@ -38,7 +38,7 @@ AedtQ2dMatrixProblemType = Literal["CG", "RL"]
 AedtQ3dMatrixProblemType = Literal["C", "AC RL", "DC RL"]
 AedtMatrixType = Literal["Maxwell", "Couple", "Spice"]
 AedtQ2dAssignmentSource = Literal["q2d_conductors", "object_patterns"]
-AedtQ2dGeometryMode = Literal["hfss_section", "native_2d"]
+AedtQ2dGeometryMode = Literal["hfss_section", "semantic_cross_section"]
 AedtQ2dRegionMode = Literal["individual", "all", "transverse"]
 AedtQ2dRegionPaddingType = Literal[
     "Absolute Offset",
@@ -312,12 +312,6 @@ class AedtNativeRunProfileSpec(BaseModel):
     progress: AedtParallelProgressMode = "auto"
     progress_interval_seconds: float = Field(default=5.0, gt=0)
 
-    @model_validator(mode="after")
-    def _validate_mode_contract(self) -> AedtNativeRunProfileSpec:
-        if self.mode == "import" and (self.skip_completed or self.continue_on_failure):
-            raise ValueError("import run profiles cannot skip or continue failed work")
-        return self
-
 
 class AedtRecipeSpec(BaseModel):
     """One AEDT solver recipe for a GDS/TECH case."""
@@ -432,16 +426,22 @@ class AedtRecipeSpec(BaseModel):
         if self.type == "q3d_extraction":
             invalid = sorted(set(self.matrix_problem_types) - {"C", "AC RL", "DC RL"})
             if invalid:
-                raise ValueError(f"q3d_extraction has invalid matrix problem types: {invalid}")
+                raise ValueError(
+                    f"q3d_extraction matrix_problem_types has invalid values: {invalid}"
+                )
         if self.type == "q2d_extraction":
             invalid = sorted(set(self.matrix_problem_types) - {"CG", "RL"})
             if invalid:
-                raise ValueError(f"q2d_extraction has invalid matrix problem types: {invalid}")
-            if self.q2d_geometry_mode == "native_2d" and self.assignment_source != "q2d_conductors":
                 raise ValueError(
-                    "q2d_extraction native_2d geometry mode requires "
-                    "assignment_source='q2d_conductors'"
+                    f"q2d_extraction matrix_problem_types has invalid values: {invalid}"
                 )
+            if self.q2d_geometry_mode == "semantic_cross_section":
+                if self.assignment_source is not None:
+                    raise ValueError(
+                        "semantic_cross_section Q2D recipes derive assignments from "
+                        "FacePattern segments and must not set assignment_source"
+                    )
+                return self
             if self.assignment_source == "q2d_conductors":
                 return self
             if not self.signal_patterns:
@@ -457,20 +457,25 @@ class AedtRecipeSpec(BaseModel):
 
 
 class AedtNativeCaseSpec(BaseModel):
-    """One GDS/TECH case included in an AEDT-native package."""
+    """One AEDT case included in a native handoff package.
+
+    Layout-backed recipes require GDS/TECH source artifacts. Semantic Q2D
+    cross-section recipes may be sidecar-only because their geometry source is
+    the explicit Stack/FacePattern payload.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     id: str
-    gds_path: Path
-    tech_path: Path
+    gds_path: Path | None = None
+    tech_path: Path | None = None
     control_path: Path | None = None
     layer_mapping_csv_path: Path | None = None
     layer_mapping_json_path: Path | None = None
     aedt_material_context_path: Path | None = None
-    source_metadata_path: Path | None = None
     q2d_conductors_csv_path: Path | None = None
     q2d_conductors_json_path: Path | None = None
+    q2d_cross_section_json_path: Path | None = None
     recipes: tuple[AedtRecipeSpec, ...]
 
     @field_validator("id")
@@ -488,6 +493,14 @@ class AedtNativeCaseSpec(BaseModel):
         recipe_ids = [recipe.id for recipe in self.recipes]
         if len(recipe_ids) != len(set(recipe_ids)):
             raise ValueError(f"case {self.id!r} has duplicate recipe ids")
+        requires_layout_artifacts = any(
+            recipe.type != "q2d_extraction" or recipe.q2d_geometry_mode != "semantic_cross_section"
+            for recipe in self.recipes
+        )
+        if requires_layout_artifacts and (self.gds_path is None or self.tech_path is None):
+            raise ValueError(
+                f"case {self.id!r} has layout-backed recipes and requires gds_path and tech_path"
+            )
         if any(
             recipe.type == "q2d_extraction"
             and recipe.assignment_source == "q2d_conductors"
@@ -500,12 +513,13 @@ class AedtNativeCaseSpec(BaseModel):
             )
         if any(
             recipe.type == "q2d_extraction"
-            and recipe.q2d_geometry_mode == "native_2d"
-            and self.source_metadata_path is None
+            and recipe.q2d_geometry_mode == "semantic_cross_section"
+            and self.q2d_cross_section_json_path is None
             for recipe in self.recipes
         ):
             raise ValueError(
-                f"case {self.id!r} uses native_2d Q2D geometry but has no source_metadata_path"
+                f"case {self.id!r} uses semantic_cross_section Q2D geometry but has no "
+                "q2d_cross_section_json_path"
             )
         return self
 
@@ -581,7 +595,6 @@ class AedtNativePackageResult(BaseModel):
     solve_run_config_path: Path
     scripts_dir: Path
     python_script_path: Path
-    q2d_script_path: Path
     bash_script_path: Path
     powershell_script_path: Path
     project_path: Path

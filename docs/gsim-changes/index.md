@@ -1,18 +1,17 @@
 # gsim Changes
 
-These pages explain the reusable Palace workflow changes that belong in
-`gsim`, not in the public PDK. Read them in order: the first page sets the API
-boundary, and later pages only mention that boundary when they add a new
-responsibility.
+These pages are implementation notes under the
+{doc}`../features/gsim-resolve-results` capability. They explain reusable
+Palace workflow changes that belong in `gsim`, not in the public PDK.
 
 ## Suggested Review Slices
 
 | Order | Slice | Why it comes here |
 | --- | --- | --- |
 | 1 | API boundary | This decides which modules own new behavior and which imports are public. |
-| 2 | Mesh and config provenance | This adds the identity artifacts used by config and reports. |
-| 3 | Run, resolve, and results | This depends on run folders and generated artifacts being identifiable. |
-| 4 | Runtime handoff records | This is largest operationally, but it should not change report semantics. |
+| 2 | Mesh and config provenance | This adds identity artifacts used by config and reports. |
+| 3 | Run, resolve, and results | This is the active product surface for completed Palace runs. |
+| 4 | Runtime handoff records | This is operational support; it should not change report semantics. |
 
 ::::{grid} 1 1 2 2
 :gutter: 3

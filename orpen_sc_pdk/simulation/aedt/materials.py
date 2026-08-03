@@ -1,4 +1,4 @@
-"""Host-side AEDT material context compiler.
+"""Notebook-side AEDT material context compiler.
 
 This module owns translation from public PDK layer/material sidecars into the
 portable material context copied into AEDT handoff packages. It does not write
@@ -271,7 +271,7 @@ def _compile_aedt_material_properties(
     _copy_scalar_material_property(
         supported_payload,
         unsupported_payload,
-        "relative_permittivity",
+        "permittivity",
         record.get("relative_permittivity"),
         supported_name="permittivity",
     )

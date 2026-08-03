@@ -637,9 +637,7 @@ def test_public_cad_mesh_identity_handoff_evidence_runs_standalone(
     for problem_key, problem in audit["problems"].items():
         assert problem["output_dir"] == f"identity/{problem_key}"
         assert problem["identity_status"] == "covered_public_fixture"
-        assert (
-            tmp_path / "identity" / problem_key / "metadata" / "mesh_manifest.json"
-        ).is_file()
+        assert (tmp_path / "identity" / problem_key / "metadata" / "mesh_manifest.json").is_file()
         assert (
             tmp_path / "identity" / problem_key / "metadata" / "palace_index_map.json"
         ).is_file()
@@ -932,9 +930,7 @@ def test_public_palace_smoke_evidence_dry_run_writes_artifacts(tmp_path: Path) -
         assert config["Solver"]["Device"] == "CPU"
         assert config["Solver"]["Linear"]
         assert (output_dir / "metadata" / "palace_handoff_metadata.json").is_file()
-        assert (
-            output_dir / "metadata" / "palace_handoff_archive_manifest.json"
-        ).is_file()
+        assert (output_dir / "metadata" / "palace_handoff_archive_manifest.json").is_file()
         assert (output_dir / "metadata" / "palace_resource_record.json").is_file()
         assert (output_dir / "metadata" / "palace_amr_passes.csv").is_file()
         assert (output_dir / "metadata" / "palace_stage_timing.csv").is_file()

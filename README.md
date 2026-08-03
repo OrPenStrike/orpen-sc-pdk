@@ -113,8 +113,8 @@ Do not put private chip designs directly in this repository.
 
 ## Contributor Setup
 
-Use editable sibling checkouts only when changing `orpen-sc-pdk`, `gsim`,
-`gplugins`, or a private layout project together:
+Use the ecosystem development group when changing `orpen-sc-pdk` and `gsim`
+together:
 
 ```toml
 [dependency-groups]
@@ -124,15 +124,13 @@ ecosystem-dev = [
 ]
 
 [tool.uv.sources]
-orpen-sc-pdk = { path = "../../orpen_sc_pdk", editable = true }
-gsim = { path = "../../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
-gplugins = { path = "../../GDSFactory_Community_Workbench/gplugins", editable = true, group = "ecosystem-dev" }
+gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
 ```
 
 For the full local contributor environment:
 
 ```bash
-uv sync -p 3.12 --extra dev --extra gdsfactoryplus --group docs --group ecosystem-dev
+uv sync -p 3.12 --all-extras
 ```
 
 Run the focused validation checks:

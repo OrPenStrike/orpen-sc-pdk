@@ -1,8 +1,8 @@
 # Detailed Ledgers
 
-These pages keep the long review records. Start with the shorter `gsim Changes`
-and `Public PDK Examples` pages first; use these ledgers when you need commit
-history, issue context, or older review notes.
+These pages keep the long review records. Start with
+{doc}`../developing-features` first; use these ledgers only when you need older
+issue context.
 
 ::::{grid} 1 1 3 3
 :gutter: 3
@@ -11,7 +11,7 @@ history, issue context, or older review notes.
 :link: ../developing-features
 :link-type: doc
 
-The broad feature board for reusable ecosystem capability.
+The current two-capability development scope.
 :::
 
 :::{grid-item-card} Issues

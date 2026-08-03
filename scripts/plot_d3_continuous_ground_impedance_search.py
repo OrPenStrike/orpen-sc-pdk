@@ -22,11 +22,7 @@ def _matching_single(pair: dict, singles: list[dict]) -> dict:
     parameters = pair["parameters"]
     scale = parameters.get("lateral_scale")
     if scale is not None:
-        matches = [
-            case
-            for case in singles
-            if case["parameters"].get("lateral_scale") == scale
-        ]
+        matches = [case for case in singles if case["parameters"].get("lateral_scale") == scale]
     else:
         matches = [
             case
@@ -56,15 +52,11 @@ def _rows(label: str, artifact_dir: Path) -> list[dict[str, float | str]]:
                 "lateral_scale": parameters.get("lateral_scale") or "",
                 "trace_width_um": float(parameters["trace_width_um"]),
                 "trace_gap_um": float(parameters["trace_gap_um"]),
-                "inter_trace_ground_width_um": float(
-                    parameters["inter_trace_ground_width_um"]
-                ),
+                "inter_trace_ground_width_um": float(parameters["inter_trace_ground_width_um"]),
                 "z0_ohm": z0,
                 "zc_ohm": zc,
                 "zm_ohm": zm,
-                "max_pairwise_relative_mismatch": max(
-                    abs(z0 - zc), abs(z0 - zm), abs(zc - zm)
-                )
+                "max_pairwise_relative_mismatch": max(abs(z0 - zc), abs(z0 - zm), abs(zc - zm))
                 / mean,
             }
         )
@@ -83,11 +75,7 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
 
-    rows = [
-        row
-        for label, artifact_dir in args.screen
-        for row in _rows(label, Path(artifact_dir))
-    ]
+    rows = [row for label, artifact_dir in args.screen for row in _rows(label, Path(artifact_dir))]
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     csv_path = output / "continuous_ground_impedance_search.csv"

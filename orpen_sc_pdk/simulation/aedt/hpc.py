@@ -1,4 +1,4 @@
-"""Host-side AEDT HPC/ACF package helpers.
+"""Notebook-side AEDT HPC/ACF package helpers.
 
 This module owns the small public model used to render ANSYS AEDT `.acf`
 worker configuration files. It does not launch AEDT or decide solver geometry;
@@ -34,7 +34,7 @@ class AedtHpcResourceSpec(BaseModel):
     num_cores: int = Field(default=4, ge=1)
     max_workers: int = Field(default=16, ge=1)
     core_budget: int | None = Field(default=64, ge=1)
-    memory_mb_total: int | None = Field(default=480000, ge=1)
+    memory_mb_total: int | None = Field(default=240000, ge=1)
     memory_mb_per_worker: int | None = Field(default=None, ge=1)
     ram_percent: int | None = Field(default=None, ge=1, le=100)
     num_job_cores: int = Field(default=0, ge=0)
@@ -115,7 +115,7 @@ class AedtHpcValidationSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     core_budget: int | None = Field(default=64, ge=1)
-    memory_mb_total: int | None = Field(default=480000, ge=1)
+    memory_mb_total: int | None = Field(default=240000, ge=1)
     allowed_distribution_types: tuple[str, ...] = Field(
         default_factory=lambda: _AEDT_HPC_DEFAULT_ALLOWED_DISTRIBUTION_TYPES
     )

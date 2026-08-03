@@ -1,14 +1,13 @@
 """Generated AEDT handoff package template renderers.
 
-This module owns the README, requirements, package-local Python runner, and
-shell launcher text copied into AEDT handoff packages. It does not validate
+This module owns the README, requirements, package-local Python entrypoints,
+and shell launcher text copied into AEDT handoff packages. It does not validate
 source artifacts or write package directories.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from importlib.resources import files
 from typing import Any
 
 from orpen_sc_pdk.simulation.aedt.models import AedtNativePackageSpec
@@ -30,13 +29,14 @@ and Q2D.
 ## Contents
 
 - `manifest.yaml`: package source of truth.
-- `gds/`: scene-level GDS files.
-- `tech/`: AEDT GDS import XML control files plus TECH audit sidecars.
-- `layer_mapping/`: source layer audit sidecars.
+- `gds/`: scene-level GDS files when the package is layout-backed.
+- `tech/`: AEDT GDS import XML control files when the package is layout-backed.
+- `layer_mapping/`: source layer audit sidecars when the package is layout-backed.
 - `metadata/`: solver-family sidecars such as Q2D conductor markers.
 - `hpc/`: generated AEDT HPC configuration files for point-local workers.
-- `scripts/run_aedt_native.py`: PyAEDT automation entrypoint.
-- `scripts/run_aedt_q2d_cross_section.py`: Q2D cross-section workflow entrypoint.
+- `scripts/run_aedt_native.py`: thin Python entrypoint.
+- `scripts/runtime_bundle/`: run-side PyAEDT automation package copied into
+  this handoff package.
 - `scripts/run_aedt_native.sh`: Ubuntu launcher.
 - `scripts/run_aedt_native.ps1`: Windows launcher.
 
@@ -53,13 +53,23 @@ and Q2D.
 After extracting the handoff archive, run from the AEDT package directory:
 
 ```bash
-cd <run_or_sweep_id>/exports/aedt_native
-./scripts/run_aedt_native.sh --import
+cd aedt_native
+./scripts/run_aedt_native.sh --mode import
 ```
 
-The target machine needs AEDT, a local AEDT license, `uv`, and an isolated
-Python environment with PyAEDT. It does not need the `orpen-sc-pdk` checkout
-once this package has been generated.
+## Target Machine Setup
+
+This package is portable across AEDT machines. The target machine does not need
+the source repository or adjacent public PDK checkouts. It does need AEDT, a
+local AEDT license, `uv`, and an isolated Python environment with PyAEDT.
+
+Extract the archive so the AEDT package directory is the top-level directory,
+then enter it:
+
+```bash
+tar -xzf <run_or_sweep_id>-aedt.tar.gz
+cd aedt_native
+```
 
 Prepare the package-local runtime from the AEDT package directory:
 
@@ -71,13 +81,104 @@ uv pip install -r requirements-aedt.txt
 python -c "from ansys.aedt.core import Hfss, Q2d; import yaml; print('PyAEDT ok')"
 ```
 
+The shell launcher uses `${{PYTHON:-python3}}`. Activate `.venv-aedt`, or set
+`PYTHON=/path/to/python`, before running the package unless you intentionally
+use another PyAEDT environment.
+
 Import mode ensures the model, assignments, and setup exist without solving.
-Solve mode reopens the same project, repairs safe settings, solves, and exports
+Incremental Q2D reruns detect existing stages. Solve mode reopens the same
+project, skips valid stages, repairs safe settings, then solves and exports
 matrices when the selected recipe supports those operations:
 
 ```bash
-./scripts/run_aedt_native.sh --import
-./scripts/run_aedt_native.sh --solve
+./scripts/run_aedt_native.sh --mode import
+./scripts/run_aedt_native.sh --mode solve
+```
+
+The short commands load generated defaults from `run_configs/import.yaml` and
+`run_configs/solve.yaml`. Explicit command-line arguments still override those
+config values. For Q2D point-local sweeps, import and solve use per-point AEDT
+worker projects; inspect the actual solve model under:
+
+```text
+points/<point_slug>/aedt_project/<project>.aedt
+```
+
+Parallel workers finish out of order, so progress is one total point-level bar
+with sweep-axis coverage rather than one progress bar per sweep axis. Parent
+progress writes to `logs/parallel_progress.jsonl`; each worker captures stdout
+under `logs/workers/<point>__<recipe>/worker_stdout.log`, and each point keeps
+its own `logs/<point>/<recipe>/progress.jsonl`.
+
+Use `--force-rebuild` only when you intentionally want to clear recipe-owned
+AEDT geometry and setup before rebuilding:
+
+```bash
+./scripts/run_aedt_native.sh --mode import --force-rebuild
+```
+
+The generated runner defaults to non-graphical AEDT startup and local-auto
+gRPC. On Linux AEDT 2024 R2 systems without the secure local service pack,
+PyAEDT starts through the local UDS path and AEDT falls back to insecure mode.
+Use `--graphical` only when the target AEDT machine should show Desktop. Use
+`--grpc-secure` only when forcing secure gRPC is required and supported. Use
+`--grpc-insecure` only for explicit TCP `InsecureMode`; that mode is not the
+local-auto default.
+
+Solver outputs are written inside this package at
+`points/<point_slug>/<recipe_id>/`, AEDT projects are written to
+`points/<point_slug>/aedt_project/`, and logs/audit files are written to
+package-local `logs/`.
+
+After AEDT finishes, return data with the light result profile. It keeps
+analysis inputs and excludes solver handoff inputs plus heavyweight AEDT project
+state:
+
+```bash
+cd aedt_native
+BUNDLE_ID="$(basename "$PWD")"
+INCLUDE_PATHS=()
+for path in manifest.yaml points.csv points.json README.md metadata logs results points; do
+  [ -e "$path" ] && INCLUDE_PATHS+=("$path")
+done
+tar \
+  --checkpoint=1000 \
+  --checkpoint-action=dot \
+  -czf "../${{BUNDLE_ID}}-aedt-results-light.tar.gz" \
+  --transform "s|^|${{BUNDLE_ID}}/|" \
+  --exclude='exports' \
+  --exclude='exports/*' \
+  --exclude='points/*/exports' \
+  --exclude='points/*/exports/*' \
+  --exclude='points/*/geometry' \
+  --exclude='points/*/geometry/*' \
+  --exclude='points/*/metadata' \
+  --exclude='points/*/metadata/*' \
+  --exclude='points/*/logs' \
+  --exclude='points/*/logs/*' \
+  --exclude='points/*/results' \
+  --exclude='points/*/results/*' \
+  --exclude='points/*/config.json' \
+  --exclude='points/*/manifest.json' \
+  --exclude='points/*/README.md' \
+  --exclude='points/*/palace.msh' \
+  --exclude='points/*/mesh.msh' \
+  --exclude='geometry' \
+  --exclude='geometry/*' \
+  --exclude='*.tar.gz' \
+  --exclude='*.tar.zst' \
+  --exclude='*.tgz' \
+  --exclude='__pycache__' \
+  --exclude='*/__pycache__/*' \
+  --exclude='.ipynb_checkpoints' \
+  --exclude='*/.ipynb_checkpoints/*' \
+  --exclude='*/aedt_project' \
+  --exclude='*/aedt_project/*' \
+  --exclude='*.aedt' \
+  --exclude='*.aedt.lock' \
+  --exclude='*.aedtresults' \
+  --exclude='*.aedtresults/*' \
+  "${{INCLUDE_PATHS[@]}}"
 ```
 """
 
@@ -92,7 +193,8 @@ def render_shell_launcher() -> str:
     return """#!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-python "$SCRIPT_DIR/run_aedt_native.py" "$@"
+PYTHON_BIN="${PYTHON:-python3}"
+exec "$PYTHON_BIN" "$SCRIPT_DIR/run_aedt_native.py" "$@"
 """
 
 
@@ -106,48 +208,16 @@ python (Join-Path $ScriptDir "run_aedt_native.py") @Args
 """
 
 
-def render_q2d_runner_script() -> str:
-    return r'''"""Run the Q2D cross-section workflow from an AEDT-native package."""
+def render_runtime_runner() -> str:
+    return '''"""Run the package-local AEDT runtime bundle."""
 
 from __future__ import annotations
 
-from run_aedt_native import (
-    apply_q2d_section_workflow as _apply_q2d_section_workflow,
-    build_q2d_native_2d_geometry_plan as _build_q2d_native_2d_geometry_plan,
-    export_q2d_matrices as _export_q2d_matrices,
-    load_q2d_conductor_rows as _load_q2d_conductor_rows,
-    main as _native_main,
-    q2d_conductor_groups as _q2d_conductor_groups,
-    run_q2d_extraction as _run_q2d_extraction,
-)
+from runtime_bundle.run_aedt_native import main as _runtime_main
 
 
-def load_q2d_conductor_rows(*args, **kwargs):
-    return _load_q2d_conductor_rows(*args, **kwargs)
-
-
-def q2d_conductor_groups(*args, **kwargs):
-    return _q2d_conductor_groups(*args, **kwargs)
-
-
-def apply_q2d_section_workflow(*args, **kwargs):
-    return _apply_q2d_section_workflow(*args, **kwargs)
-
-
-def build_q2d_native_2d_geometry_plan(*args, **kwargs):
-    return _build_q2d_native_2d_geometry_plan(*args, **kwargs)
-
-
-def run_q2d_extraction(*args, **kwargs):
-    return _run_q2d_extraction(*args, **kwargs)
-
-
-def export_q2d_matrices(*args, **kwargs):
-    return _export_q2d_matrices(*args, **kwargs)
-
-
-def main():
-    _native_main()
+def main() -> None:
+    _runtime_main()
 
 
 if __name__ == "__main__":
@@ -155,23 +225,10 @@ if __name__ == "__main__":
 '''
 
 
-def render_runtime_runner() -> str:
-    return _runtime_bundle_text("run_aedt_native.py")
-
-
-def _runtime_bundle_text(name: str) -> str:
-    return (
-        files("orpen_sc_pdk.simulation.aedt.runtime_bundle")
-        .joinpath(name)
-        .read_text(encoding="utf-8")
-    )
-
-
 __all__ = [
     "render_aedt_package_readme",
     "render_aedt_requirements",
     "render_powershell_launcher",
-    "render_q2d_runner_script",
     "render_runtime_runner",
     "render_shell_launcher",
 ]

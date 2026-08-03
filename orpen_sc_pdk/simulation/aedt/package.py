@@ -1,8 +1,9 @@
-"""Host-side AEDT handoff package writer.
+"""Notebook-side AEDT handoff package writer.
 
 This module owns manifest layout, source-artifact copying, sidecar validation,
 run-config writing, generated launcher placement, and archive packaging. It does
-not define package models, material compilation, or template text.
+not define package models, material compilation, template text, or run-side
+PyAEDT execution logic.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import json
 import shutil
 import tarfile
 from collections.abc import Mapping, Sequence
+from importlib.resources import as_file, files
 from pathlib import Path
 from typing import Any
 
@@ -34,16 +36,39 @@ from orpen_sc_pdk.simulation.aedt.models import (
     AedtRecipeSpec,
     safe_aedt_name,
 )
+from orpen_sc_pdk.simulation.aedt.q2d import validate_q2d_cross_section_payload
 from orpen_sc_pdk.simulation.aedt.templates import (
     render_aedt_package_readme,
     render_aedt_requirements,
     render_powershell_launcher,
-    render_q2d_runner_script,
     render_runtime_runner,
     render_shell_launcher,
 )
 
 _ARCHIVE_SKIP_NAMES = {".DS_Store", "__pycache__"}
+_REQUIRED_RUNTIME_BUNDLE_FILES = (
+    "run_aedt_native.py",
+    "__init__.py",
+    "io.py",
+    "materials.py",
+    "session.py",
+    "sweep.py",
+    "solver/__init__.py",
+    "solver/q3d.py",
+    "solver/hfss/__init__.py",
+    "solver/hfss/driven_terminal.py",
+    "solver/hfss/eigenmode.py",
+    "solver/q2d/__init__.py",
+    "solver/q2d/workflow.py",
+    "solver/q2d/state.py",
+    "solver/q2d/geometry.py",
+    "solver/q2d/assignment.py",
+    "solver/q2d/region.py",
+    "solver/q2d/setup.py",
+    "solver/q2d/solve.py",
+    "solver/q2d/export.py",
+    "solver/q2d/audit.py",
+)
 
 
 def write_aedt_run_config_artifacts(
@@ -57,11 +82,17 @@ def write_aedt_run_config_artifacts(
     """Write import/solve runner profiles for the generated AEDT package."""
 
     run_configs_dir.mkdir(parents=True, exist_ok=True)
+    import_max_workers = None
+    if point_local_q2d_sweep:
+        import_max_workers = resource.core_budget or resource.num_cores * resource.max_workers
     import_profile = import_run_profile or AedtNativeRunProfileSpec(
         mode="import",
+        resume_policy=("skip_completed_retry_failed" if point_local_q2d_sweep else "run_all"),
+        skip_completed=point_local_q2d_sweep,
+        continue_on_failure=point_local_q2d_sweep,
         parallel=point_local_q2d_sweep,
-        max_workers=resource.max_workers if point_local_q2d_sweep else None,
-        num_cores=resource.num_cores if point_local_q2d_sweep else None,
+        max_workers=import_max_workers,
+        num_cores=1 if point_local_q2d_sweep else None,
         memory_mb_total=resource.memory_mb_total if point_local_q2d_sweep else None,
         memory_mb_per_worker=resource.memory_mb_per_worker if point_local_q2d_sweep else None,
         ram_percent=resource.ram_percent if point_local_q2d_sweep else None,
@@ -101,7 +132,13 @@ def prepare_aedt_native_handoff_package(
     package_dir: str | Path,
     overwrite: bool = True,
 ) -> AedtNativePackageResult:
-    """Write a generic AEDT-native package with manifest and PyAEDT scripts."""
+    """Write a generic AEDT-native package with manifest and PyAEDT scripts.
+
+    Existing run folders are updated in place when ``overwrite`` is true. The
+    writer refreshes generated package metadata, run configs, and scripts, but
+    deliberately leaves existing ``results/``, ``logs/``, and ``points/`` data
+    in place so expanded point sweeps can resume with skip-completed behavior.
+    """
 
     resolved_package_dir = Path(package_dir)
     if resolved_package_dir.exists() and not overwrite:
@@ -114,9 +151,6 @@ def prepare_aedt_native_handoff_package(
     run_configs_dir = resolved_package_dir / "run_configs"
     scripts_dir = resolved_package_dir / "scripts"
     for directory in (
-        gds_dir,
-        tech_dir,
-        layer_mapping_dir,
         metadata_dir,
         hpc_dir,
         run_configs_dir,
@@ -127,26 +161,34 @@ def prepare_aedt_native_handoff_package(
     project_path = spec.project_path or (resolved_package_dir / f"{spec.project_name}.aedt")
     case_rows = []
     for case in spec.cases:
-        _validate_native_2d_case_sidecars(case)
+        _validate_q2d_semantic_case_sidecars(case)
         gds_path = gds_dir / f"{case.id}.gds"
         tech_path = tech_dir / f"{case.id}.tech"
         control_path = tech_dir / f"{case.id}.xml"
         layer_mapping_csv_path = layer_mapping_dir / f"{case.id}_layer_mapping.csv"
         layer_mapping_json_path = layer_mapping_dir / f"{case.id}_layer_mapping.json"
         aedt_material_context_path = metadata_dir / f"{case.id}_aedt_material_context.json"
-        source_metadata_path = metadata_dir / f"{case.id}_cross_section.json"
         q2d_conductors_csv_path = metadata_dir / f"{case.id}_q2d_conductors.csv"
         q2d_conductors_json_path = metadata_dir / f"{case.id}_q2d_conductors.json"
-        _copy_required_file(case.gds_path, gds_path)
-        _copy_required_file(case.tech_path, tech_path)
+        q2d_cross_section_path = metadata_dir / f"{case.id}_q2d_cross_section.json"
+        gds_relative = None
+        tech_relative = None
         control_relative = None
         csv_relative = None
         json_relative = None
         aedt_material_context_relative = None
-        source_metadata_relative = None
         q2d_csv_relative = None
         q2d_json_relative = None
-        source_control_path = case.control_path or _candidate_control_path(case.tech_path)
+        q2d_cross_section_relative = None
+        if case.gds_path is not None:
+            _copy_required_file(case.gds_path, gds_path)
+            gds_relative = _relative_posix(resolved_package_dir, gds_path)
+        if case.tech_path is not None:
+            _copy_required_file(case.tech_path, tech_path)
+            tech_relative = _relative_posix(resolved_package_dir, tech_path)
+        source_control_path = case.control_path
+        if source_control_path is None and case.tech_path is not None:
+            source_control_path = _candidate_control_path(case.tech_path)
         if source_control_path is not None:
             _copy_required_file(source_control_path, control_path)
             control_relative = _relative_posix(resolved_package_dir, control_path)
@@ -175,9 +217,6 @@ def prepare_aedt_native_handoff_package(
                 resolved_package_dir,
                 aedt_material_context_path,
             )
-        if case.source_metadata_path is not None:
-            _copy_required_file(case.source_metadata_path, source_metadata_path)
-            source_metadata_relative = _relative_posix(resolved_package_dir, source_metadata_path)
         if case.q2d_conductors_csv_path is not None:
             _copy_required_file(case.q2d_conductors_csv_path, q2d_conductors_csv_path)
             q2d_csv_relative = _relative_posix(resolved_package_dir, q2d_conductors_csv_path)
@@ -185,19 +224,27 @@ def prepare_aedt_native_handoff_package(
             _validate_q2d_conductor_sidecar(case.q2d_conductors_json_path)
             _copy_required_file(case.q2d_conductors_json_path, q2d_conductors_json_path)
             q2d_json_relative = _relative_posix(resolved_package_dir, q2d_conductors_json_path)
+        if case.q2d_cross_section_json_path is not None:
+            payload = json.loads(Path(case.q2d_cross_section_json_path).read_text(encoding="utf-8"))
+            validate_q2d_cross_section_payload(payload)
+            _copy_required_file(case.q2d_cross_section_json_path, q2d_cross_section_path)
+            q2d_cross_section_relative = _relative_posix(
+                resolved_package_dir,
+                q2d_cross_section_path,
+            )
 
         case_rows.append(
             {
                 "id": case.id,
-                "gds": _relative_posix(resolved_package_dir, gds_path),
-                "tech": _relative_posix(resolved_package_dir, tech_path),
+                "gds": gds_relative,
+                "tech": tech_relative,
                 "control": control_relative,
                 "layer_mapping": csv_relative,
                 "layer_mapping_json": json_relative,
                 "aedt_material_context": aedt_material_context_relative,
-                "source_metadata": source_metadata_relative,
                 "q2d_conductors": q2d_json_relative,
                 "q2d_conductors_csv": q2d_csv_relative,
+                "q2d_cross_section": q2d_cross_section_relative,
                 "recipes": [
                     _recipe_manifest_row(case_id=case.id, recipe=recipe) for recipe in case.recipes
                 ],
@@ -243,11 +290,10 @@ def prepare_aedt_native_handoff_package(
     requirements_path.write_text(render_aedt_requirements(), encoding="utf-8")
 
     python_script_path = scripts_dir / "run_aedt_native.py"
-    q2d_script_path = scripts_dir / "run_aedt_q2d_cross_section.py"
     bash_script_path = scripts_dir / "run_aedt_native.sh"
     powershell_script_path = scripts_dir / "run_aedt_native.ps1"
+    _copy_runtime_bundle(scripts_dir / "runtime_bundle")
     python_script_path.write_text(render_runtime_runner(), encoding="utf-8")
-    q2d_script_path.write_text(render_q2d_runner_script(), encoding="utf-8")
     bash_script_path.write_text(render_shell_launcher(), encoding="utf-8")
     powershell_script_path.write_text(render_powershell_launcher(), encoding="utf-8")
     bash_script_path.chmod(0o755)
@@ -269,7 +315,6 @@ def prepare_aedt_native_handoff_package(
         solve_run_config_path=solve_run_config_path,
         scripts_dir=scripts_dir,
         python_script_path=python_script_path,
-        q2d_script_path=q2d_script_path,
         bash_script_path=bash_script_path,
         powershell_script_path=powershell_script_path,
         project_path=project_path,
@@ -329,11 +374,6 @@ def prepare_aedt_native_sweep_handoff_package(
                     "*_layer_mapping.json",
                     label=point.point_slug,
                 ),
-                source_metadata_path=_optional_single_matching_file(
-                    source_dir,
-                    "*_cross_section.json",
-                    label=point.point_slug,
-                ),
                 q2d_conductors_csv_path=_optional_single_matching_file(
                     source_dir,
                     "*_q2d_conductors.csv",
@@ -381,11 +421,14 @@ def prepare_aedt_native_sweep_handoff_package(
     resolved_package_dir = (
         Path(package_dir) if package_dir is not None else sweep_paths.aedt_native_dir
     )
-    return prepare_aedt_native_handoff_package(
+    result = prepare_aedt_native_handoff_package(
         spec,
         package_dir=resolved_package_dir,
         overwrite=overwrite,
     )
+    _copy_required_file(sweep_paths.points_csv_path, result.package_dir / "points.csv")
+    _copy_required_file(sweep_paths.points_json_path, result.package_dir / "points.json")
+    return result
 
 
 def package_aedt_native_handoff(
@@ -412,10 +455,7 @@ def package_aedt_native_handoff(
     _validate_required_file(package_dir / "manifest.yaml", "AEDT native manifest")
     _validate_required_file(package_dir / "requirements-aedt.txt", "AEDT Python requirements")
     _validate_required_file(package_dir / "scripts" / "run_aedt_native.py", "PyAEDT runner")
-    _validate_required_file(
-        package_dir / "scripts" / "run_aedt_q2d_cross_section.py",
-        "Q2D PyAEDT runner",
-    )
+    _validate_runtime_bundle_files(package_dir / "scripts" / "runtime_bundle")
     _validate_required_file(package_dir / "scripts" / "run_aedt_native.sh", "shell runner")
     _validate_required_file(package_dir / "scripts" / "run_aedt_native.ps1", "PowerShell runner")
 
@@ -423,49 +463,12 @@ def package_aedt_native_handoff(
     if resolved_archive_path.exists() and not overwrite:
         raise FileExistsError(resolved_archive_path)
 
+    for directory_name in ("logs", "points", "results"):
+        (package_dir / directory_name).mkdir(parents=True, exist_ok=True)
+
     included: list[str] = []
-    archive_root = _standard_aedt_run_archive_root(package_dir)
     with tarfile.open(resolved_archive_path, "w:gz") as archive:
-        if archive_root is None:
-            _add_aedt_archive_tree(archive, package_dir, package_dir.name, included)
-        else:
-            root_dir = archive_root
-            root_name = root_dir.name
-            _add_archive_directory_entry(archive, root_dir, root_name, included)
-            for file_name in ("manifest.json", "points.csv", "points.json", "README.md"):
-                path = root_dir / file_name
-                if path.is_file():
-                    _add_aedt_archive_file(archive, path, f"{root_name}/{file_name}", included)
-            metadata_dir = root_dir / "metadata"
-            if metadata_dir.is_dir():
-                _add_aedt_archive_tree(archive, metadata_dir, f"{root_name}/metadata", included)
-            else:
-                _add_archive_directory_entry(
-                    archive,
-                    metadata_dir,
-                    f"{root_name}/metadata",
-                    included,
-                )
-            _add_aedt_archive_tree(
-                archive,
-                package_dir,
-                f"{root_name}/exports/aedt_native",
-                included,
-            )
-            for directory_name in ("logs", "results"):
-                directory = root_dir / directory_name
-                _add_archive_directory_entry(
-                    archive,
-                    directory,
-                    f"{root_name}/{directory_name}",
-                    included,
-                )
-                _add_archive_directory_entry(
-                    archive,
-                    directory / "aedt",
-                    f"{root_name}/{directory_name}/aedt",
-                    included,
-                )
+        _add_aedt_archive_tree(archive, package_dir, package_dir.name, included)
     return AedtNativeHandoffArchiveResult(
         archive_path=resolved_archive_path.resolve(),
         included=tuple(dict.fromkeys(included)),
@@ -475,7 +478,15 @@ def package_aedt_native_handoff(
 def _is_point_local_q2d_sweep(spec: AedtNativePackageSpec) -> bool:
     if not spec.point_local_sweep:
         return False
-    return any(recipe.type == "q2d_extraction" for case in spec.cases for recipe in case.recipes)
+    recipe_types = {recipe.type for case in spec.cases for recipe in case.recipes}
+    if recipe_types and recipe_types <= {"q2d_extraction"}:
+        return True
+    if "q2d_extraction" in recipe_types:
+        raise ValueError(
+            "AEDT point-local parallel sweep currently supports q2d_extraction recipes only; "
+            f"got mixed recipe types: {sorted(recipe_types)}"
+        )
+    return False
 
 
 def _write_aedt_sweep_point_tables(sweep_paths: Any, points: Sequence[Any]) -> None:
@@ -534,6 +545,18 @@ def _copy_required_file(source: str | Path, destination: Path) -> None:
     shutil.copy2(source_path, destination)
 
 
+def _copy_runtime_bundle(destination: Path) -> None:
+    source = files("orpen_sc_pdk.simulation.aedt.runtime_bundle")
+    if destination.exists():
+        shutil.rmtree(destination)
+    with as_file(source) as source_path:
+        shutil.copytree(
+            source_path,
+            destination,
+            ignore=shutil.ignore_patterns(*_ARCHIVE_SKIP_NAMES, "*.pyc", "*.pyo"),
+        )
+
+
 def _candidate_control_path(tech_path: Path) -> Path | None:
     control_path = Path(tech_path).with_suffix(".xml")
     return control_path if control_path.is_file() else None
@@ -542,6 +565,14 @@ def _candidate_control_path(tech_path: Path) -> Path | None:
 def _validate_required_file(path: Path, label: str) -> None:
     if not path.is_file():
         raise FileNotFoundError(f"Missing {label}: {path}")
+
+
+def _validate_runtime_bundle_files(runtime_bundle_dir: Path) -> None:
+    for relative in _REQUIRED_RUNTIME_BUNDLE_FILES:
+        _validate_required_file(
+            runtime_bundle_dir / relative,
+            f"PyAEDT runtime bundle file {relative}",
+        )
 
 
 def _validate_q2d_conductor_sidecar(path: Path) -> None:
@@ -585,124 +616,22 @@ def _validate_q2d_conductor_sidecar(path: Path) -> None:
         raise ValueError("Q2D conductor sidecar requires at least one Reference Ground assignment.")
 
 
-def _validate_native_2d_case_sidecars(case: AedtNativeCaseSpec) -> None:
+def _validate_q2d_semantic_case_sidecars(case: AedtNativeCaseSpec) -> None:
     if not any(
-        recipe.type == "q2d_extraction" and recipe.q2d_geometry_mode == "native_2d"
+        recipe.type == "q2d_extraction" and recipe.q2d_geometry_mode == "semantic_cross_section"
         for recipe in case.recipes
     ):
         return
-    if case.source_metadata_path is None:
-        raise ValueError(f"case {case.id!r} native_2d requires source_metadata_path")
-    if case.layer_mapping_json_path is None:
-        raise ValueError(f"case {case.id!r} native_2d requires layer_mapping_json_path")
-    if case.q2d_conductors_json_path is None:
-        raise ValueError(f"case {case.id!r} native_2d requires q2d_conductors_json_path")
-    source_metadata = json.loads(Path(case.source_metadata_path).read_text(encoding="utf-8"))
-    mapping_payload = json.loads(Path(case.layer_mapping_json_path).read_text(encoding="utf-8"))
-    conductor_payload = json.loads(Path(case.q2d_conductors_json_path).read_text(encoding="utf-8"))
-    _validate_native_2d_source_metadata(case.id, source_metadata)
-    _validate_native_2d_layer_mapping(case.id, mapping_payload)
-    _validate_native_2d_conductors(case.id, conductor_payload)
-
-
-def _validate_native_2d_source_metadata(case_id: str, payload: Mapping[str, Any]) -> None:
-    parameters = dict(payload.get("parameters") or {})
-    for key in (
-        "case_kind",
-        "cpw_left_gap_um",
-        "cpw_width_um",
-        "cpw_right_gap_um",
-        "flip_chip_gap_um",
-        "horizontal_offset_um",
-    ):
-        if key not in parameters and key in payload:
-            parameters[key] = payload[key]
-    case_kind = str(parameters.get("case_kind") or payload.get("case_kind") or "")
-    if "flip_chip" not in case_kind:
+    if case.q2d_cross_section_json_path is None:
         raise ValueError(
-            f"case {case_id!r} native_2d requires flip-chip source_metadata; "
-            f"got case_kind={case_kind!r}"
+            f"case {case.id!r} semantic_cross_section requires q2d_cross_section_json_path"
         )
-    positive = ("cpw_left_gap_um", "cpw_width_um", "cpw_right_gap_um", "flip_chip_gap_um")
-    required = (*positive, "horizontal_offset_um")
-    missing = [key for key in required if key not in parameters]
-    if missing:
-        raise ValueError(f"case {case_id!r} native_2d source_metadata missing {missing}")
-    for key in required:
-        value = _required_float(parameters, key, label=f"case {case_id!r} source_metadata")
-        if key in positive and value <= 0.0:
-            raise ValueError(f"case {case_id!r} native_2d parameter {key!r} must be positive")
-
-
-def _validate_native_2d_layer_mapping(case_id: str, payload: Mapping[str, Any]) -> None:
-    rows = payload.get("layers") or payload.get("gds_import_layers") or []
-    rows_by_name = {
-        str(row.get("layer_name") or "").strip(): row for row in rows if isinstance(row, Mapping)
-    }
-    for layer_name in ("D0_SUBSTRATE", "D1_SUBSTRATE", "D0_TOP_M1", "D1_BOTTOM_M1"):
-        row = rows_by_name.get(layer_name)
-        if row is None:
-            raise ValueError(f"case {case_id!r} native_2d missing layer {layer_name!r}")
-        _required_float(row, "bbox_ymin_um", label=layer_name)
-        _required_float(row, "bbox_ymax_um", label=layer_name)
-        _required_float(row, "zmin_um", label=layer_name)
-        thickness = _required_float(row, "thickness_um", label=layer_name)
-        if thickness <= 0.0:
-            raise ValueError(f"case {case_id!r} native_2d layer {layer_name!r} thickness <= 0")
-
-
-def _validate_native_2d_conductors(case_id: str, payload: Any) -> None:
-    rows = payload.get("conductors") if isinstance(payload, dict) else payload
-    if not isinstance(rows, list):
-        raise ValueError(f"case {case_id!r} native_2d q2d_conductors must be a row list")
-    grouped: dict[tuple[str, str, str], list[Mapping[str, Any]]] = {}
-    for row in rows:
-        if not isinstance(row, Mapping):
-            raise ValueError(f"case {case_id!r} native_2d q2d_conductors rows must be objects")
-        key = (
-            str(row.get("assignment_name") or "").strip(),
-            str(row.get("conductor_type") or "").strip(),
-            str(row.get("layer_stack_layer_name") or "").strip(),
-        )
-        grouped.setdefault(key, []).append(row)
-    for layer_name, assignment_name in (
-        ("D0_TOP_M1", "Trace1"),
-        ("D1_BOTTOM_M1", "Trace2"),
-    ):
-        signal_rows = grouped.get((assignment_name, "Signal Line", layer_name), [])
-        if len(signal_rows) != 1:
-            raise ValueError(
-                f"case {case_id!r} native_2d requires exactly one {assignment_name} "
-                f"Signal Line marker on {layer_name}; got {len(signal_rows)}"
-            )
-        _required_float(signal_rows[0], "center_y_um", label=assignment_name)
-        ground_rows = grouped.get(("Ground", "Reference Ground", layer_name), [])
-        if len(ground_rows) < 2:
-            raise ValueError(
-                f"case {case_id!r} native_2d requires at least two Ground markers "
-                f"on {layer_name}; got {len(ground_rows)}"
-            )
-
-
-def _required_float(payload: Mapping[str, Any], key: str, *, label: str) -> float:
-    value = payload.get(key)
-    if value in (None, ""):
-        raise ValueError(f"{label} requires numeric field {key!r}")
-    try:
-        return float(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"{label} field {key!r} must be numeric; got {value!r}") from exc
+    payload = json.loads(Path(case.q2d_cross_section_json_path).read_text(encoding="utf-8"))
+    validate_q2d_cross_section_payload(payload)
 
 
 def _relative_posix(root: Path, path: Path) -> str:
     return path.resolve().relative_to(root.resolve()).as_posix()
-
-
-def _standard_aedt_run_archive_root(package_dir: Path) -> Path | None:
-    resolved = package_dir.resolve()
-    if resolved.name == "aedt_native" and resolved.parent.name == "exports":
-        return resolved.parent.parent
-    return None
 
 
 def _single_matching_file(directory: Path, pattern: str, *, label: str) -> Path:
@@ -770,7 +699,7 @@ def _filter_archive_member(member: tarfile.TarInfo, included: list[str]) -> tarf
         return None
     if any(part.endswith(".aedtresults") for part in path.parts):
         return None
-    if any(part in {"logs", "results"} for part in path.parts) and not member.isdir():
+    if any(part in {"logs", "points", "results"} for part in path.parts) and not member.isdir():
         return None
     included.append(member.name if not member.isdir() else member.name.rstrip("/") + "/")
     return member

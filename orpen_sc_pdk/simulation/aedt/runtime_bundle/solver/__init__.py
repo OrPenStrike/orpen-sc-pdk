@@ -1,8 +1,13 @@
-"""Solver workflow contracts for generated AEDT handoff runtime.
+"""Solver workflow contracts for generated AEDT handoff runtimes.
 
-This package owns the common scaffold boundary shared by generated runtime
-solver paths. Solver-specific modules own the real PyAEDT app choice, geometry
-method, boundary assignment, setup, solve, export, and audit semantics.
+This package reserves the solver-specific Run-side folder structure and shared
+stage vocabulary for AEDT recipes. The intended solver ownership is PyAEDT app
+choice, geometry method, boundary assignment, setup, solve, export, and audit.
+
+Current v1 status is deliberately conservative: real solver execution still
+lives in ``runtime_bundle/run_aedt_native.py``. The modules under
+``solver/*`` are fail-fast review boundaries until those implementations are
+moved here behind a reviewed contract.
 """
 
 from __future__ import annotations

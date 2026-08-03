@@ -1,9 +1,9 @@
 """Q2D geometry construction boundary for generated AEDT runtimes.
 
-This module reserves both ``hfss_section`` and ``native_2d`` geometry modes.
-The future implementation must either section staged HFSS geometry or build
-Q2D rectangles from source metadata, layer mapping, material context, and
-conductor markers.
+This module reserves both ``hfss_section`` and ``semantic_cross_section``
+geometry modes. The future semantic implementation must build Q2D rectangles
+from an explicit Stack/FacePattern cross-section sidecar, not from GDS layout,
+CPW case metadata, layer mapping heuristics, or conductor marker ports.
 """
 
 from __future__ import annotations

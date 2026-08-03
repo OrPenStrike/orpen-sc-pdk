@@ -1,0 +1,25 @@
+---
+title: "Notebooks"
+---
+
+The notebook suite gives GDSFactory developers executable examples for public OrPen layout cells, SGB geometry handoff, Palace simulation setup, Slurm handoff package generation, and `gsim` result review.
+
+Quarto renders the linked `.ipynb` files as first-class documentation pages. In this docs tree, `docs-quarto/docs` is a symlink to the repo-level `docs/` notebooks and `docs-quarto/sgb-notebooks` is a symlink to `notebooks/SGB_Geometry_Tutorials/`; the Jupytext sources live under `notebooks/src/`. By default, the site build shows the checked-in notebook cells and outputs; to force execution of a notebook, run:
+
+```bash
+quarto render docs-quarto/docs/notebooks/public_electrostatic_workflow.ipynb --execute
+```
+
+The report cells are intentionally fail-fast. They require real Palace outputs from a completed run folder, usually by setting `NOTEBOOK_ANALYSIS_RUN_ROOT`; the docs should not fabricate result tables.
+
+## SGB Geometry Tutorials
+
+- [Martinis Ribbon Route A](sgb-notebooks/martinis2022_ribbon_route_a.ipynb)
+- [Martinis Ribbon Route B](sgb-notebooks/martinis2022_ribbon_route_b.ipynb)
+- [Martinis Ribbon Route C](sgb-notebooks/martinis2022_ribbon_route_c.ipynb)
+
+## gsim Workflows
+
+- [Public Electrostatic Workflow](docs/notebooks/public_electrostatic_workflow.ipynb)
+- [Public Driven Workflow](docs/notebooks/public_driven_workflow.ipynb)
+- [Public Eigenmode Workflow](docs/notebooks/public_eigenmode_workflow.ipynb)

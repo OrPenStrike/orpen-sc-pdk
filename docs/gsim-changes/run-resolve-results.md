@@ -21,9 +21,10 @@ driven_report.show_all_results()
 
 ## What gsim Already Had
 
-`gsim` already had Palace simulation classes and result loaders. The likely
-maintainer intent was that examples could call loaders directly when they knew
-which result file they needed.
+`gsim` upstream/main already had Palace simulation classes, mesh/config
+generation, and basic S-parameter/text result helpers. It did not have a
+dedicated completed-run Resolve package or typed electrostatic report assembly
+for terminal-C, domain-E, and surface-Q convergence.
 
 The public PDK needs a clearer completed-run contract. A user should point at a
 run folder, state the problem type, and receive a typed report or a hard
@@ -40,8 +41,7 @@ Code pointers:
 | Report assembly | `../GDSFactory_Community_Workbench/gsim/src/gsim/palace/resolve/assembly/` |
 | Primitive loaders | `../GDSFactory_Community_Workbench/gsim/src/gsim/palace/resolve/loaders/` |
 | Derived loss/material tables | `../GDSFactory_Community_Workbench/gsim/src/gsim/palace/resolve/derived/` |
-| Typed result data | `../GDSFactory_Community_Workbench/gsim/src/gsim/palace/results/` |
-| Problem reports | `../GDSFactory_Community_Workbench/gsim/src/gsim/palace/results/reports/` |
+| Typed result data and reports | `../GDSFactory_Community_Workbench/gsim/src/gsim/palace/results/` |
 
 Boundary change:
 

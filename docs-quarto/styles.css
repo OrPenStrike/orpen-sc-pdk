@@ -1,0 +1,92 @@
+body {
+  color: #3f444a;
+  font-size: 16px;
+}
+
+.navbar {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e7e9ec;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 3%);
+  min-height: 58px;
+}
+
+.navbar-brand img {
+  height: 30px;
+  width: 30px;
+}
+
+.navbar-title {
+  color: #5f8db8;
+  font-size: 1.32rem;
+  font-weight: 500;
+}
+
+.navbar-nav .nav-link {
+  color: #626970 !important;
+  font-weight: 500;
+}
+
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link:hover {
+  color: #2f3b45 !important;
+}
+
+.quarto-navbar-tools .quarto-navigation-tool {
+  color: #626970 !important;
+}
+
+#quarto-sidebar {
+  background: #fff;
+  border-right: 0;
+  padding-top: 2.25rem;
+}
+
+#quarto-sidebar .sidebar-item-text {
+  color: #4f5963;
+  font-size: 0.95rem;
+}
+
+#quarto-sidebar .sidebar-item-text:hover,
+#quarto-sidebar .sidebar-item-container .active {
+  color: #2f79b7;
+}
+
+main.content {
+  max-width: 840px;
+  padding-top: 2.2rem;
+}
+
+h1 {
+  color: #28323c;
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  color: #303942;
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+}
+
+a {
+  color: #2f79b7;
+}
+
+code {
+  color: #7b3db9;
+}
+
+.sourceCode {
+  border: 1px solid #e4e7eb;
+  border-radius: 6px;
+}
+
+@media (min-width: 992px) {
+  #quarto-content {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+}

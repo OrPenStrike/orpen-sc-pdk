@@ -20,9 +20,7 @@ SOURCE = Path(
 NOTEBOOK = Path(
     "notebooks/Native_Masked_Surface_EPR/martinis2022_ribbon_native_mask_hpc_handoff.ipynb"
 )
-SGB_HELPER = Path(
-    "notebooks/src/Native_Masked_Surface_EPR/sgb_native_mask_handoff_common.py"
-)
+SGB_HELPER = Path("notebooks/src/Native_Masked_Surface_EPR/sgb_native_mask_handoff_common.py")
 SGB_ROUTE_SOURCES = {
     "A": Path(
         "notebooks/src/Native_Masked_Surface_EPR/"
@@ -127,7 +125,7 @@ def test_native_masked_surface_epr_notebook_does_not_let_packaging_rewrite_confi
     assert "native_mask_profile_metadata =" in source
     assert "profile=native_mask_profile_metadata" in source
     assert "PALACE_NATIVE_MASK_BUNDLE_EXECUTABLE" in source
-    assert 'PALACE_NATIVE_MASK_BUNDLE_EXECUTABLE", "1"' in source
+    assert "PALACE_NATIVE_MASK_BUNDLE_EXECUTABLE = True" in source
     assert '"palace-x86_64.bin"' in source
     assert "shutil.copy2(source_executable, bundled_executable)" in source
     assert "sim.write_slurm_sbatch_handoff(" in source
@@ -136,6 +134,45 @@ def test_native_masked_surface_epr_notebook_does_not_let_packaging_rewrite_confi
     assert "setup_commands=PALACE_NATIVE_MASK_SETUP_COMMANDS" in source
     assert "sim.generate_handoff_package(" in source
     assert "write_config=False" in source
+
+
+def test_native_masked_surface_epr_notebook_uses_notebook_config_not_env() -> None:
+    source = SOURCE.read_text()
+
+    assert "import os" not in source
+    assert "os.environ" not in source
+    assert "NOTEBOOK_ANALYSIS_RUN_ROOT: Path | None = None" in source
+    assert 'NOTEBOOK_ANALYSIS_RUN_ROOT = Path("/path/to/handoff/run/folder")' in source
+    assert 'PALACE_HPC_PROFILE = "f1:ct112"' in source
+    assert '"partition": "ltlab-workstation1"' in source
+
+
+def test_native_masked_surface_epr_notebook_writes_dielectric_index_map_entries() -> None:
+    source = SOURCE.read_text()
+
+    assert 'index_map_path=output_dir / "metadata" / "palace_index_map.json"' in source
+    assert '"section": "Boundaries.Postprocessing.Dielectric"' in source
+    assert '"mask_margin_nm": mask_margin_nm' in source
+    assert '"interface_type": interface_type' in source
+    assert '"Type": interface_type' in source
+
+
+def test_native_masked_surface_epr_notebook_shows_benchmark_section() -> None:
+    source = SOURCE.read_text()
+
+    assert "# ## Simulation Performance / Benchmark" in source
+    assert "electrostatic_report.show_simulation_benchmark()" in source
+
+
+def test_native_masked_surface_epr_notebook_builds_missing_resource_record_from_log() -> None:
+    source = SOURCE.read_text()
+
+    assert "palace_resource_record_path = analysis_run_root /" in source
+    assert 'palace_log_paths = sorted((analysis_run_root / "logs").glob("palace-*.log"))' in source
+    assert "write_palace_resource_record_from_log(" in source
+    assert "status=_palace_log_run_status(analysis_run_root)" in source
+    assert "allocation=_handoff_requested_allocation(analysis_run_root)" in source
+    assert 'metadata={"source": "notebook_analysis"}' in source
 
 
 def test_native_masked_surface_epr_notebook_json_has_matching_source() -> None:
@@ -152,9 +189,7 @@ def test_sgb_route_native_mask_helper_uses_route_geometry_sidecars_only() -> Non
     assignments = _assignments(SGB_HELPER)
     tree = ast.parse(source)
     top_level_imports = [
-        node
-        for node in tree.body
-        if isinstance(node, ast.Import | ast.ImportFrom)
+        node for node in tree.body if isinstance(node, ast.Import | ast.ImportFrom)
     ]
 
     assert ast.literal_eval(assignments["PALACE_ORDER"]) == 2
@@ -179,6 +214,12 @@ def test_sgb_route_native_mask_helper_uses_route_geometry_sidecars_only() -> Non
     assert "sgb_route_{route.lower()}_physical_group_config_map.csv" in source
     assert "analysis_run_root: Path | None = None" in source
     assert "NOTEBOOK_ANALYSIS_RUN_ROOT" not in source
+    assert 'index_map_path=output_dir / "metadata" / "palace_index_map.json"' in source
+    assert '"section": "Boundaries.Postprocessing.Dielectric"' in source
+    assert '"mask_margin_nm": mask_margin_nm' in source
+    assert "report.show_simulation_benchmark()" in source
+    assert "status=_palace_log_run_status(analysis_run_root)" in source
+    assert "allocation=_handoff_requested_allocation(analysis_run_root)" in source
     assert not any(
         (
             isinstance(node, ast.ImportFrom)
@@ -197,8 +238,7 @@ def test_sgb_route_native_mask_notebooks_select_one_route_each() -> None:
     for route, source_path in SGB_ROUTE_SOURCES.items():
         source = source_path.read_text()
         expected_call = (
-            f'run_sgb_native_mask_handoff("{route}", '
-            "analysis_run_root=ANALYSIS_RUN_ROOT)"
+            f'run_sgb_native_mask_handoff("{route}", analysis_run_root=ANALYSIS_RUN_ROOT)'
         )
         assert expected_call in source
         assert "ANALYSIS_RUN_ROOT: Path | None = None" in source
@@ -214,8 +254,7 @@ def test_sgb_route_native_mask_notebook_json_has_matching_source() -> None:
         joined_source = "".join("".join(cell.get("source", ())) for cell in payload["cells"])
         assert f"SGB Route {route} Native Mask" in joined_source
         expected_call = (
-            f'run_sgb_native_mask_handoff("{route}", '
-            "analysis_run_root=ANALYSIS_RUN_ROOT)"
+            f'run_sgb_native_mask_handoff("{route}", analysis_run_root=ANALYSIS_RUN_ROOT)'
         )
         assert expected_call in joined_source
 
@@ -224,9 +263,7 @@ def test_native_mask_surface_epr_pure_analysis_notebook_contract() -> None:
     source = PURE_ANALYSIS_SOURCE.read_text()
     tree = ast.parse(source)
     top_level_imports = [
-        node
-        for node in tree.body
-        if isinstance(node, ast.Import | ast.ImportFrom)
+        node for node in tree.body if isinstance(node, ast.Import | ast.ImportFrom)
     ]
     assert not any(
         (
@@ -265,10 +302,11 @@ def test_native_mask_surface_epr_pure_analysis_notebook_contract() -> None:
     joined_source = "".join("".join(cell.get("source", ())) for cell in payload["cells"])
     assert "from gsim" not in joined_source
     assert "import gsim" not in joined_source
+    assert "Masked Surface EPR sum, in micro units" in joined_source
+    assert "Interface share within each mask margin" in joined_source
+    assert "share_of_margin_total" in joined_source
 
-    route_b_source = "".join(
-        "".join(cell.get("source", ())) for cell in route_b_payload["cells"]
-    )
+    route_b_source = "".join("".join(cell.get("source", ())) for cell in route_b_payload["cells"])
     assert "martinis2022_ribbon_sgb_route_b_native_mask_hpc_handoff/2026-07-03-Run01" in (
         route_b_source
     )

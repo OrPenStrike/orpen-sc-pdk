@@ -43,11 +43,11 @@ Set up the private GF+ project without publishing private layout/IP.
 :::
 
 :::{grid-item-card} Develop Ecosystem Features
-:link: gsim-changes/index
+:link: developing-features
 :link-type: doc
 
-Read the high-level `gsim` implementation slices before opening the detailed
-feature and issue ledgers.
+Start with the two active development capabilities before opening detailed
+implementation notes.
 :::
 
 :::{grid-item-card} Prepare Upstream PRs

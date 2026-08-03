@@ -36,6 +36,7 @@ dev = [
   "pytest>=9.0.0",
   "ruff>=0.15.11",
 ]
+fem-aedt = ["pyaedt[all]==0.26.2"]
 gdsfactoryplus = ["gdsfactoryplus", "httpx"]
 
 [dependency-groups]
@@ -56,13 +57,19 @@ docs = [
   "sphinxcontrib-mermaid",
   "sphinxcontrib-svgbob",
 ]
+docs-quarto = [
+  "griffe<2",
+  "quartodoc",
+]
 ecosystem-dev = [
   "gplugins",
   "gsim",
+  "kaleido>=1.0.0",
+  "pandas>=2.0",
+  "plotly>=6.0.0",
 ]
 
 [tool.uv.sources]
-gplugins = { path = "../GDSFactory_Community_Workbench/gplugins", editable = true, group = "ecosystem-dev" }
 gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
 
 [tool.ruff]

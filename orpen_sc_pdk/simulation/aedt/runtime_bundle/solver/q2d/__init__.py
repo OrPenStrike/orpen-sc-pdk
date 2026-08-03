@@ -1,8 +1,12 @@
-"""Q2D solver scaffold package for generated AEDT handoff runtimes.
+"""Q2D solver stage package for generated AEDT handoff runtimes.
 
-This package owns the stateful Q2D cross-section boundary. Each module maps to
-one reviewable workflow stage so host-side package design can be checked before
-the PyAEDT implementation exists.
+This package reserves the target stateful Q2D cross-section boundary. Each
+module maps to one reviewable workflow stage: state, geometry, assignment,
+region, setup, solve, export, and audit.
+
+Current v1 Q2D execution still lives in ``runtime_bundle/run_aedt_native.py``.
+The files here fail fast until that implementation is moved into these stage
+modules behind a reviewed contract.
 """
 
 from __future__ import annotations

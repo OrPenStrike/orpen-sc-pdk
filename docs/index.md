@@ -22,6 +22,7 @@ home
 :hidden:
 :caption: gsim changes
 
+developing-features
 gsim-changes/index
 ```
 

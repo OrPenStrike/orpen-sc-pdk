@@ -1,0 +1,22 @@
+---
+title: "Issues"
+---
+
+This page tracks the current public follow-up issues for the OrPen SC PDK workflow. It mirrors the development-feature split: two `gsim` feature candidates plus one SGB input-contract dependency.
+
+## Active Issue Clusters
+
+| Cluster | Owner | Done when |
+| --- | --- | --- |
+| SGB input contract | `semantic_geometry_builder`, consumed by `gsim` where needed | Route A/B/C notebooks preserve terminal, interface, and physical-group identity without being presented as native `gsim` behavior. |
+| Slurm HPC handoff package | `gsim` | Public notebooks can generate reviewable run folders, sbatch scripts, metadata sidecars, and handoff archives without submitting jobs. |
+| Resolve/Results | `gsim` | Public notebooks can resolve completed Palace run folders and show C-matrix, domain-E, surface-Q, and convergence through typed reports. |
+
+## Boundary Ledgers
+
+| Ledger | Use |
+| --- | --- |
+| CAD/mesh identity provenance | SGB semantic identity context. |
+| Palace report ownership | Resolve/Results ownership details for report loading and display semantics. |
+| Palace config ownership | Config-generation identity decisions that affect SGB, Slurm handoff packaging, or Resolve/Results. |
+| Public problem-type notebook coverage | Public notebook evidence for the two `gsim` feature candidates. |

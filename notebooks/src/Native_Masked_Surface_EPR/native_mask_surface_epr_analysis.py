@@ -28,7 +28,7 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
-from IPython.display import display
+from IPython.display import Markdown, display
 
 # %%
 RUN_ROOT: Path = Path("/path/to/hpc_handoff_package")
@@ -61,22 +61,62 @@ for group in groups:
     groups_by_key[key].extend(int(row_index) for row_index in group["row_indices"])
 
 result_dirs = []
+iteration_surface_paths = {}
 for candidate in sorted(results_root.glob("iteration*")):
     match = re.fullmatch(r"iteration(\d+)", candidate.name)
     if match and (candidate / "surface-mask-Q.csv").is_file():
         pass_index = int(match.group(1))
-        result_dirs.append((pass_index, f"Pass {pass_index}", candidate))
+        surface_mask_path = candidate / "surface-mask-Q.csv"
+        iteration_surface_paths[surface_mask_path.resolve()] = pass_index
+        result_dirs.append(
+            {
+                "pass_index": pass_index,
+                "label": f"Pass {pass_index}",
+                "path": candidate,
+                "result_kind": "archived_iteration",
+                "is_archived": True,
+                "include_in_default_summary": True,
+            }
+        )
+
+resource_status = None
+resource_record_path = run_root / "metadata" / "palace_resource_record.json"
+if resource_record_path.is_file():
+    resource_status = json.loads(resource_record_path.read_text()).get("status")
 
 root_surface_mask = results_root / "surface-mask-Q.csv"
+root_surface_mask_policy = "missing"
 if root_surface_mask.is_file():
-    latest_index = max((row[0] for row in result_dirs), default=0) + 1
-    result_dirs.append((latest_index, "Latest root", results_root))
+    root_archived_pass = iteration_surface_paths.get(root_surface_mask.resolve())
+    if root_archived_pass is not None:
+        root_surface_mask_policy = f"symlink_or_samefile_to_pass_{root_archived_pass}"
+    else:
+        latest_index = max((row["pass_index"] for row in result_dirs), default=0) + 1
+        include_root_as_final = resource_status == "completed" or not result_dirs
+        root_surface_mask_policy = (
+            "final_root"
+            if include_root_as_final
+            else f"latest_unarchived_root_status_{resource_status or 'unknown'}"
+        )
+        result_dirs.append(
+            {
+                "pass_index": latest_index,
+                "label": "Final root" if include_root_as_final else "Latest root (unarchived)",
+                "path": results_root,
+                "result_kind": "root_latest",
+                "is_archived": False,
+                "include_in_default_summary": include_root_as_final,
+            }
+        )
 
 if not result_dirs:
     raise FileNotFoundError(f"No surface-mask-Q.csv files found under: {results_root}")
 
 rows = []
-for pass_index, label, result_dir in result_dirs:
+for result_dir_info in result_dirs:
+    pass_index = result_dir_info["pass_index"]
+    label = result_dir_info["label"]
+    result_dir = result_dir_info["path"]
     surface_mask_path = result_dir / "surface-mask-Q.csv"
     with surface_mask_path.open(newline="") as handle:
         records = [
@@ -107,13 +147,16 @@ for pass_index, label, result_dir in result_dirs:
                 "mask_margin_nm": margin_nm,
                 "mask_margin_label": margin_label,
                 "series_label": f"{margin_label}, {interface_type}",
+                "result_kind": result_dir_info["result_kind"],
+                "is_archived": result_dir_info["is_archived"],
+                "include_in_default_summary": result_dir_info["include_in_default_summary"],
                 "p_surf_mask_sum": value,
                 "p_surf_mask_sum_micro": value * 1e6,
             }
         )
 
 history = pd.DataFrame(rows).sort_values(["pass_index", "interface_type", "mask_margin_nm"])
-label_order = [label for _, label, _ in result_dirs]
+label_order = [str(row["label"]) for row in result_dirs]
 visible_history = history.copy()
 visible_history["label"] = pd.Categorical(
     visible_history["label"],
@@ -149,12 +192,23 @@ if WRITE_STATIC_IMAGE:
     written_files.append(image_path)
 
 fig.show()
+default_summary_history = history[history["include_in_default_summary"]].copy()
+if default_summary_history.empty:
+    default_summary_history = history.copy()
+default_summary_label = (
+    default_summary_history.sort_values("pass_index")["label"].iloc[-1]
+    if not default_summary_history.empty
+    else None
+)
 display(
     {
         "run_root": run_root.as_posix(),
         "result_directories": len(result_dirs),
         "history_rows": len(history),
         "latest_label": label_order[-1],
+        "default_summary_label": default_summary_label,
+        "root_surface_mask_policy": root_surface_mask_policy,
+        "resource_status": resource_status,
         "written_files": [path.relative_to(run_root).as_posix() for path in written_files],
     }
 )
@@ -181,10 +235,9 @@ summary_columns = [
     "p_surf_mask_sum",
     "p_surf_mask_sum_micro",
 ]
-adaptive_pass_summary = (
-    selected_pass.sort_values(["interface_type", "mask_margin_nm"])[summary_columns]
-    .reset_index(drop=True)
-)
+adaptive_pass_summary = selected_pass.sort_values(["interface_type", "mask_margin_nm"])[
+    summary_columns
+].reset_index(drop=True)
 display(
     {
         "pass_index": PASS_INDEX,
@@ -194,6 +247,7 @@ display(
 )
 display(adaptive_pass_summary)
 
+display(Markdown("**Masked Surface EPR sum, in micro units (`p_surf_mask_sum * 1e6`)**"))
 adaptive_pass_pivot_micro = adaptive_pass_summary.pivot(
     index="interface_type",
     columns="mask_margin_nm",
@@ -205,17 +259,45 @@ adaptive_pass_pivot_micro.columns = [
 ]
 display(adaptive_pass_pivot_micro)
 
+adaptive_pass_share = adaptive_pass_summary.copy()
+adaptive_pass_share["share_of_margin_total"] = adaptive_pass_share[
+    "p_surf_mask_sum"
+] / adaptive_pass_share.groupby("mask_margin_nm")["p_surf_mask_sum"].transform("sum")
+adaptive_pass_share_pivot = adaptive_pass_share.pivot(
+    index="interface_type",
+    columns="mask_margin_nm",
+    values="share_of_margin_total",
+).reindex(["MS", "SA", "MA"])
+adaptive_pass_share_pivot.columns = [
+    f"{margin_nm} nm" if margin_nm < 1000 else "1 um"
+    for margin_nm in adaptive_pass_share_pivot.columns
+]
+display(Markdown("**Interface share within each mask margin; each column sums to 1**"))
+display(adaptive_pass_share_pivot)
+
 # %% [markdown]
 # ## Last Summary
 
 # %%
-last = history[history["pass_index"] == history["pass_index"].max()].copy()
-last_summary = (
-    last.sort_values(["interface_type", "mask_margin_nm"])[summary_columns]
-    .reset_index(drop=True)
+default_summary_history = history[history["include_in_default_summary"]].copy()
+if default_summary_history.empty:
+    default_summary_history = history.copy()
+last = default_summary_history[
+    default_summary_history["pass_index"] == default_summary_history["pass_index"].max()
+].copy()
+last_summary = last.sort_values(["interface_type", "mask_margin_nm"])[summary_columns].reset_index(
+    drop=True
+)
+display(
+    {
+        "summary_label": last_summary["label"].iloc[0],
+        "root_surface_mask_policy": root_surface_mask_policy,
+        "resource_status": resource_status,
+    }
 )
 display(last_summary)
 
+display(Markdown("**Masked Surface EPR sum, in micro units (`p_surf_mask_sum * 1e6`)**"))
 last_pivot_micro = last_summary.pivot(
     index="interface_type",
     columns="mask_margin_nm",
@@ -225,3 +307,18 @@ last_pivot_micro.columns = [
     f"{margin_nm} nm" if margin_nm < 1000 else "1 um" for margin_nm in last_pivot_micro.columns
 ]
 display(last_pivot_micro)
+
+last_share = last_summary.copy()
+last_share["share_of_margin_total"] = last_share["p_surf_mask_sum"] / last_share.groupby(
+    "mask_margin_nm"
+)["p_surf_mask_sum"].transform("sum")
+last_share_pivot = last_share.pivot(
+    index="interface_type",
+    columns="mask_margin_nm",
+    values="share_of_margin_total",
+).reindex(["MS", "SA", "MA"])
+last_share_pivot.columns = [
+    f"{margin_nm} nm" if margin_nm < 1000 else "1 um" for margin_nm in last_share_pivot.columns
+]
+display(Markdown("**Interface share within each mask margin; each column sums to 1**"))
+display(last_share_pivot)

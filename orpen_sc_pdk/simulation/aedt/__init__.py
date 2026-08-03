@@ -1,113 +1,116 @@
-"""AEDT-native handoff package review contract for public OrPen PDK workflows.
+"""Notebook-side AEDT/PyAEDT handoff API for OrPen PDK workflows.
 
-This package owns the portable AEDT/PyAEDT handoff contract that private design
-repositories can call with their own GDS, TECH/XML, layer mapping, material
-sidecars, solver sidecars, and HPC profile catalogs. It does not own private
-chip geometry, private notebook run evidence, local AEDT licenses, or
-site-private machine policy. The generated package must be runnable on the
-target AEDT machine without importing the private repository or this PDK.
+This package is the public Notebook-side facade used by private design repos to
+turn GDS, TECH/XML, layer mapping, material sidecars, solver sidecars, and HPC
+policy into a portable AEDT handoff package. It does not own private chip
+geometry, notebook evidence, local AEDT licensing, or site machine policy. Once
+the package is written, the target AEDT machine runs the copied
+``runtime_bundle`` from inside the handoff package and does not import the
+notebook repo or this checkout.
 
-Host-side pipeline:
-1. Author a package spec.
-   ``AedtNativePackageSpec`` is the source of truth for project, runtime, HPC
-   policy, cases, recipes, and sweep behavior.
-2. Collect source artifacts.
-   A case carries GDS, TECH/XML, layer mapping, material context, source
-   metadata, and solver sidecars.
-3. Build the handoff package.
-   The builder writes ``manifest.yaml``, ``hpc/*.acf``, ``run_configs/*.yaml``,
-   launchers, README, scripts, and optional archive.
-4. Preserve sweep shape.
-   Parameter sweeps are represented as one manifest case per sweep point. Point
-   identity, sidecars, result directories, worker project isolation, progress,
-   skip-completed, retry-failed, and stale-state fail-fast behavior are part of
-   the package contract.
+This ``__init__`` file owns the review map and public exports only. Runtime
+behavior belongs to the files listed below.
 
-Target-side runtime pipeline:
-1. Bootstrap runtime.
-   Parse CLI/run config, resolve package root, output roots, AEDT version, gRPC
-   mode, Desktop lifecycle, worker mode, and HPC/ACF inputs.
-2. Dispatch recipe.
-   Each manifest recipe dispatches to one solver-specific path.
-3. Validate state for recovery.
-   Runtime state records source hashes, geometry settings, recipe settings,
-   stage decisions, exported files, completion status, and failures.
-4. Register materials.
-   Material context creates AEDT project materials and records unsupported
-   properties for audit.
-5. Build or import geometry.
-   Geometry is solver-owned. Common code may provide file copying, material
-   binding, object naming, units, and inventory helpers, but each solver path
-   declares its own AEDT app class, import/build method, expected sidecars, and
-   geometry audit artifacts.
-6. Assign boundaries.
-   Boundary assignment is solver-owned. Each solver path declares how objects
-   become terminals, ports, signal lines, reference grounds, sources, nets, or
-   modes.
-7. Create region, setup, and sweeps.
-   Setup creation is solver-owned. Shared helpers may validate names, run
-   configs, HPC policy, and timing records.
-8. Solve with HPC policy.
-   Solve uses the resolved ACF file. Explicit ACF files and resource override
-   flags must not silently disagree.
-9. Export results.
-   Export solver results, matrices, convergence, benchmark artifacts, timing,
-   and metadata.
-10. Audit completion.
-   Write simulation metadata, stage detection, assignment summary, geometry
-   inventory, solve timing, completion status, and AEDT messages when present.
+Notebook-side pipeline:
+1. The notebook creates an ``AedtNativePackageSpec`` from real artifacts.
+2. ``materials.py`` compiles material policy into a portable material context.
+3. ``hpc.py`` renders reviewed AEDT ACF/resource policy.
+4. ``package.py`` writes ``manifest.yaml``, run configs, copied sources,
+   launchers, README text, the copied ``runtime_bundle``, and optional archive.
+5. Sweep runs remain one manifest case per point so point identity, sidecars,
+   result folders, retry/skip policy, and worker project isolation are explicit.
 
-Solver-specific path contracts:
-- HFSS Driven Terminal:
-  Use ``Hfss3dLayout``. Import GDS with TECH/XML control into an AEDB, create
-  the layout setup and frequency sweep, resolve terminal/port patterns, solve,
-  export layout results and benchmark artifacts, then save the project.
-- HFSS Eigenmode:
-  Use ``Hfss3dLayout``. Import GDS with TECH/XML control into an AEDB, create
-  the layout setup, apply ``mode_count`` when present, solve, export benchmark
-  artifacts, then save the project.
-- Q3D extraction:
-  Use ``Hfss3dLayout`` as the GDS/AEDB import stage, create a layout setup,
-  attempt ``export_to_q3d`` when PyAEDT supports it, open ``Q3d`` in the same
-  project, apply materials, resolve source/reference/net patterns, solve, export
-  C/AC-RL/DC-RL matrices and benchmark artifacts, then save the project.
-- Q2D extraction:
-  Use a stateful incremental workflow. Validate previous source and recipe
-  hashes, then choose one geometry mode. ``hfss_section`` imports GDS into an
-  ``Hfss`` 3D staging design, applies rotations, sections eligible objects,
-  copies section objects into ``Q2d``, and audits the section plan/inventory.
-  ``native_2d`` loads source metadata, layer mapping, material context, and Q2D
-  conductor markers, builds a rectangle geometry plan, creates rectangles
-  directly in ``Q2d``, and audits the plan/inventory. After geometry, create the
-  Q2D Region, assign signal/reference conductors from markers or object
-  patterns, create or repair CG/RL setup blocks, solve with ACF/HPC policy,
-  export CG/RL matrices, physical convergence, benchmark artifacts, state, and
-  completion metadata.
+Run-side pipeline inside the generated package:
+1. ``scripts/run_aedt_native.py`` enters ``runtime_bundle/run_aedt_native.py``.
+2. ``runtime_bundle/io.py`` loads the manifest, run config, paths, hashes, and
+   audit files.
+3. ``runtime_bundle/sweep.py`` either dispatches a serial run or starts isolated
+   worker subprocesses for point-local parallel Q2D sweeps.
+4. ``runtime_bundle/session.py`` owns AEDT version, gRPC/Desktop lifecycle,
+   PyAEDT app registration, modeler units, save, close, and lifecycle audit.
+5. ``runtime_bundle/materials.py`` creates AEDT project materials and binds
+   imported objects to the compiled material context.
+6. Solver logic imports/builds geometry, assigns boundaries, creates setup,
+   solves with ACF/HPC policy, exports results, and writes completion evidence.
 
-Scaffold target:
-- ``models.py``: public Pydantic package/case/recipe/result models.
-- ``package.py``: host-side package, manifest, archive, README, and launcher
-  writers.
-- ``hpc.py``: host-side HPC profile, resource defaults, validation, and ACF
-  rendering.
-- ``materials.py``: host-side material context compiler.
-- ``templates.py``: generated README, runner, requirements, and launcher text.
-- ``runtime_bundle/``: runtime source copied or rendered into handoff packages
-  so target machines do not import private repositories.
-- ``runtime_bundle/sweep.py``: sweep orchestration, skip/retry/recovery,
-  worker project isolation, progress reporting, per-point result/log routing,
-  and completion aggregation.
-- ``runtime_bundle/session.py``: AEDT version, gRPC, Desktop lifecycle, app
-  construction, save/close policy, and message collection.
-- ``runtime_bundle/io.py``: manifest loading, package paths, JSON/JSONL writes,
-  hashing, result/log roots, and audit file conventions.
-- ``runtime_bundle/materials.py``: AEDT material creation and object/material
-  binding.
-- ``runtime_bundle/solver/hfss/driven_terminal.py``: HFSS Driven Terminal path.
-- ``runtime_bundle/solver/hfss/eigenmode.py``: HFSS Eigenmode path.
-- ``runtime_bundle/solver/q3d.py``: Q3D extraction path.
-- ``runtime_bundle/solver/q2d/``: Q2D workflow, state, geometry, assignment,
-  region, setup, solve, export, and audit code.
+Current v1 boundary status:
+- Notebook-side packaging, material context compilation, ACF rendering, run-side
+  manifest I/O, material application, session lifecycle, and point-local sweep
+  orchestration are implemented boundaries.
+- ``runtime_bundle/run_aedt_native.py`` is the current run-side main entrypoint.
+  It still hosts solver implementations and compatibility re-exports while the
+  solver leaf modules remain reviewable fail-fast boundaries.
+- ``runtime_bundle/solver/*`` names the target solver folder structure. Those
+  modules should receive solver-specific code as it is moved out of the runner;
+  until then, they must fail loudly instead of pretending to run.
+
+File responsibility map:
+- ``__init__.py``: public API exports plus this Notebook-side/Run-side review
+  contract. It should not implement package writing or runtime behavior.
+- ``constants.py``: small Notebook-side scalar constants shared by models and
+  writers. Run-side scripts keep copied constants so handoff packages are
+  self-contained.
+- ``models.py``: Pydantic schemas for runtime policy, cases, recipes, materials,
+  HPC settings, and package results. It should not copy files or import PyAEDT.
+- ``materials.py``: Notebook-side compiler from repo material DB/layer mapping
+  into the portable AEDT material context. It should not mutate AEDT projects.
+- ``hpc.py``: Notebook-side HPC resource/profile validation and ACF rendering.
+  It should not launch AEDT or choose solver geometry.
+- ``package.py``: handoff directory writer, source copier, manifest/run-config
+  writer, runtime bundle copier, launcher writer, and archive writer. It should
+  not create PyAEDT sessions or solve recipes.
+- ``templates.py``: text renderers for generated README, requirements, thin
+  scripts, and shell launchers. It should not validate artifacts or write files.
+- ``runtime_bundle/__init__.py``: Run-side package map and narrow imports for
+  generated packages. It should not run the pipeline at import time.
+- ``runtime_bundle/io.py``: manifest/run-config/path/hash/JSON/JSONL helpers and
+  audit file conventions. It should not decide solver behavior.
+- ``runtime_bundle/materials.py``: Run-side AEDT material creation and object
+  material binding from the compiled context. It should not compile repo-side
+  material policy.
+- ``runtime_bundle/session.py``: AEDT session state, app construction,
+  gRPC/Desktop settings, modeler units, save/release, messages, and lifecycle
+  audit. It should not select manifest points or implement solver recipes.
+- ``runtime_bundle/sweep.py``: parent orchestration for one-script parallel
+  point-local runs, worker commands, progress, result/log routing, resume
+  decisions, and current shared manifest selection helpers. It should not open
+  AEDT Desktop or solve a recipe.
+- ``runtime_bundle/run_aedt_native.py``: copied CLI entrypoint and transitional
+  runtime dispatcher. It parses arguments, applies preflight/run configs,
+  dispatches recipes, and currently holds solver code until that code moves into
+  ``runtime_bundle/solver``.
+- ``runtime_bundle/solver/__init__.py``: common fail-fast solver workflow
+  contract and stage vocabulary.
+- ``runtime_bundle/solver/hfss/__init__.py``: HFSS-family scaffold exports and
+  boundary split between Driven Terminal and Eigenmode recipes.
+- ``runtime_bundle/solver/hfss/driven_terminal.py``: target HFSS Driven
+  Terminal boundary for GDS/AEDB import, setup/sweep, port resolution, solve,
+  export, and save.
+- ``runtime_bundle/solver/hfss/eigenmode.py``: target HFSS Eigenmode boundary
+  for GDS/AEDB import, mode-count setup, solve, export, and save.
+- ``runtime_bundle/solver/q3d.py``: target Q3D extraction boundary for layout
+  handoff, Q3D design creation, source/reference or net assignment, matrix
+  solve, export, and save.
+- ``runtime_bundle/solver/q2d/``: target Q2D stage package for state, geometry,
+  assignment, region, setup, solve, export, and audit.
+- ``runtime_bundle/solver/q2d/__init__.py``: Q2D stage package exports and
+  current fail-fast status.
+- ``runtime_bundle/solver/q2d/workflow.py``: Q2D stage coordinator boundary.
+- ``runtime_bundle/solver/q2d/state.py``: source hash, recipe hash, completion
+  state, recovery, and stale-state rejection boundary.
+- ``runtime_bundle/solver/q2d/geometry.py``: ``hfss_section`` and
+  ``semantic_cross_section`` geometry construction boundary.
+- ``runtime_bundle/solver/q2d/assignment.py``: signal/reference conductor
+  assignment boundary from markers or explicit object patterns.
+- ``runtime_bundle/solver/q2d/region.py``: Q2D Region creation/repair and
+  padding/material audit boundary.
+- ``runtime_bundle/solver/q2d/setup.py``: CG/RL setup block and convergence
+  setting boundary.
+- ``runtime_bundle/solver/q2d/solve.py``: ACF/HPC-controlled solve boundary.
+- ``runtime_bundle/solver/q2d/export.py``: matrix, convergence, benchmark, and
+  physical result export boundary.
+- ``runtime_bundle/solver/q2d/audit.py``: stage decision, inventory, assignment,
+  timing, AEDT message, and completion metadata boundary.
 """
 
 from __future__ import annotations
@@ -168,6 +171,31 @@ from .package import (
     prepare_aedt_native_handoff_package,
     prepare_aedt_native_sweep_handoff_package,
 )
+from .parameter_space import Axis, ParameterSpace
+from .q2d import (
+    Air,
+    Die,
+    DieGap,
+    FacePattern,
+    Gap,
+    Ground,
+    Q2dDerivedSweepResult,
+    Q2dFacetLineGrid,
+    Q2dFormula,
+    Q2dHeatMap,
+    Q2dImpedanceFormula,
+    Q2dLinePlot,
+    Q2dMatrixElement,
+    Q2dRawPoint,
+    Q2dRawSweepResult,
+    Q2dResultView,
+    Q2dSemanticCrossSection,
+    Stack,
+    Trace,
+    load_q2d_raw_sweep_result,
+    validate_q2d_cross_section_payload,
+    write_q2d_cross_section_payload,
+)
 
 __all__ = [
     "AedtAcfConfigSpec",
@@ -208,6 +236,26 @@ __all__ = [
     "AedtSectionPlane",
     "AedtSupportedMaterialProperties",
     "AedtUnsupportedMaterialProperties",
+    "Air",
+    "Die",
+    "DieGap",
+    "FacePattern",
+    "Gap",
+    "Ground",
+    "Q2dDerivedSweepResult",
+    "Q2dFacetLineGrid",
+    "Q2dFormula",
+    "Q2dHeatMap",
+    "Q2dImpedanceFormula",
+    "Q2dLinePlot",
+    "Q2dMatrixElement",
+    "Q2dRawPoint",
+    "Q2dRawSweepResult",
+    "Q2dResultView",
+    "load_q2d_raw_sweep_result",
+    "Q2dSemanticCrossSection",
+    "Stack",
+    "Trace",
     "aedt_material_fallback_reason",
     "aedt_material_name_for_physical_material",
     "aedt_material_name_from_physical_key",
@@ -217,5 +265,9 @@ __all__ = [
     "prepare_aedt_native_handoff_package",
     "prepare_aedt_native_sweep_handoff_package",
     "render_aedt_acf_config",
+    "validate_q2d_cross_section_payload",
+    "write_q2d_cross_section_payload",
+    "Axis",
+    "ParameterSpace",
     "write_aedt_hpc_artifacts",
 ]

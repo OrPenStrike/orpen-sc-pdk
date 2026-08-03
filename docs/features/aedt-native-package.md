@@ -1,8 +1,8 @@
-# AEDT Native Package Scaffold
+# AEDT Native Package
 
 **Target:** `orpen_sc_pdk.simulation.aedt`
 
-**Status:** scaffold
+**Status:** implemented v1 with transitional solver modules
 
 The public PDK owns a portable AEDT handoff package contract that private
 layout repositories can call with their own GDS, TECH/XML, layer mapping,
@@ -25,7 +25,8 @@ Host-side code runs before the AEDT machine is involved:
 - write `manifest.yaml`, `run_configs/*.yaml`, `hpc/*.acf`, launcher scripts,
   README, and optional handoff archives;
 - fail before package creation when a recipe declares sidecars that cannot
-  satisfy the runtime contract, such as `native_2d` Q2D metadata.
+  satisfy the runtime contract, such as missing semantic Q2D cross-section
+  metadata.
 
 ## Runtime Contract
 
@@ -88,9 +89,9 @@ orpen_sc_pdk/simulation/aedt/
 - Q3D owns layout import/export handoff, Q3D design creation, source/reference
   or net assignment, C/AC-RL/DC-RL export, and project save.
 - Q2D owns stateful cross-section execution. `hfss_section` uses HFSS staging
-  and section extraction; `native_2d` uses source metadata, layer mapping,
-  material context, and Q2D conductor markers to build public flip-chip CPW
-  rectangles directly in Q2D.
+  and section extraction. `semantic_cross_section` builds explicit
+  Stack/FacePattern rectangles directly in Q2D; legacy CPW marker-driven
+  `native_2d` geometry is no longer a valid package contract.
 
 Private repositories can add their own profile catalog or artifact discovery
 around this API without modifying the public PDK scaffold.

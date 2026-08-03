@@ -1,0 +1,40 @@
+---
+title: "gsim: Resolve/Results"
+---
+
+This `gsim` feature candidate owns the completed-run review path. Notebooks point at a Palace run folder, `gsim` audits the available artifacts, and typed report objects display capacitance, domain energy, surface participation, convergence, and related result tables.
+
+## Need
+
+Notebook-local CSV parsing makes report semantics drift. The reusable path should be `resolve_palace_result(...)`, then `load_report()`, then explicit typed report display. Missing solver outputs should fail loudly.
+
+## Native `gsim` Upstream/Main
+
+`gdsfactory/gsim` upstream/main at `16f6ef6` has a monolithic `src/gsim/palace/results.py` helper layer. It does not have a run-folder resolver, source-audit model, typed problem reports, or a `resolve_palace_result(...).load_report()` pipeline.
+
+## Local Delta
+
+The local branch `feature/gsim-palace-postprocessing-roles` at `1a3f48f` adds:
+
+- [`gsim/src/gsim/palace/resolve/`](https://github.com/arfiligol/gsim/tree/feature/gsim-palace-postprocessing-roles/src/gsim/palace/resolve) for source discovery, artifact audit, loaders, and report assembly.
+- [`gsim/src/gsim/palace/results/`](https://github.com/arfiligol/gsim/tree/feature/gsim-palace-postprocessing-roles/src/gsim/palace/results) for typed result models and problem reports.
+- `resolve_palace_result`, report bundle models, and report classes exported from `gsim.palace`.
+
+## Pipeline
+
+```{mermaid}
+flowchart LR
+    A["Completed Palace run folder"] --> B["resolve_palace_result"]
+    B --> C["source audit"]
+    C --> D["load_report"]
+    D --> E["typed report"]
+    E --> F["show_all_results"]
+```
+
+## Notebook Entry Points
+
+- [Public Electrostatic Workflow](../docs/notebooks/public_electrostatic_workflow.ipynb)
+- [Public Driven Workflow](../docs/notebooks/public_driven_workflow.ipynb)
+- [Public Eigenmode Workflow](../docs/notebooks/public_eigenmode_workflow.ipynb)
+
+Result cells require real Palace outputs. If `NOTEBOOK_ANALYSIS_RUN_ROOT` is not set to a completed run folder, `require_report=True` should fail instead of manufacturing placeholder results.

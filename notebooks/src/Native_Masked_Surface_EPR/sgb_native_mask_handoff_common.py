@@ -127,6 +127,121 @@ def _read_msh_physical_names(mesh_path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _indexable_interface_names(
+    interface_records: list[dict[str, Any]],
+) -> dict[tuple[str, int], list[str]]:
+    names_by_key: dict[tuple[str, int], set[str]] = defaultdict(set)
+    for record in interface_records:
+        interface_type = str(record.get("interface_type") or "").upper()
+        if interface_type not in {"SA", "MS", "MA"}:
+            continue
+        attribute = int(record["attribute"])
+        physical_name = str(record.get("physical_name") or "").strip()
+        if not physical_name:
+            continue
+        names_by_key[(interface_type, attribute)].add(physical_name)
+    return {key: sorted(names) for key, names in names_by_key.items() if names}
+
+
+def _build_dielectric_index_map_entries(
+    dielectric_rows: list[dict[str, Any]],
+    interface_records: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    names_by_key = _indexable_interface_names(interface_records)
+    entries: list[dict[str, Any]] = []
+    for row in dielectric_rows:
+        attrs = _as_int_tuple(row.get("Attributes", ()))
+        interface_type = str(row.get("Type", ""))
+        if not attrs or interface_type not in {"SA", "MS", "MA"}:
+            continue
+        mask_margin_nm = int(round(float(row["Mask"]["Margin"]) * 1000))
+        physical_names = sorted(
+            {
+                name
+                for attribute in attrs
+                for name in names_by_key.get((interface_type, int(attribute)), ())
+            }
+        )
+        entry: dict[str, Any] = {
+            "section": "Boundaries.Postprocessing.Dielectric",
+            "index": int(row["Index"]),
+            "entry_name": (
+                f"native_mask_dielectric_{interface_type.lower()}_"
+                f"{mask_margin_nm}nm_{row['Index']:03d}"
+            ),
+            "role": "boundary_surface",
+            "attributes": list(attrs),
+            "physical_names": physical_names,
+            "dimension": 2,
+            "Type": interface_type,
+            "metadata": {
+                "interface_type": interface_type,
+                "mask_margin_nm": mask_margin_nm,
+                "attributes": list(attrs),
+            },
+        }
+        if row.get("terminal") is not None:
+            entry["metadata"]["terminal_name"] = row["terminal"]
+        if row.get("terminal_index") is not None:
+            entry["metadata"]["terminal_index"] = row["terminal_index"]
+        entries.append(entry)
+    return entries
+
+
+def _update_palace_index_map(
+    *,
+    index_map_path: Path,
+    dielectric_rows: list[dict[str, Any]],
+    interface_records: list[dict[str, Any]],
+) -> None:
+    if not index_map_path.is_file():
+        raise FileNotFoundError(f"Missing palace_index_map.json: {index_map_path}")
+
+    index_map = json.loads(index_map_path.read_text())
+    entries = list(index_map.get("entries", ()))
+    if not isinstance(entries, list):
+        raise TypeError("palace_index_map.json entries must be a JSON array")
+
+    non_dielectric_entries = [
+        entry
+        for entry in entries
+        if str(entry.get("section")) != "Boundaries.Postprocessing.Dielectric"
+    ]
+    dielectric_entries = _build_dielectric_index_map_entries(
+        dielectric_rows=dielectric_rows,
+        interface_records=interface_records,
+    )
+    if not dielectric_entries:
+        raise RuntimeError("No dielectric index-map entries were generated.")
+    index_map["schema_version"] = int(index_map.get("schema_version", 1))
+    index_map["entries"] = sorted(
+        [*non_dielectric_entries, *dielectric_entries],
+        key=lambda entry: (str(entry.get("section")), int(entry.get("index", -1))),
+    )
+    index_map_path.write_text(json.dumps(index_map, indent=2) + "\n")
+
+
+def _ensure_native_mask_dielectric_index_map(analysis_run_root: Path) -> None:
+    index_map_path = analysis_run_root / "metadata" / "palace_index_map.json"
+    native_mask_path = analysis_run_root / "metadata" / "native_mask_postprocessing.json"
+    if not index_map_path.is_file() or not native_mask_path.is_file():
+        return
+
+    index_map = json.loads(index_map_path.read_text())
+    if any(
+        entry.get("section") == "Boundaries.Postprocessing.Dielectric"
+        for entry in index_map.get("entries", ())
+    ):
+        return
+
+    native_mask = json.loads(native_mask_path.read_text())
+    _update_palace_index_map(
+        index_map_path=index_map_path,
+        dielectric_rows=list(native_mask.get("dielectric_rows", ())),
+        interface_records=list(native_mask.get("surface_epr_interface_records", ())),
+    )
+
+
 def _surface_interface_records(groups: dict[str, Any]) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for alias, info in sorted((groups.get("boundary_surfaces") or {}).items()):
@@ -148,9 +263,7 @@ def _surface_interface_records(groups: dict[str, Any]) -> list[dict[str, Any]]:
                     {
                         "interface_type": expanded_interface_type,
                         "face_kind": (
-                            "top"
-                            if expanded_interface_type == "MA"
-                            else info.get("face_kind")
+                            "top" if expanded_interface_type == "MA" else info.get("face_kind")
                         ),
                         "source_id": info.get("source_id"),
                         "representation": info.get("representation"),
@@ -213,9 +326,7 @@ def _build_config_tables(
     interface_records: list[dict[str, Any]],
     dielectric_rows: list[dict[str, Any]],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    records_by_attr = {
-        (2, int(record["attribute"])): record for record in interface_records
-    }
+    records_by_attr = {(2, int(record["attribute"])): record for record in interface_records}
     roles_by_attr = _config_roles_by_attribute(palace_config)
     physical_rows = []
     for row in _read_msh_physical_names(output_dir / "palace.msh"):
@@ -358,6 +469,11 @@ def _patch_native_mask_config(
     )
     palace_config["Boundaries"].setdefault("Postprocessing", {})["Dielectric"] = dielectric_rows
     config_path.write_text(json.dumps(palace_config, indent=2) + "\n")
+    _update_palace_index_map(
+        index_map_path=output_dir / "metadata" / "palace_index_map.json",
+        dielectric_rows=dielectric_rows,
+        interface_records=interface_records,
+    )
 
     native_mask_metadata = {
         "schema_version": 1,
@@ -386,12 +502,8 @@ def _patch_native_mask_config(
         interface_records=interface_records,
         dielectric_rows=dielectric_rows,
     )
-    physical_group_map_path = (
-        f"metadata/sgb_route_{route.lower()}_physical_group_config_map.csv"
-    )
-    dielectric_mask_config_path = (
-        f"metadata/sgb_route_{route.lower()}_dielectric_mask_config.csv"
-    )
+    physical_group_map_path = f"metadata/sgb_route_{route.lower()}_physical_group_config_map.csv"
+    dielectric_mask_config_path = f"metadata/sgb_route_{route.lower()}_dielectric_mask_config.csv"
     display(
         {
             "config_file": config_path.relative_to(output_dir).as_posix(),
@@ -543,30 +655,70 @@ def _plot_native_mask_history(
         legend_title_text="",
     )
     html_path = (
-        analysis_run_root
-        / f"sgb_route_{route.lower()}_native_mask_all_interfaces_convergence.html"
+        analysis_run_root / f"sgb_route_{route.lower()}_native_mask_all_interfaces_convergence.html"
     )
     fig.write_html(html_path)
     fig.show()
     display({"plot_html": html_path.relative_to(analysis_run_root).as_posix()})
 
 
-def _display_electrostatic_report(analysis_run_root: Path) -> None:
-    try:
-        from gsim.palace import resolve_palace_result
-    except ImportError as exc:
-        display({"electrostatic_result_status": f"skipped: {exc}"})
+def _ensure_palace_resource_record(analysis_run_root: Path) -> None:
+    """Create palace_resource_record.json from the best available palace log.
+
+    When analyzing a pre-existing handoff run, some folders can miss the
+    resource record sidecar while still containing raw palace-*.log files. The
+    existing gsim parser API can reconstruct the sidecar directly from the log.
+    """
+    resource_record_path = analysis_run_root / "metadata" / "palace_resource_record.json"
+    if resource_record_path.is_file():
         return
 
-    try:
-        resolved_result = resolve_palace_result(analysis_run_root, problem_type="Electrostatic")
-    except Exception as exc:  # noqa: BLE001
-        display({"electrostatic_result_status": f"unavailable: {exc}"})
+    palace_log_paths = sorted((analysis_run_root / "logs").glob("palace-*.log"))
+    if not palace_log_paths:
         return
-    if not hasattr(resolved_result, "report"):
-        display({"electrostatic_result_status": "resolved result has no report view yet"})
-        return
-    display(resolved_result.report)
+
+    from gsim.palace.resolve.sources.resources import write_palace_resource_record_from_log
+
+    write_palace_resource_record_from_log(
+        analysis_run_root,
+        palace_log_paths[-1],
+        status=_palace_log_run_status(analysis_run_root),
+        allocation=_handoff_requested_allocation(analysis_run_root),
+        metadata={"source": "notebook_analysis"},
+    )
+
+
+def _palace_log_run_status(analysis_run_root: Path) -> str:
+    log_text = "\n".join(
+        path.read_text(errors="replace")[-20_000:]
+        for path in sorted((analysis_run_root / "logs").glob("*"))
+        if path.is_file()
+    ).lower()
+    if "due to time limit" in log_text:
+        return "cancelled_time_limit"
+    if "out of memory" in log_text or "oom" in log_text:
+        return "oom_killed"
+    return "completed"
+
+
+def _handoff_requested_allocation(analysis_run_root: Path) -> dict[str, Any]:
+    handoff_path = analysis_run_root / "metadata" / "palace_handoff_metadata.json"
+    if not handoff_path.is_file():
+        return {}
+    handoff = json.loads(handoff_path.read_text())
+    return dict(handoff.get("resources", {}).get("requested", {}))
+
+
+def _display_electrostatic_report(analysis_run_root: Path) -> None:
+    from gsim.palace import resolve_palace_result
+
+    _ensure_native_mask_dielectric_index_map(analysis_run_root)
+    _ensure_palace_resource_record(analysis_run_root)
+    resolved_result = resolve_palace_result(analysis_run_root, problem_type="Electrostatic")
+    report = resolved_result.load_report(require_report=True).require_report()
+    report.show_all_results()
+    display({"analysis_section": "Simulation Performance / Benchmark"})
+    report.show_simulation_benchmark()
 
 
 def run_sgb_native_mask_handoff(

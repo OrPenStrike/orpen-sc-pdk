@@ -30,7 +30,6 @@ from __future__ import annotations
 import csv
 import json
 import math
-import os
 import re
 import shutil
 import warnings
@@ -38,6 +37,7 @@ from collections import defaultdict
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import plotly.express as px
@@ -70,7 +70,7 @@ PALACE_LINEAR_TOL = 1e-6
 
 NATIVE_MASK_MARGINS_L0_UNITS = (0.0, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0)
 NATIVE_MASK_MARGINS_NM = tuple(int(round(value * 1000)) for value in NATIVE_MASK_MARGINS_L0_UNITS)
-NATIVE_MASK_SOURCE_INDEX = int(os.environ.get("NATIVE_MASK_SOURCE_INDEX", "1"))
+NATIVE_MASK_SOURCE_INDEX = 1
 NATIVE_MASK_VISIBLE_MARGINS_NM = (0, 10, 50, 100, 200, 500, 1000)
 NATIVE_MASK_CONFIG_SCHEMA = "palace_fork_dielectric_mask"
 
@@ -89,21 +89,177 @@ NOTEBOOK_ROOT = (
     / "martinis2022_ribbon_native_mask_hpc_handoff"
 )
 NOTEBOOK_RUN_DATE = date.today().isoformat()
-NOTEBOOK_RUN_INDEX = int(os.environ.get("NOTEBOOK_RUN_INDEX", "1"))
+NOTEBOOK_RUN_INDEX = 1
 NOTEBOOK_RUN_ID = f"{NOTEBOOK_RUN_DATE}-Run{NOTEBOOK_RUN_INDEX:02d}"
 NOTEBOOK_RUN_ROOT = NOTEBOOK_ROOT / NOTEBOOK_RUN_ID
-NOTEBOOK_ANALYSIS_RUN_ROOT_ENV = os.environ.get("NOTEBOOK_ANALYSIS_RUN_ROOT")
-NOTEBOOK_ANALYSIS_RUN_ROOT = (
-    Path(NOTEBOOK_ANALYSIS_RUN_ROOT_ENV).expanduser().resolve()
-    if NOTEBOOK_ANALYSIS_RUN_ROOT_ENV
-    else None
-)
+NOTEBOOK_ANALYSIS_RUN_ROOT: Path | None = None  # Default: None
+# NOTEBOOK_ANALYSIS_RUN_ROOT = Path("/path/to/handoff/run/folder")
 NOTEBOOK_PREPARE_RUN_STAGE = NOTEBOOK_ANALYSIS_RUN_ROOT is None
 DEFAULT_PALACE_NATIVE_MASK_SOURCE_EXECUTABLE = (
     PATH.simulation.parents[2] / "palace" / "build" / "bin" / "palace-x86_64.bin"
 )
+PALACE_HPC_PROFILE = "f1:ct112"
+PALACE_HPC_RESOURCE_OVERRIDES = {
+    "account": "public_alloc",
+    "partition": "ltlab-workstation1",
+    "nodes": 1,
+    "ntasks_per_node": 2,
+    "cpus_per_task": 16,
+    "memory_mb": 480000,
+    "wall_time": "12:00:00",
+}
+PALACE_NATIVE_MASK_EXECUTABLE = "palace"
+PALACE_NATIVE_MASK_COMMAND_STYLE = "binary"
+PALACE_NATIVE_MASK_SETUP_COMMANDS: tuple[str, ...] = ()
+PALACE_NATIVE_MASK_BUNDLE_EXECUTABLE = True
+PALACE_NATIVE_MASK_SOURCE_EXECUTABLE = DEFAULT_PALACE_NATIVE_MASK_SOURCE_EXECUTABLE
+PALACE_SBATCH_JOB_NAME = "orpen_native_mask_epr"
 if NOTEBOOK_PREPARE_RUN_STAGE:
     NOTEBOOK_RUN_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+def _as_int_tuple(value: Any) -> tuple[int, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, bool):
+        return ()
+    if isinstance(value, int):
+        return (value,)
+    if isinstance(value, str):
+        return (int(value),)
+    if isinstance(value, list | tuple | set):
+        return tuple(sorted({int(item) for item in value}))
+    return ()
+
+
+def _read_manifest_boundary_surface_names(
+    mesh_manifest: dict[str, Any],
+) -> dict[int, list[str]]:
+    names_by_attr: dict[int, set[str]] = defaultdict(set)
+    for entry in mesh_manifest.get("entries", ()):
+        if entry.get("role") != "boundary_surface":
+            continue
+        physical_name = entry.get("name")
+        if not physical_name:
+            continue
+        for attribute in _as_int_tuple(entry.get("attributes", ())):
+            names_by_attr[attribute].add(str(physical_name))
+    return {attribute: sorted(names) for attribute, names in names_by_attr.items()}
+
+
+def _update_palace_index_map(
+    *,
+    index_map_path: Path,
+    dielectric_rows: list[dict[str, Any]],
+    manifest_attr_names: dict[int, list[str]],
+) -> None:
+    if not index_map_path.is_file():
+        raise FileNotFoundError(f"Missing palace_index_map.json: {index_map_path}")
+
+    index_map = json.loads(index_map_path.read_text())
+    entries = list(index_map.get("entries", ()))
+    if not isinstance(entries, list):
+        raise TypeError("palace_index_map.json entries must be a JSON array")
+
+    non_dielectric_entries = [
+        entry
+        for entry in entries
+        if str(entry.get("section")) != "Boundaries.Postprocessing.Dielectric"
+    ]
+    dielectric_entries: list[dict[str, Any]] = []
+    for row in dielectric_rows:
+        attrs = _as_int_tuple(row.get("Attributes", ()))
+        if not attrs:
+            continue
+        interface_type = str(row.get("Type", ""))
+        if not interface_type:
+            continue
+        mask_margin_nm = int(round(float(row["Mask"]["Margin"]) * 1000))
+        physical_names = sorted(
+            {name for attribute in attrs for name in manifest_attr_names.get(attribute, ())}
+        )
+        dielectric_entry: dict[str, Any] = {
+            "section": "Boundaries.Postprocessing.Dielectric",
+            "index": int(row["Index"]),
+            "entry_name": (
+                f"native_mask_dielectric_{interface_type.lower()}_"
+                f"{mask_margin_nm}nm_{row['Index']:03d}"
+            ),
+            "role": "boundary_surface",
+            "attributes": list(attrs),
+            "physical_names": physical_names,
+            "dimension": 2,
+            "Type": interface_type,
+            "metadata": {
+                "interface_type": interface_type,
+                "mask_margin_nm": mask_margin_nm,
+                "attributes": list(attrs),
+            },
+        }
+        if row.get("terminal") is not None:
+            dielectric_entry["metadata"]["terminal_name"] = row["terminal"]
+        if row.get("terminal_index") is not None:
+            dielectric_entry["metadata"]["terminal_index"] = row["terminal_index"]
+        dielectric_entries.append(dielectric_entry)
+    if not dielectric_entries:
+        raise RuntimeError("No dielectric index-map entries were generated.")
+
+    index_map["schema_version"] = int(index_map.get("schema_version", 1))
+    index_map["entries"] = sorted(
+        [*non_dielectric_entries, *dielectric_entries],
+        key=lambda entry: (str(entry.get("section")), int(entry.get("index", -1))),
+    )
+    index_map_path.write_text(json.dumps(index_map, indent=2) + "\n")
+
+
+def _ensure_native_mask_dielectric_index_map(analysis_run_root: Path) -> None:
+    metadata_dir = analysis_run_root / "metadata"
+    index_map_path = metadata_dir / "palace_index_map.json"
+    native_mask_path = metadata_dir / "native_mask_postprocessing.json"
+    mesh_manifest_path = metadata_dir / "mesh_manifest.json"
+    if (
+        not index_map_path.is_file()
+        or not native_mask_path.is_file()
+        or not mesh_manifest_path.is_file()
+    ):
+        return
+
+    index_map = json.loads(index_map_path.read_text())
+    if any(
+        entry.get("section") == "Boundaries.Postprocessing.Dielectric"
+        for entry in index_map.get("entries", ())
+    ):
+        return
+
+    native_mask = json.loads(native_mask_path.read_text())
+    mesh_manifest = json.loads(mesh_manifest_path.read_text())
+    _update_palace_index_map(
+        index_map_path=index_map_path,
+        dielectric_rows=list(native_mask.get("dielectric_rows", ())),
+        manifest_attr_names=_read_manifest_boundary_surface_names(mesh_manifest),
+    )
+
+
+def _palace_log_run_status(analysis_run_root: Path) -> str:
+    log_text = "\n".join(
+        path.read_text(errors="replace")[-20_000:]
+        for path in sorted((analysis_run_root / "logs").glob("*"))
+        if path.is_file()
+    ).lower()
+    if "due to time limit" in log_text:
+        return "cancelled_time_limit"
+    if "out of memory" in log_text or "oom" in log_text:
+        return "oom_killed"
+    return "completed"
+
+
+def _handoff_requested_allocation(analysis_run_root: Path) -> dict[str, Any]:
+    handoff_path = analysis_run_root / "metadata" / "palace_handoff_metadata.json"
+    if not handoff_path.is_file():
+        return {}
+    handoff = json.loads(handoff_path.read_text())
+    return dict(handoff.get("resources", {}).get("requested", {}))
+
 
 # %% [markdown]
 # ## Geometry
@@ -228,40 +384,14 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
 
 # %%
 if NOTEBOOK_PREPARE_RUN_STAGE:
-    PALACE_HPC_PROFILE = os.environ.get("PALACE_HPC_PROFILE", "f1:ct112")
-    PALACE_HPC_RESOURCE_OVERRIDES = {
-        "account": os.environ.get("PALACE_HPC_ACCOUNT", "public_alloc"),
-        "partition": os.environ.get("PALACE_HPC_PARTITION", "ct112"),
-        "nodes": int(os.environ.get("PALACE_HPC_NODES", "1")),
-        "ntasks_per_node": int(os.environ.get("PALACE_HPC_NTASKS_PER_NODE", "2")),
-        "cpus_per_task": int(os.environ.get("PALACE_HPC_CPUS_PER_TASK", "16")),
-        "memory_mb": int(os.environ.get("PALACE_HPC_MEMORY_MB", "480000")),
-        "wall_time": os.environ.get("PALACE_HPC_WALL_TIME", "12:00:00"),
-    }
-    PALACE_NATIVE_MASK_EXECUTABLE = os.environ.get("PALACE_NATIVE_MASK_EXECUTABLE", "palace")
-    PALACE_NATIVE_MASK_COMMAND_STYLE = os.environ.get("PALACE_NATIVE_MASK_COMMAND_STYLE", "binary")
-    PALACE_NATIVE_MASK_SETUP_COMMANDS = tuple(
-        command.strip()
-        for command in os.environ.get("PALACE_NATIVE_MASK_SETUP_COMMANDS", "").splitlines()
-        if command.strip()
-    )
-    if os.environ.get("PALACE_NATIVE_MASK_BUNDLE_EXECUTABLE", "1") == "1":
-        source_executable = Path(
-            os.environ.get(
-                "PALACE_NATIVE_MASK_SOURCE_EXECUTABLE",
-                DEFAULT_PALACE_NATIVE_MASK_SOURCE_EXECUTABLE,
-            )
-        )
+    if PALACE_NATIVE_MASK_BUNDLE_EXECUTABLE:
+        source_executable = PALACE_NATIVE_MASK_SOURCE_EXECUTABLE
         if not source_executable.is_file():
             raise FileNotFoundError(source_executable)
         bundled_executable = output_dir / source_executable.name
         shutil.copy2(source_executable, bundled_executable)
         bundled_executable.chmod(bundled_executable.stat().st_mode | 0o755)
         PALACE_NATIVE_MASK_EXECUTABLE = f"./{bundled_executable.name}"
-    PALACE_SBATCH_JOB_NAME = os.environ.get(
-        "PALACE_SBATCH_JOB_NAME",
-        "orpen_native_mask_epr",
-    )
 
     run_profile = resolve_public_palace_run_profile(
         PALACE_HPC_PROFILE,
@@ -372,6 +502,8 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
                         "Permittivity": params["permittivity"],
                         "LossTan": params["loss_tangent"],
                         "Mask": {"Type": "Inset", "Margin": margin_l0},
+                        "terminal": terminal_name,
+                        "terminal_index": terminal_row["Index"],
                     }
                 )
                 native_mask_groups.append(
@@ -388,6 +520,13 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
     boundary_postprocessing = palace_config["Boundaries"].setdefault("Postprocessing", {})
     boundary_postprocessing["Dielectric"] = native_mask_dielectric_rows
     config_path.write_text(json.dumps(palace_config, indent=2) + "\n")
+    _update_palace_index_map(
+        index_map_path=output_dir / "metadata" / "palace_index_map.json",
+        dielectric_rows=native_mask_dielectric_rows,
+        manifest_attr_names=_read_manifest_boundary_surface_names(
+            json.loads((output_dir / "metadata" / "mesh_manifest.json").read_text())
+        ),
+    )
 
     native_mask_metadata = {
         "schema_version": 1,
@@ -426,7 +565,7 @@ if NOTEBOOK_PREPARE_RUN_STAGE:
         "workflow": "martinis2022_ribbon_native_mask_hpc_handoff",
         "native_mask_schema": NATIVE_MASK_CONFIG_SCHEMA,
         "palace_requirement": "Palace fork with Dielectric.Mask and surface-mask CSV output",
-        "launcher_source": "environment override or job environment",
+        "launcher_source": "notebook config cell",
     }
     sbatch_handoff = sim.write_slurm_sbatch_handoff(
         run_profile,
@@ -586,11 +725,7 @@ if not native_mask_history.empty:
     fig.write_html(native_mask_convergence_html_path)
     fig.show()
     display(
-        {
-            "plot_html": native_mask_convergence_html_path.relative_to(
-                analysis_run_root
-            ).as_posix()
-        }
+        {"plot_html": native_mask_convergence_html_path.relative_to(analysis_run_root).as_posix()}
     )
 
 # %% [markdown]
@@ -601,8 +736,9 @@ if not native_mask_history.empty:
     latest_pass_index = int(native_mask_history["pass_index"].max())
     native_mask_latest_summary = (
         native_mask_history[native_mask_history["pass_index"] == latest_pass_index]
-        .sort_values(["interface_type", "mask_margin_nm"])
-        [["label", "source_index", "interface_type", "mask_margin_nm", "p_surf_mask_sum"]]
+        .sort_values(["interface_type", "mask_margin_nm"])[
+            ["label", "source_index", "interface_type", "mask_margin_nm", "p_surf_mask_sum"]
+        ]
         .reset_index(drop=True)
     )
     native_mask_latest_summary_path = (
@@ -624,24 +760,39 @@ if not native_mask_history.empty:
 # ## Electrostatic Report
 
 # %%
-try:
-    resolved_result = resolve_palace_result(analysis_run_root, problem_type="Electrostatic")
-    electrostatic_report = resolved_result.load_report(require_report=True).require_report()
-except Exception as exc:
-    electrostatic_report = None
-    display(
-        {
-            "analysis_run_folder": analysis_run_root.as_posix(),
-            "report_status": type(exc).__name__,
-        }
-    )
-else:
-    electrostatic_report.show_all_results()
-    display(
-        {
-            "analysis_run_folder": analysis_run_root.as_posix(),
-            "problem_type": electrostatic_report.problem_type,
-            "paper_scale_reference_capacitance_fF": round(paper_reference_capacitance_ff, 1),
-            "notebook_reference_capacitance_fF": round(notebook_reference_capacitance_ff, 1),
-        }
-    )
+if not NOTEBOOK_PREPARE_RUN_STAGE:
+    _ensure_native_mask_dielectric_index_map(analysis_run_root)
+    palace_resource_record_path = analysis_run_root / "metadata" / "palace_resource_record.json"
+    if not palace_resource_record_path.is_file():
+        palace_log_paths = sorted((analysis_run_root / "logs").glob("palace-*.log"))
+        if palace_log_paths:
+            from gsim.palace.resolve.sources.resources import (
+                write_palace_resource_record_from_log,
+            )
+
+            write_palace_resource_record_from_log(
+                analysis_run_root,
+                palace_log_paths[-1],
+                status=_palace_log_run_status(analysis_run_root),
+                allocation=_handoff_requested_allocation(analysis_run_root),
+                metadata={"source": "notebook_analysis"},
+            )
+
+resolved_result = resolve_palace_result(analysis_run_root, problem_type="Electrostatic")
+electrostatic_report = resolved_result.load_report(require_report=True).require_report()
+electrostatic_report.show_all_results()
+display(
+    {
+        "analysis_run_folder": analysis_run_root.as_posix(),
+        "problem_type": electrostatic_report.problem_type,
+        "paper_scale_reference_capacitance_fF": round(paper_reference_capacitance_ff, 1),
+        "notebook_reference_capacitance_fF": round(notebook_reference_capacitance_ff, 1),
+    }
+)
+
+# %% [markdown]
+# ## Simulation Performance / Benchmark
+
+# %%
+if not NOTEBOOK_PREPARE_RUN_STAGE:
+    electrostatic_report.show_simulation_benchmark()

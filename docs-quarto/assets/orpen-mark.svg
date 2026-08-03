@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="OrPen SC PDK">
+  <circle cx="32" cy="32" r="28" fill="#6da7d8"/>
+  <path fill="#fff" d="M30 8h4v48h-4zM8 30h48v4H8z"/>
+  <circle cx="32" cy="32" r="10" fill="#fff"/>
+  <circle cx="32" cy="32" r="5" fill="#6da7d8"/>
+</svg>

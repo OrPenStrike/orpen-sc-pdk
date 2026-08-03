@@ -2651,9 +2651,7 @@ def _cad_mesh_identity_problem_evidence(
         "palace_index_map.json": find_postprocessing_index_map(source),
         "config.json": find_config_json(source),
     }
-    missing_artifacts = [
-        name for name, path in artifact_path_candidates.items() if path is None
-    ]
+    missing_artifacts = [name for name, path in artifact_path_candidates.items() if path is None]
     if missing_artifacts:
         names = ", ".join(missing_artifacts)
         raise FileNotFoundError(f"Could not find {names} for {source}")
@@ -2681,9 +2679,7 @@ def _cad_mesh_identity_problem_evidence(
         ),
         "artifact_paths": {
             name: (
-                _relative_path(path, relative_to)
-                if relative_to is not None
-                else path.as_posix()
+                _relative_path(path, relative_to) if relative_to is not None else path.as_posix()
             )
             for name, path in artifact_path_candidates.items()
             if path is not None
@@ -3057,9 +3053,7 @@ def _build_sweep_evidence(
             handoff_metadata_path=(
                 f"{problem['output_dir']}/metadata/palace_handoff_metadata.json"
             ),
-            resource_record_path=(
-                f"{problem['output_dir']}/metadata/palace_resource_record.json"
-            ),
+            resource_record_path=(f"{problem['output_dir']}/metadata/palace_resource_record.json"),
         )
         for problem_key, problem in sorted(problems.items())
     ]

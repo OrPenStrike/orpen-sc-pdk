@@ -1,0 +1,39 @@
+---
+title: "SGB Input Contract"
+---
+
+Semantic Geometry Builder is context for the `gsim` review, not a `gsim` feature. It owns the optional Route A/B/C semantic sidecar used when layer names alone do not preserve terminal plans, interface ownership, and physical-group identity.
+
+## Need
+
+Some layouts need explicit semantic identity before mesh/config lowering. The sidecar should preserve route choice, canonical topology, electrostatic terminal plans, interface ownership, and physical-group ledgers.
+
+## Native `gsim` Upstream/Main
+
+Native `gsim` can build useful Palace geometry from layers and stack data. Its upstream/main model does not carry SGB-style Route A/B/C semantic sidecars or explicit interface ownership ledgers.
+
+## Local / External Delta
+
+SGB lives in [`semantic-geometry-builder/src/semantic_geometry_builder/`](https://github.com/OrPenStrike/semantic-geometry-builder/tree/main/src/semantic_geometry_builder). The local `gsim` branch also has an SGB/XAO adapter path, but that is optional and branch-local, not native upstream behavior.
+
+## Design And Folders
+
+| Area | Path |
+| --- | --- |
+| SGB package | [`semantic-geometry-builder/src/semantic_geometry_builder/`](https://github.com/OrPenStrike/semantic-geometry-builder/tree/main/src/semantic_geometry_builder) |
+| Stack fixtures | [`notebooks/assets/semantic_geometry_builder/`](https://github.com/OrPenStrike/orpen-sc-pdk/tree/main/notebooks/assets/semantic_geometry_builder) |
+| Tutorial sources | [`notebooks/src/SGB_Geometry_Tutorials/`](https://github.com/OrPenStrike/orpen-sc-pdk/tree/main/notebooks/src/SGB_Geometry_Tutorials) |
+
+```{mermaid}
+flowchart LR
+    A["GDS + stack JSON"] --> B["SGB route compiler"]
+    B --> C["Canonical topology"]
+    B --> D["Terminal/interface ledger"]
+    D --> E["Optional gsim consumer"]
+```
+
+## Notebook Entry Points
+
+- [Martinis Ribbon Route A](../sgb-notebooks/martinis2022_ribbon_route_a.ipynb)
+- [Martinis Ribbon Route B](../sgb-notebooks/martinis2022_ribbon_route_b.ipynb)
+- [Martinis Ribbon Route C](../sgb-notebooks/martinis2022_ribbon_route_c.ipynb)

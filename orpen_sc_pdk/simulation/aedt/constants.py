@@ -1,8 +1,8 @@
-"""Shared AEDT scalar constants for host-side package validation.
+"""Shared AEDT scalar constants for notebook-side package validation.
 
 This module owns small unit conversion tables used by AEDT package models and
-host-side writers. Runtime scripts copied into handoff packages keep their own
-self-contained constants until the runtime bundle is copied as a package.
+notebook-side writers. Run-side scripts copied into handoff packages keep their
+own self-contained constants inside ``runtime_bundle``.
 """
 
 from __future__ import annotations

@@ -51,9 +51,7 @@ class Axis:
         values = tuple(self.values)
         default = values[0] if self.default is None else self.default
         if default not in values:
-            raise ValueError(
-                f"axis {self.name!r} default {self.default!r} is not in values"
-            )
+            raise ValueError(f"axis {self.name!r} default {self.default!r} is not in values")
         object.__setattr__(self, "values", values)
         object.__setattr__(self, "default", default)
 
@@ -106,9 +104,7 @@ class ParameterSpace:
         if len(coords) != len(self.axes):
             missing = ", ".join(sorted(set(self.axis_names) - set(coords)))
             raise ValueError(f"missing axis coordinates: {missing}")
-        return "__".join(
-            f"{axis.name}={_slugify(coords[axis.name])}" for axis in self.axes
-        )
+        return "__".join(f"{axis.name}={_slugify(coords[axis.name])}" for axis in self.axes)
 
     def grid(self) -> list[Point]:
         """Return the full Cartesian grid for all axes."""

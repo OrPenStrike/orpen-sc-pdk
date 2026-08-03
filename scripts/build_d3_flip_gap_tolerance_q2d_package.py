@@ -56,10 +56,7 @@ def _case_id(
 ) -> str:
     suffix = "__d1_ground_continuous" if clearance_um == 0.0 else ""
     qualifier_suffix = "" if qualifier is None else f"__{qualifier}"
-    return (
-        f"{role}__gap_{_height_slug(height_um)}um"
-        f"{qualifier_suffix}{suffix}"
-    )
+    return f"{role}__gap_{_height_slug(height_um)}um{qualifier_suffix}{suffix}"
 
 
 def _point_row(
@@ -101,9 +98,7 @@ def build_package(
     upper_ground_clearance_width_um: float = UPPER_GROUND_CLEARANCE_WIDTH_UM,
     trace_width_um: float = TRACE_WIDTH_UM,
     trace_gap_um: float = TRACE_GAP_UM,
-    inter_trace_ground_widths_um: tuple[float, ...] = (
-        INTER_TRACE_GROUND_WIDTH_UM,
-    ),
+    inter_trace_ground_widths_um: tuple[float, ...] = (INTER_TRACE_GROUND_WIDTH_UM,),
     lateral_scales: tuple[float, ...] = (),
     screen_trace_gaps_um: tuple[float, ...] = (),
 ):
@@ -112,15 +107,10 @@ def build_package(
     if not heights_um:
         raise ValueError("At least one flip-chip height is required.")
     if lateral_scales and len(inter_trace_ground_widths_um) != 1:
+        raise ValueError("lateral_scales cannot be combined with an inter-trace-ground sweep.")
+    if screen_trace_gaps_um and (lateral_scales or len(inter_trace_ground_widths_um) != 1):
         raise ValueError(
-            "lateral_scales cannot be combined with an inter-trace-ground sweep."
-        )
-    if screen_trace_gaps_um and (
-        lateral_scales or len(inter_trace_ground_widths_um) != 1
-    ):
-        raise ValueError(
-            "screen_trace_gaps_um requires one fixed inter-trace ground and no "
-            "lateral-scale sweep."
+            "screen_trace_gaps_um requires one fixed inter-trace ground and no lateral-scale sweep."
         )
     geometries = (
         [
@@ -175,11 +165,7 @@ def build_package(
         for height_um in heights_um
         for width_um, gap_um, inter_ground_um, scale, qualifier in geometries
     ]
-    single_geometries = (
-        geometries
-        if lateral_scales or screen_trace_gaps_um
-        else [geometries[0]]
-    )
+    single_geometries = geometries if lateral_scales or screen_trace_gaps_um else [geometries[0]]
     rows = pair_rows + [
         _point_row(
             run_root.name,
@@ -223,9 +209,7 @@ def build_package(
             cross_section = (
                 make_q2d_same_face_two_trace_cross_section(
                     **common,
-                    inter_trace_ground_width_um=float(
-                        row["parameter_inter_trace_ground_width_um"]
-                    ),
+                    inter_trace_ground_width_um=float(row["parameter_inter_trace_ground_width_um"]),
                 )
                 if role == "coupled_pair"
                 else make_q2d_same_face_single_trace_cross_section(**common)
@@ -343,16 +327,10 @@ def main() -> None:
         help="Repeat to screen CPW gaps at one fixed trace and center-ground width.",
     )
     args = parser.parse_args()
-    if (
-        args.lateral_scale is not None
-        and args.inter_trace_ground_width_um is not None
-    ):
-        parser.error(
-            "--lateral-scale cannot be combined with --inter-trace-ground-width-um."
-        )
+    if args.lateral_scale is not None and args.inter_trace_ground_width_um is not None:
+        parser.error("--lateral-scale cannot be combined with --inter-trace-ground-width-um.")
     if args.screen_trace_gap_um is not None and (
-        args.lateral_scale is not None
-        or args.inter_trace_ground_width_um is not None
+        args.lateral_scale is not None or args.inter_trace_ground_width_um is not None
     ):
         parser.error(
             "--screen-trace-gap-um cannot be combined with lateral-scale or "
@@ -370,15 +348,9 @@ def main() -> None:
             if args.inter_trace_ground_width_um is not None
             else (args.base_inter_trace_ground_width_um,)
         ),
-        lateral_scales=(
-            tuple(args.lateral_scale)
-            if args.lateral_scale is not None
-            else ()
-        ),
+        lateral_scales=(tuple(args.lateral_scale) if args.lateral_scale is not None else ()),
         screen_trace_gaps_um=(
-            tuple(args.screen_trace_gap_um)
-            if args.screen_trace_gap_um is not None
-            else ()
+            tuple(args.screen_trace_gap_um) if args.screen_trace_gap_um is not None else ()
         ),
     )
     print(json.dumps({"run_root": str(result.package_dir), "cases": result.case_count}))

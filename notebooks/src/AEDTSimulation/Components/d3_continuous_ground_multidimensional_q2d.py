@@ -325,26 +325,11 @@ def b7_bridge_seed(
         raise ValueError("B7 target frequencies produce a nonpositive physical section.")
 
     f_prime = (1.0 + rho**2) * (
-        sinc_prime(x)
-        * coupled_length_m
-        / VELOCITY_M_PER_S
-        * math.cos(theta)
-        - sinc_x
-        * math.sin(theta)
-        * notch_path_m
-        / VELOCITY_M_PER_S
+        sinc_prime(x) * coupled_length_m / VELOCITY_M_PER_S * math.cos(theta)
+        - sinc_x * math.sin(theta) * notch_path_m / VELOCITY_M_PER_S
     )
-    denominator = 2.0 * math.cos(math.pi * wn / (2.0 * wr)) * math.cos(
-        math.pi * wn / (2.0 * wp)
-    )
-    d_im_z21_d_omega = (
-        Z0_OHM**2
-        * wn
-        * coupled_length_m
-        * pair_cm
-        * f_prime
-        / denominator
-    )
+    denominator = 2.0 * math.cos(math.pi * wn / (2.0 * wr)) * math.cos(math.pi * wn / (2.0 * wp))
+    d_im_z21_d_omega = Z0_OHM**2 * wn * coupled_length_m * pair_cm * f_prime / denominator
 
     cr = readout_total_m / (2.0 * Z0_OHM * VELOCITY_M_PER_S)
     lr = 8.0 * Z0_OHM * readout_total_m / (math.pi**2 * VELOCITY_M_PER_S)
@@ -366,9 +351,7 @@ def b7_bridge_seed(
         * geometric_omega
         * (geometric_omega / wn - wn / geometric_omega)
     )
-    zero_residual = (
-        (1.0 + rho**2) * sinc_x * math.cos(theta) - (1.0 - rho**2)
-    )
+    zero_residual = (1.0 + rho**2) * sinc_x * math.cos(theta) - (1.0 - rho**2)
     return {
         "fr_hz": fr_hz,
         "fp_hz": fp_hz,
@@ -458,6 +441,18 @@ LENGTH_SPEC_JSON.write_text(
                 "single_reference": single["cache_key"],
                 "coupled_pair": pair["cache_key"],
             },
+            "q2d_sources": {
+                role: {
+                    "source_run_root": row["source_run_root"],
+                    "source_case_id": row["source_case_id"],
+                    "source_sha256": json.loads(row["source_sha256_json"]),
+                    "solver_completed_at": row["solver_completed_at"],
+                }
+                for role, row in (
+                    ("single_reference", single),
+                    ("coupled_pair", pair),
+                )
+            },
             "cross_section_um": {
                 "w": SELECTED_W_UM,
                 "s": SELECTED_S_UM,
@@ -469,7 +464,10 @@ LENGTH_SPEC_JSON.write_text(
                 "zc_ohm": ZC_OHM,
                 "zm_ohm": ZM_OHM,
                 "single_velocity_m_per_s": VELOCITY_M_PER_S,
-                "coupled_velocities_m_per_s": [VC1_M_PER_S, VC2_M_PER_S],
+                "coupled_diagonal_line_velocities_m_per_s": [
+                    VC1_M_PER_S,
+                    VC2_M_PER_S,
+                ],
                 "consonant_max_relative": consonant_relative,
                 "lm_over_lc": pair_lm / ((pair_l11 + pair_l22) / 2.0),
                 "cm_over_cc": pair_cm / ((pair_c11 + pair_c22) / 2.0 - pair_cm),

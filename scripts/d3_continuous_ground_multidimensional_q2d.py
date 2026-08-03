@@ -121,9 +121,7 @@ def _runtime_bundle_hash() -> str:
     files = sorted(
         path
         for path in runtime_root.rglob("*")
-        if path.is_file()
-        and "__pycache__" not in path.parts
-        and path.suffix != ".pyc"
+        if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"
     )
     if not files:
         raise FileNotFoundError(f"AEDT runtime bundle is empty: {runtime_root}")
@@ -252,8 +250,7 @@ def _connect(database_path: Path) -> sqlite3.Connection:
         "ingested_at",
     }
     actual_columns = {
-        str(row["name"])
-        for row in connection.execute("PRAGMA table_info(q2d_point_result)")
+        str(row["name"]) for row in connection.execute("PRAGMA table_info(q2d_point_result)")
     }
     if actual_columns != expected_columns:
         connection.close()
@@ -356,8 +353,7 @@ def prepare_sweep(
     ]
     all_points = pair_points + single_points
     single_key_by_geometry = {
-        (point["w_nm"], point["s_nm"], point["h_nm"]): point["cache_key"]
-        for point in single_points
+        (point["w_nm"], point["s_nm"], point["h_nm"]): point["cache_key"] for point in single_points
     }
 
     with _connect(database_path) as connection:
@@ -368,9 +364,7 @@ def prepare_sweep(
     # Solve single references first so partial runs can already join Z0 to later
     # pair results; the database still deduplicates each (w, s, h) single point.
     misses = [
-        point
-        for point in single_points + pair_points
-        if point["cache_key"] not in cached_keys
+        point for point in single_points + pair_points if point["cache_key"] not in cached_keys
     ]
     run_root.mkdir(parents=True, exist_ok=True)
 
@@ -447,9 +441,7 @@ def prepare_sweep(
             "parameter_trace_gap_um": point["s_um"],
             "parameter_inter_trace_ground_width_um": point["d_um"],
             "parameter_flip_chip_gap_height_um": point["h_um"],
-            "parameter_upper_ground_clearance_width_um": (
-                UPPER_GROUND_CLEARANCE_WIDTH_UM
-            ),
+            "parameter_upper_ground_clearance_width_um": (UPPER_GROUND_CLEARANCE_WIDTH_UM),
         }
         for point in misses
     ]
@@ -515,9 +507,7 @@ def _parse_convergence(path: Path) -> dict[str, Any]:
             f"current={current}, target={target}"
         )
     if completed >= maximum:
-        raise ValueError(
-            f"Q2D {problem_type} stopped at maximum passes: {completed}/{maximum}"
-        )
+        raise ValueError(f"Q2D {problem_type} stopped at maximum passes: {completed}/{maximum}")
     return {
         "problem_type": problem_type,
         "completed_passes": completed,
@@ -543,10 +533,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
         not path.is_file() or path.stat().st_size <= 0 for path in matrix_paths.values()
     ):
         return None
-    if any(
-        not path.is_file() or path.stat().st_size <= 0
-        for path in convergence_paths.values()
-    ):
+    if any(not path.is_file() or path.stat().st_size <= 0 for path in convergence_paths.values()):
         return None
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     analyze = metadata.get("solve_status", {}).get("analyze_setup", {})
@@ -567,13 +554,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     cache_input = _cache_input(row["role"], sidecar_payload)
     cache_key = _cache_key(cache_input)
 
-    preflight_path = (
-        run_root
-        / "logs"
-        / "workers"
-        / f"{case_id}__q2d"
-        / "aedt_preflight.json"
-    )
+    preflight_path = run_root / "logs" / "workers" / f"{case_id}__q2d" / "aedt_preflight.json"
     preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
     if (
         str(preflight.get("aedt_version")) != AEDT_VERSION
@@ -581,9 +562,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     ):
         raise ValueError(f"Solver version mismatch for {case_id}")
 
-    workflow_state_path = (
-        run_root / "logs" / case_id / "q2d" / "q2d_workflow_state.json"
-    )
+    workflow_state_path = run_root / "logs" / case_id / "q2d" / "q2d_workflow_state.json"
     workflow_state = json.loads(workflow_state_path.read_text(encoding="utf-8"))
     if (
         workflow_state.get("completion_status") != "complete"
@@ -598,10 +577,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     solver_completed_at = workflow_state.get("completed_at")
     if not isinstance(solver_completed_at, str) or not solver_completed_at:
         raise ValueError(f"Q2D workflow completion time is missing: {case_id}")
-    convergence = {
-        name: _parse_convergence(path)
-        for name, path in convergence_paths.items()
-    }
+    convergence = {name: _parse_convergence(path) for name, path in convergence_paths.items()}
 
     point = load_q2d_raw_point_result(
         result_dir,
@@ -629,9 +605,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
         ).evaluate(point)
         derived["zc1_ohm"] = self_values["zc_T1_ohm"]
         derived["zc2_ohm"] = self_values["zc_T2_ohm"]
-        derived["zm_ohm"] = Q2dImpedanceFormula.mutual(name="zm").evaluate(point)[
-            "zm_T1_T2_ohm"
-        ]
+        derived["zm_ohm"] = Q2dImpedanceFormula.mutual(name="zm").evaluate(point)["zm_T1_T2_ohm"]
     if any(value is not None and not math.isfinite(value) for value in derived.values()):
         raise ValueError(f"Non-finite impedance for {case_id}")
 
@@ -780,15 +754,9 @@ def _root_cell_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     axes = {name: sorted({float(row[name]) for row in rows}) for name in axis_names}
     if any(len(values) < 2 for values in axes.values()):
         return []
-    by_coordinate = {
-        tuple(float(row[name]) for name in axis_names): row
-        for row in rows
-    }
+    by_coordinate = {tuple(float(row[name]) for name in axis_names): row for row in rows}
     cells = []
-    intervals = {
-        name: list(zip(values, values[1:], strict=False))
-        for name, values in axes.items()
-    }
+    intervals = {name: list(zip(values, values[1:], strict=False)) for name, values in axes.items()}
     for bounds in product(*(intervals[name] for name in axis_names)):
         vertices = [
             by_coordinate.get(coordinate)
@@ -817,9 +785,7 @@ def _root_cell_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "rm_max": rm_max,
             "rc_brackets_zero": rc_min <= 0 <= rc_max,
             "rm_brackets_zero": rm_min <= 0 <= rm_max,
-            "simultaneous_zero_bracket": (
-                rc_min <= 0 <= rc_max and rm_min <= 0 <= rm_max
-            ),
+            "simultaneous_zero_bracket": (rc_min <= 0 <= rc_max and rm_min <= 0 <= rm_max),
             "cell_root_score": math.hypot(
                 zero_distance(rc_min, rc_max),
                 zero_distance(rm_min, rm_max),
@@ -890,6 +856,317 @@ def ingest_sweep(run_root: Path, database_path: Path) -> dict[str, Any]:
         encoding="utf-8",
     )
     return summary
+
+
+def _matrix_value_si(payload: str, row: str, column: str) -> float:
+    matches = [
+        float(item["value_si"])
+        for item in json.loads(payload)
+        if item["row_terminal"] == row and item["column_terminal"] == column
+    ]
+    if len(matches) != 1:
+        raise ValueError(f"expected one {row},{column} matrix entry, found {len(matches)}")
+    return matches[0]
+
+
+def export_consonant_length_seeds(
+    database_path: Path,
+    output_dir: Path,
+    *,
+    width_um: float = 3.0,
+    gap_um: float = 3.0,
+    center_ground_um: float = 3.0,
+    height_um: float = 8.0,
+    slot_hz: tuple[float, ...] = (5.52e9, 5.76e9, 6.00e9, 6.24e9, 6.48e9),
+    readout_offset_hz: float = -2.0e6,
+    filter_offset_hz: float = 2.0e6,
+    notch_hz: float = 4.5e9,
+    j_hz: float = 5.0e6,
+    kappa_p_lb_hz: float = 20.0e6,
+    consonant_max_relative: float = 0.01,
+) -> dict[str, Any]:
+    """Export Spring2025 B7/C16 seeds from one solved consonant Q2D point."""
+
+    if not database_path.is_file():
+        raise FileNotFoundError(database_path)
+    w_nm, s_nm, d_nm, h_nm = (
+        _nm(width_um),
+        _nm(gap_um),
+        _nm(center_ground_um),
+        _nm(height_um),
+    )
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        single = connection.execute(
+            """
+            SELECT *
+            FROM q2d_point_result
+            WHERE role = 'single_reference'
+              AND w_nm = ? AND s_nm = ? AND d_nm IS NULL AND h_nm = ?
+            """,
+            (w_nm, s_nm, h_nm),
+        ).fetchone()
+        pair = connection.execute(
+            """
+            SELECT *
+            FROM q2d_point_result
+            WHERE role = 'coupled_pair'
+              AND w_nm = ? AND s_nm = ? AND d_nm = ? AND h_nm = ?
+            """,
+            (w_nm, s_nm, d_nm, h_nm),
+        ).fetchone()
+    if single is None or pair is None:
+        raise RuntimeError(
+            "The selected single-reference and coupled-pair Q2D points must both "
+            "be complete in the cache."
+        )
+
+    single_l = _matrix_value_si(single["l_matrix_json"], "T1", "T1")
+    single_c = _matrix_value_si(single["c_matrix_json"], "T1", "T1")
+    pair_l11 = _matrix_value_si(pair["l_matrix_json"], "T1", "T1")
+    pair_l22 = _matrix_value_si(pair["l_matrix_json"], "T2", "T2")
+    pair_lm = _matrix_value_si(pair["l_matrix_json"], "T1", "T2")
+    pair_c11 = _matrix_value_si(pair["c_matrix_json"], "T1", "T1")
+    pair_c22 = _matrix_value_si(pair["c_matrix_json"], "T2", "T2")
+    pair_cm = -_matrix_value_si(pair["c_matrix_json"], "T1", "T2")
+
+    z0_ohm = float(single["z0_ohm"])
+    zc1_ohm = float(pair["zc1_ohm"])
+    zc2_ohm = float(pair["zc2_ohm"])
+    zc_ohm = (zc1_ohm + zc2_ohm) / 2.0
+    zm_ohm = float(pair["zm_ohm"])
+    velocity_m_per_s = 1.0 / math.sqrt(single_l * single_c)
+    vc1_m_per_s = 1.0 / math.sqrt(pair_l11 * pair_c11)
+    vc2_m_per_s = 1.0 / math.sqrt(pair_l22 * pair_c22)
+    rho = zm_ohm / z0_ohm
+    consonant_relative = max(
+        abs(zc1_ohm / z0_ohm - 1.0),
+        abs(zc2_ohm / z0_ohm - 1.0),
+        abs(vc1_m_per_s / velocity_m_per_s - 1.0),
+        abs(vc2_m_per_s / velocity_m_per_s - 1.0),
+    )
+    if consonant_relative > consonant_max_relative:
+        raise ValueError(
+            "Selected Q2D point is not consonant within "
+            f"{consonant_max_relative:.3%}: {consonant_relative:.3%}"
+        )
+
+    def sinc(value: float) -> float:
+        return 1.0 - value**2 / 6.0 if abs(value) < 1.0e-8 else math.sin(value) / value
+
+    def sinc_prime(value: float) -> float:
+        if abs(value) < 1.0e-6:
+            return -value / 3.0 + value**3 / 30.0
+        return (value * math.cos(value) - math.sin(value)) / value**2
+
+    def bridge_seed(
+        *,
+        fr_hz: float,
+        fp_hz: float,
+        coupled_length_m: float,
+        impedance_ratio: float,
+    ) -> dict[str, float]:
+        wn = 2.0 * math.pi * notch_hz
+        wr = 2.0 * math.pi * fr_hz
+        wp = 2.0 * math.pi * fp_hz
+        x = wn * coupled_length_m / velocity_m_per_s
+        sinc_x = sinc(x)
+        cosine = (1.0 - impedance_ratio**2) / ((1.0 + impedance_ratio**2) * sinc_x)
+        if not -1.0 < cosine < 1.0:
+            raise ValueError(
+                "B7 has no first real symmetric-short-tail zero for this coupled length."
+            )
+
+        theta = math.acos(cosine)
+        notch_path_m = theta * velocity_m_per_s / wn
+        short_m = (notch_path_m - coupled_length_m) / 2.0
+        readout_total_m = velocity_m_per_s / (4.0 * fr_hz)
+        filter_total_m = velocity_m_per_s / (4.0 * fp_hz)
+        readout_open_m = readout_total_m - coupled_length_m - short_m
+        filter_open_m = filter_total_m - coupled_length_m - short_m
+        if min(short_m, readout_open_m, filter_open_m) <= 0.0:
+            raise ValueError("B7 target frequencies produce a nonpositive section.")
+
+        f_prime = (1.0 + impedance_ratio**2) * (
+            sinc_prime(x) * coupled_length_m / velocity_m_per_s * math.cos(theta)
+            - sinc_x * math.sin(theta) * notch_path_m / velocity_m_per_s
+        )
+        denominator = (
+            2.0 * math.cos(math.pi * wn / (2.0 * wr)) * math.cos(math.pi * wn / (2.0 * wp))
+        )
+        d_im_z21_d_omega = z0_ohm**2 * wn * coupled_length_m * pair_cm * f_prime / denominator
+
+        cr = readout_total_m / (2.0 * z0_ohm * velocity_m_per_s)
+        lr = 8.0 * z0_ohm * readout_total_m / (math.pi**2 * velocity_m_per_s)
+        cp = filter_total_m / (2.0 * z0_ohm * velocity_m_per_s)
+        lp = 8.0 * z0_ohm * filter_total_m / (math.pi**2 * velocity_m_per_s)
+        br = wn * cr - 1.0 / (wn * lr)
+        bp = wn * cp - 1.0 / (wn * lp)
+        cn = -0.5 * d_im_z21_d_omega * br * bp
+        if cn <= 0.0:
+            raise ValueError("B7 zero slope did not produce a positive response-matched Cn.")
+        zn = 1.0 / (wn * cn)
+        geometric_omega = math.sqrt(wr * wp)
+        j_rad_per_s = (
+            math.sqrt(math.sqrt(lr / cr) * math.sqrt(lp / cp))
+            / (2.0 * zn)
+            * geometric_omega
+            * (geometric_omega / wn - wn / geometric_omega)
+        )
+        return {
+            "fr_hz": fr_hz,
+            "fp_hz": fp_hz,
+            "lr_open_um": readout_open_m * 1.0e6,
+            "lr_short_um": short_m * 1.0e6,
+            "lc_um": coupled_length_m * 1.0e6,
+            "lp_short_um": short_m * 1.0e6,
+            "lp_open_um": filter_open_m * 1.0e6,
+            "lr_total_um": readout_total_m * 1.0e6,
+            "lp_total_um": filter_total_m * 1.0e6,
+            "notch_path_um": notch_path_m * 1.0e6,
+            "notch_hz": notch_hz,
+            "j_hz": j_rad_per_s / (2.0 * math.pi),
+            "cn_fF": cn * 1.0e15,
+            "zn_ohm": zn,
+            "b7_zero_residual": (
+                (1.0 + impedance_ratio**2) * sinc_x * math.cos(theta) - (1.0 - impedance_ratio**2)
+            ),
+        }
+
+    def solve_coupled_length(target_slot_hz: float) -> dict[str, float]:
+        fr_hz = target_slot_hz + readout_offset_hz
+        fp_hz = target_slot_hz + filter_offset_hz
+        lower_m, upper_m = 1.0e-6, 1.0e-3
+        lower = bridge_seed(
+            fr_hz=fr_hz,
+            fp_hz=fp_hz,
+            coupled_length_m=lower_m,
+            impedance_ratio=rho,
+        )
+        upper = bridge_seed(
+            fr_hz=fr_hz,
+            fp_hz=fp_hz,
+            coupled_length_m=upper_m,
+            impedance_ratio=rho,
+        )
+        if not lower["j_hz"] < j_hz < upper["j_hz"]:
+            raise ValueError("The 1–1000 um coupled-length bracket does not contain J target.")
+        for _ in range(80):
+            midpoint_m = (lower_m + upper_m) / 2.0
+            midpoint = bridge_seed(
+                fr_hz=fr_hz,
+                fp_hz=fp_hz,
+                coupled_length_m=midpoint_m,
+                impedance_ratio=rho,
+            )
+            if midpoint["j_hz"] < j_hz:
+                lower_m = midpoint_m
+            else:
+                upper_m = midpoint_m
+        result = bridge_seed(
+            fr_hz=fr_hz,
+            fp_hz=fp_hz,
+            coupled_length_m=(lower_m + upper_m) / 2.0,
+            impedance_ratio=rho,
+        )
+        result["slot_hz"] = target_slot_hz
+        return result
+
+    homogeneous = bridge_seed(
+        fr_hz=6.0e9,
+        fp_hz=6.0e9,
+        coupled_length_m=160.0e-6,
+        impedance_ratio=1.0,
+    )
+    omega_bar = 2.0 * math.pi * 6.0e9
+    omega_n = 2.0 * math.pi * notch_hz
+    capacitance_per_m = 1.0 / (z0_ohm * velocity_m_per_s)
+    spring_c17_j_hz = (
+        omega_bar
+        * math.pi**2
+        / 32.0
+        * (omega_bar / omega_n - omega_n / omega_bar) ** 3
+        / math.cos(math.pi * omega_n / (2.0 * omega_bar)) ** 2
+        * (pair_cm / capacitance_per_m)
+        * math.sin(omega_n * 160.0e-6 / velocity_m_per_s)
+        / (2.0 * math.pi)
+    )
+    if not math.isclose(homogeneous["j_hz"], spring_c17_j_hz, rel_tol=1.0e-12):
+        raise AssertionError("Generalized B7 slope does not reduce to Eq. C17.")
+
+    rows = [solve_coupled_length(target) for target in slot_hz]
+    if max(abs(row["b7_zero_residual"]) for row in rows) >= 1.0e-12:
+        raise AssertionError("B7 zero residual exceeds tolerance.")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = output_dir / "spring2025_b7_consonant_length_seeds.csv"
+    json_path = output_dir / "spring2025_b7_consonant_length_seeds.json"
+    _write_csv(csv_path, rows)
+    payload = {
+        "schema_version": "d3-spring2025-b7-consonant-length-seeds.v1",
+        "status": "estimator_only_not_distributed_validated",
+        "q2d_cache_keys": {
+            "single_reference": single["cache_key"],
+            "coupled_pair": pair["cache_key"],
+        },
+        "q2d_sources": {
+            role: {
+                "source_run_root": row["source_run_root"],
+                "source_case_id": row["source_case_id"],
+                "source_sha256": json.loads(row["source_sha256_json"]),
+                "solver_completed_at": row["solver_completed_at"],
+            }
+            for role, row in (
+                ("single_reference", single),
+                ("coupled_pair", pair),
+            )
+        },
+        "cross_section_um": {
+            "w": width_um,
+            "s": gap_um,
+            "d": center_ground_um,
+            "flip_chip_height": height_um,
+        },
+        "q2d_readback": {
+            "z0_ohm": z0_ohm,
+            "zc1_ohm": zc1_ohm,
+            "zc2_ohm": zc2_ohm,
+            "zc_ohm": zc_ohm,
+            "zm_ohm": zm_ohm,
+            "single_velocity_m_per_s": velocity_m_per_s,
+            "coupled_diagonal_line_velocities_m_per_s": [
+                vc1_m_per_s,
+                vc2_m_per_s,
+            ],
+            "consonant_max_relative": consonant_relative,
+            "consonant_limit_relative": consonant_max_relative,
+            "zm_equality_is_gate": False,
+            "lm_over_lc": pair_lm / ((pair_l11 + pair_l22) / 2.0),
+            "cm_over_cc": pair_cm / ((pair_c11 + pair_c22) / 2.0 - pair_cm),
+        },
+        "targets": {
+            "notch_hz": notch_hz,
+            "j_hz": j_hz,
+            "kappa_p_lb_hz": kappa_p_lb_hz,
+            "readout_offset_hz": readout_offset_hz,
+            "filter_offset_hz": filter_offset_hz,
+        },
+        "formula_scope": (
+            "Spring2025 Appendix B Eq. B7 zero and slope, response-matched "
+            "bridge LC, Appendix C Eq. C16; symmetric short-tail initializer"
+        ),
+        "rows": rows,
+    }
+    json_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "csv": str(csv_path.resolve()),
+        "json": str(json_path.resolve()),
+        "row_count": len(rows),
+        "consonant_max_relative": consonant_relative,
+    }
 
 
 def _dash_styles(values: list[float]) -> dict[float, tuple[int, tuple[int, ...]] | str]:
@@ -995,13 +1272,8 @@ def _plot_three_rows(
         for row_index, (metric, label) in enumerate(metrics):
             ax = axes[row_index, column]
             if metric == "z0_ohm" and color_key == "d_um":
-                subset = [
-                    item for item in rows if float(item[facet_key]) == facet
-                ]
-                unique_by_x = {
-                    float(item[x_key]): item
-                    for item in subset
-                }
+                subset = [item for item in rows if float(item[facet_key]) == facet]
+                unique_by_x = {float(item[x_key]): item for item in subset}
                 ordered = [unique_by_x[value] for value in sorted(unique_by_x)]
                 ax.plot(
                     [float(item[x_key]) for item in ordered],
@@ -1047,8 +1319,7 @@ def _plot_three_rows(
                     values = [
                         float(item[metric])
                         for item in rows
-                        if float(item[facet_key]) == facet
-                        and float(item[x_key]) == x_value
+                        if float(item[facet_key]) == facet and float(item[x_key]) == x_value
                     ]
                     if values:
                         spreads.append((max(values) - min(values)) / (sum(values) / len(values)))
@@ -1120,6 +1391,14 @@ def main() -> None:
     plot = subparsers.add_parser("plot")
     plot.add_argument("--run-root", required=True, type=Path)
 
+    seeds = subparsers.add_parser("export-length-seeds")
+    seeds.add_argument("--database", required=True, type=Path)
+    seeds.add_argument("--output-dir", required=True, type=Path)
+    seeds.add_argument("--w-um", type=float, default=3.0)
+    seeds.add_argument("--s-um", type=float, default=3.0)
+    seeds.add_argument("--d-um", type=float, default=3.0)
+    seeds.add_argument("--height-um", type=float, default=8.0)
+
     args = parser.parse_args()
     if args.command == "prepare":
         result = prepare_sweep(
@@ -1133,6 +1412,15 @@ def main() -> None:
         )
     elif args.command == "ingest":
         result = ingest_sweep(args.run_root, args.database)
+    elif args.command == "export-length-seeds":
+        result = export_consonant_length_seeds(
+            args.database,
+            args.output_dir,
+            width_um=args.w_um,
+            gap_um=args.s_um,
+            center_ground_um=args.d_um,
+            height_um=args.height_um,
+        )
     else:
         result = {"plots": [str(path) for path in plot_sweep(args.run_root)]}
     print(json.dumps(result, indent=2))

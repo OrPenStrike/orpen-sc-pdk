@@ -1,8 +1,13 @@
 """HFSS solver scaffold package for generated AEDT handoff runtimes.
 
-This package owns HFSS-family reservation points. Driven Terminal and Eigenmode
-remain separate modules because they use different recipe requirements and
-result expectations even while both start from an ``Hfss3dLayout`` import path.
+This package reserves HFSS-family Run-side solver boundaries. Driven Terminal
+and Eigenmode stay in separate modules because they use different recipe
+requirements and result expectations, even though both start from an
+``Hfss3dLayout`` import path.
+
+Current v1 HFSS execution still lives in ``runtime_bundle/run_aedt_native.py``.
+The files here provide the target structure and fail-fast import surface until
+that code is moved behind a reviewed contract.
 """
 
 from __future__ import annotations
