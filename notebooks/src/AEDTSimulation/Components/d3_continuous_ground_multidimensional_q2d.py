@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: 1.19.3
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -25,15 +25,19 @@
 # - Fabrication-tolerance height samples are 4–9 µm in 0.25 µm steps.
 # - \(Z_m=Z_0\) is not a feasibility gate.  Spring2025 Appendix B Eq. (B7)
 #   retains \(Z_m/Z_0\) when locating the transfer zero.
-# - The stable SQLite file caches only validated completed Q2D points.  AEDT
-#   Run folders remain the owner of projects, logs, and raw matrix exports.
+# - The stable SQLite file caches only validated completed Q2D points.  Its
+#   SQLite schema v3 immutable row identity is the full cache key, including
+#   recipe and runtime; identical geometry from different runtime identities
+#   coexists.  AEDT Run folders remain the owner of projects, logs, and raw
+#   matrix exports.
+# - Material identity is part of the same cache key.  The current candidate
+#   uses explicit silicon \(\epsilon_r=11.9\), PEC conductors, and Vacuum region.
 
 # %%
 from __future__ import annotations
 
 import json
 import math
-import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -51,6 +55,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from d3_continuous_ground_multidimensional_q2d import (  # noqa: E402
     ingest_sweep,
+    load_current_q2d_point_pair,
     plot_sweep,
     prepare_sweep,
 )
@@ -125,8 +130,11 @@ if RUN_SOLVER:
 # %% [markdown]
 # ## Ingest completed points and export high-dimensional CSV
 #
-# Ingestion is transactional and single-process.  Incomplete or failed points
-# never enter the cache.  The joined CSV retains both pair diagonals so
+# Ingestion is transactional, immutable, and single-process.  Incomplete or
+# failed points never enter the cache; re-ingesting an identical cache key is
+# an idempotent no-op, while conflicting evidence fails.  Joined rows are
+# selected by their Run ledger cache keys rather than geometry.  The joined CSV
+# retains both pair diagonals so
 # \(Z_{c1}/Z_{c2}\) asymmetry remains visible instead of being hidden by their
 # mean.
 
@@ -236,28 +244,13 @@ def matrix_value_si(payload: str, row: str, column: str) -> float:
     return matches[0]
 
 
-with sqlite3.connect(DATABASE_PATH) as connection:
-    connection.row_factory = sqlite3.Row
-    single = connection.execute(
-        """
-        SELECT *
-        FROM q2d_point_result
-        WHERE role = 'single_reference'
-          AND w_nm = ? AND s_nm = ? AND d_nm IS NULL AND h_nm = ?
-        """,
-        (3000, 3000, 8000),
-    ).fetchone()
-    pair = connection.execute(
-        """
-        SELECT *
-        FROM q2d_point_result
-        WHERE role = 'coupled_pair'
-          AND w_nm = ? AND s_nm = ? AND d_nm = ? AND h_nm = ?
-        """,
-        (3000, 3000, 3000, 8000),
-    ).fetchone()
-if single is None or pair is None:
-    raise RuntimeError("The selected 8 µm single/pair Q2D points are missing from the cache.")
+single, pair = load_current_q2d_point_pair(
+    DATABASE_PATH,
+    width_um=SELECTED_W_UM,
+    gap_um=SELECTED_S_UM,
+    center_ground_um=SELECTED_D_UM,
+    height_um=SELECTED_HEIGHT_UM,
+)
 
 single_l = matrix_value_si(single["l_matrix_json"], "T1", "T1")
 single_c = matrix_value_si(single["c_matrix_json"], "T1", "T1")

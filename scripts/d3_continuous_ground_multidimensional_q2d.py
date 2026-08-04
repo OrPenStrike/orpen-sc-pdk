@@ -1,8 +1,10 @@
 """Prepare, cache, analyze, and plot a continuous-ground D3 Q2D sweep.
 
 This is a notebook-facing research workflow.  The SQLite file is a local,
-cross-run cache of validated completed point results; Run folders continue to
-own AEDT projects, logs, and raw matrix exports.
+cross-run cache of validated completed point results.  Each cache key owns one
+immutable row, so identical geometry solved by different runtime identities
+coexists as distinct evidence.  Run folders continue to own AEDT projects,
+logs, and raw matrix exports.
 """
 
 from __future__ import annotations
@@ -26,11 +28,14 @@ from matplotlib.colors import Normalize
 from matplotlib.lines import Line2D
 
 from orpen_sc_pdk.simulation.aedt.models import (
+    AedtCompiledMaterialSpec,
+    AedtMaterialContext,
     AedtNativeCaseSpec,
     AedtNativePackageSpec,
     AedtQ2dSetupSpec,
     AedtRecipeSpec,
     AedtRuntimeSpec,
+    AedtSupportedMaterialProperties,
 )
 from orpen_sc_pdk.simulation.aedt.package import prepare_aedt_native_handoff_package
 from orpen_sc_pdk.simulation.aedt.q2d import (
@@ -42,8 +47,11 @@ from orpen_sc_pdk.simulation.aedt.q2d import (
 )
 
 PROJECT_NAME = "d3_continuous_ground_multidimensional_q2d"
-CACHE_SCHEMA = "orpen-q2d-point-result-cache.v2"
-SWEEP_SCHEMA = "d3-continuous-ground-multidimensional-q2d.v1"
+# This value participates in every scientific cache key.  SQLite ownership and
+# index migrations are versioned separately through PRAGMA user_version.
+CACHE_SCHEMA = "orpen-q2d-point-result-cache.v3"
+DATABASE_SCHEMA_VERSION = 3
+SWEEP_SCHEMA = "d3-continuous-ground-multidimensional-q2d.v2"
 AEDT_VERSION = "2024.2"
 PYAEDT_VERSION = "0.26.2"
 ADAPTIVE_FREQUENCY = "6GHz"
@@ -52,6 +60,43 @@ AIR_HEIGHT_UM = 200.0
 GROUND_WIDTH_UM = 150.0
 METAL_THICKNESS_UM = 0.2
 UPPER_GROUND_CLEARANCE_WIDTH_UM = 0.0
+SUBSTRATE_PHYSICAL_MATERIAL = "silicon"
+SUBSTRATE_AEDT_MATERIAL = "D3Silicon_er11p9"
+SUBSTRATE_RELATIVE_PERMITTIVITY = 11.9
+CONDUCTOR_AEDT_MATERIAL = "pec"
+REGION_AEDT_MATERIAL = "Vacuum"
+LEGACY_GEOMETRY_INDEX = "q2d_point_result_geometry"
+GEOMETRY_LOOKUP_INDEX = "q2d_point_result_geometry_lookup"
+LEGACY_GEOMETRY_INDEX_SQL = f"""
+    CREATE UNIQUE INDEX {LEGACY_GEOMETRY_INDEX}
+    ON q2d_point_result(role, w_nm, s_nm, COALESCE(d_nm, -1), h_nm)
+"""
+GEOMETRY_LOOKUP_INDEX_SQL = f"""
+    CREATE INDEX {GEOMETRY_LOOKUP_INDEX}
+    ON q2d_point_result(role, w_nm, s_nm, COALESCE(d_nm, -1), h_nm)
+"""
+DATABASE_COLUMNS = (
+    "cache_key",
+    "role",
+    "input_json",
+    "solver_json",
+    "w_nm",
+    "s_nm",
+    "d_nm",
+    "h_nm",
+    "c_matrix_json",
+    "l_matrix_json",
+    "convergence_json",
+    "z0_ohm",
+    "zc1_ohm",
+    "zc2_ohm",
+    "zm_ohm",
+    "source_run_root",
+    "source_case_id",
+    "source_sha256_json",
+    "solver_completed_at",
+    "ingested_at",
+)
 
 
 def _canonical_json(value: Any) -> str:
@@ -109,14 +154,49 @@ def _recipe() -> AedtRecipeSpec:
     )
 
 
-def _runtime_bundle_hash() -> str:
-    runtime_root = (
-        Path(__file__).resolve().parents[1]
-        / "orpen_sc_pdk"
-        / "simulation"
-        / "aedt"
-        / "runtime_bundle"
+def _material_identity() -> dict[str, Any]:
+    return {
+        "substrate": {
+            "physical_material_key": SUBSTRATE_PHYSICAL_MATERIAL,
+            "aedt_material_name": SUBSTRATE_AEDT_MATERIAL,
+            "relative_permittivity": SUBSTRATE_RELATIVE_PERMITTIVITY,
+            "relative_permeability": 1.0,
+        },
+        "conductor": {"aedt_material_name": CONDUCTOR_AEDT_MATERIAL},
+        "region": {
+            "aedt_material_name": REGION_AEDT_MATERIAL,
+            "relative_permittivity": 1.0,
+            "relative_permeability": 1.0,
+        },
+    }
+
+
+def _material_context() -> AedtMaterialContext:
+    return AedtMaterialContext(
+        material_condition="cryogenic",
+        compiled_materials=(
+            AedtCompiledMaterialSpec(
+                aedt_material_name=SUBSTRATE_AEDT_MATERIAL,
+                source_physical_material_key=SUBSTRATE_PHYSICAL_MATERIAL,
+                material_kind="dielectric",
+                supported_properties=AedtSupportedMaterialProperties(
+                    permittivity=SUBSTRATE_RELATIVE_PERMITTIVITY,
+                    permeability=1.0,
+                ),
+            ),
+        ),
     )
+
+
+def _runtime_bundle_hash(runtime_root: Path | None = None) -> str:
+    if runtime_root is None:
+        runtime_root = (
+            Path(__file__).resolve().parents[1]
+            / "orpen_sc_pdk"
+            / "simulation"
+            / "aedt"
+            / "runtime_bundle"
+        )
     digest = hashlib.sha256()
     files = sorted(
         path
@@ -144,6 +224,8 @@ def _cross_section(role: str, *, w_nm: int, s_nm: int, d_nm: int | None, h_nm: i
         "air_height_um": AIR_HEIGHT_UM,
         "ground_width_um": GROUND_WIDTH_UM,
         "metal_thickness_um": METAL_THICKNESS_UM,
+        "substrate_material": SUBSTRATE_AEDT_MATERIAL,
+        "conductor_material": CONDUCTOR_AEDT_MATERIAL,
     }
     if role == "coupled_pair":
         if d_nm is None:
@@ -157,16 +239,22 @@ def _cross_section(role: str, *, w_nm: int, s_nm: int, d_nm: int | None, h_nm: i
     raise ValueError(f"Unsupported role: {role!r}")
 
 
-def _cache_input(role: str, cross_section_payload: dict[str, Any]) -> dict[str, Any]:
+def _cache_input(
+    role: str,
+    cross_section_payload: dict[str, Any],
+    *,
+    runtime_bundle_sha256: str | None = None,
+) -> dict[str, Any]:
     return {
         "schema_version": CACHE_SCHEMA,
         "role": role,
         "semantic_cross_section": cross_section_payload,
+        "materials": _material_identity(),
         "recipe": _recipe().model_dump(mode="json"),
         "solver": {
             "aedt_version": AEDT_VERSION,
             "pyaedt_version": PYAEDT_VERSION,
-            "runtime_bundle_sha256": _runtime_bundle_hash(),
+            "runtime_bundle_sha256": runtime_bundle_sha256 or _runtime_bundle_hash(),
         },
     }
 
@@ -191,72 +279,92 @@ def _case_id(
     return f"{prefix}__{geometry}__{cache_key[:10]}"
 
 
+def _normalized_sql(value: str) -> str:
+    return " ".join(value.lower().split())
+
+
+def _migrate_database_indexes(connection: sqlite3.Connection) -> None:
+    legacy = connection.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = ?",
+        (LEGACY_GEOMETRY_INDEX,),
+    ).fetchone()
+    if legacy is not None:
+        actual_sql = legacy["sql"]
+        if actual_sql is None or _normalized_sql(actual_sql) != _normalized_sql(
+            LEGACY_GEOMETRY_INDEX_SQL
+        ):
+            raise ValueError(f"Refusing to migrate unexpected index {LEGACY_GEOMETRY_INDEX!r}.")
+        connection.execute(f"DROP INDEX {LEGACY_GEOMETRY_INDEX}")
+    lookup = connection.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = ?",
+        (GEOMETRY_LOOKUP_INDEX,),
+    ).fetchone()
+    if lookup is None:
+        connection.execute(GEOMETRY_LOOKUP_INDEX_SQL)
+        return
+    actual_sql = lookup["sql"]
+    if actual_sql is None or _normalized_sql(actual_sql) != _normalized_sql(
+        GEOMETRY_LOOKUP_INDEX_SQL
+    ):
+        raise ValueError(f"Refusing to use unexpected index {GEOMETRY_LOOKUP_INDEX!r}.")
+
+
+def _migrate_database_schema(connection: sqlite3.Connection) -> None:
+    version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+    if version not in (0, DATABASE_SCHEMA_VERSION):
+        raise ValueError(
+            f"Unsupported Q2D SQLite schema version {version}; "
+            f"expected 0 or {DATABASE_SCHEMA_VERSION}."
+        )
+    _migrate_database_indexes(connection)
+    connection.execute(f"PRAGMA user_version = {DATABASE_SCHEMA_VERSION}")
+
+
 def _connect(database_path: Path) -> sqlite3.Connection:
     database_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(database_path)
     connection.row_factory = sqlite3.Row
-    connection.execute(
-        """
-        CREATE TABLE IF NOT EXISTS q2d_point_result (
-            cache_key TEXT PRIMARY KEY,
-            role TEXT NOT NULL CHECK(role IN ('single_reference', 'coupled_pair')),
-            input_json TEXT NOT NULL,
-            solver_json TEXT NOT NULL,
-            w_nm INTEGER NOT NULL,
-            s_nm INTEGER NOT NULL,
-            d_nm INTEGER,
-            h_nm INTEGER NOT NULL,
-            c_matrix_json TEXT NOT NULL,
-            l_matrix_json TEXT NOT NULL,
-            convergence_json TEXT NOT NULL,
-            z0_ohm REAL,
-            zc1_ohm REAL,
-            zc2_ohm REAL,
-            zm_ohm REAL,
-            source_run_root TEXT NOT NULL,
-            source_case_id TEXT NOT NULL,
-            source_sha256_json TEXT NOT NULL,
-            solver_completed_at TEXT NOT NULL,
-            ingested_at TEXT NOT NULL
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS q2d_point_result (
+                cache_key TEXT PRIMARY KEY,
+                role TEXT NOT NULL CHECK(role IN ('single_reference', 'coupled_pair')),
+                input_json TEXT NOT NULL,
+                solver_json TEXT NOT NULL,
+                w_nm INTEGER NOT NULL,
+                s_nm INTEGER NOT NULL,
+                d_nm INTEGER,
+                h_nm INTEGER NOT NULL,
+                c_matrix_json TEXT NOT NULL,
+                l_matrix_json TEXT NOT NULL,
+                convergence_json TEXT NOT NULL,
+                z0_ohm REAL,
+                zc1_ohm REAL,
+                zc2_ohm REAL,
+                zm_ohm REAL,
+                source_run_root TEXT NOT NULL,
+                source_case_id TEXT NOT NULL,
+                source_sha256_json TEXT NOT NULL,
+                solver_completed_at TEXT NOT NULL,
+                ingested_at TEXT NOT NULL
+            )
+            """
         )
-        """
-    )
-    connection.execute(
-        """
-        CREATE UNIQUE INDEX IF NOT EXISTS q2d_point_result_geometry
-        ON q2d_point_result(role, w_nm, s_nm, COALESCE(d_nm, -1), h_nm)
-        """
-    )
-    expected_columns = {
-        "cache_key",
-        "role",
-        "input_json",
-        "solver_json",
-        "w_nm",
-        "s_nm",
-        "d_nm",
-        "h_nm",
-        "c_matrix_json",
-        "l_matrix_json",
-        "convergence_json",
-        "z0_ohm",
-        "zc1_ohm",
-        "zc2_ohm",
-        "zm_ohm",
-        "source_run_root",
-        "source_case_id",
-        "source_sha256_json",
-        "solver_completed_at",
-        "ingested_at",
-    }
-    actual_columns = {
-        str(row["name"]) for row in connection.execute("PRAGMA table_info(q2d_point_result)")
-    }
-    if actual_columns != expected_columns:
+        actual_columns = {
+            str(row["name"]) for row in connection.execute("PRAGMA table_info(q2d_point_result)")
+        }
+        if actual_columns != set(DATABASE_COLUMNS):
+            raise ValueError(
+                f"Q2D cache schema mismatch at {database_path}; use a new v2 database path"
+            )
+        _migrate_database_schema(connection)
+        connection.commit()
+    except Exception:
+        connection.rollback()
         connection.close()
-        raise ValueError(
-            f"Q2D cache schema mismatch at {database_path}; use a new v2 database path"
-        )
+        raise
     return connection
 
 
@@ -372,6 +480,11 @@ def prepare_sweep(
         recipe = _recipe()
         with TemporaryDirectory(prefix="orpen-d3-multidimensional-q2d-") as temporary_directory:
             source_dir = Path(temporary_directory)
+            material_context_path = source_dir / "aedt_material_context.json"
+            material_context_path.write_text(
+                json.dumps(_material_context().model_dump(mode="json"), indent=2) + "\n",
+                encoding="utf-8",
+            )
             cases = []
             for point in misses:
                 sidecar = write_q2d_cross_section_payload(
@@ -381,6 +494,7 @@ def prepare_sweep(
                 cases.append(
                     AedtNativeCaseSpec(
                         id=str(point["case_id"]),
+                        aedt_material_context_path=material_context_path,
                         q2d_cross_section_json_path=sidecar,
                         recipes=(recipe,),
                     )
@@ -428,6 +542,10 @@ def prepare_sweep(
                 "s_um": point["s_um"],
                 "d_um": point["d_um"],
                 "h_um": point["h_um"],
+                "substrate_material": SUBSTRATE_AEDT_MATERIAL,
+                "substrate_relative_permittivity": SUBSTRATE_RELATIVE_PERMITTIVITY,
+                "conductor_material": CONDUCTOR_AEDT_MATERIAL,
+                "region_material": REGION_AEDT_MATERIAL,
             }
         )
     _write_csv(run_root / "sweep_points.csv", ledger_rows)
@@ -442,6 +560,10 @@ def prepare_sweep(
             "parameter_inter_trace_ground_width_um": point["d_um"],
             "parameter_flip_chip_gap_height_um": point["h_um"],
             "parameter_upper_ground_clearance_width_um": (UPPER_GROUND_CLEARANCE_WIDTH_UM),
+            "parameter_substrate_material": SUBSTRATE_AEDT_MATERIAL,
+            "parameter_substrate_relative_permittivity": SUBSTRATE_RELATIVE_PERMITTIVITY,
+            "parameter_conductor_material": CONDUCTOR_AEDT_MATERIAL,
+            "parameter_region_material": REGION_AEDT_MATERIAL,
         }
         for point in misses
     ]
@@ -472,6 +594,7 @@ def prepare_sweep(
         "minimum_feature_um": 3.0,
         "nominal_height_window_um": [7.0, 8.0],
         "upper_ground_policy": "continuous",
+        "materials": _material_identity(),
         "requested_pair_points": len(pair_points),
         "requested_single_points": len(single_points),
         "cache_hits": len(all_points) - len(misses),
@@ -541,7 +664,13 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
         return None
 
     sidecar_path = run_root / "metadata" / f"{case_id}_q2d_cross_section.json"
+    material_context_path = run_root / "metadata" / f"{case_id}_aedt_material_context.json"
     sidecar_payload = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    material_context_payload = json.loads(material_context_path.read_text(encoding="utf-8"))
+    if _canonical_json(material_context_payload) != _canonical_json(
+        _material_context().model_dump(mode="json")
+    ):
+        raise ValueError(f"Solved material context does not match declared materials: {case_id}")
     expected_payload = _cross_section(
         row["role"],
         w_nm=int(row["w_nm"]),
@@ -551,8 +680,17 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     ).to_payload()
     if _canonical_json(sidecar_payload) != _canonical_json(expected_payload):
         raise ValueError(f"Solved sidecar does not match ledger geometry: {case_id}")
-    cache_input = _cache_input(row["role"], sidecar_payload)
+    run_runtime_root = run_root / "scripts" / "runtime_bundle"
+    cache_input = _cache_input(
+        row["role"],
+        sidecar_payload,
+        runtime_bundle_sha256=_runtime_bundle_hash(run_runtime_root),
+    )
     cache_key = _cache_key(cache_input)
+    if cache_key != row["cache_key"]:
+        raise ValueError(
+            f"Run evidence no longer reconstructs its prepared cache identity: {case_id}"
+        )
 
     preflight_path = run_root / "logs" / "workers" / f"{case_id}__q2d" / "aedt_preflight.json"
     preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
@@ -578,6 +716,18 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     if not isinstance(solver_completed_at, str) or not solver_completed_at:
         raise ValueError(f"Q2D workflow completion time is missing: {case_id}")
     convergence = {name: _parse_convergence(path) for name, path in convergence_paths.items()}
+    applied_materials_path = result_dir / "aedt_material_context_applied.json"
+    applied_materials = json.loads(applied_materials_path.read_text(encoding="utf-8"))
+    substrate_records = [
+        item
+        for item in applied_materials.get("materials", [])
+        if item.get("aedt_material_name") == SUBSTRATE_AEDT_MATERIAL
+    ]
+    if len(substrate_records) != 1 or substrate_records[0].get("applied") != {
+        "permittivity": SUBSTRATE_RELATIVE_PERMITTIVITY,
+        "permeability": 1.0,
+    }:
+        raise ValueError(f"AEDT did not apply the declared silicon properties: {case_id}")
 
     point = load_q2d_raw_point_result(
         result_dir,
@@ -633,6 +783,8 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
             *convergence_paths.values(),
             metadata_path,
             sidecar_path,
+            material_context_path,
+            applied_materials_path,
             preflight_path,
             workflow_state_path,
         )
@@ -659,11 +811,11 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
 
 
 def _database_rows(connection: sqlite3.Connection) -> list[dict[str, Any]]:
-    return [
+    rows = [
         dict(row)
         for row in connection.execute(
             """
-            SELECT cache_key, role, w_nm / 1000.0 AS w_um,
+            SELECT cache_key, role, input_json, w_nm / 1000.0 AS w_um,
                    s_nm / 1000.0 AS s_um, d_nm / 1000.0 AS d_um,
                    h_nm / 1000.0 AS h_um, z0_ohm, zc1_ohm, zc2_ohm, zm_ohm,
                    source_run_root, source_case_id, solver_completed_at, ingested_at
@@ -672,34 +824,33 @@ def _database_rows(connection: sqlite3.Connection) -> list[dict[str, Any]]:
             """
         )
     ]
+    for row in rows:
+        materials = json.loads(row.pop("input_json")).get("materials", {})
+        substrate = materials.get("substrate", {})
+        row["substrate_material"] = substrate.get("aedt_material_name")
+        row["substrate_relative_permittivity"] = substrate.get("relative_permittivity")
+        row["conductor_material"] = materials.get("conductor", {}).get("aedt_material_name")
+        row["region_material"] = materials.get("region", {}).get("aedt_material_name")
+    return rows
 
 
 def _requested_rows(
     connection: sqlite3.Connection,
     ledger_rows: list[dict[str, str]],
 ) -> list[dict[str, Any]]:
-    by_geometry = {
-        (
-            str(row["role"]),
-            int(row["w_nm"]),
-            int(row["s_nm"]),
-            None if row["d_nm"] is None else int(row["d_nm"]),
-            int(row["h_nm"]),
-        ): dict(row)
+    by_cache_key = {
+        str(row["cache_key"]): dict(row)
         for row in connection.execute("SELECT * FROM q2d_point_result")
     }
     requested = []
     for ledger in ledger_rows:
         if ledger["role"] != "coupled_pair":
             continue
-        w_nm = int(ledger["w_nm"])
-        s_nm = int(ledger["s_nm"])
-        d_nm = int(ledger["d_nm"])
-        h_nm = int(ledger["h_nm"])
-        pair = by_geometry.get(("coupled_pair", w_nm, s_nm, d_nm, h_nm))
-        single = by_geometry.get(("single_reference", w_nm, s_nm, None, h_nm))
+        pair = by_cache_key.get(ledger["pair_cache_key"])
+        single = by_cache_key.get(ledger["single_cache_key"])
         if pair is None or single is None:
             continue
+        _require_common_authority(single, pair)
         z0 = float(single["z0_ohm"])
         zc1 = float(pair["zc1_ohm"])
         zc2 = float(pair["zc2_ohm"])
@@ -745,6 +896,71 @@ def _requested_rows(
             row["d_um"],
         ),
     )
+
+
+def _require_common_authority(
+    single: dict[str, Any] | sqlite3.Row,
+    pair: dict[str, Any] | sqlite3.Row,
+) -> None:
+    single_input = json.loads(single["input_json"])
+    pair_input = json.loads(pair["input_json"])
+    for field in ("recipe", "solver"):
+        if single_input[field] != pair_input[field]:
+            raise ValueError(
+                "Q2D single-reference and coupled-pair rows do not share one "
+                f"{field} authority. Select exact cache keys from the same Run."
+            )
+
+
+def load_current_q2d_point_pair(
+    database_path: Path,
+    *,
+    width_um: float,
+    gap_um: float,
+    center_ground_um: float,
+    height_um: float,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Load the exact single/pair rows for the current recipe and runtime."""
+
+    if not database_path.is_file():
+        raise FileNotFoundError(database_path)
+    w_nm, s_nm, d_nm, h_nm = (
+        _nm(width_um),
+        _nm(gap_um),
+        _nm(center_ground_um),
+        _nm(height_um),
+    )
+    single_key = _point_definition(
+        "single_reference",
+        w_nm=w_nm,
+        s_nm=s_nm,
+        d_nm=None,
+        h_nm=h_nm,
+    )["cache_key"]
+    pair_key = _point_definition(
+        "coupled_pair",
+        w_nm=w_nm,
+        s_nm=s_nm,
+        d_nm=d_nm,
+        h_nm=h_nm,
+    )["cache_key"]
+    with _connect(database_path) as connection:
+        by_key = {
+            str(row["cache_key"]): dict(row)
+            for row in connection.execute(
+                "SELECT * FROM q2d_point_result WHERE cache_key IN (?, ?)",
+                (single_key, pair_key),
+            )
+        }
+    single = by_key.get(single_key)
+    pair = by_key.get(pair_key)
+    if single is None or pair is None:
+        raise RuntimeError(
+            "The selected single-reference and coupled-pair Q2D points for the "
+            "current recipe/runtime identity must both be complete in the cache."
+        )
+    _require_common_authority(single, pair)
+    return single, pair
 
 
 def _root_cell_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -809,6 +1025,39 @@ def _root_cell_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
+def _insert_immutable_points(
+    connection: sqlite3.Connection,
+    points: list[dict[str, Any]],
+) -> tuple[int, int]:
+    inserted = 0
+    already_present = 0
+    compare_columns = tuple(column for column in DATABASE_COLUMNS if column != "ingested_at")
+    for point in points:
+        existing = connection.execute(
+            "SELECT * FROM q2d_point_result WHERE cache_key = ?",
+            (point["cache_key"],),
+        ).fetchone()
+        if existing is not None:
+            mismatches = [column for column in compare_columns if existing[column] != point[column]]
+            if mismatches:
+                raise ValueError(
+                    "Immutable Q2D cache row conflicts with existing evidence for "
+                    f"{point['cache_key']}: {', '.join(mismatches)}"
+                )
+            already_present += 1
+            continue
+        placeholders = ", ".join("?" for _ in DATABASE_COLUMNS)
+        connection.execute(
+            f"""
+            INSERT INTO q2d_point_result ({", ".join(DATABASE_COLUMNS)})
+            VALUES ({placeholders})
+            """,
+            tuple(point[column] for column in DATABASE_COLUMNS),
+        )
+        inserted += 1
+    return inserted, already_present
+
+
 def ingest_sweep(run_root: Path, database_path: Path) -> dict[str, Any]:
     """Ingest only validated completed results, then export agent-readable CSVs."""
 
@@ -822,16 +1071,7 @@ def ingest_sweep(run_root: Path, database_path: Path) -> dict[str, Any]:
             completed.append(point)
 
     with _connect(database_path) as connection:
-        if completed:
-            columns = tuple(completed[0])
-            placeholders = ", ".join("?" for _ in columns)
-            connection.executemany(
-                f"""
-                INSERT OR REPLACE INTO q2d_point_result ({", ".join(columns)})
-                VALUES ({placeholders})
-                """,
-                [tuple(row[column] for column in columns) for row in completed],
-            )
+        inserted, already_present = _insert_immutable_points(connection, completed)
         database_rows = _database_rows(connection)
         requested_rows = _requested_rows(connection, ledger_rows)
     root_cells = _root_cell_rows(requested_rows)
@@ -842,7 +1082,9 @@ def ingest_sweep(run_root: Path, database_path: Path) -> dict[str, Any]:
     _write_csv(results_dir / "q2d_root_cells.csv", root_cells)
     summary = {
         "schema_version": SWEEP_SCHEMA,
-        "ingested_from_run": len(completed),
+        "validated_from_run": len(completed),
+        "ingested_from_run": inserted,
+        "already_present_from_run": already_present,
         "database_complete_points": len(database_rows),
         "requested_complete_pair_rows": len(requested_rows),
         "requested_pair_rows": sum(row["role"] == "coupled_pair" for row in ledger_rows),
@@ -887,39 +1129,13 @@ def export_consonant_length_seeds(
 ) -> dict[str, Any]:
     """Export Spring2025 B7/C16 seeds from one solved consonant Q2D point."""
 
-    if not database_path.is_file():
-        raise FileNotFoundError(database_path)
-    w_nm, s_nm, d_nm, h_nm = (
-        _nm(width_um),
-        _nm(gap_um),
-        _nm(center_ground_um),
-        _nm(height_um),
+    single, pair = load_current_q2d_point_pair(
+        database_path,
+        width_um=width_um,
+        gap_um=gap_um,
+        center_ground_um=center_ground_um,
+        height_um=height_um,
     )
-    with sqlite3.connect(database_path) as connection:
-        connection.row_factory = sqlite3.Row
-        single = connection.execute(
-            """
-            SELECT *
-            FROM q2d_point_result
-            WHERE role = 'single_reference'
-              AND w_nm = ? AND s_nm = ? AND d_nm IS NULL AND h_nm = ?
-            """,
-            (w_nm, s_nm, h_nm),
-        ).fetchone()
-        pair = connection.execute(
-            """
-            SELECT *
-            FROM q2d_point_result
-            WHERE role = 'coupled_pair'
-              AND w_nm = ? AND s_nm = ? AND d_nm = ? AND h_nm = ?
-            """,
-            (w_nm, s_nm, d_nm, h_nm),
-        ).fetchone()
-    if single is None or pair is None:
-        raise RuntimeError(
-            "The selected single-reference and coupled-pair Q2D points must both "
-            "be complete in the cache."
-        )
 
     single_l = _matrix_value_si(single["l_matrix_json"], "T1", "T1")
     single_c = _matrix_value_si(single["c_matrix_json"], "T1", "T1")
