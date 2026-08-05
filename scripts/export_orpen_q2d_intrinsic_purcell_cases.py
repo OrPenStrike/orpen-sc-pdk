@@ -21,7 +21,6 @@ from typing import Any
 
 import yaml
 
-from orpen_sc_pdk.simulation.aedt.d3_q2d_material import MATERIAL_PROFILE_ID
 from orpen_sc_pdk.simulation.aedt.q2d import (
     Q2dMatrixElement,
     load_q2d_raw_point_result,
@@ -394,11 +393,16 @@ def _case_payload(
         "AEDT material context",
     )
     material_context = _read_json_object(material_context_path, "AEDT material context")
-    profile_id = (material_context.get("material_profile") or {}).get("material_profile_id")
-    if profile_id == MATERIAL_PROFILE_ID:
+    if (
+        material_context.get("material_profile") is not None
+        or material_context.get("material_profile_hash")
+        or material_context.get("readback_required")
+        or material_context.get("policy_source")
+        or material_context.get("compiled_materials")
+    ):
         raise _pending(
-            "the current public export schema omits D3 material authority; "
-            "a reviewed material-aware export schema is required"
+            "the current public export schema omits material authority and diagnostic "
+            "classification; a reviewed material-aware export schema is required"
         )
     cross_section_path = _run_source_path(
         run_root,
