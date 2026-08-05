@@ -24,31 +24,14 @@ SCQ_Design/
   palace/        # optional fork of awslabs/palace for solver-source work
 ```
 
-:::{list-table}
-:widths: 25 75
-:header-rows: 1
-
-* - Repo or folder
-  - Responsibility
-* - `orpen_sc_pdk`
-  - Public base PDK checkout for `orpen-sc-pdk`: `LAYER`, `LAYER_STACK`,
-    `LAYER_VIEWS`, process/material semantics, public CPW cross-sections, public
-    cells, public layout helpers, docs, and examples.
-* - `NCU_AS_SC_Qubit_Design`
-  - Private GF+ project: Primary Layout, private cells, chip assemblies, private
-    parameters, private layout inputs, private notebooks, and private run evidence.
-* - `gsim`
-  - Reusable solver workflow, Palace/EPR/reporting capability, benchmark surfaces,
-    and material workflow adapters.
-* - `gplugins`
-  - Generic GDSFactory plugin capability that should not be PDK-specific.
-* - `meshwell`
-  - Upstream mesh workflow fork used for mesh experiments and possible upstream
-    contribution.
-* - Palace source fork
-  - Optional solver-source lane for Palace-side output, postprocessing, or runtime
-    behavior that cannot be handled cleanly in `gsim`.
-:::
+| Repo or folder | Responsibility |
+| --- | --- |
+| `orpen_sc_pdk` | Public base PDK checkout for `orpen-sc-pdk`: `LAYER`, `LAYER_STACK`, `LAYER_VIEWS`, process/material semantics, public CPW cross-sections, public cells, public layout helpers, docs, and examples. |
+| `NCU_AS_SC_Qubit_Design` | Private GF+ project: Primary Layout, private cells, chip assemblies, private parameters, private layout inputs, private notebooks, and private run evidence. |
+| `gsim` | Reusable solver workflow, Palace/EPR/reporting capability, benchmark surfaces, and material workflow adapters. |
+| `gplugins` | Generic GDSFactory plugin capability that should not be PDK-specific. |
+| `meshwell` | Upstream mesh workflow fork used for mesh experiments and possible upstream contribution. |
+| Palace source fork | Optional solver-source lane for Palace-side output, postprocessing, or runtime behavior that cannot be handled cleanly in `gsim`. |
 
 ## Private GF+ Project Route
 
