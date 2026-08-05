@@ -290,11 +290,19 @@ def readback_aedt_project_materials(
     if not aedt_version:
         raise RuntimeError("Running AEDT version is unavailable for material readback")
     method = "post-save-GetProjectMaterialNames-GetData-direct-object-property.v1"
+    normalized_properties = {
+        name: {
+            "property_type": record["property_type"],
+            "normalized_value": record["normalized_value"],
+            "scientific_authority": record["scientific_authority"],
+        }
+        for name, record in properties.items()
+    }
     authority = {
         "material_profile_hash": profile_hash,
         "stored_material_name": stored_name,
         "source_type": "custom_project_material",
-        "properties": properties,
+        "properties": normalized_properties,
         "solver_identity": {
             "aedt_version": aedt_version,
             "pyaedt_version": pyaedt_version,
