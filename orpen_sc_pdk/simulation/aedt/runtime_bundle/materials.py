@@ -293,7 +293,7 @@ def readback_aedt_project_materials(
     }
 
     try:
-        pyaedt_version = metadata.version("ansys-aedt-core")
+        pyaedt_version = metadata.version("pyaedt")
     except metadata.PackageNotFoundError as exc:
         raise RuntimeError("Installed PyAEDT distribution version is unavailable") from exc
     aedt_version = str(getattr(app, "aedt_version_id", None) or "").strip()
