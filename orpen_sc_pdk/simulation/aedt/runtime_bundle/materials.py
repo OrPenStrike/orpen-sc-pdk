@@ -296,9 +296,7 @@ def readback_aedt_project_materials(
         pyaedt_version = metadata.version("pyaedt")
     except metadata.PackageNotFoundError as exc:
         raise RuntimeError("Installed PyAEDT distribution version is unavailable") from exc
-    aedt_version = str(getattr(app, "aedt_version_id", None) or "").strip()
-    if not aedt_version:
-        raise RuntimeError("Running AEDT version is unavailable for material readback")
+    aedt_version, aedt_version_raw = _readback_running_aedt_version(app)
     method = "post-save-GetProjectMaterialNames-GetData-direct-object-property.v1"
     normalized_properties = {
         name: {
@@ -315,6 +313,7 @@ def readback_aedt_project_materials(
         "properties": normalized_properties,
         "solver_identity": {
             "aedt_version": aedt_version,
+            "aedt_version_raw": aedt_version_raw,
             "pyaedt_version": pyaedt_version,
         },
         "policy_source": material_context.get("policy_source"),
@@ -371,6 +370,19 @@ def readback_aedt_project_materials(
     record = {**receipt, "material_evidence_snapshot_hash": evidence_hash}
     write_json(result_dir / "aedt_material_readback.json", record)
     return record
+
+
+def _readback_running_aedt_version(app: Any) -> tuple[str, str]:
+    """Read and normalize the running AEDT-native version."""
+
+    get_version = getattr(getattr(app, "odesktop", None), "GetVersion", None)
+    if not callable(get_version):
+        raise RuntimeError("AEDT native version readback is unavailable")
+    raw = str(get_version() or "").strip()
+    match = re.fullmatch(r"(?P<canonical>[0-9]{4}\.[0-9])(?:\.[0-9]+)*", raw)
+    if match is None:
+        raise RuntimeError(f"Unexpected AEDT native version value: {raw!r}")
+    return match.group("canonical"), raw
 
 
 def _readback_scalar_property(property_obj: Any, name: str) -> dict[str, Any]:

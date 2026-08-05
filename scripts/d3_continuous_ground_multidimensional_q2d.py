@@ -114,6 +114,14 @@ def _sha256_file(path: Path) -> str:
     return _sha256_bytes(path.read_bytes())
 
 
+def _canonical_aedt_native_version(value: Any) -> str:
+    raw = str(value or "").strip()
+    match = re.fullmatch(r"(?P<canonical>[0-9]{4}\.[0-9])(?:\.[0-9]+)*", raw)
+    if match is None:
+        raise ValueError(f"Unexpected AEDT native version value: {raw!r}")
+    return match.group("canonical")
+
+
 def _nm(value_um: float) -> int:
     value_nm = round(float(value_um) * 1000)
     if not math.isclose(value_nm / 1000, float(value_um), abs_tol=1e-9):
@@ -878,6 +886,8 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     receipt_solver = (readback.get("material_authority") or {}).get("solver_identity") or {}
     if (
         str(receipt_solver.get("aedt_version")) != AEDT_VERSION
+        or _canonical_aedt_native_version(receipt_solver.get("aedt_version_raw"))
+        != AEDT_VERSION
         or str(receipt_solver.get("pyaedt_version")) != PYAEDT_VERSION
         or cache_input["solver"]["runtime_bundle_sha256"]
         != cache_input["requested_material_policy"]["policy_source"][
@@ -1212,6 +1222,7 @@ def _validate_technical_evidence_row(row: dict[str, Any]) -> None:
         run_root=run_root,
     )
     authority = evidence.get("material_authority") or {}
+    receipt_solver = authority.get("solver_identity") or {}
     solver = cache_input["solver"]
     preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
     if (
@@ -1219,11 +1230,10 @@ def _validate_technical_evidence_row(row: dict[str, Any]) -> None:
         or receipt_identity["material_authority_hash"] != row["material_authority_hash"]
         or receipt_identity["material_evidence_snapshot_hash"]
         != row["material_evidence_snapshot_hash"]
-        or authority.get("solver_identity")
-        != {
-            "aedt_version": solver["aedt_version"],
-            "pyaedt_version": solver["pyaedt_version"],
-        }
+        or receipt_solver.get("aedt_version") != solver["aedt_version"]
+        or _canonical_aedt_native_version(receipt_solver.get("aedt_version_raw"))
+        != solver["aedt_version"]
+        or receipt_solver.get("pyaedt_version") != solver["pyaedt_version"]
         or authority.get("policy_source") != expected_policy["policy_source"]
         or str(preflight.get("aedt_version")) != solver["aedt_version"]
         or str(preflight.get("pyaedt_version")) != solver["pyaedt_version"]
