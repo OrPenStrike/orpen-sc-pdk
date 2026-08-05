@@ -209,8 +209,8 @@ def readback_aedt_project_materials(
         raise RuntimeError("Material profile has no requested solver material name")
 
     manager = getattr(app, "materials", None)
-    native_manager = getattr(manager, "_omaterial_manager", None)
-    get_names = getattr(native_manager, "GetProjectMaterialNames", None)
+    definition_manager = getattr(manager, "odefinition_manager", None)
+    get_names = getattr(definition_manager, "GetProjectMaterialNames", None)
     if manager is None or not callable(get_names):
         raise RuntimeError("AEDT project material-name readback is unavailable")
     raw_project_names = get_names()
