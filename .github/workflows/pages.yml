@@ -89,13 +89,13 @@ jobs:
         uses: xu-cheng/latex-action@v3
         with:
           working_directory: docs/_build/latex
-          root_file: ili-scq-pdk.tex
+          root_file: orpen-sc-pdk.tex
           latexmk_use_xelatex: true
 
       - name: Collect PDF
         run: |
           mkdir -p docs/_build/pdf
-          cp docs/_build/latex/ili-scq-pdk.pdf docs/_build/pdf/ili-scq-pdk.pdf
+          cp docs/_build/latex/orpen-sc-pdk.pdf docs/_build/pdf/ili-scq-pdk.pdf
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
