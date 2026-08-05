@@ -1902,6 +1902,18 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                     "readback_status": (
                         material_readback.get("status") if material_readback else "NOT_REQUIRED"
                     ),
+                    "data_class": (material_context.get("material_profile") or {}).get(
+                        "data_class"
+                    ),
+                    "allowed_consumers": (material_context.get("material_profile") or {}).get(
+                        "allowed_consumers"
+                    ),
+                    "publication_state": (material_context.get("material_profile") or {}).get(
+                        "publication_state"
+                    ),
+                    "promotion_eligible": (material_context.get("material_profile") or {}).get(
+                        "promotion_eligible"
+                    ),
                 },
                 "q2d_region": region_summary,
                 "q2d_setup": setup_summary(recipe, setup),

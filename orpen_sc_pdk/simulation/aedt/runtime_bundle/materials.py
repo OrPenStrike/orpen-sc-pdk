@@ -172,6 +172,16 @@ def ensure_aedt_project_materials(
         "material_count": len(records),
         "materials": records,
     }
+    profile = (material_context or {}).get("material_profile") or {}
+    if profile:
+        summary.update(
+            {
+                "data_class": profile.get("data_class"),
+                "allowed_consumers": profile.get("allowed_consumers"),
+                "publication_state": profile.get("publication_state"),
+                "promotion_eligible": profile.get("promotion_eligible"),
+            }
+        )
     if result_dir is not None:
         write_json(result_dir / "aedt_material_context_applied.json", summary)
     return summary
@@ -321,6 +331,10 @@ def readback_aedt_project_materials(
     receipt = {
         "schema_version": "aedt-material-readback.v1",
         "status": "PASS",
+        "data_class": profile.get("data_class"),
+        "allowed_consumers": profile.get("allowed_consumers"),
+        "publication_state": profile.get("publication_state"),
+        "promotion_eligible": profile.get("promotion_eligible"),
         "method": method,
         "material_profile_id": profile.get("material_profile_id"),
         "material_profile_hash": profile_hash,
@@ -331,8 +345,7 @@ def readback_aedt_project_materials(
         "substrate_assignments": assignments,
         "provenance_layers": {
             "requested": {
-                "material_profile": profile,
-                "material_profile_hash": profile_hash,
+                "material_context": material_context,
             },
             "resolved": authority,
             "applied_write_attempt": write_attempt,
