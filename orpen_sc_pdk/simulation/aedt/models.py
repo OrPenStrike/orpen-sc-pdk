@@ -9,6 +9,8 @@ other way around.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections.abc import Mapping
 from pathlib import Path
@@ -151,10 +153,14 @@ class AedtMaterialPolicySpec(BaseModel):
 
     conductor_material: str = "pec"
     material_condition: str = "cryogenic"
+    material_profile_id: str | None = None
+    readback_required: bool = False
 
-    @field_validator("conductor_material", "material_condition")
+    @field_validator("conductor_material", "material_condition", "material_profile_id")
     @classmethod
-    def _validate_text(cls, value: str) -> str:
+    def _validate_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
         text = str(value).strip()
         if not text:
             raise ValueError("AEDT material policy fields must not be empty")
@@ -259,8 +265,30 @@ class AedtMaterialContext(BaseModel):
     material_condition: str = "cryogenic"
     registry_hash: str | None = None
     layer_stack_hash: str | None = None
+    material_profile: dict[str, Any] | None = None
+    material_profile_hash: str | None = None
+    readback_required: bool = False
+    policy_source: dict[str, Any] | None = None
     bindings: tuple[AedtLayerMaterialBinding, ...] = ()
     compiled_materials: tuple[AedtCompiledMaterialSpec, ...] = ()
+
+    @model_validator(mode="after")
+    def _validate_material_profile_hash(self) -> AedtMaterialContext:
+        if self.material_profile is None:
+            if self.material_profile_hash is not None or self.readback_required:
+                raise ValueError("material profile hash/readback requires material_profile")
+            return self
+        if self.material_profile_hash is None:
+            raise ValueError("material_profile requires material_profile_hash")
+        encoded = json.dumps(
+            self.material_profile,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+        if hashlib.sha256(encoded).hexdigest() != self.material_profile_hash:
+            raise ValueError("material_profile_hash does not match material_profile")
+        return self
 
 
 class AedtRuntimeSpec(BaseModel):

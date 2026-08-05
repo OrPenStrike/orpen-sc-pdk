@@ -387,6 +387,23 @@ def _case_payload(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     case = _manifest_case(manifest, case_id)
     recipe = _manifest_recipe(case)
+    material_context_path = _run_source_path(
+        run_root,
+        case.get("aedt_material_context"),
+        "AEDT material context",
+    )
+    material_context = _read_json_object(material_context_path, "AEDT material context")
+    if (
+        material_context.get("material_profile") is not None
+        or material_context.get("material_profile_hash")
+        or material_context.get("readback_required")
+        or material_context.get("policy_source")
+        or material_context.get("compiled_materials")
+    ):
+        raise _pending(
+            "the current public export schema omits material authority and diagnostic "
+            "classification; a reviewed material-aware export schema is required"
+        )
     cross_section_path = _run_source_path(
         run_root,
         case.get("q2d_cross_section"),

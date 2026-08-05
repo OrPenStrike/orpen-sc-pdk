@@ -13,6 +13,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  GSIM_REVISION: bb97148fbb133af43d43b59304b03cd2d6dee985
+  SGB_REVISION: 616cfbd4b44e6fcc54295a9addb5f355163397a5
+
 jobs:
   build-html:
     name: Build HTML docs
@@ -21,6 +25,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Checkout editable documentation sources
+        run: |
+          mkdir -p ../GDSFactory_Community_Workbench
+          git clone --filter=blob:none https://github.com/arfiligol/gsim.git ../GDSFactory_Community_Workbench/gsim
+          git -C ../GDSFactory_Community_Workbench/gsim checkout --detach "$GSIM_REVISION"
+          git clone --filter=blob:none https://github.com/OrPenStrike/semantic-geometry-builder.git ../semantic_geometry_builder
+          git -C ../semantic_geometry_builder checkout --detach "$SGB_REVISION"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -51,6 +63,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout editable documentation sources
+        run: |
+          mkdir -p ../GDSFactory_Community_Workbench
+          git clone --filter=blob:none https://github.com/arfiligol/gsim.git ../GDSFactory_Community_Workbench/gsim
+          git -C ../GDSFactory_Community_Workbench/gsim checkout --detach "$GSIM_REVISION"
+          git clone --filter=blob:none https://github.com/OrPenStrike/semantic-geometry-builder.git ../semantic_geometry_builder
+          git -C ../semantic_geometry_builder checkout --detach "$SGB_REVISION"
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -68,14 +88,15 @@ jobs:
       - name: Compile PDF
         uses: xu-cheng/latex-action@v3
         with:
+          texlive_version: "2024"
           working_directory: docs/_build/latex
-          root_file: ili-scq-pdk.tex
+          root_file: orpen-sc-pdk.tex
           latexmk_use_xelatex: true
 
       - name: Collect PDF
         run: |
           mkdir -p docs/_build/pdf
-          cp docs/_build/latex/ili-scq-pdk.pdf docs/_build/pdf/ili-scq-pdk.pdf
+          cp docs/_build/latex/orpen-sc-pdk.pdf docs/_build/pdf/ili-scq-pdk.pdf
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4

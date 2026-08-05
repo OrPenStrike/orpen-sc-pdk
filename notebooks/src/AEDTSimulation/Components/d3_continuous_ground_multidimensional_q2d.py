@@ -44,6 +44,11 @@ from IPython.display import display
 REPO_ROOT = Path.cwd().resolve()
 if not (REPO_ROOT / "orpen_sc_pdk" / "simulation" / "aedt").is_dir():
     raise RuntimeError("Run this notebook from the orpen_sc_pdk repository root.")
+raise RuntimeError(
+    "This legacy notebook entry point is disabled because it uses the material-blind "
+    "v2 Q2D cache. Use scripts/d3_continuous_ground_multidimensional_q2d.py with a "
+    "new material-result database path."
+)
 
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
