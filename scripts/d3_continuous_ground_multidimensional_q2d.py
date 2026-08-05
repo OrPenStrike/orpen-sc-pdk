@@ -25,7 +25,15 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.lines import Line2D
 
+from orpen_sc_pdk.simulation.aedt.d3_q2d_material import (
+    CONDUCTOR_AEDT_MATERIAL,
+    SUBSTRATE_AEDT_MATERIAL,
+    d3_q2d_material_profile,
+    material_profile_hash,
+    write_d3_q2d_material_context,
+)
 from orpen_sc_pdk.simulation.aedt.models import (
+    AedtMaterialPolicySpec,
     AedtNativeCaseSpec,
     AedtNativePackageSpec,
     AedtQ2dSetupSpec,
@@ -106,6 +114,7 @@ def _recipe() -> AedtRecipeSpec:
         matrix_problem_types=("CG", "RL"),
         matrix_types=("Maxwell",),
         q2d_setup=AedtQ2dSetupSpec(adaptive_frequency=ADAPTIVE_FREQUENCY),
+        material_policy=AedtMaterialPolicySpec(material_condition="NOT_AVAILABLE"),
     )
 
 
@@ -144,6 +153,8 @@ def _cross_section(role: str, *, w_nm: int, s_nm: int, d_nm: int | None, h_nm: i
         "air_height_um": AIR_HEIGHT_UM,
         "ground_width_um": GROUND_WIDTH_UM,
         "metal_thickness_um": METAL_THICKNESS_UM,
+        "substrate_material": SUBSTRATE_AEDT_MATERIAL,
+        "conductor_material": CONDUCTOR_AEDT_MATERIAL,
     }
     if role == "coupled_pair":
         if d_nm is None:
@@ -162,6 +173,8 @@ def _cache_input(role: str, cross_section_payload: dict[str, Any]) -> dict[str, 
         "schema_version": CACHE_SCHEMA,
         "role": role,
         "semantic_cross_section": cross_section_payload,
+        "material_profile": d3_q2d_material_profile(),
+        "material_profile_hash": material_profile_hash(),
         "recipe": _recipe().model_dump(mode="json"),
         "solver": {
             "aedt_version": AEDT_VERSION,
@@ -372,6 +385,9 @@ def prepare_sweep(
         recipe = _recipe()
         with TemporaryDirectory(prefix="orpen-d3-multidimensional-q2d-") as temporary_directory:
             source_dir = Path(temporary_directory)
+            material_context_path = write_d3_q2d_material_context(
+                source_dir / "aedt_material_context.json"
+            )
             cases = []
             for point in misses:
                 sidecar = write_q2d_cross_section_payload(
@@ -381,6 +397,7 @@ def prepare_sweep(
                 cases.append(
                     AedtNativeCaseSpec(
                         id=str(point["case_id"]),
+                        aedt_material_context_path=material_context_path,
                         q2d_cross_section_json_path=sidecar,
                         recipes=(recipe,),
                     )

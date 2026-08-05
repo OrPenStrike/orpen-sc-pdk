@@ -9,8 +9,11 @@ notebook-side material policy or decide solver boundary assignments.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 import re
+from importlib import metadata
 from typing import Any
 
 from .io import package_path, write_json
@@ -24,10 +27,23 @@ def load_aedt_material_context(case: dict[str, Any], package_root) -> dict[str, 
         raise RuntimeError(f"case {case.get('id')!r} is missing aedt_material_context")
     path = package_path(package_root, relative)
     context = json.loads(path.read_text(encoding="utf-8"))
-    if context.get("schema_version") != "aedt-material-context.v1":
+    if context.get("schema_version") not in {
+        "aedt-material-context.v1",
+        "aedt-material-context.v2",
+    }:
         raise RuntimeError(
             f"Unsupported AEDT material context schema: {context.get('schema_version')!r}"
         )
+    profile = context.get("material_profile")
+    if profile is not None:
+        encoded = json.dumps(
+            profile,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+        if hashlib.sha256(encoded).hexdigest() != context.get("material_profile_hash"):
+            raise RuntimeError("AEDT material profile hash does not match its payload")
     return context
 
 
@@ -148,10 +164,166 @@ def ensure_aedt_project_materials(
                 "unsupported_properties": spec.get("unsupported_properties") or {},
             }
         )
-    summary = {"material_count": len(records), "materials": records}
+    summary = {
+        "schema_version": "aedt-material-write-attempt.v1",
+        "status": "write_attempt_accepted_by_api",
+        "independent_readback": False,
+        "material_count": len(records),
+        "materials": records,
+    }
     if result_dir is not None:
         write_json(result_dir / "aedt_material_context_applied.json", summary)
     return summary
+
+
+def readback_aedt_project_materials(
+    app: Any,
+    material_context: dict[str, Any],
+    expected_substrate_objects: list[str],
+    result_dir,
+) -> dict[str, Any]:
+    """Read stored project material values and object assignments after save."""
+
+    if not material_context.get("readback_required"):
+        raise RuntimeError("Promotion material readback requires readback_required=true")
+    profile = material_context.get("material_profile")
+    profile_hash = str(material_context.get("material_profile_hash") or "")
+    if not isinstance(profile, dict) or not profile_hash:
+        raise RuntimeError("Promotion material readback requires a hashed material profile")
+    if profile.get("material_profile_id") != "d3-q2d-silicon-er11p9-scalar-v1":
+        raise RuntimeError("Required material readback received an unsupported profile")
+    expected_name = str(profile.get("solver_material_name") or "").strip()
+    if not expected_name:
+        raise RuntimeError("Material profile has no requested solver material name")
+
+    manager = getattr(app, "materials", None)
+    native_manager = getattr(manager, "_omaterial_manager", None)
+    get_names = getattr(native_manager, "GetProjectMaterialNames", None)
+    if manager is None or not callable(get_names):
+        raise RuntimeError("AEDT project material-name readback is unavailable")
+    raw_project_names = get_names()
+    project_names = (
+        [str(raw_project_names)]
+        if isinstance(raw_project_names, str)
+        else [str(value) for value in raw_project_names]
+    )
+    matching_names = [
+        value for value in project_names if value.casefold() == expected_name.casefold()
+    ]
+    if len(matching_names) != 1:
+        raise RuntimeError(
+            f"Expected one custom project material {expected_name!r}, got {matching_names!r}"
+        )
+    stored_name = matching_names[0]
+    fresh_reader = getattr(manager, "_aedmattolibrary", None)
+    if not callable(fresh_reader):
+        raise RuntimeError("AEDT GetData material reconstruction is unavailable")
+    fresh = fresh_reader(stored_name)
+    if fresh is None:
+        raise RuntimeError(f"AEDT GetData returned no material for {stored_name!r}")
+
+    properties = {
+        name: _readback_scalar_property(getattr(fresh, name, None), name)
+        for name in (
+            "permittivity",
+            "permeability",
+            "dielectric_loss_tangent",
+            "conductivity",
+        )
+    }
+    expected = {"permittivity": 11.9, "permeability": 1.0}
+    for property_name, expected_value in expected.items():
+        record = properties[property_name]
+        if record["property_type"] != "simple" or record["normalized_value"] != expected_value:
+            raise RuntimeError(
+                f"Stored AEDT {property_name} mismatch: {record!r}; expected {expected_value}"
+            )
+
+    if not expected_substrate_objects:
+        raise RuntimeError("Material readback requires expected substrate objects")
+    if set(expected_substrate_objects) != {"q2d_die_D0", "q2d_die_D1"}:
+        raise RuntimeError(
+            "D3 material readback requires exactly q2d_die_D0 and q2d_die_D1, got "
+            f"{expected_substrate_objects!r}"
+        )
+    editor = getattr(getattr(app, "modeler", None), "oeditor", None)
+    get_property = getattr(editor, "GetPropertyValue", None)
+    if not callable(get_property):
+        raise RuntimeError("AEDT object material readback is unavailable")
+    assignments = []
+    for object_name in expected_substrate_objects:
+        assigned = str(
+            get_property("Geometry3DAttributeTab", object_name, "Material") or ""
+        ).strip().strip('"')
+        if assigned.casefold() != stored_name.casefold():
+            raise RuntimeError(
+                f"AEDT object {object_name!r} material mismatch: {assigned!r} != {stored_name!r}"
+            )
+        assignments.append({"object_name": object_name, "stored_material_name": assigned})
+
+    try:
+        pyaedt_version = metadata.version("ansys-aedt-core")
+    except metadata.PackageNotFoundError as exc:
+        raise RuntimeError("Installed PyAEDT distribution version is unavailable") from exc
+    aedt_version = str(getattr(app, "aedt_version_id", None) or "").strip()
+    if not aedt_version:
+        raise RuntimeError("Running AEDT version is unavailable for material readback")
+    method = "post-save-GetProjectMaterialNames-GetData-direct-object-property.v1"
+    authority = {
+        "material_profile_hash": profile_hash,
+        "stored_material_name": stored_name,
+        "source_type": "custom_project_material",
+        "properties": properties,
+        "solver_identity": {
+            "aedt_version": aedt_version,
+            "pyaedt_version": pyaedt_version,
+        },
+        "policy_source": material_context.get("policy_source"),
+        "readback_method": method,
+    }
+    authority_hash = hashlib.sha256(
+        json.dumps(
+            authority,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    record = {
+        "schema_version": "aedt-material-readback.v1",
+        "status": "PASS",
+        "method": method,
+        "material_profile_id": profile.get("material_profile_id"),
+        "material_profile_hash": profile_hash,
+        "stored_material_name": stored_name,
+        "source_type": "custom_project_material",
+        "material_authority": authority,
+        "material_authority_hash": authority_hash,
+        "substrate_assignments": assignments,
+    }
+    write_json(result_dir / "aedt_material_readback.json", record)
+    return record
+
+
+def _readback_scalar_property(property_obj: Any, name: str) -> dict[str, Any]:
+    if property_obj is None:
+        raise RuntimeError(f"AEDT GetData material is missing property {name!r}")
+    property_type = str(getattr(property_obj, "type", "") or "").strip().casefold()
+    raw_value = getattr(property_obj, "value", None)
+    try:
+        normalized = float(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(
+            f"AEDT stored material property {name!r} is not scalar: {raw_value!r}"
+        ) from exc
+    if not math.isfinite(normalized):
+        raise RuntimeError(f"AEDT stored material property {name!r} is not finite")
+    return {
+        "property_type": property_type,
+        "raw_value": raw_value,
+        "normalized_value": normalized,
+        "scientific_authority": name in {"permittivity", "permeability"},
+    }
 
 
 register_aedt_materials = ensure_aedt_project_materials
@@ -226,5 +398,6 @@ __all__ = [
     "material_context_bindings",
     "material_context_compiled_materials",
     "material_context_material_for_row",
+    "readback_aedt_project_materials",
     "register_aedt_materials",
 ]

@@ -60,6 +60,7 @@ from runtime_bundle.materials import (
     material_context_bindings,
     material_context_compiled_materials,
     material_context_material_for_row,
+    readback_aedt_project_materials,
 )
 from runtime_bundle.session import (
     AEDT_MODELER_UNIT_TO_UM,
@@ -1829,6 +1830,27 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                     exported_files=list(exported_files),
                 )
             )
+        save_ok = q2d.save_project()
+        if save_ok is False:
+            raise RuntimeError("AEDT project save returned False before material readback")
+        material_readback = None
+        if material_context.get("readback_required"):
+            if semantic_geometry_plan is None:
+                raise RuntimeError("Required D3 material readback needs semantic geometry")
+            expected_substrates = [
+                str(rectangle["name"])
+                for rectangle in semantic_geometry_plan["rectangles"]
+                if rectangle.get("kind") == "dielectric"
+            ]
+            material_readback = readback_aedt_project_materials(
+                q2d,
+                material_context,
+                expected_substrates,
+                result_dir,
+            )
+            detection["stages"].append(
+                stage_record("material_readback", "created", status="PASS")
+            )
         write_json(
             result_dir / "simulation_metadata.json",
             {
@@ -1849,6 +1871,14 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                     "layer_stack_hash": material_context.get("layer_stack_hash"),
                     "binding_count": len(material_context_bindings(material_context)),
                     "material_count": len(material_context_compiled_materials(material_context)),
+                    "material_profile_id": (
+                        material_context.get("material_profile") or {}
+                    ).get("material_profile_id"),
+                    "material_profile_hash": material_context.get("material_profile_hash"),
+                    "readback_required": material_context.get("readback_required", False),
+                    "readback_status": (
+                        material_readback.get("status") if material_readback else "NOT_REQUIRED"
+                    ),
                 },
                 "q2d_region": region_summary,
                 "q2d_setup": setup_summary(recipe, setup),
@@ -1872,7 +1902,6 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
         )
         workflow_state["stage_decisions"] = list(detection["stages"])
         write_q2d_stage_outputs(log_dir, detection, workflow_state)
-        q2d.save_project()
     except Exception:
         detection["error"] = traceback.format_exc()
         workflow_state["stage_decisions"] = list(detection["stages"])
