@@ -324,46 +324,32 @@ def _complete_case(
     )
 
 
-def test_d3_exporter_rejects_nonphysical_maxwell_matrices(tmp_path: Path) -> None:
+def test_d3_exporter_requires_material_schema_before_matrix_validation(
+    tmp_path: Path,
+) -> None:
     run_root = tmp_path / "2026-07-20-Run03"
     build_package(run_root)
     _, point_ledger = _load_package(run_root)
-    pair_ids = [
+    case_id = next(
         row["point_slug"]
         for row in point_ledger["points"]
         if row["parameter_case_role"] == "coupled_pair"
-    ]
-    invalid_cases = (
-        (
-            pair_ids[0],
-            {"l_values": ((400.0, 500.0), (500.0, 400.0))},
-            "Maxwell L matrix must be positive definite",
-        ),
-        (
-            pair_ids[1],
-            {"c_values": ((20.0, -20.0), (-20.0, 30.0))},
-            "Maxwell C row sums must be positive",
-        ),
-        (
-            pair_ids[2],
-            {"l_values": ((400.0, 80.0), (80.0, float("nan")))},
-            "Maxwell L matrix must contain only finite values",
-        ),
     )
-    for case_id, matrix_override, message in invalid_cases:
-        _complete_case(
-            run_root,
-            case_id,
-            terminals=("T1", "T2"),
-            **matrix_override,
-        )
-        output = tmp_path / f"{case_id}.json"
-        with pytest.raises(ValueError, match=message):
-            export_cases(run_root, output, case_ids=(case_id,))
-        assert not output.exists()
+    _complete_case(
+        run_root,
+        case_id,
+        terminals=("T1", "T2"),
+        l_values=((400.0, 500.0), (500.0, 400.0)),
+    )
+    output = tmp_path / f"{case_id}.json"
+
+    with pytest.raises(PendingQ2dArtifactError, match="schema omits material authority"):
+        export_cases(run_root, output, case_ids=(case_id,))
+
+    assert not output.exists()
 
 
-def test_d3_exporter_is_pending_then_dispatches_single_and_pair_schemas(
+def test_d3_exporter_is_pending_for_explicit_material_single_and_pair(
     tmp_path: Path,
 ) -> None:
     run_root = tmp_path / "2026-07-20-Run03"
@@ -380,47 +366,8 @@ def test_d3_exporter_is_pending_then_dispatches_single_and_pair_schemas(
         if row["parameter_case_role"] == "single_reference"
     )
 
-    pending_output = tmp_path / "pending.json"
-    with pytest.raises(PendingQ2dArtifactError, match="missing Q2D simulation metadata"):
-        export_cases(run_root, pending_output, case_ids=(pair_id,))
-    assert not pending_output.exists()
-
-    _complete_case(run_root, pair_id, terminals=("T1", "T2"))
-    _complete_case(run_root, single_id, terminals=("T1",))
-
-    pair_output = export_cases(
-        run_root,
-        tmp_path / "coupled_pair.json",
-        case_ids=(pair_id,),
-    )
-    pair_payload = json.loads(pair_output.read_text(encoding="utf-8"))
-    assert pair_payload["metadata"]["case_role"] == "coupled_pair"
-    assert pair_payload["metadata"]["case_schema_version"] == (
-        "orpen-q2d-coupled-pair-maxwell-lc.v1"
-    )
-    assert pair_payload["metadata"]["conductor_order"] == ["T1", "T2"]
-    assert len(pair_payload["cases"][0]["l_matrix_h_per_m"]) == 2
-    assert "mutual_impedance_ohm" in pair_payload["cases"][0]["derived"]
-
-    single_output = export_cases(
-        run_root,
-        tmp_path / "single_reference.json",
-        case_ids=(single_id,),
-    )
-    single_payload = json.loads(single_output.read_text(encoding="utf-8"))
-    assert single_payload["metadata"]["case_role"] == "single_reference"
-    assert single_payload["metadata"]["case_schema_version"] == (
-        "orpen-q2d-single-reference-maxwell-lc.v1"
-    )
-    assert single_payload["metadata"]["topology_contract"] == (
-        "q2d-single-reference-upper-ground-clearance.v1"
-    )
-    assert single_payload["metadata"]["conductor_order"] == ["T1"]
-    assert single_payload["cases"][0]["l_matrix_h_per_m"] == [[390e-9]]
-    assert single_payload["cases"][0]["c_matrix_f_per_m"] == [[95e-12]]
-    assert "mutual_impedance_ohm" not in single_payload["cases"][0]["derived"]
-
-    mixed_output = tmp_path / "mixed_roles.json"
-    with pytest.raises(ValueError, match="shared metadata 'case_role'"):
-        export_cases(run_root, mixed_output, case_ids=(pair_id, single_id))
-    assert not mixed_output.exists()
+    for case_id in (pair_id, single_id):
+        output = tmp_path / f"{case_id}.json"
+        with pytest.raises(PendingQ2dArtifactError, match="schema omits material authority"):
+            export_cases(run_root, output, case_ids=(case_id,))
+        assert not output.exists()

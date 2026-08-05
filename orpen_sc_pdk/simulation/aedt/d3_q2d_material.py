@@ -20,6 +20,11 @@ from orpen_sc_pdk.simulation.aedt.models import (
 MATERIAL_PROFILE_ID = "d3-q2d-silicon-er11p9-scalar-v1"
 MATERIAL_PROFILE_SCHEMA = "d3-q2d-material-profile.v1"
 MATERIAL_CONTEXT_SCHEMA = "aedt-material-context.v2"
+D3_Q2D_ALLOWED_CONSUMERS = (
+    "d3_q2d",
+    "rev10_five_slot_search",
+    "stage_2_stage_3_closure",
+)
 SUBSTRATE_AEDT_MATERIAL = "D3Silicon_er11p9"
 SUBSTRATE_RELATIVE_PERMITTIVITY = 11.9
 SUBSTRATE_RELATIVE_PERMEABILITY = 1.0
@@ -88,7 +93,7 @@ def d3_q2d_material_profile() -> dict[str, Any]:
             "cryogenic_material_claim": False,
         },
         "data_class": "project-internal",
-        "allowed_consumers": ["orpen_candidate_validation"],
+        "allowed_consumers": list(D3_Q2D_ALLOWED_CONSUMERS),
         "publication_state": "diagnostic",
         "promotion_eligible": False,
     }
@@ -433,6 +438,7 @@ def write_d3_q2d_material_context(path: str | Path) -> Path:
 
 __all__ = [
     "CONDUCTOR_AEDT_MATERIAL",
+    "D3_Q2D_ALLOWED_CONSUMERS",
     "MATERIAL_CONTEXT_SCHEMA",
     "MATERIAL_PROFILE_ID",
     "REGION_AEDT_MATERIAL",

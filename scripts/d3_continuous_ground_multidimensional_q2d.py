@@ -27,6 +27,7 @@ from matplotlib.lines import Line2D
 
 from orpen_sc_pdk.simulation.aedt.d3_q2d_material import (
     CONDUCTOR_AEDT_MATERIAL,
+    D3_Q2D_ALLOWED_CONSUMERS,
     SUBSTRATE_AEDT_MATERIAL,
     d3_q2d_material_policy,
     d3_q2d_material_profile,
@@ -112,6 +113,10 @@ def _sha256_bytes(value: bytes) -> str:
 
 def _sha256_file(path: Path) -> str:
     return _sha256_bytes(path.read_bytes())
+
+
+def _allowed_consumers_json() -> str:
+    return _canonical_json(D3_Q2D_ALLOWED_CONSUMERS)
 
 
 def _canonical_aedt_native_version(value: Any) -> str:
@@ -305,6 +310,34 @@ def _connect_readonly(database_path: Path) -> sqlite3.Connection:
     return connection
 
 
+def _require_current_database_authority(
+    connection: sqlite3.Connection,
+    database_path: Path,
+) -> None:
+    expected = (
+        d3_q2d_material_profile()["material_profile_id"],
+        material_profile_hash(),
+        _allowed_consumers_json(),
+    )
+    mismatch_count = int(
+        connection.execute(
+            """
+            SELECT COUNT(*) FROM q2d_material_result
+            WHERE material_profile_id != ?
+               OR material_profile_hash != ?
+               OR allowed_consumers_json != ?
+            """,
+            expected,
+        ).fetchone()[0]
+    )
+    if mismatch_count:
+        raise ValueError(
+            f"Refusing {DATABASE_SCHEMA} database {database_path} with "
+            f"{mismatch_count} non-current material-authority row(s); "
+            "use a new absent database path"
+        )
+
+
 def _connect_writer(database_path: Path) -> sqlite3.Connection:
     if database_path.exists():
         with _connect_readonly(database_path):
@@ -480,6 +513,7 @@ def prepare_sweep(
     cached_keys: set[str] = set()
     if database_path.exists():
         with _connect_readonly(database_path) as connection:
+            _require_current_database_authority(connection, database_path)
             requested_keys = [
                 str(row["request_cache_key"])
                 for row in connection.execute(
@@ -559,7 +593,7 @@ def prepare_sweep(
                     else "scheduled"
                 ),
                 "data_class": "project-internal",
-                "allowed_consumers": "orpen_candidate_validation",
+                "allowed_consumers": _allowed_consumers_json(),
                 "publication_state": "diagnostic",
                 "promotion_eligible": False,
                 "w_nm": point["w_nm"],
@@ -585,7 +619,7 @@ def prepare_sweep(
             "parameter_flip_chip_gap_height_um": point["h_um"],
             "parameter_upper_ground_clearance_width_um": (UPPER_GROUND_CLEARANCE_WIDTH_UM),
             "data_class": "project-internal",
-            "allowed_consumers": "orpen_candidate_validation",
+            "allowed_consumers": _allowed_consumers_json(),
             "publication_state": "diagnostic",
             "promotion_eligible": False,
         }
@@ -598,10 +632,16 @@ def prepare_sweep(
                 "schema_version": "aedt-q2d-sweep-points.v1",
                 "sweep_contract": SWEEP_SCHEMA,
                 "data_class": "project-internal",
-                "allowed_consumers": ["orpen_candidate_validation"],
+                "allowed_consumers": list(D3_Q2D_ALLOWED_CONSUMERS),
                 "publication_state": "diagnostic",
                 "promotion_eligible": False,
-                "points": runtime_rows,
+                "points": [
+                    {
+                        **row,
+                        "allowed_consumers": list(D3_Q2D_ALLOWED_CONSUMERS),
+                    }
+                    for row in runtime_rows
+                ],
             },
             indent=2,
         )
@@ -617,7 +657,7 @@ def prepare_sweep(
         "material_profile_id": d3_q2d_material_profile()["material_profile_id"],
         "material_profile_hash": material_profile_hash(),
         "data_class": "project-internal",
-        "allowed_consumers": ["orpen_candidate_validation"],
+        "allowed_consumers": list(D3_Q2D_ALLOWED_CONSUMERS),
         "publication_state": "diagnostic",
         "promotion_eligible": False,
         "axes_um": {
@@ -944,7 +984,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
         "technical_evidence_complete": 1,
         "evidence_partition": "d3_er11p9_diagnostic_complete",
         "data_class": "project-internal",
-        "allowed_consumers_json": _canonical_json(["orpen_candidate_validation"]),
+        "allowed_consumers_json": _allowed_consumers_json(),
         "publication_state": "diagnostic",
         "promotion_eligible": 0,
         "w_nm": int(row["w_nm"]),
@@ -1054,7 +1094,7 @@ def _requested_rows(
                 "technical_evidence_complete": True,
                 "evidence_partition": "d3_er11p9_diagnostic_complete",
                 "data_class": "project-internal",
-                "allowed_consumers": "orpen_candidate_validation",
+                "allowed_consumers": _allowed_consumers_json(),
                 "publication_state": "diagnostic",
                 "promotion_eligible": False,
                 "w_um": float(ledger["w_um"]),
@@ -1141,7 +1181,7 @@ def _validate_technical_evidence_row(row: dict[str, Any]) -> None:
         or int(row["technical_evidence_complete"]) != 1
         or row["evidence_partition"] != "d3_er11p9_diagnostic_complete"
         or row["data_class"] != "project-internal"
-        or json.loads(row["allowed_consumers_json"]) != ["orpen_candidate_validation"]
+        or json.loads(row["allowed_consumers_json"]) != list(D3_Q2D_ALLOWED_CONSUMERS)
         or row["publication_state"] != "diagnostic"
         or int(row["promotion_eligible"]) != 0
     ):
@@ -1303,7 +1343,7 @@ def _root_cell_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
         row = {
             "data_class": "project-internal",
-            "allowed_consumers": "orpen_candidate_validation",
+            "allowed_consumers": _allowed_consumers_json(),
             "publication_state": "diagnostic",
             "promotion_eligible": False,
             **{
@@ -1394,7 +1434,7 @@ def ingest_sweep(run_root: Path, database_path: Path) -> dict[str, Any]:
         "database_schema": DATABASE_SCHEMA,
         "evidence_partition": "d3_er11p9_diagnostic_complete",
         "data_class": "project-internal",
-        "allowed_consumers": ["orpen_candidate_validation"],
+        "allowed_consumers": list(D3_Q2D_ALLOWED_CONSUMERS),
         "publication_state": "diagnostic",
         "promotion_eligible": False,
         "requested_complete_pair_rows": len(requested_rows),
