@@ -1872,7 +1872,7 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                 },
             )
             detection["stages"].append(
-                stage_record("material_readback", "created", status="PASS")
+                stage_record("material_readback", "created", readback_status="PASS")
             )
         write_json(
             result_dir / "simulation_metadata.json",
