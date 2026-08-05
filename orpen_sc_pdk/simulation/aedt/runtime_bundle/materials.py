@@ -14,6 +14,7 @@ import json
 import math
 import re
 from importlib import metadata
+from pathlib import Path
 from typing import Any
 
 from .io import package_path, write_json
@@ -181,6 +182,7 @@ def readback_aedt_project_materials(
     material_context: dict[str, Any],
     expected_substrate_objects: list[str],
     result_dir,
+    evidence_identity: dict[str, Any],
 ) -> dict[str, Any]:
     """Read stored project material values and object assignments after save."""
 
@@ -261,6 +263,25 @@ def readback_aedt_project_materials(
             )
         assignments.append({"object_name": object_name, "stored_material_name": assigned})
 
+    write_attempt_path = Path(result_dir) / "aedt_material_context_applied.json"
+    if not write_attempt_path.is_file():
+        raise RuntimeError("Material readback requires the separate write-attempt record")
+    write_attempt = json.loads(write_attempt_path.read_text(encoding="utf-8"))
+    if (
+        write_attempt.get("status") != "write_attempt_accepted_by_api"
+        or write_attempt.get("independent_readback") is not False
+    ):
+        raise RuntimeError("Material write-attempt record is invalid")
+
+    project_file = Path(str(getattr(app, "project_file", None) or ""))
+    if not project_file.is_file() or project_file.stat().st_size <= 0:
+        raise RuntimeError(f"Saved AEDT project is unavailable for readback: {project_file}")
+    project_record = {
+        "path": str(project_file.resolve()),
+        "size_bytes": project_file.stat().st_size,
+        "sha256": hashlib.sha256(project_file.read_bytes()).hexdigest(),
+    }
+
     try:
         pyaedt_version = metadata.version("ansys-aedt-core")
     except metadata.PackageNotFoundError as exc:
@@ -289,7 +310,7 @@ def readback_aedt_project_materials(
             ensure_ascii=True,
         ).encode("utf-8")
     ).hexdigest()
-    record = {
+    receipt = {
         "schema_version": "aedt-material-readback.v1",
         "status": "PASS",
         "method": method,
@@ -300,7 +321,33 @@ def readback_aedt_project_materials(
         "material_authority": authority,
         "material_authority_hash": authority_hash,
         "substrate_assignments": assignments,
+        "provenance_layers": {
+            "requested": {
+                "material_profile": profile,
+                "material_profile_hash": profile_hash,
+            },
+            "resolved": authority,
+            "applied_write_attempt": write_attempt,
+            "readback": {
+                "status": "PASS",
+                "stored_material_name": stored_name,
+                "properties": properties,
+                "substrate_assignments": assignments,
+                "method": method,
+            },
+        },
+        "evidence_identity": evidence_identity,
+        "saved_project": project_record,
     }
+    evidence_hash = hashlib.sha256(
+        json.dumps(
+            receipt,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    record = {**receipt, "material_evidence_snapshot_hash": evidence_hash}
     write_json(result_dir / "aedt_material_readback.json", record)
     return record
 
@@ -320,7 +367,7 @@ def _readback_scalar_property(property_obj: Any, name: str) -> dict[str, Any]:
         raise RuntimeError(f"AEDT stored material property {name!r} is not finite")
     return {
         "property_type": property_type,
-        "raw_value": raw_value,
+        "raw_value": raw_value if isinstance(raw_value, (str, int, float)) else str(raw_value),
         "normalized_value": normalized,
         "scientific_authority": name in {"permittivity", "permeability"},
     }

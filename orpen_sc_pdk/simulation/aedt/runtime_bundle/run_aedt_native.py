@@ -1847,6 +1847,29 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                 material_context,
                 expected_substrates,
                 result_dir,
+                {
+                    "case_id": case["id"],
+                    "recipe_id": recipe["id"],
+                    "project_name": manifest["project"]["name"],
+                    "design_name": recipe["design_name"],
+                    "q2d_geometry_mode": geometry_mode,
+                    "source_hashes": source_hashes,
+                    "material_context_hash": source_hashes.get("aedt_material_context"),
+                    "cross_section_hash": source_hashes.get("q2d_cross_section"),
+                    "layer_stack_hash": sha256_text(
+                        stable_json(
+                            {
+                                "die_spans": semantic_geometry_plan["die_spans"],
+                                "stack_height_um": semantic_geometry_plan["stack_height_um"],
+                                "region_padding_um": semantic_geometry_plan[
+                                    "region_padding_um"
+                                ],
+                            }
+                        )
+                    ),
+                    "geometry_settings_hash": geometry_settings_hash,
+                    "recipe_settings_hash": recipe_settings_hash,
+                },
             )
             detection["stages"].append(
                 stage_record("material_readback", "created", status="PASS")
@@ -3343,10 +3366,18 @@ def q2d_solve_completion_status(result_dir, log_dir, recipe):
     solve_status = metadata.get("solve_status") if isinstance(metadata, dict) else {}
     analyze_setup = solve_status.get("analyze_setup") if isinstance(solve_status, dict) else None
     analyze_ok = bool(analyze_setup and analyze_setup.get("return_value"))
+    material_policy = recipe.get("material_policy") or {}
+    readback_required = material_policy.get("readback_required") is True
+    material_metadata = metadata.get("aedt_material_context") or {}
+    readback_ok = (
+        material_metadata.get("readback_required") is True
+        and material_metadata.get("readback_status") == "PASS"
+        and (result_dir / "aedt_material_readback.json").is_file()
+    )
     failure_exists = (log_dir / "failure.json").is_file()
     if recipe_settings_stale:
         completion_status = "stale"
-    elif analyze_ok and not missing_exports:
+    elif analyze_ok and not missing_exports and (not readback_required or readback_ok):
         completion_status = "complete"
     elif failure_exists:
         completion_status = "failed"
@@ -3355,6 +3386,8 @@ def q2d_solve_completion_status(result_dir, log_dir, recipe):
     return {
         "completion_status": completion_status,
         "analyze_setup_ok": analyze_ok,
+        "material_readback_required": readback_required,
+        "material_readback_ok": readback_ok,
         "expected_exports": expected_exports,
         "missing_required_exports": missing_exports,
         "simulation_metadata_exists": bool(metadata),

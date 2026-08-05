@@ -26,10 +26,10 @@ import yaml
 from orpen_sc_pdk.simulation.aedt.d3_q2d_material import (
     CONDUCTOR_AEDT_MATERIAL,
     SUBSTRATE_AEDT_MATERIAL,
+    d3_q2d_material_policy,
     write_d3_q2d_material_context,
 )
 from orpen_sc_pdk.simulation.aedt.models import (
-    AedtMaterialPolicySpec,
     AedtNativeCaseSpec,
     AedtNativePackageResult,
     AedtNativePackageSpec,
@@ -376,7 +376,7 @@ def build_package(
         matrix_problem_types=("CG", "RL"),
         matrix_types=("Maxwell",),
         q2d_setup=AedtQ2dSetupSpec(adaptive_frequency=ADAPTIVE_FREQUENCY),
-        material_policy=AedtMaterialPolicySpec(material_condition="NOT_AVAILABLE"),
+        material_policy=d3_q2d_material_policy(),
     )
 
     with TemporaryDirectory(prefix="orpen-d3-q2d-") as temporary_directory:

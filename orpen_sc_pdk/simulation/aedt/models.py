@@ -153,10 +153,14 @@ class AedtMaterialPolicySpec(BaseModel):
 
     conductor_material: str = "pec"
     material_condition: str = "cryogenic"
+    material_profile_id: str | None = None
+    readback_required: bool = False
 
-    @field_validator("conductor_material", "material_condition")
+    @field_validator("conductor_material", "material_condition", "material_profile_id")
     @classmethod
-    def _validate_text(cls, value: str) -> str:
+    def _validate_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
         text = str(value).strip()
         if not text:
             raise ValueError("AEDT material policy fields must not be empty")

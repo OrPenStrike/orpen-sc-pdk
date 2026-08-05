@@ -11,6 +11,7 @@ from typing import Any
 from orpen_sc_pdk.simulation.aedt.models import (
     AedtCompiledMaterialSpec,
     AedtMaterialContext,
+    AedtMaterialPolicySpec,
     AedtSupportedMaterialProperties,
 )
 
@@ -99,18 +100,29 @@ def material_profile_hash() -> str:
     return sha256_json(d3_q2d_material_profile())
 
 
-def _repository_revision() -> str:
+def d3_q2d_material_policy() -> AedtMaterialPolicySpec:
+    """Return the recipe marker that makes resume checks require true readback."""
+
+    return AedtMaterialPolicySpec(
+        conductor_material=CONDUCTOR_AEDT_MATERIAL,
+        material_condition="NOT_AVAILABLE",
+        material_profile_id=MATERIAL_PROFILE_ID,
+        readback_required=True,
+    )
+
+
+def _git_revision(*args: str) -> str:
     root = Path(__file__).resolve().parents[3]
     try:
         return subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+            ["git", *args],
             cwd=root,
             check=True,
             capture_output=True,
             text=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError("D3 Q2D packaging requires an exact OrPen Git revision") from exc
+        raise RuntimeError(f"D3 Q2D packaging requires Git identity: {' '.join(args)}") from exc
 
 
 def _runtime_bundle_hash() -> str:
@@ -135,15 +147,25 @@ def d3_q2d_material_context() -> AedtMaterialContext:
     """Compile the accepted profile into an explicit AEDT project material context."""
 
     profile = d3_q2d_material_profile()
+    profile_hash = sha256_json(profile)
     return AedtMaterialContext(
         schema_version=MATERIAL_CONTEXT_SCHEMA,
         material_condition="NOT_AVAILABLE",
         material_profile=profile,
-        material_profile_hash=sha256_json(profile),
+        material_profile_hash=profile_hash,
+        registry_hash=sha256_json(
+            {
+                "schema_version": "d3-target-material-policy-registry.v1",
+                "material_profile_hash": profile_hash,
+            }
+        ),
         readback_required=True,
         policy_source={
             "repository": "OrPen",
-            "revision": _repository_revision(),
+            "revision": _git_revision("rev-parse", "HEAD"),
+            "integration_baseline_revision": _git_revision(
+                "merge-base", "HEAD", "origin/develop"
+            ),
             "path": "orpen_sc_pdk/simulation/aedt/d3_q2d_material.py",
             "sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "runtime_bundle_sha256": _runtime_bundle_hash(),
@@ -183,6 +205,7 @@ __all__ = [
     "SUBSTRATE_RELATIVE_PERMITTIVITY",
     "canonical_json",
     "d3_q2d_material_context",
+    "d3_q2d_material_policy",
     "d3_q2d_material_profile",
     "material_profile_hash",
     "sha256_json",
