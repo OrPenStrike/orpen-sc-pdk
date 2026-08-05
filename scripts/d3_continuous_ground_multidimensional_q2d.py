@@ -53,9 +53,9 @@ from orpen_sc_pdk.simulation.aedt.q2d import (
 
 PROJECT_NAME = "d3_continuous_ground_multidimensional_q2d"
 CACHE_SCHEMA = "orpen-q2d-request-cache.v4"
-DATABASE_SCHEMA = "orpen-q2d-d3-material-result.v2"
+DATABASE_SCHEMA = "orpen-q2d-d3-material-result.v3"
 DATABASE_APPLICATION_ID = 0x4F513231
-DATABASE_USER_VERSION = 2
+DATABASE_USER_VERSION = 3
 SWEEP_SCHEMA = "d3-continuous-ground-multidimensional-q2d.v3"
 AEDT_VERSION = "2024.2"
 PYAEDT_VERSION = "0.26.2"
@@ -666,17 +666,129 @@ def _parse_convergence(path: Path) -> dict[str, Any]:
     }
 
 
+def _canonical_scientific_result_payload(
+    *,
+    role: str,
+    case_id: str,
+    result_dir: Path,
+    convergence_paths: dict[str, Path],
+) -> dict[str, Any]:
+    """Recompute the scientific result from the solver-owned raw exports."""
+
+    point = load_q2d_raw_point_result(
+        result_dir,
+        point_id=case_id,
+        point_slug=case_id,
+        coords={},
+        required_sources=("cg_maxwell", "rl_maxwell"),
+    )
+    impedance: dict[str, float | None] = {
+        "z0_ohm": None,
+        "zc1_ohm": None,
+        "zc2_ohm": None,
+        "zm_ohm": None,
+    }
+    if role == "single_reference":
+        impedance["z0_ohm"] = Q2dImpedanceFormula.self(
+            name="z0",
+            trace_names=("T1",),
+        ).evaluate(point)["z0_T1_ohm"]
+    elif role == "coupled_pair":
+        self_values = Q2dImpedanceFormula.self(
+            name="zc",
+            trace_names=("T1", "T2"),
+        ).evaluate(point)
+        impedance["zc1_ohm"] = self_values["zc_T1_ohm"]
+        impedance["zc2_ohm"] = self_values["zc_T2_ohm"]
+        impedance["zm_ohm"] = Q2dImpedanceFormula.mutual(name="zm").evaluate(point)[
+            "zm_T1_T2_ohm"
+        ]
+    else:
+        raise ValueError(f"Unsupported Q2D result role: {role!r}")
+    if any(value is not None and not math.isfinite(value) for value in impedance.values()):
+        raise ValueError(f"Non-finite impedance for {case_id}")
+
+    matrix_rows = point.matrix_table()
+    return {
+        "schema_version": "orpen-q2d-scientific-result.v1",
+        "matrices": {
+            quantity: [
+                {
+                    "row_terminal": item["row_terminal"],
+                    "column_terminal": item["column_terminal"],
+                    "value": item["value"],
+                    "unit": item.get("unit"),
+                    "value_si": item.get("value_si"),
+                }
+                for item in matrix_rows
+                if item["quantity"] == quantity
+            ]
+            for quantity in ("C", "L")
+        },
+        "convergence": {
+            name: _parse_convergence(path) for name, path in convergence_paths.items()
+        },
+        "impedance_ohm": impedance,
+    }
+
+
+def _scientific_result_columns(payload: dict[str, Any]) -> dict[str, Any]:
+    """Serialize one canonical scientific payload into database columns."""
+
+    return {
+        "c_matrix_json": _canonical_json(payload["matrices"]["C"]),
+        "l_matrix_json": _canonical_json(payload["matrices"]["L"]),
+        "convergence_json": _canonical_json(payload["convergence"]),
+        **payload["impedance_ohm"],
+    }
+
+
+def _require_scientific_result_match(
+    row: dict[str, Any],
+    payload: dict[str, Any],
+) -> None:
+    """Reject database values that differ from recomputed raw solver exports."""
+
+    expected = _scientific_result_columns(payload)
+    if any(row[field] != value for field, value in expected.items()):
+        raise ValueError(f"Q2D result {row['result_id']} scientific payload mismatch")
+
+
+def _immutable_result_id(
+    *,
+    request_cache_key: str,
+    material_evidence_snapshot_hash: str,
+    solver_completed_at: str,
+    source_hashes: dict[str, str],
+    scientific_result: dict[str, Any],
+) -> str:
+    """Bind request, receipt, raw sources, and recomputed scientific values."""
+
+    return _sha256_bytes(
+        _canonical_json(
+            {
+                "schema_version": "orpen-q2d-immutable-result-identity.v2",
+                "request_cache_key": request_cache_key,
+                "material_evidence_snapshot_hash": material_evidence_snapshot_hash,
+                "solver_completed_at": solver_completed_at,
+                "source_sha256": source_hashes,
+                "scientific_result": scientific_result,
+            }
+        ).encode("utf-8")
+    )
+
+
 def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | None:
     case_id = row["case_id"]
     result_dir = run_root / "points" / case_id / "q2d"
+    convergence_paths = {
+        "CG": result_dir / "aedt_convergenceCG.prop",
+        "RL": result_dir / "aedt_convergenceCGRL.prop",
+    }
     metadata_path = result_dir / "simulation_metadata.json"
     matrix_paths = {
         "C": result_dir / "cg_maxwell_matrix.csv",
         "L": result_dir / "rl_maxwell_matrix.csv",
-    }
-    convergence_paths = {
-        "CG": result_dir / "aedt_convergenceCG.prop",
-        "RL": result_dir / "aedt_convergenceCGRL.prop",
     }
     if not metadata_path.is_file() or any(
         not path.is_file() or path.stat().st_size <= 0 for path in matrix_paths.values()
@@ -776,55 +888,14 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     solver_completed_at = workflow_state.get("completed_at")
     if not isinstance(solver_completed_at, str) or not solver_completed_at:
         raise ValueError(f"Q2D workflow completion time is missing: {case_id}")
-    convergence = {name: _parse_convergence(path) for name, path in convergence_paths.items()}
-
-    point = load_q2d_raw_point_result(
-        result_dir,
-        point_id=case_id,
-        point_slug=case_id,
-        coords={},
-        required_sources=("cg_maxwell", "rl_maxwell"),
-    )
     role = row["role"]
-    derived: dict[str, float | None] = {
-        "z0_ohm": None,
-        "zc1_ohm": None,
-        "zc2_ohm": None,
-        "zm_ohm": None,
-    }
-    if role == "single_reference":
-        derived["z0_ohm"] = Q2dImpedanceFormula.self(
-            name="z0",
-            trace_names=("T1",),
-        ).evaluate(point)["z0_T1_ohm"]
-    else:
-        self_values = Q2dImpedanceFormula.self(
-            name="zc",
-            trace_names=("T1", "T2"),
-        ).evaluate(point)
-        derived["zc1_ohm"] = self_values["zc_T1_ohm"]
-        derived["zc2_ohm"] = self_values["zc_T2_ohm"]
-        derived["zm_ohm"] = Q2dImpedanceFormula.mutual(name="zm").evaluate(point)["zm_T1_T2_ohm"]
-    if any(value is not None and not math.isfinite(value) for value in derived.values()):
-        raise ValueError(f"Non-finite impedance for {case_id}")
-
-    matrix_rows = point.matrix_table()
-    matrix_json = {
-        quantity: _canonical_json(
-            [
-                {
-                    "row_terminal": item["row_terminal"],
-                    "column_terminal": item["column_terminal"],
-                    "value": item["value"],
-                    "unit": item.get("unit"),
-                    "value_si": item.get("value_si"),
-                }
-                for item in matrix_rows
-                if item["quantity"] == quantity
-            ]
-        )
-        for quantity in ("C", "L")
-    }
+    scientific_result = _canonical_scientific_result_payload(
+        role=role,
+        case_id=case_id,
+        result_dir=result_dir,
+        convergence_paths=convergence_paths,
+    )
+    scientific_columns = _scientific_result_columns(scientific_result)
     source_sha = {
         path.name: _sha256_file(path)
         for path in (
@@ -837,16 +908,14 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
             *required_material_paths,
         )
     }
-    result_id = _sha256_bytes(
-        _canonical_json(
-            {
-                "request_cache_key": request_cache_key,
-                "material_evidence_snapshot_hash": receipt_identity[
-                    "material_evidence_snapshot_hash"
-                ],
-                "solver_completed_at": solver_completed_at,
-            }
-        ).encode("utf-8")
+    result_id = _immutable_result_id(
+        request_cache_key=request_cache_key,
+        material_evidence_snapshot_hash=receipt_identity[
+            "material_evidence_snapshot_hash"
+        ],
+        solver_completed_at=solver_completed_at,
+        source_hashes=source_sha,
+        scientific_result=scientific_result,
     )
     return {
         "result_id": result_id,
@@ -872,10 +941,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
         "s_nm": int(row["s_nm"]),
         "d_nm": None if not row["d_nm"] else int(row["d_nm"]),
         "h_nm": int(row["h_nm"]),
-        "c_matrix_json": matrix_json["C"],
-        "l_matrix_json": matrix_json["L"],
-        "convergence_json": _canonical_json(convergence),
-        **derived,
+        **scientific_columns,
         "source_run_root": str(run_root.resolve()),
         "source_case_id": case_id,
         "source_sha256_json": _canonical_json(source_sha),
@@ -885,24 +951,56 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
 
 
 def _database_rows(connection: sqlite3.Connection) -> list[dict[str, Any]]:
-    return [
+    rows = [
         dict(row)
         for row in connection.execute(
             """
-            SELECT result_id, request_cache_key, role,
-                   material_profile_id, material_profile_hash,
-                   material_authority_hash, material_evidence_snapshot_hash,
-                   technical_evidence_complete, evidence_partition,
-                   data_class, allowed_consumers_json, publication_state,
-                   promotion_eligible,
-                   w_nm / 1000.0 AS w_um,
-                   s_nm / 1000.0 AS s_um, d_nm / 1000.0 AS d_um,
-                   h_nm / 1000.0 AS h_um, z0_ohm, zc1_ohm, zc2_ohm, zm_ohm,
-                   source_run_root, source_case_id, solver_completed_at, ingested_at
-            FROM q2d_material_result
+            SELECT * FROM q2d_material_result
             ORDER BY role, h_nm, w_nm, s_nm, d_nm, solver_completed_at
             """
         )
+    ]
+    for row in rows:
+        _validate_technical_evidence_row(row)
+    return [
+        {
+            **{
+                field: row[field]
+                for field in (
+                    "result_id",
+                    "request_cache_key",
+                    "role",
+                    "material_profile_id",
+                    "material_profile_hash",
+                    "material_authority_hash",
+                    "material_evidence_snapshot_hash",
+                    "technical_evidence_complete",
+                    "evidence_partition",
+                    "data_class",
+                    "allowed_consumers_json",
+                    "publication_state",
+                    "promotion_eligible",
+                )
+            },
+            "w_um": row["w_nm"] / 1000.0,
+            "s_um": row["s_nm"] / 1000.0,
+            "d_um": None if row["d_nm"] is None else row["d_nm"] / 1000.0,
+            "h_um": row["h_nm"] / 1000.0,
+            **{
+                field: row[field]
+                for field in (
+                    "z0_ohm",
+                    "zc1_ohm",
+                    "zc2_ohm",
+                    "zm_ohm",
+                    "source_run_root",
+                    "source_case_id",
+                    "solver_completed_at",
+                    "ingested_at",
+                )
+            },
+        }
+        for row in rows
     ]
 
 
@@ -1058,6 +1156,10 @@ def _validate_technical_evidence_row(row: dict[str, Any]) -> None:
     run_root = Path(row["source_run_root"])
     case_id = str(row["source_case_id"])
     result_dir = run_root / "points" / case_id / "q2d"
+    convergence_paths = {
+        "CG": result_dir / "aedt_convergenceCG.prop",
+        "RL": result_dir / "aedt_convergenceCGRL.prop",
+    }
     material_context_path = run_root / "metadata" / f"{case_id}_aedt_material_context.json"
     cross_section_path = run_root / "metadata" / f"{case_id}_q2d_cross_section.json"
     write_attempt_path = result_dir / "aedt_material_context_applied.json"
@@ -1067,8 +1169,7 @@ def _validate_technical_evidence_row(row: dict[str, Any]) -> None:
     source_paths = (
         result_dir / "cg_maxwell_matrix.csv",
         result_dir / "rl_maxwell_matrix.csv",
-        result_dir / "aedt_convergenceCG.prop",
-        result_dir / "aedt_convergenceCGRL.prop",
+        *convergence_paths.values(),
         result_dir / "simulation_metadata.json",
         cross_section_path,
         preflight_path,
@@ -1130,16 +1231,19 @@ def _validate_technical_evidence_row(row: dict[str, Any]) -> None:
         != expected_policy["policy_source"]["runtime_bundle_sha256"]
     ):
         raise ValueError(f"Q2D result {row['result_id']} has invalid material evidence")
-    result_id = _sha256_bytes(
-        _canonical_json(
-            {
-                "request_cache_key": row["request_cache_key"],
-                "material_evidence_snapshot_hash": row[
-                    "material_evidence_snapshot_hash"
-                ],
-                "solver_completed_at": row["solver_completed_at"],
-            }
-        ).encode("utf-8")
+    scientific_result = _canonical_scientific_result_payload(
+        role=str(row["role"]),
+        case_id=case_id,
+        result_dir=result_dir,
+        convergence_paths=convergence_paths,
+    )
+    _require_scientific_result_match(row, scientific_result)
+    result_id = _immutable_result_id(
+        request_cache_key=row["request_cache_key"],
+        material_evidence_snapshot_hash=row["material_evidence_snapshot_hash"],
+        solver_completed_at=row["solver_completed_at"],
+        source_hashes=stored_source_hashes,
+        scientific_result=scientific_result,
     )
     if result_id != row["result_id"]:
         raise ValueError(f"Q2D result {row['result_id']} immutable identity mismatch")
