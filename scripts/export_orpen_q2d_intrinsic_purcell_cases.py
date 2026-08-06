@@ -687,14 +687,31 @@ def _case_payload(
         ):
             raise ValueError(f"material-result row authority mismatch for {case_id!r}")
 
-    derived: dict[str, Any] = {
+    legacy_derived: dict[str, Any] = {
         "self_impedance_ohm": {
             trace: math.sqrt(l_matrix[index][index] / c_matrix[index][index])
             for index, trace in enumerate(conductor_order)
         },
     }
     if case_role == "coupled_pair":
-        derived["mutual_impedance_ohm"] = math.sqrt(l_matrix[0][1] / -c_matrix[0][1])
+        legacy_derived["mutual_impedance_ohm"] = math.sqrt(l_matrix[0][1] / -c_matrix[0][1])
+    historical_impedance = {
+        "z0_ohm": (
+            legacy_derived["self_impedance_ohm"]["T1"] if case_role == "single_reference" else None
+        ),
+        "zc1_ohm": (
+            legacy_derived["self_impedance_ohm"]["T1"] if case_role == "coupled_pair" else None
+        ),
+        "zc2_ohm": (
+            legacy_derived["self_impedance_ohm"]["T2"] if case_role == "coupled_pair" else None
+        ),
+        "zm_ohm": (legacy_derived["mutual_impedance_ohm"] if case_role == "coupled_pair" else None),
+    }
+    emitted_derived = (
+        ({"z0_ohm": historical_impedance["z0_ohm"]} if case_role == "single_reference" else None)
+        if material_aware
+        else legacy_derived
+    )
 
     source_hashes = [_source_record(run_root, path) for path in integrity_paths]
     if material_aware:
@@ -722,20 +739,7 @@ def _case_payload(
                 for quantity in ("C", "L")
             },
             "convergence": convergence,
-            "impedance_ohm": {
-                "z0_ohm": (
-                    derived["self_impedance_ohm"]["T1"] if case_role == "single_reference" else None
-                ),
-                "zc1_ohm": (
-                    derived["self_impedance_ohm"]["T1"] if case_role == "coupled_pair" else None
-                ),
-                "zc2_ohm": (
-                    derived["self_impedance_ohm"]["T2"] if case_role == "coupled_pair" else None
-                ),
-                "zm_ohm": (
-                    derived["mutual_impedance_ohm"] if case_role == "coupled_pair" else None
-                ),
-            },
+            "impedance_ohm": historical_impedance,
         }
         expected_columns = {
             "c_matrix_json": _canonical_json(scientific_result["matrices"]["C"]),
@@ -784,7 +788,6 @@ def _case_payload(
         },
         "l_matrix_h_per_m": l_matrix,
         "c_matrix_f_per_m": c_matrix,
-        "derived": derived,
         "convergence": convergence,
         "selected_result": selected_result,
         "material_authority": material_authority,
@@ -792,6 +795,8 @@ def _case_payload(
             selected_result["common_request_authority"] if selected_result else None
         ),
     }
+    if emitted_derived is not None:
+        case_payload["derived"] = emitted_derived
     if case_role == "coupled_pair":
         matrix_semantics = {
             "C": "F/m; Maxwell off-diagonal retained as negative",
