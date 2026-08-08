@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from math import isfinite
+
 import gdsfactory as gf
 from gdsfactory.typings import CrossSectionSpec, Layer, LayerSpec
 
@@ -55,6 +57,21 @@ def cpw_straight(
         port_type="sim_cpw",
     )
     return component
+
+
+@gf.cell
+def n_trace_mtl_section(
+    length: float,
+    cross_section: CrossSectionSpec = "coupled_cpw_w7_s6_d3",
+) -> gf.Component:
+    """Return a cross-section-driven N-trace straight section."""
+
+    if not isfinite(length) or length <= 0:
+        raise ValueError(f"length must be positive, got {length!r}.")
+
+    xs = gf.get_cross_section(cross_section)
+    path = gf.path.straight(length)
+    return gf.path.extrude(path, cross_section=xs)
 
 
 @gf.cell(tags=["elements"])

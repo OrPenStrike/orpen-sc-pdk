@@ -16,6 +16,7 @@ from orpen_sc_pdk.cells import (
     launcher,
     manhattan_style_junction,
     martinis2022_differential_ribbon_capacitor,
+    n_trace_mtl_section,
     resonator,
     resonator_hanger,
     resonator_meander,
@@ -25,6 +26,7 @@ from orpen_sc_pdk.cells import (
 from orpen_sc_pdk.ports import register_sim_port_types
 from orpen_sc_pdk.tech import (
     coplanar_waveguide,
+    coupled_cpw_w7_s6_d3,
     cpw,
     cpw_2dot7_4_2dot7,
     cpw_6_7_6,
@@ -36,6 +38,7 @@ from orpen_sc_pdk.tech import (
     josephson_junction_cross_section_wide,
     launcher_cross_section_big,
     microstrip,
+    n_trace_coplanar_waveguide,
     strip,
     strip_metal,
 )
@@ -50,6 +53,7 @@ _cells = {
     "bend_circular": bend_circular,
     "bend_euler": bend_euler,
     "cpw_straight": cpw_straight,
+    "n_trace_mtl_section": n_trace_mtl_section,
     "dicing_edge": dicing_edge,
     "interdigital_capacitor": interdigital_capacitor,
     "launcher": launcher,
@@ -60,11 +64,13 @@ _cells = {
 
 _cross_sections = {
     "coplanar_waveguide": coplanar_waveguide,
+    "coupled_cpw_w7_s6_d3": coupled_cpw_w7_s6_d3,
     "cpw": cpw,
     "cpw_2dot7_4_2dot7": cpw_2dot7_4_2dot7,
     "cpw_6_7_6": cpw_6_7_6,
     "cpw_6_10_6": cpw_6_10_6,
     "cpw_15_5_15": cpw_15_5_15,
+    "n_trace_coplanar_waveguide": n_trace_coplanar_waveguide,
     "etch": etch,
     "etch_only": etch_only,
     "josephson_junction_cross_section_narrow": josephson_junction_cross_section_narrow,

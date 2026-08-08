@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from functools import cache, partial, wraps
+from math import isfinite
 from typing import Any
 
 import gdsfactory as gf
@@ -532,6 +533,153 @@ def coplanar_waveguide(
     )
 
 
+def n_trace_coplanar_waveguide(
+    trace_widths: tuple[float, ...],
+    trace_gaps: tuple[float, ...],
+    inter_trace_ground_widths: tuple[float, ...],
+    *,
+    trace_names: tuple[str, ...] | None = None,
+    draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
+    etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
+    ground_mask_layer: LayerSpec = LAYER.D0_TOP_GROUND_MASK,
+    radius: float | None = 100.0,
+) -> CrossSection:
+    """Return a multi-trace coplanar-waveguide cross-section with named traces."""
+
+    n_traces = len(trace_widths)
+    if n_traces < 2:
+        raise ValueError(
+            f"n_trace_coplanar_waveguide requires at least two traces, got {n_traces!r}."
+        )
+    if len(trace_gaps) != n_traces:
+        raise ValueError(
+            "trace_widths and trace_gaps must have the same length, "
+            f"got {n_traces!r} and {len(trace_gaps)!r}."
+        )
+    if len(inter_trace_ground_widths) != n_traces - 1:
+        raise ValueError(
+            "inter_trace_ground_widths must contain exactly one value between traces, "
+            f"got {len(inter_trace_ground_widths)!r} for {n_traces!r} traces."
+        )
+
+    trace_widths_f = tuple(float(value) for value in trace_widths)
+    trace_gaps_f = tuple(float(value) for value in trace_gaps)
+    inter_trace_ground_widths_f = tuple(float(value) for value in inter_trace_ground_widths)
+    for label, values in (
+        ("trace_widths", trace_widths_f),
+        ("trace_gaps", trace_gaps_f),
+        ("inter_trace_ground_widths", inter_trace_ground_widths_f),
+    ):
+        for index, value in enumerate(values):
+            if not isfinite(value) or value <= 0:
+                raise ValueError(
+                    f"{label}[{index}] must be finite and greater than 0, got {value!r}."
+                )
+    if radius is not None and (not isfinite(radius) or radius <= 0):
+        raise ValueError(f"radius must be finite and greater than 0, got {radius!r}.")
+
+    if trace_names is None:
+        trace_names = tuple(f"t{i + 1}" for i in range(n_traces))
+    else:
+        trace_names = tuple(trace_names)
+    if len(trace_names) != n_traces:
+        raise ValueError(
+            f"trace_names must contain exactly {n_traces} names, got {len(trace_names)!r}."
+        )
+    for trace_name in trace_names:
+        if not isinstance(trace_name, str) or not trace_name.strip():
+            raise ValueError("trace_names must be non-empty strings.")
+    if len(set(trace_names)) != n_traces:
+        raise ValueError("trace_names must be unique.")
+
+    total_footprint_width = (
+        2 * sum(trace_gaps_f) + sum(trace_widths_f) + sum(inter_trace_ground_widths_f)
+    )
+    section_centers = -total_footprint_width / 2
+
+    first_trace_name = trace_names[0]
+    first_left_gap = trace_gaps_f[0]
+    first_trace_width = trace_widths_f[0]
+    sections: list[gf.Section] = [
+        gf.Section(
+            width=first_left_gap,
+            offset=-(section_centers + first_left_gap / 2),
+            layer=etch_layer,
+            name=f"{first_trace_name}_s_neg",
+        )
+    ]
+    section_centers += first_left_gap
+    first_trace_offset = -(section_centers + first_trace_width / 2)
+    section_centers += first_trace_width
+    sections.append(
+        gf.Section(
+            width=first_left_gap,
+            offset=-(section_centers + first_left_gap / 2),
+            layer=etch_layer,
+            name=f"{first_trace_name}_s_pos",
+        )
+    )
+    section_centers += first_left_gap
+    if n_traces > 1:
+        section_centers += inter_trace_ground_widths_f[0]
+
+    for trace_index in range(1, n_traces):
+        left_gap = trace_gaps_f[trace_index]
+        trace_width = trace_widths_f[trace_index]
+        trace_name = trace_names[trace_index]
+        sections.append(
+            gf.Section(
+                width=left_gap,
+                offset=-(section_centers + left_gap / 2),
+                layer=etch_layer,
+                name=f"{trace_name}_s_neg",
+            )
+        )
+        section_centers += left_gap
+        sections.append(
+            gf.Section(
+                width=trace_width,
+                offset=-(section_centers + trace_width / 2),
+                layer=draw_layer,
+                name=trace_name,
+                port_names=(f"{trace_name}_o1", f"{trace_name}_o2"),
+            )
+        )
+        section_centers += trace_width
+        sections.append(
+            gf.Section(
+                width=left_gap,
+                offset=-(section_centers + left_gap / 2),
+                layer=etch_layer,
+                name=f"{trace_name}_s_pos",
+            )
+        )
+        section_centers += left_gap
+        if trace_index < n_traces - 1:
+            inter_ground = inter_trace_ground_widths_f[trace_index]
+            section_centers += inter_ground
+    sections.append(
+        gf.Section(
+            width=total_footprint_width,
+            offset=0.0,
+            layer=ground_mask_layer,
+            name=CPW_GROUND_MASK,
+        )
+    )
+
+    return gf.cross_section.cross_section(
+        width=trace_widths_f[0],
+        layer=draw_layer,
+        offset=first_trace_offset,
+        main_section_name=trace_names[0],
+        port_names=(f"{trace_names[0]}_o1", f"{trace_names[0]}_o2"),
+        sections=tuple(sections),
+        radius=radius,
+    )
+
+
+cross_sections["n_trace_coplanar_waveguide"] = n_trace_coplanar_waveguide
+
 cpw = coplanar_waveguide
 etch = etch_only = partial(
     coplanar_waveguide,
@@ -594,6 +742,29 @@ def cpw_6_7_6(
     return coplanar_waveguide(
         width=width,
         gap=6.0,
+        draw_layer=draw_layer,
+        etch_layer=etch_layer,
+        ground_mask_layer=ground_mask_layer,
+        radius=radius,
+    )
+
+
+@xsection
+def coupled_cpw_w7_s6_d3(
+    *,
+    trace_names: tuple[str, ...] | None = None,
+    draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
+    etch_layer: LayerSpec = LAYER.D0_TOP_M1_ETCH,
+    ground_mask_layer: LayerSpec = LAYER.D0_TOP_GROUND_MASK,
+    radius: float | None = 100.0,
+) -> CrossSection:
+    """Return a thin two-trace coupled-coplanar-waveguide cross-section."""
+
+    return n_trace_coplanar_waveguide(
+        trace_widths=(7.0, 7.0),
+        trace_gaps=(6.0, 6.0),
+        inter_trace_ground_widths=(3.0,),
+        trace_names=trace_names,
         draw_layer=draw_layer,
         etch_layer=etch_layer,
         ground_mask_layer=ground_mask_layer,
@@ -734,6 +905,8 @@ __all__ = [
     "LayerMapOrpenSCPDK",
     "LayerSpec",
     "coplanar_waveguide",
+    "n_trace_coplanar_waveguide",
+    "coupled_cpw_w7_s6_d3",
     "cpw_15_5_15",
     "cpw_2dot7_4_2dot7",
     "cpw_6_10_6",
