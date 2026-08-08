@@ -1,7 +1,7 @@
 """Canonical public cell registry for the OrPen SC PDK."""
 
 from orpen_sc_pdk.cells.capacitor import interdigital_capacitor
-from orpen_sc_pdk.cells.cpw import cpw_straight, launcher, n_trace_mtl_section
+from orpen_sc_pdk.cells.cpw import cpw_straight, cpw_t_junction, launcher, n_trace_mtl_section
 from orpen_sc_pdk.cells.dicing import dicing_edge
 from orpen_sc_pdk.cells.indium import indium_bump, indium_ground
 from orpen_sc_pdk.cells.junction import manhattan_style_junction
@@ -21,6 +21,7 @@ __all__ = [
     "taper",
     "bend_circular",
     "cpw_straight",
+    "cpw_t_junction",
     "n_trace_mtl_section",
     "bend_euler",
     "dicing_edge",

@@ -9,7 +9,13 @@ from gdsfactory.typings import CrossSectionSpec, Layer, LayerSpec
 
 from orpen_sc_pdk.helpers.layout import add_etch_for_component
 from orpen_sc_pdk.ports import AxisDirection, add_driven_lumped_port
-from orpen_sc_pdk.tech import LAYER
+from orpen_sc_pdk.tech import (
+    CPW_DRAW,
+    CPW_ETCH_NEG,
+    CPW_ETCH_POS,
+    CPW_GROUND_MASK,
+    LAYER,
+)
 
 
 @gf.cell
@@ -59,9 +65,77 @@ def cpw_straight(
     return component
 
 
+@gf.cell(tags=["elements"])
+def cpw_t_junction(
+    trunk_length: float = 200.0,
+    branch_length: float = 100.0,
+    cross_section: CrossSectionSpec = "coplanar_waveguide",
+) -> gf.Component:
+    """Return a CPW T-junction with two trunk ports and one branch port."""
+
+    if not isfinite(trunk_length) or trunk_length <= 0:
+        raise ValueError(f"trunk_length must be finite and positive, got {trunk_length!r}.")
+    if not isfinite(branch_length) or branch_length <= 0:
+        raise ValueError(f"branch_length must be finite and positive, got {branch_length!r}.")
+
+    xs = gf.get_cross_section(cross_section)
+    required_sections = (CPW_DRAW, CPW_ETCH_NEG, CPW_ETCH_POS, CPW_GROUND_MASK)
+    section_names = {section.name for section in xs.sections}
+    missing_sections = [name for name in required_sections if name not in section_names]
+    if missing_sections:
+        raise ValueError(
+            "cross_section must use OrPen CPW sections "
+            f"{', '.join(required_sections)}, missing {', '.join(missing_sections)}."
+        )
+
+    trunk_center_x = trunk_length / 2
+    component = gf.Component()
+    trunk_ref = component << gf.path.extrude(
+        gf.path.straight(trunk_length),
+        cross_section=xs,
+    )
+    trunk_ref.dmovex(-trunk_center_x)
+
+    branch_ref = component << gf.path.extrude(
+        gf.path.straight(branch_length),
+        cross_section=xs,
+    )
+    branch_ref.drotate(90)
+
+    component.add_port(
+        name="o1",
+        port=trunk_ref.ports["o1"],
+    )
+    component.add_port(
+        name="o2",
+        port=trunk_ref.ports["o2"],
+    )
+    component.add_port(
+        name="o_branch",
+        port=branch_ref.ports["o2"],
+    )
+
+    component.info["topology"] = "cpw_t_junction"
+    component.info["trunk_length_um"] = float(trunk_length)
+    component.info["branch_length_um"] = float(branch_length)
+    component.info["junction_center_um"] = (0.0, 0.0)
+    component.info["branch_bends"] = 0
+    component.info["ordered_port_names"] = ("o1", "o2", "o_branch")
+    component.info["cross_section_name"] = xs.name
+    component.info["layers"] = {
+        "draw": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_DRAW].layer)),
+        "etch": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_ETCH_NEG].layer)),
+        "ground_mask": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_GROUND_MASK].layer)),
+    }
+
+    component.flatten(merge=False)
+
+    return component
+
+
 @gf.cell
 def n_trace_mtl_section(
-    length: float,
+    length: float = 500.0,
     cross_section: CrossSectionSpec = "coupled_cpw_w7_s6_d3",
 ) -> gf.Component:
     """Return a cross-section-driven N-trace straight section."""
