@@ -8,6 +8,7 @@ from orpen_sc_pdk import tech
 from orpen_sc_pdk.cells import (
     bend_circular,
     bend_euler,
+    capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators,
     cpw_straight,
     cpw_t_junction,
     dicing_edge,
@@ -21,6 +22,7 @@ from orpen_sc_pdk.cells import (
     resonator,
     resonator_hanger,
     resonator_meander,
+    spring2025_intrinsic_individual_purcell_filter_test_chip,
     straight,
     taper,
 )
@@ -55,6 +57,12 @@ _cells = {
     "bend_euler": bend_euler,
     "cpw_straight": cpw_straight,
     "cpw_t_junction": cpw_t_junction,
+    "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators": (
+        capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators
+    ),
+    "spring2025_intrinsic_individual_purcell_filter_test_chip": (
+        spring2025_intrinsic_individual_purcell_filter_test_chip
+    ),
     "n_trace_mtl_section": n_trace_mtl_section,
     "dicing_edge": dicing_edge,
     "interdigital_capacitor": interdigital_capacitor,
