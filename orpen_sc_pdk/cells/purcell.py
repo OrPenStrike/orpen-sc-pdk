@@ -94,11 +94,11 @@ def _quarter_wave_arm(
 
 @gf.cell(tags=["elements"])
 def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
-    readout_open_length: float = 3014.87,
-    readout_short_length: float = 2100.74,
-    coupled_length: float = 645.30,
-    filter_open_length: float = 3014.87,
-    filter_short_length: float = 2100.74,
+    readout_open_length: float = 2539.512388,
+    readout_short_length: float = 2270.302789,
+    coupled_length: float = 311.256590,
+    filter_open_length: float = 2319.359517,
+    filter_short_length: float = 2270.302789,
     cpw_radius: float = 100.0,
     arm_horizontal_length: float = 500.0,
     single_cpw_xs: CrossSectionSpec = "cpw_6_7_6",
@@ -107,12 +107,14 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
     draw_layer: Layer = LAYER.D0_TOP_M1_DRAW,
     etch_layer: Layer = LAYER.D0_TOP_M1_ETCH,
     ground_mask_layer: Layer = LAYER.D0_TOP_GROUND_MASK,
+    idc_finger_length: float = 59.924760,
 ) -> gf.Component:
     """Return an individual readout/coupled Purcell-filter topology sharing one coupled MTL section.
 
     Public preview defaults:
-    readout_open_length=3014.87, readout_short_length=2100.74,
-    coupled_length=645.30, filter_open_length=3014.87, filter_short_length=2100.74.
+    readout_open_length=2539.512388, readout_short_length=2270.302789,
+    coupled_length=311.256590, filter_open_length=2319.359517,
+    filter_short_length=2270.302789, idc_finger_length=59.924760.
     """
 
     for name, value in (
@@ -121,6 +123,7 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
         ("coupled_length", coupled_length),
         ("filter_open_length", filter_open_length),
         ("filter_short_length", filter_short_length),
+        ("idc_finger_length", idc_finger_length),
         ("cpw_radius", cpw_radius),
         ("arm_horizontal_length", arm_horizontal_length),
     ):
@@ -152,6 +155,7 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
     c.info["coupled_length_um"] = float(coupled_length)
     c.info["filter_open_length_um"] = float(filter_open_length)
     c.info["filter_short_length_um"] = float(filter_short_length)
+    c.info["idc_finger_length_um"] = float(idc_finger_length)
     c.info["cpw_radius_um"] = float(cpw_radius)
     c.info["arm_horizontal_length_um"] = float(arm_horizontal_length)
     c.info["ordered_port_names"] = ("o_readout_open", "o_feedline_coupling")
@@ -228,6 +232,7 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
 
     capacitor = c << gf.get_component(
         "interdigital_capacitor",
+        finger_length=idc_finger_length,
         cpw_xs=single_cpw_xs,
         draw_layer=draw_layer,
         etch_layer=etch_layer,
