@@ -1,5 +1,6 @@
 """Canonical public cell registry for the OrPen SC PDK."""
 
+from orpen_sc_pdk.cells.airbridge import airbridge
 from orpen_sc_pdk.cells.capacitor import interdigital_capacitor
 from orpen_sc_pdk.cells.chips.spring2025_intrinsic_individual_purcell_filter_test_chip import (
     spring2025_intrinsic_individual_purcell_filter_test_chip,
@@ -21,6 +22,7 @@ from orpen_sc_pdk.cells.taper import taper
 __all__ = [
     "indium_bump",
     "indium_ground",
+    "airbridge",
     "resonator",
     "resonator_hanger",
     "resonator_meander",

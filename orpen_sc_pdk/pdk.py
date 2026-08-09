@@ -6,6 +6,7 @@ from gdsfactory.pdk import Pdk
 
 from orpen_sc_pdk import tech
 from orpen_sc_pdk.cells import (
+    airbridge,
     bend_circular,
     bend_euler,
     capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators,
@@ -48,6 +49,7 @@ from orpen_sc_pdk.tech import (
 
 _cells = {
     "indium_bump": indium_bump,
+    "airbridge": airbridge,
     "indium_ground": indium_ground,
     "resonator": resonator,
     "resonator_hanger": resonator_hanger,

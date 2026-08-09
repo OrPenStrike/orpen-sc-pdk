@@ -49,6 +49,7 @@ def test_pdk_registry_contains_public_cells() -> None:
         "manhattan_style_junction",
         "martinis2022_differential_ribbon_capacitor",
         "straight",
+        "airbridge",
     }
 
     assert set(PDK.cells) == expected

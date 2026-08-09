@@ -3,6 +3,7 @@
 import gdsfactory as gf
 from gdsfactory.typings import CrossSectionSpec
 
+from orpen_sc_pdk.cells.airbridge import airbridge
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
@@ -67,19 +68,14 @@ def small_airbridge_chip(
         start_x = -((airbridge_count - 1) * airbridge_pitch) / 2
         for index in range(airbridge_count):
             x = start_x + index * airbridge_pitch
-            deck = c << gf.components.rectangle(
-                size=(airbridge_width, airbridge_span),
-                centered=True,
-                layer=airbridge_draw_layer,
+            bridge = c << airbridge(
+                bridge_span=airbridge_span,
+                bridge_width=airbridge_width,
+                via_size=airbridge_via_size,
+                airbridge_draw_layer=airbridge_draw_layer,
+                airbridge_via_layer=airbridge_via_layer,
             )
-            deck.move((x, 0.0))
-            for y in (-airbridge_span / 2, airbridge_span / 2):
-                via = c << gf.components.rectangle(
-                    size=(airbridge_via_size, airbridge_via_size),
-                    centered=True,
-                    layer=airbridge_via_layer,
-                )
-                via.move((x, y))
+            bridge.move((x, 0.0))
 
     c.add_port(name="o_left", port=left.ports["o_pad"])
     c.add_port(name="o_right", port=right.ports["o_pad"])
