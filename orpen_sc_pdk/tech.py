@@ -534,9 +534,9 @@ def coplanar_waveguide(
 
 
 def n_trace_coplanar_waveguide(
-    trace_widths: tuple[float, ...],
-    trace_gaps: tuple[float, ...],
-    inter_trace_ground_widths: tuple[float, ...],
+    trace_widths: tuple[float, ...] = (7.0, 7.0),
+    trace_gaps: tuple[float, ...] = (6.0, 6.0),
+    inter_trace_ground_widths: tuple[float, ...] = (3.0,),
     *,
     trace_names: tuple[str, ...] | None = None,
     draw_layer: LayerSpec = LAYER.D0_TOP_M1_DRAW,
