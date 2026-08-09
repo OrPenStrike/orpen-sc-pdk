@@ -53,54 +53,108 @@ def _add_open_end_cap(
     return open_etch_ref
 
 
-def _quarter_wave_arm(
+def _folded_path(
     component: gf.Component,
     start_port: gf.Port,
-    first_arc_angle: float,
-    second_arc_angle: float,
     cpw_length: float,
-    arm_horizontal_length: float,
+    arc_angles: tuple[float, ...],
     cpw_radius: float,
     cross_section: object,
-) -> gf.Port:
-    """Add a three-straight, two-arc U-turn arm and return its output port."""
+) -> tuple[gf.Port, dict[str, object]]:
+    """Add a folded CPW arm and return its output port plus simple geometry receipt."""
 
     if start_port.orientation not in {0, 180}:
         raise ValueError(
-            "Start ports for quarter-wave arms must be oriented east or west. "
+            "Start ports for folded arms must be oriented east or west. "
             f"Got {start_port.orientation!r}."
         )
-    straight_vertical = cpw_length - 2 * arm_horizontal_length - pi * cpw_radius
-    if straight_vertical <= 0:
+    if len(arc_angles) == 0:
+        raise ValueError("folded path requires at least one arc angle")
+    if any(not isfinite(value) for value in (cpw_length, cpw_radius, *arc_angles)):
+        raise ValueError("Path geometry values must be finite.")
+    if cpw_radius <= 0:
+        raise ValueError(f"cpw_radius must be positive, got {cpw_radius!r}.")
+
+    arc_total_length = sum(abs(angle) for angle in arc_angles) / 360.0 * 2 * pi * cpw_radius
+
+    if len(arc_angles) == 2:
+        expected_straight_segments = 2
+    elif len(arc_angles) == 5:
+        expected_straight_segments = 4
+    else:
+        raise ValueError("Unsupported path complexity for this cell. Use 2 or 5 bends only.")
+
+    remaining_straight_length = cpw_length - arc_total_length
+    if remaining_straight_length <= 0:
         raise ValueError(
-            "Each quarter-wave arm must leave a positive vertical remainder. "
-            f"Got {straight_vertical!r}."
+            "Each folded arm requires positive straight segments. "
+            f"Got cpw_length={cpw_length!r}, arc_total_length={arc_total_length!r}, "
+            f"cpw_radius={cpw_radius!r}."
         )
 
-    arm_path = (
-        gf.path.straight(arm_horizontal_length)
-        + gf.path.arc(radius=cpw_radius, angle=first_arc_angle)
-        + gf.path.straight(straight_vertical)
-        + gf.path.arc(radius=cpw_radius, angle=second_arc_angle)
-        + gf.path.straight(arm_horizontal_length)
-    )
+    max_transverse = 2 * cpw_radius
+    if len(arc_angles) == 2:
+        transverse_length = min(max_transverse, remaining_straight_length * 0.5)
+        longitudinal_length = remaining_straight_length - transverse_length
+        if longitudinal_length <= 0:
+            raise ValueError(
+                "Each folded short path requires a non-zero terminal straight segment. "
+                f"Got cpw_length={cpw_length!r}, arc_total_length={arc_total_length!r}, "
+                f"cpw_radius={cpw_radius!r}."
+            )
+        straight_lengths = [transverse_length, longitudinal_length]
+    else:
+        transverse_length = min(max_transverse, remaining_straight_length / 4)
+        longitudinal_length = (remaining_straight_length - 2 * transverse_length) / 2
+        if longitudinal_length <= 0:
+            raise ValueError(
+                "Each folded open path requires non-zero longitudinal straight segments. "
+                f"Got cpw_length={cpw_length!r}, arc_total_length={arc_total_length!r}, "
+                f"cpw_radius={cpw_radius!r}."
+            )
+        straight_lengths = [
+            transverse_length,
+            longitudinal_length,
+            transverse_length,
+            longitudinal_length,
+        ]
+
+    if any(straight <= 0 for straight in straight_lengths):
+        raise ValueError(
+            "Each folded path requires positive straight segments after compact allocation. "
+            f"Computed segments={straight_lengths!r}."
+        )
+
+    if len(straight_lengths) != expected_straight_segments:
+        raise AssertionError("Internal straight-segment accounting is broken.")
+
+    arm_path = gf.Path()
+    for index, angle in enumerate(arc_angles):
+        arm_path += gf.path.arc(radius=cpw_radius, angle=angle)
+        if index < len(straight_lengths):
+            arm_path += gf.path.straight(straight_lengths[index])
+
+    arm_realized_length = float(arm_path.length())
     arm_ref = component << gf.path.extrude(arm_path, cross_section=cross_section)
-    if start_port.orientation == 180:
-        arm_ref.connect("o2", start_port)
-        return arm_ref.ports["o1"]
     arm_ref.connect("o1", start_port)
-    return arm_ref.ports["o2"]
+    return arm_ref.ports["o2"], {
+        "declared_length_um": float(cpw_length),
+        "realized_length_um": arm_realized_length,
+        "straight_segment_length_um": tuple(float(value) for value in straight_lengths),
+        "bend_count": len(arc_angles),
+        "bend_angles_deg": tuple(float(value) for value in arc_angles),
+        "start": str(start_port.name),
+        "end": str(arm_ref.ports["o2"].name),
+    }
 
 
 @gf.cell(tags=["elements"])
 def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
     readout_open_length: float = 2539.512388,
-    readout_short_length: float = 2270.302789,
+    shared_short_length: float = 2270.302789,
     coupled_length: float = 311.256590,
     filter_open_length: float = 2319.359517,
-    filter_short_length: float = 2270.302789,
     cpw_radius: float = 100.0,
-    arm_horizontal_length: float = 500.0,
     single_cpw_xs: CrossSectionSpec = "cpw_6_7_6",
     coupled_cpw_xs: CrossSectionSpec = "coupled_cpw_w7_s6_d3",
     # Layers
@@ -112,20 +166,18 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
     """Return an individual readout/coupled Purcell-filter topology sharing one coupled MTL section.
 
     Public preview defaults:
-    readout_open_length=2539.512388, readout_short_length=2270.302789,
-    coupled_length=311.256590, filter_open_length=2319.359517,
-    filter_short_length=2270.302789, idc_finger_length=59.924760.
+    readout_open_length=2539.512388, shared_short_length=2270.302789,
+    coupled_length=311.256590,
+    filter_open_length=2319.359517, idc_finger_length=59.924760.
     """
 
     for name, value in (
         ("readout_open_length", readout_open_length),
-        ("readout_short_length", readout_short_length),
+        ("shared_short_length", shared_short_length),
         ("coupled_length", coupled_length),
         ("filter_open_length", filter_open_length),
-        ("filter_short_length", filter_short_length),
         ("idc_finger_length", idc_finger_length),
         ("cpw_radius", cpw_radius),
-        ("arm_horizontal_length", arm_horizontal_length),
     ):
         if not isfinite(value) or value <= 0:
             raise ValueError(f"{name} must be finite and positive, got {value!r}.")
@@ -151,14 +203,14 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
         "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators"
     )
     c.info["readout_open_length_um"] = float(readout_open_length)
-    c.info["readout_short_length_um"] = float(readout_short_length)
+    c.info["shared_short_length_um"] = float(shared_short_length)
     c.info["coupled_length_um"] = float(coupled_length)
     c.info["filter_open_length_um"] = float(filter_open_length)
-    c.info["filter_short_length_um"] = float(filter_short_length)
     c.info["idc_finger_length_um"] = float(idc_finger_length)
     c.info["cpw_radius_um"] = float(cpw_radius)
-    c.info["arm_horizontal_length_um"] = float(arm_horizontal_length)
     c.info["ordered_port_names"] = ("o_readout_open", "o_feedline_coupling")
+
+    shared_short_length = float(shared_short_length)
 
     cpw_width = float(single_xs.width)
     etch_section = single_xs["cpw_etch_pos"]
@@ -171,58 +223,73 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
     c.info["readout_trace"] = "r"
     c.info["filter_trace"] = "p"
 
+    shared_coupled_length = float(coupled_length)
     coupled = c << gf.get_component(
         "n_trace_mtl_section",
-        length=coupled_length,
+        length=shared_coupled_length,
         cross_section=coupled_xs,
     )
 
-    _quarter_wave_arm(
-        component=c,
-        start_port=coupled.ports["r_o1"],
-        first_arc_angle=-90.0,
-        second_arc_angle=90.0,
-        cpw_length=readout_short_length,
-        arm_horizontal_length=arm_horizontal_length,
-        cpw_radius=cpw_radius,
-        cross_section=single_xs,
-    )
-    r_right_port = _quarter_wave_arm(
+    readout_short, readout_short_info = _folded_path(
         component=c,
         start_port=coupled.ports["r_o2"],
-        first_arc_angle=90.0,
-        second_arc_angle=-90.0,
-        cpw_length=readout_open_length,
-        arm_horizontal_length=arm_horizontal_length,
+        cpw_length=shared_short_length,
+        arc_angles=(90.0, -90.0),
         cpw_radius=cpw_radius,
         cross_section=single_xs,
     )
-    _quarter_wave_arm(
-        component=c,
-        start_port=coupled.ports["p_o1"],
-        first_arc_angle=90.0,
-        second_arc_angle=-90.0,
-        cpw_length=filter_short_length,
-        arm_horizontal_length=arm_horizontal_length,
-        cpw_radius=cpw_radius,
-        cross_section=single_xs,
-    )
-    p_right_port = _quarter_wave_arm(
+    filter_short, filter_short_info = _folded_path(
         component=c,
         start_port=coupled.ports["p_o2"],
-        first_arc_angle=-90.0,
-        second_arc_angle=90.0,
+        cpw_length=shared_short_length,
+        arc_angles=(-90.0, 90.0),
+        cpw_radius=cpw_radius,
+        cross_section=single_xs,
+    )
+    filter_open, filter_open_info = _folded_path(
+        component=c,
+        start_port=coupled.ports["p_o1"],
         cpw_length=filter_open_length,
-        arm_horizontal_length=arm_horizontal_length,
+        arc_angles=(90.0, -90.0, -90.0, -90.0, -90.0),
+        cpw_radius=cpw_radius,
+        cross_section=single_xs,
+    )
+    readout_open, readout_open_info = _folded_path(
+        component=c,
+        start_port=coupled.ports["r_o1"],
+        cpw_length=readout_open_length,
+        arc_angles=(-90.0, 90.0, 90.0, 90.0, 90.0),
         cpw_radius=cpw_radius,
         cross_section=single_xs,
     )
 
     c.info["short_termination"] = "cpw_gap_stop"
+    c.info["path_geometry"] = {
+        "mtl_instance": {
+            "length_um": shared_coupled_length,
+            "r_ports": ("r_o1", "r_o2"),
+            "p_ports": ("p_o1", "p_o2"),
+            "ports": {
+                "r_o1": tuple(coupled.ports["r_o1"].center),
+                "r_o2": tuple(coupled.ports["r_o2"].center),
+                "p_o1": tuple(coupled.ports["p_o1"].center),
+                "p_o2": tuple(coupled.ports["p_o2"].center),
+            },
+        },
+        "readout_short": readout_short_info,
+        "filter_short": filter_short_info,
+        "readout_open": readout_open_info,
+        "filter_open": filter_open_info,
+        "short_length_um": shared_short_length,
+        "idc_outer_port": {
+            "name": "o_feedline_coupling",
+            "orientation": 270,
+        },
+    }
 
     readout_open_cap = _add_open_end_cap(
         component=c,
-        end_port=r_right_port,
+        end_port=readout_open,
         etch_width=float(etch_section.width),
         cpw_width=cpw_width,
         etch_layer=etch_layer,
@@ -238,24 +305,26 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
         etch_layer=etch_layer,
         ground_mask_layer=ground_mask_layer,
     )
-    capacitor.connect("o_capacitor_in", p_right_port)
+    capacitor.connect("o_capacitor_in", filter_open)
+    if capacitor.ports["o_capacitor_out"].orientation != 270:
+        raise ValueError(
+            "IDC cap outer port orientation must be 270 for this preview topology. "
+            f"Got {capacitor.ports['o_capacitor_out'].orientation!r}."
+        )
     c.info["filter_capacitor_instance"] = "interdigital_capacitor"
-
-    c.add_port(
-        "o_readout_open",
-        center=readout_open_cap.ports["o2"].center,
-        width=cpw_width,
-        orientation=readout_open_cap.ports["o2"].orientation,
-        layer=readout_open_cap.ports["o2"].layer,
-        port_type="placement",
+    c.info["path_geometry"]["idc_outer_port"]["orientation"] = int(
+        capacitor.ports["o_capacitor_out"].orientation
     )
-    c.add_port(
-        "o_feedline_coupling",
-        center=capacitor.ports["o_capacitor_out"].center,
-        width=cpw_width,
-        orientation=270,
-        layer=single_xs["cpw_draw"].layer,
-        port_type="placement",
+
+    c.add_port(port=readout_open_cap.ports["o2"], name="o_readout_open")
+    c.add_port(port=capacitor.ports["o_capacitor_out"], name="o_feedline_coupling")
+    pair_bbox = c.bbox()
+    c.info["pair_bbox_um"] = {
+        "width": float(pair_bbox.width()),
+        "height": float(pair_bbox.height()),
+    }
+    c.info["path_geometry"]["idc_outer_port"]["center_um"] = tuple(
+        capacitor.ports["o_capacitor_out"].center
     )
 
     return c

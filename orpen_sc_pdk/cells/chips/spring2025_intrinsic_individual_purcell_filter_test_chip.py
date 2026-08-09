@@ -14,8 +14,6 @@ from orpen_sc_pdk.tech import LAYER
 def spring2025_intrinsic_individual_purcell_filter_test_chip(
     chip_width: float = 5000.0,
     chip_height: float = 5000.0,
-    pad_reference_x: float = 2450.0,
-    feedline_y: float = -2200.0,
     cpw_xs: CrossSectionSpec = "cpw_6_7_6",
     cpw_radius: float = 100.0,
     # Layers
@@ -23,6 +21,7 @@ def spring2025_intrinsic_individual_purcell_filter_test_chip(
     etch_layer: Layer = LAYER.D0_TOP_M1_ETCH,
     ground_mask_layer: Layer = LAYER.D0_TOP_GROUND_MASK,
     sim_boundary_layer: Layer = LAYER.D0_TOP_SIM_BOUNDARY,
+    t_branch_length: float = 100.0,
 ) -> gf.Component:
     """Return a 5000x5000 preview test chip with one Purcell-filter pair and feedline."""
 
@@ -31,25 +30,13 @@ def spring2025_intrinsic_individual_purcell_filter_test_chip(
     for name, value in (
         ("chip_width", chip_width),
         ("chip_height", chip_height),
-        ("pad_reference_x", pad_reference_x),
-        ("feedline_y", feedline_y),
         ("cpw_radius", cpw_radius),
+        ("t_branch_length", t_branch_length),
     ):
         if not isfinite(value):
             raise ValueError(f"{name} must be finite, got {value!r}.")
-        if value <= 0 and name != "feedline_y":
+        if value <= 0:
             raise ValueError(f"{name} must be positive, got {value!r}.")
-
-    if pad_reference_x >= chip_width / 2:
-        raise ValueError(
-            "pad_reference_x must leave room inside the dicing edge. "
-            f"Got pad_reference_x={pad_reference_x!r}, chip_width={chip_width!r}."
-        )
-    if abs(feedline_y) > chip_height / 2:
-        raise ValueError(
-            "feedline_y must lie inside the chip bounds. "
-            f"Got feedline_y={feedline_y!r}, chip_height={chip_height!r}."
-        )
 
     c = gf.Component()
     c << gf.get_component(
@@ -63,20 +50,13 @@ def spring2025_intrinsic_individual_purcell_filter_test_chip(
         "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators"
     )
     pair = c << pair_comp
-    pair.move(origin=(pair.center[0], pair.center[1]), destination=(0.0, 0.0))
-
-    pair_port = pair.ports["o_feedline_coupling"]
     t = c << gf.get_component(
         "cpw_t_junction",
         trunk_length=200.0,
-        branch_length=100.0,
+        branch_length=t_branch_length,
         cross_section=cpw_xs,
     )
-    t.move(
-        origin=(t.center[0], t.center[1]),
-        destination=(pair_port.x, feedline_y),
-    )
-    t.dmovey(feedline_y - t.ports["o1"].y)
+    pair.connect("o_feedline_coupling", t.ports["o_branch"])
 
     launcher = gf.get_component(
         "launcher",
@@ -88,16 +68,12 @@ def spring2025_intrinsic_individual_purcell_filter_test_chip(
     )
 
     left_launcher = c << launcher
-    left_launcher.move(
-        origin=left_launcher.ports["o_pad"].center,
-        destination=(-pad_reference_x, feedline_y),
-    )
+    left_launcher.movex(-chip_width / 2 + dicing_edge_width - left_launcher.xmin)
+    left_launcher.movey(-left_launcher.ports["o_pad"].y)
     right_launcher = c << launcher
     right_launcher.rotate(180)
-    right_launcher.move(
-        origin=right_launcher.ports["o_pad"].center,
-        destination=(pad_reference_x, feedline_y),
-    )
+    right_launcher.movex(chip_width / 2 - dicing_edge_width - right_launcher.xmax)
+    right_launcher.movey(-right_launcher.ports["o_pad"].y)
 
     route_xs = gf.get_cross_section(
         cpw_xs,
@@ -139,34 +115,29 @@ def spring2025_intrinsic_individual_purcell_filter_test_chip(
     ):
         raise ValueError("Right feed route does not land on T-junction o2.")
 
-    pair_branch_length = pair_port.y - t.ports["o_branch"].y
-    if pair_branch_length <= 0:
+    if (
+        abs(pair.ports["o_feedline_coupling"].x - t.ports["o_branch"].x) > 1e-6
+        or abs(pair.ports["o_feedline_coupling"].y - t.ports["o_branch"].y) > 1e-6
+    ):
+        raise ValueError("Pair IDC-to-T o_branch connection is not coincident.")
+    if abs(left_route_length - right_route_length) > 1e-6:
         raise ValueError(
-            "pair o_feedline_coupling must lie above T branch origin. "
-            f"Got pair.y={pair_port.y!r}, branch_origin={t.ports['o_branch'].y!r}."
+            "Launcher-to-T feed route lengths are not symmetric. "
+            f"Got left={left_route_length!r}, right={right_route_length!r}."
         )
-    branch_route = c << gf.path.extrude(
-        gf.path.straight(pair_branch_length),
-        cross_section=route_xs,
-    )
-    branch_route.drotate(-90)
-    branch_route.connect("o2", t.ports["o_branch"])
-    if (
-        abs(branch_route.ports["o1"].x - pair_port.x) > 1e-3
-        or abs(branch_route.ports["o1"].y - pair_port.y) > 1e-3
-    ):
-        raise ValueError("Branch route does not land on pair o_feedline_coupling.")
 
-    dicing_half_x = chip_width / 2 + dicing_edge_width
-    dicing_half_y = chip_height / 2 + dicing_edge_width
-    bbox = c.bbox()
+    chip_half_x = chip_width / 2
+    chip_half_y = chip_height / 2
+    functional_bbox = pair.bbox() + t.bbox() + left_launcher.bbox() + right_launcher.bbox()
+    functional_bbox += left_route.bbox()
+    functional_bbox += right_route.bbox()
     if (
-        bbox.left < -dicing_half_x - 1e-6
-        or bbox.right > dicing_half_x + 1e-6
-        or bbox.bottom < -dicing_half_y - 1e-6
-        or bbox.top > dicing_half_y + 1e-6
+        functional_bbox.left < -chip_half_x - 1e-6
+        or functional_bbox.right > chip_half_x + 1e-6
+        or functional_bbox.bottom < -chip_half_y - 1e-6
+        or functional_bbox.top > chip_half_y + 1e-6
     ):
-        raise ValueError("Functional chip geometry extends beyond the dicing-edge outer boundary.")
+        raise ValueError("Functional chip geometry extends beyond the 5000x5000 inner opening.")
 
     c.add_port("o1", port=left_launcher.ports["o_pad"])
     c.add_port("o2", port=right_launcher.ports["o_pad"])
@@ -179,13 +150,47 @@ def spring2025_intrinsic_individual_purcell_filter_test_chip(
     c.info["ordered_port_names"] = ("o1", "o2")
     c.info["pair_topology"] = pair_comp.info.get("topology")
     c.info["pair_ports"] = tuple(port.name for port in pair.ports)
-    c.info["pad_reference_x"] = float(pad_reference_x)
-    c.info["feedline_y"] = float(feedline_y)
+    c.info["chip_inner_size_um"] = (float(chip_width), float(chip_height))
+    c.info["dicing_edge_width_um"] = float(dicing_edge_width)
+    c.info["launcher_positions"] = {
+        "left_bbox_left_um": float(left_launcher.xmin),
+        "right_bbox_right_um": float(right_launcher.xmax),
+        "left_clearance_to_inner_left_um": float(left_launcher.xmin + chip_width / 2),
+        "right_clearance_to_inner_right_um": float(chip_width / 2 - right_launcher.xmax),
+    }
+    c.info["launch_routes_um"] = {
+        "left_route_length": float(left_route_length),
+        "right_route_length": float(right_route_length),
+        "route_length_delta_um": float(left_route_length - right_route_length),
+    }
     c.info["junction_ports"] = {
+        "junction_center": ((t.ports["o1"].x + t.ports["o2"].x) / 2, t.ports["o1"].y),
         "o1": t.ports["o1"].center,
         "o2": t.ports["o2"].center,
         "o_branch": t.ports["o_branch"].center,
     }
+    c.info["pair_t_connection"] = {
+        "pair_feed_coupler": pair.ports["o_feedline_coupling"].center,
+        "t_branch": t.ports["o_branch"].center,
+        "declared_t_branch_length_um": float(t_branch_length),
+        "delta_um": (
+            float(pair.ports["o_feedline_coupling"].x - t.ports["o_branch"].x),
+            float(pair.ports["o_feedline_coupling"].y - t.ports["o_branch"].y),
+        ),
+    }
+    c.info["pair_bbox_um"] = {
+        "width": float(pair.bbox().width()),
+        "height": float(pair.bbox().height()),
+    }
+    c.info["pair_geometry_receipt"] = pair_comp.info.get("path_geometry")
+    if abs(left_launcher.ports["o_pad"].y) > 1e-6 or abs(right_launcher.ports["o_pad"].y) > 1e-6:
+        raise ValueError("Launcher pad ports must be y=0.")
+    if abs(t.ports["o1"].y - t.ports["o2"].y) > 1e-6:
+        raise ValueError("T-junction is not level on feedline axis.")
+    if abs((t.ports["o1"].x + t.ports["o2"].x) / 2) > 1e-6 or abs(t.ports["o1"].y) > 1e-6:
+        raise ValueError("T-junction center should be exactly (0,0).")
+    if abs(t.ports["o_branch"].x) > 1e-6:
+        raise ValueError("T-junction branch x should be 0.")
 
     return c
 
