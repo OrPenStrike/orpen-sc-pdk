@@ -101,9 +101,19 @@ website:
 
 format:
   html:
-    theme: cosmo
-    css: styles.css
+    theme:
+      light: [cosmo, theme-light.scss]
+      dark: [cosmo, theme-dark.scss]
+    css: [styles.css, layout-viewer.css]
+    html-math-method: mathjax
+    respect-user-color-scheme: true
     toc: true
+    page-layout: article
+    grid:
+      sidebar-width: 260px
+      body-width: 960px
+      margin-width: 240px
+      gutter-width: 2.5rem
     code-copy: true
     code-overflow: wrap
 

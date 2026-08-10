@@ -1,0 +1,34 @@
+/*-- scss:defaults --*/
+
+$body-bg: #111827;
+$body-color: #dbe6f3;
+$link-color: #7bb7f0;
+$navbar-bg: #0f1724;
+$navbar-fg: #dbe6f3;
+$sidebar-bg: #111827;
+$sidebar-fg: #dbe6f3;
+$border-color: #2b3a4f;
+$code-bg: #182235;
+$code-color: #b8e6c1;
+$pre-color: $code-color;
+$callout-color-note: #7bb7f0;
+
+$mermaid-bg-color: #111827;
+$mermaid-edge-color: #91a4bd;
+$mermaid-node-bg-color: #1d2b3f;
+$mermaid-node-fg-color: #eaf2fb;
+$mermaid-fg-color: #eaf2fb;
+$mermaid-label-bg-color: #111827;
+$mermaid-label-fg-color: #eaf2fb;
+
+/*-- scss:rules --*/
+
+:root {
+  --scq-surface: #182235;
+  --scq-surface-muted: #1d2b3f;
+  --scq-text-secondary: #a8b7ca;
+  --scq-line-subtle: #2b3a4f;
+  --scq-accent: #7bb7f0;
+  --mermaid-fg-color--lighter: #3f516a;
+  --mermaid-fg-color--lightest: #1d2b3f;
+}
