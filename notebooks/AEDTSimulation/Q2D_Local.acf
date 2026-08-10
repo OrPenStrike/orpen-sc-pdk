@@ -1,0 +1,34 @@
+$begin 'Configs'
+	$begin 'Configs'
+		$begin 'DSOConfig'
+			ConfigName='OrPen_Q2D_Local'
+			DesignType='2D Extractor'
+			$begin 'DSOMachineList'
+				$begin 'DSOMachineInfo'
+					MachineName='localhost'
+					NumEngines=1
+					NumCores=4
+					IsEnabled=true
+					RAMPercent=12
+					NumJobCores=0
+					NumGPUs=0
+				$end 'DSOMachineInfo'
+			$end 'DSOMachineList'
+			UseAutoSettings=true
+			NumVariationsToDistribute=1
+			$begin 'DSOJobDistributionInfo'
+				AllowedDistributionTypes[5: 'Variations', 'Frequencies', 'Mesh Assembly', 'Transient Excitations', 'Domain Solver']
+				Enable2LevelDistribution=false
+				NumL1Engines=0
+				UseDefaultsForDistributionTypes=false
+				Context()
+			$end 'DSOJobDistributionInfo'
+			$begin 'DSOMachineOptionsInfo'
+				MenuValues()
+				IntValues()
+				BoolValues()
+				DoubleValues()
+			$end 'DSOMachineOptionsInfo'
+		$end 'DSOConfig'
+	$end 'Configs'
+$end 'Configs'
