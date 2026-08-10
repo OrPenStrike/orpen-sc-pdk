@@ -71,20 +71,30 @@ def _validate_manifest(manifest: dict[str, Any], path: str | Path) -> None:
         recipes = case.get("recipes")
         if not isinstance(recipes, list) or not recipes:
             raise RuntimeError(f"AEDT manifest {path} case {case.get('id')!r} needs recipes")
-        requires_layout_artifacts = any(
-            recipe.get("type") != "q2d_extraction"
-            or recipe.get("q2d_geometry_mode") != "semantic_cross_section"
+        layout_recipes = [
+            recipe
             for recipe in recipes
             if isinstance(recipe, dict)
-        )
-        if requires_layout_artifacts:
+            and (
+                recipe.get("type") != "q2d_extraction"
+                or recipe.get("q2d_geometry_mode") != "semantic_cross_section"
+            )
+        ]
+        if not layout_recipes:
+            if not str(case.get("q2d_cross_section") or "").strip():
+                raise RuntimeError(
+                    f"AEDT manifest {path} semantic Q2D case.q2d_cross_section is required"
+                )
+        elif any(recipe.get("type") == "q3d_extraction" for recipe in layout_recipes):
+            for key in ("gds", "layer_mapping_json"):
+                if not str(case.get(key) or "").strip():
+                    raise RuntimeError(
+                        f"AEDT manifest {path} direct-GDS Q3D case.{key} is required"
+                    )
+        if any(recipe.get("type") != "q3d_extraction" for recipe in layout_recipes):
             for key in ("gds", "tech"):
                 if not str(case.get(key) or "").strip():
                     raise RuntimeError(f"AEDT manifest {path} case.{key} is required")
-        elif not str(case.get("q2d_cross_section") or "").strip():
-            raise RuntimeError(
-                f"AEDT manifest {path} semantic Q2D case.q2d_cross_section is required"
-            )
         for recipe in recipes:
             if not isinstance(recipe, dict):
                 raise RuntimeError(f"AEDT manifest {path} recipes must contain mappings")

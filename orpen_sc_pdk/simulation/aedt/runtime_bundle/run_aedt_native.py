@@ -1452,14 +1452,6 @@ def run_hfss_eigenmode(case, recipe, manifest, package_root, result_dir, log_dir
 
 @recipe_handler("q3d_extraction")
 def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir, args):
-    layout = import_gds_layout(case, recipe, manifest, package_root, result_dir, log_dir, args)
-    setup = create_layout_setup(layout, recipe)
-    export_file = result_dir / f"{case['id']}_{recipe['id']}.q3d"
-    try:
-        setup.export_to_q3d(str(export_file), keep_net_name=True, unite=True)
-    except AttributeError:
-        log(log_dir, "Setup3DLayout.export_to_q3d is unavailable in this PyAEDT version.")
-
     from ansys.aedt.core import Q3d
 
     q3d = create_aedt_app(
@@ -1467,20 +1459,47 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
         args,
         project=manifest["project"]["path"],
         design=recipe["design_name"],
-        **aedt_constructor_kwargs(args, new_desktop=False),
+        **aedt_constructor_kwargs(args),
     )
     ensure_design_modeler_units(q3d, recipe, recipe["type"])
+    mapping_payload = load_layer_mapping(case, package_root)
+    mapping_layers = q2d_import_mapping_layers(mapping_payload, recipe_modeler_units(recipe))
     material_context = load_aedt_material_context(case, package_root)
-    ensure_aedt_project_materials(q3d, material_context, result_dir)
-    names = object_names(q3d)
-    source_matches = []
-    if recipe.get("source_patterns"):
-        source_matches = match_patterns(
-            names,
-            recipe["source_patterns"],
-            label="Q3D source patterns",
-            min_count=1,
+    material_summary = ensure_aedt_project_materials(q3d, material_context, result_dir)
+    gds_path = package_path(package_root, case["gds"])
+    with aedt_blocking_stage_heartbeat(
+        log_dir,
+        "q3d_import_gds_3d",
+        project_path=manifest["project"]["path"],
+        extra_paths={"gds": gds_path, "result_dir": result_dir},
+        metadata={
+            "case_id": case["id"],
+            "recipe_id": recipe["id"],
+            "design": recipe["design_name"],
+        },
+    ):
+        ok = q3d.import_gds_3d(
+            str(gds_path),
+            mapping_layers,
+            units=recipe_modeler_units(recipe),
+            import_method=1,
         )
+    if not ok:
+        raise RuntimeError(f"Q3d.import_gds_3d failed for case {case['id']}")
+    renames = rename_modeler_objects_for_layer_stack(q3d, material_context, section_only=False)
+    assign_imported_materials(
+        q3d,
+        mapping_payload.get("gds_import_layers", []),
+        recipe,
+        material_context,
+    )
+    imported_objects = object_inventory(q3d, material_context)
+    write_json(result_dir / "object_inventory_imported.json", imported_objects)
+    assignment = assign_q3d_nets(q3d, recipe)
+    setup = create_q3d_setup(q3d, recipe)
+    write_json(result_dir / "assignment_summary.json", assignment)
+    if not q3d.save_project():
+        raise RuntimeError("Q3D failed to save the pre-solve GUI-auditable project")
     solve_status = {
         "mode": args.mode,
         "analyze_setup": None,
@@ -1490,9 +1509,8 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
     }
     if args.mode == "solve":
         stage_timing = solve_status["stage_timing"]
-        setup_name = recipe.get("setup_name", "Setup1")
-        analyze_ok = timed_stage(stage_timing, "analyze_setup", q3d.analyze_setup, setup_name)
-        solve_status["analyze_setup"] = {"setup": setup_name, "return_value": bool(analyze_ok)}
+        analyze_ok = timed_stage(stage_timing, "analyze_setup", q3d.analyze_setup, setup.name)
+        solve_status["analyze_setup"] = {"setup": setup.name, "return_value": bool(analyze_ok)}
         matrix_exports = timed_stage(
             stage_timing,
             "export_q3d_matrices",
@@ -1504,26 +1522,178 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
         solve_status["matrix_exports"] = matrix_exports
         solve_status["benchmark_exports"] = export_aedt_benchmark_artifacts(
             q3d,
-            setup_name,
+            setup.name,
             result_dir,
             solver_type=recipe["type"],
             problem_types=recipe.get("matrix_problem_types", ("C", "AC RL")),
             stage_timing=stage_timing,
         )
         write_json(result_dir / "solve_timing.json", {"stage_timing": stage_timing})
-    write_json(
-        result_dir / "assignment_summary.json",
-        {"recipe_type": recipe["type"], "source_matches": source_matches},
-    )
+        if not q3d.save_project():
+            raise RuntimeError("Q3D failed to save the exported GUI-auditable project")
     write_json(
         result_dir / "simulation_metadata.json",
         {
             "recipe_type": recipe["type"],
-            "setup": recipe.get("setup_name", "Setup1"),
+            "setup": q3d_setup_summary(recipe, setup),
+            "source_identity": q3d_source_hashes(case, package_root),
+            "import": {
+                "method": "Q3d.import_gds_3d",
+                "mapping_layers": mapping_layers,
+                "renames": renames,
+                "material_summary": material_summary,
+                "object_count": len(imported_objects),
+            },
+            "net_definitions": assignment,
+            "output_paths": {
+                "result_dir": str(result_dir),
+                "project_path": str(manifest["project"]["path"]),
+            },
             "solve_status": solve_status,
         },
     )
-    q3d.save_project()
+
+
+def q3d_source_hashes(case, package_root):
+    """Return the immutable source identities consumed by direct-GDS Q3D."""
+
+    keys = ("gds", "layer_mapping_json", "aedt_material_context")
+    source_hashes = {
+        key: file_sha256(package_path(package_root, case[key])) for key in keys if case.get(key)
+    }
+    source_hashes["runtime_bundle_run_aedt_native_py"] = file_sha256(Path(__file__).resolve())
+    return source_hashes
+
+
+def create_q3d_setup(q3d, recipe):
+    """Create the requested Q3D setup without adding candidate convergence policy."""
+
+    setup = q3d.create_setup(
+        name=recipe.get("setup_name", "Setup1"),
+        **dict(recipe.get("setup_options") or {}),
+    )
+    if setup is None:
+        raise RuntimeError("Q3d.create_setup did not return a setup")
+    return setup
+
+
+def q3d_setup_summary(recipe, setup):
+    """Return setup provenance while preserving AEDT's actual defaults."""
+
+    return {
+        "name": setup.name,
+        "requested_options": dict(recipe.get("setup_options") or {}),
+        "props": q3d_json_safe(getattr(setup, "props", {}) or {}),
+    }
+
+
+def q3d_json_safe(value):
+    """Normalize PyAEDT setup values before they cross the JSON audit boundary."""
+
+    try:
+        return json.loads(json.dumps(value, default=str, allow_nan=False))
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def assign_q3d_nets(q3d, recipe):
+    """Assign and independently read back exact Q3D signal and ground nets."""
+
+    if recipe.get("source_patterns"):
+        raise RuntimeError(
+            "Direct-GDS Q3D requires net_patterns; source_patterns are not a permissive "
+            "fallback. Regenerate the package with explicit net assignments."
+        )
+    patterns_by_net = dict(recipe.get("net_patterns") or {})
+    if not patterns_by_net:
+        raise RuntimeError("Direct-GDS Q3D requires explicit net_patterns")
+    if not recipe.get("reference_patterns"):
+        raise RuntimeError("Direct-GDS Q3D requires reference_patterns for exactly one ground")
+    if q3d.net_names:
+        raise RuntimeError(
+            "Direct-GDS Q3D target design already has nets; use a fresh project/design "
+            "rather than merging assignments."
+        )
+
+    names = modeler_object_names(q3d)
+    requested = {}
+    object_owner = {}
+    for net_name, patterns in sorted(patterns_by_net.items()):
+        matches = match_patterns(
+            names,
+            patterns,
+            label=f"Q3D net {net_name!r}",
+            min_count=1,
+        )
+        for name in matches:
+            if name in object_owner:
+                raise RuntimeError(
+                    f"Q3D net patterns overlap on {name!r}: {object_owner[name]!r} and {net_name!r}"
+                )
+            object_owner[name] = net_name
+        requested[net_name] = matches
+
+    ground_matches = match_patterns(
+        names,
+        recipe["reference_patterns"],
+        label="Q3D reference patterns",
+        min_count=1,
+    )
+    reference_nets = [
+        name for name, matches in requested.items() if set(matches).intersection(ground_matches)
+    ]
+    if len(reference_nets) != 1:
+        raise RuntimeError(
+            "Q3D reference patterns must identify exactly one requested net; "
+            f"reference={ground_matches}, matching_nets={reference_nets}, requested={requested}"
+        )
+    ground_net = reference_nets[0]
+    if set(requested[ground_net]) != set(ground_matches):
+        raise RuntimeError(
+            "Q3D reference patterns must identify every object of their one requested net; "
+            f"ground_net={ground_net!r}, reference={ground_matches}, "
+            f"requested={requested[ground_net]}"
+        )
+
+    for net_name, matches in requested.items():
+        net_type = "Ground" if net_name == ground_net else "Signal"
+        boundary = q3d.assign_net(matches, net_name=net_name, net_type=net_type)
+        if boundary is None:
+            raise RuntimeError(f"Q3D failed to assign net {net_name!r}")
+
+    readback = {}
+    actual_names = set(q3d.net_names)
+    expected_names = set(requested)
+    if actual_names != expected_names:
+        raise RuntimeError(
+            f"Q3D net readback mismatch: expected={expected_names}, actual={actual_names}"
+        )
+    for net_name in sorted(expected_names):
+        boundary = q3d.design_nets.get(net_name)
+        if boundary is None:
+            raise RuntimeError(f"Q3D net {net_name!r} is absent from design-net readback")
+        objects_by_net = q3d.objects_from_nets(net_name)
+        if not isinstance(objects_by_net, dict):
+            raise RuntimeError(
+                f"Q3D net {net_name!r} object readback is not a mapping: {objects_by_net!r}"
+            )
+        actual_objects = sorted(objects_by_net.get(net_name, []))
+        expected_objects = requested[net_name]
+        expected_type = "GroundNet" if net_name == ground_net else "SignalNet"
+        if actual_objects != expected_objects or boundary.type != expected_type:
+            raise RuntimeError(
+                f"Q3D net {net_name!r} readback mismatch: expected objects={expected_objects}, "
+                f"type={expected_type}; actual objects={actual_objects}, type={boundary.type}"
+            )
+        readback[net_name] = {"objects": actual_objects, "type": boundary.type}
+    return {
+        "recipe_type": recipe["type"],
+        "requested_patterns": patterns_by_net,
+        "reference_patterns": list(recipe["reference_patterns"]),
+        "ground_net": ground_net,
+        "requested_objects": requested,
+        "readback": readback,
+    }
 
 
 @recipe_handler("q2d_extraction")

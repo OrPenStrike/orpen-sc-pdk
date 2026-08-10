@@ -449,9 +449,16 @@ class AedtRecipeSpec(BaseModel):
             )
         if self.type == "hfss_eigenmode" and self.mode_count is None:
             raise ValueError("hfss_eigenmode recipes require mode_count")
-        if self.type == "q3d_extraction" and not (self.source_patterns or self.net_patterns):
-            raise ValueError("q3d_extraction recipes require source_patterns or net_patterns")
         if self.type == "q3d_extraction":
+            if self.source_patterns:
+                raise ValueError(
+                    "direct-GDS q3d_extraction recipes forbid source_patterns; "
+                    "use explicit net_patterns"
+                )
+            if not self.net_patterns:
+                raise ValueError("direct-GDS q3d_extraction recipes require net_patterns")
+            if not self.reference_patterns:
+                raise ValueError("direct-GDS q3d_extraction recipes require reference_patterns")
             invalid = sorted(set(self.matrix_problem_types) - {"C", "AC RL", "DC RL"})
             if invalid:
                 raise ValueError(
@@ -521,13 +528,30 @@ class AedtNativeCaseSpec(BaseModel):
         recipe_ids = [recipe.id for recipe in self.recipes]
         if len(recipe_ids) != len(set(recipe_ids)):
             raise ValueError(f"case {self.id!r} has duplicate recipe ids")
-        requires_layout_artifacts = any(
+        requires_gds = any(
             recipe.type != "q2d_extraction" or recipe.q2d_geometry_mode != "semantic_cross_section"
             for recipe in self.recipes
         )
-        if requires_layout_artifacts and (self.gds_path is None or self.tech_path is None):
+        requires_tech = any(
+            recipe.type not in {"q3d_extraction", "q2d_extraction"}
+            or recipe.q2d_geometry_mode != "semantic_cross_section"
+            and recipe.type == "q2d_extraction"
+            for recipe in self.recipes
+        )
+        if requires_gds and requires_tech and self.gds_path is None and self.tech_path is None:
             raise ValueError(
                 f"case {self.id!r} has layout-backed recipes and requires gds_path and tech_path"
+            )
+        if requires_gds and self.gds_path is None:
+            raise ValueError(f"case {self.id!r} has layout-backed recipes and requires gds_path")
+        if requires_tech and self.tech_path is None:
+            raise ValueError(f"case {self.id!r} has TECH-backed recipes and requires tech_path")
+        if (
+            any(recipe.type == "q3d_extraction" for recipe in self.recipes)
+            and self.layer_mapping_json_path is None
+        ):
+            raise ValueError(
+                f"case {self.id!r} uses direct-GDS Q3D and requires layer_mapping_json_path"
             )
         if any(
             recipe.type == "q2d_extraction"
