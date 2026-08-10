@@ -60,8 +60,9 @@ def _folded_path(
     arc_angles: tuple[float, ...],
     cpw_radius: float,
     cross_section: object,
+    connection_authoring: str = "MTL_to_IDC",
 ) -> tuple[gf.Port, dict[str, object]]:
-    """Add a folded CPW arm and return its output port plus simple geometry receipt."""
+    """Add a folded CPW arm and return its free/facing port plus simple geometry receipt."""
 
     if start_port.orientation not in {0, 180}:
         raise ValueError(
@@ -74,6 +75,11 @@ def _folded_path(
         raise ValueError("Path geometry values must be finite.")
     if cpw_radius <= 0:
         raise ValueError(f"cpw_radius must be positive, got {cpw_radius!r}.")
+    if connection_authoring not in {"MTL_to_IDC", "IDC_to_MTL"}:
+        raise ValueError(
+            "connection_authoring must be 'MTL_to_IDC' or 'IDC_to_MTL', "
+            f"got {connection_authoring!r}."
+        )
 
     arc_total_length = sum(abs(angle) for angle in arc_angles) / 360.0 * 2 * pi * cpw_radius
 
@@ -112,12 +118,20 @@ def _folded_path(
                 f"Got cpw_length={cpw_length!r}, arc_total_length={arc_total_length!r}, "
                 f"cpw_radius={cpw_radius!r}."
             )
-        straight_lengths = [
-            transverse_length,
-            longitudinal_length,
-            transverse_length,
-            longitudinal_length,
-        ]
+        if connection_authoring == "IDC_to_MTL":
+            straight_lengths = [
+                longitudinal_length,
+                transverse_length,
+                longitudinal_length,
+                transverse_length,
+            ]
+        else:
+            straight_lengths = [
+                transverse_length,
+                longitudinal_length,
+                transverse_length,
+                longitudinal_length,
+            ]
 
     if any(straight <= 0 for straight in straight_lengths):
         raise ValueError(
@@ -136,15 +150,35 @@ def _folded_path(
 
     arm_realized_length = float(arm_path.length())
     arm_ref = component << gf.path.extrude(arm_path, cross_section=cross_section)
-    arm_ref.connect("o1", start_port)
-    return arm_ref.ports["o2"], {
+    if connection_authoring == "MTL_to_IDC":
+        connect_port_name = "o1"
+        free_port_name = "o2"
+    else:
+        connect_port_name = "o2"
+        free_port_name = "o1"
+    arm_ref.connect(connect_port_name, start_port)
+    free_port = arm_ref.ports[free_port_name]
+    return free_port, {
         "declared_length_um": float(cpw_length),
         "realized_length_um": arm_realized_length,
         "straight_segment_length_um": tuple(float(value) for value in straight_lengths),
+        "authored_direction": connection_authoring,
+        "local_turn_sequence": tuple("L" if value > 0 else "R" for value in arc_angles),
         "bend_count": len(arc_angles),
         "bend_angles_deg": tuple(float(value) for value in arc_angles),
-        "start": str(start_port.name),
-        "end": str(arm_ref.ports["o2"].name),
+        "connection_port": {
+            "name": str(connect_port_name),
+            "x": float(arm_ref.ports[connect_port_name].x),
+            "y": float(arm_ref.ports[connect_port_name].y),
+            "orientation": float(arm_ref.ports[connect_port_name].orientation),
+        },
+        "free_port": {
+            "name": str(free_port_name),
+            "x": float(free_port.x),
+            "y": float(free_port.y),
+            "orientation": float(free_port.orientation),
+        },
+        "connected_to": str(start_port.name),
     }
 
 
@@ -250,17 +284,19 @@ def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
         component=c,
         start_port=coupled.ports["p_o1"],
         cpw_length=filter_open_length,
-        arc_angles=(90.0, -90.0, -90.0, -90.0, -90.0),
+        arc_angles=(90.0, -90.0, -90.0, 90.0, -90.0),
         cpw_radius=cpw_radius,
         cross_section=single_xs,
+        connection_authoring="IDC_to_MTL",
     )
     readout_open, readout_open_info = _folded_path(
         component=c,
         start_port=coupled.ports["r_o1"],
         cpw_length=readout_open_length,
-        arc_angles=(-90.0, 90.0, 90.0, 90.0, 90.0),
+        arc_angles=(-90.0, 90.0, 90.0, -90.0, 90.0),
         cpw_radius=cpw_radius,
         cross_section=single_xs,
+        connection_authoring="IDC_to_MTL",
     )
 
     c.info["short_termination"] = "cpw_gap_stop"
