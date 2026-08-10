@@ -6,6 +6,8 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+/docs-quarto/
+/docs/_build/
 /batch.log
 notebooks/*.ipynb
 orpen_sc_pdk/cells/privates/*
