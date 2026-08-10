@@ -9,7 +9,7 @@ dist/
 /docs/_build/
 /docs-quarto/.quarto/
 /docs-quarto/_site/
-/batch.log
+batch.log
 notebooks/*.ipynb
 orpen_sc_pdk/cells/privates/*
 !orpen_sc_pdk/cells/privates/.gitkeep

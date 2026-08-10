@@ -25,7 +25,6 @@ from orpen_sc_pdk.cells import (
     resonator,
     resonator_hanger,
     resonator_meander,
-    spring2025_intrinsic_individual_purcell_filter_test_chip,
     straight,
     taper,
 )
@@ -63,9 +62,6 @@ _cells = {
     "cpw_t_junction": cpw_t_junction,
     "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators": (
         capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators
-    ),
-    "spring2025_intrinsic_individual_purcell_filter_test_chip": (
-        spring2025_intrinsic_individual_purcell_filter_test_chip
     ),
     "n_trace_mtl_section": n_trace_mtl_section,
     "mtl_bend_coupling_section": mtl_bend_coupling_section,

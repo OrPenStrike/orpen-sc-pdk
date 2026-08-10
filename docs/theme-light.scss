@@ -1,0 +1,33 @@
+/*-- scss:defaults --*/
+
+$body-bg: #f7f9fc;
+$body-color: #243044;
+$link-color: #2f80d1;
+$navbar-bg: #ffffff;
+$navbar-fg: #243044;
+$sidebar-bg: #f7f9fc;
+$sidebar-fg: #243044;
+$border-color: #d8e1ec;
+$code-bg: #eaf0f7;
+$code-color: #193326;
+$callout-color-note: #2f80d1;
+
+$mermaid-bg-color: #f7f9fc;
+$mermaid-edge-color: #526276;
+$mermaid-node-bg-color: #eaf3fc;
+$mermaid-node-fg-color: #243044;
+$mermaid-fg-color: #243044;
+$mermaid-label-bg-color: #f7f9fc;
+$mermaid-label-fg-color: #243044;
+
+/*-- scss:rules --*/
+
+:root {
+  --scq-surface: #ffffff;
+  --scq-surface-muted: #eaf0f7;
+  --scq-text-secondary: #5b677a;
+  --scq-line-subtle: #d8e1ec;
+  --scq-accent: #2f80d1;
+  --mermaid-fg-color--lighter: #9eb3ca;
+  --mermaid-fg-color--lightest: #d8e6f4;
+}

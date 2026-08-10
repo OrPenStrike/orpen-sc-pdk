@@ -2847,7 +2847,7 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'gdsfactoryplus'" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "numpy", specifier = ">=2.0" },
-    { name = "pyaedt", extras = ["all"], marker = "extra == 'fem-aedt'", specifier = "==0.26.2" },
+    { name = "pyaedt", extras = ["all"], marker = "extra == 'fem-aedt'", specifier = "==1.3.0" },
     { name = "pydantic", specifier = ">=2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.0" },
     { name = "pyyaml", specifier = ">=6.0" },
@@ -3274,7 +3274,7 @@ wheels = [
 
 [[package]]
 name = "pyaedt"
-version = "0.26.2"
+version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ansys-tools-common" },
@@ -3288,9 +3288,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "tomli-w" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a2/67/dc50ac1053cb5c8349689fe71d11c452cc8f467064ab5f1694faeafba8f0/pyaedt-0.26.2.tar.gz", hash = "sha256:04b00fecd9eb6ed1135d274b558077369cbe714232372afa7a4e962b3e3989c2", size = 27294207, upload-time = "2026-04-17T17:33:46.572Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/af/37387d6b4183157d94f98c8e7067a6c44d4fe9f277057ce1c2d22b228326/pyaedt-1.3.0.tar.gz", hash = "sha256:97e26349a79dc53ea3b06fc40aa4b1683442104397f90bf7fae27e1deea454df", size = 27245286, upload-time = "2026-07-17T13:16:28.755Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/15/fe7ea180ce41a3285a237d4750c4de0bcca355329c06aa849e373fccf1e8/pyaedt-0.26.2-py3-none-any.whl", hash = "sha256:9d7870d1ac34a817baae0a1cfa8eebae418c28880c70c3579356025f7323673e", size = 7411601, upload-time = "2026-04-17T17:33:44.129Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/af/8b615f93d49ac6c98ff1e707a3170ef768fd9c40aadfdb529503236591c4/pyaedt-1.3.0-py3-none-any.whl", hash = "sha256:a318f94ed1dcb1607b153d6db23c087ab77bd386104c73c7f9dc47c3be65708f", size = 7557191, upload-time = "2026-07-17T13:16:25.855Z" },
 ]
 
 [package.optional-dependencies]
