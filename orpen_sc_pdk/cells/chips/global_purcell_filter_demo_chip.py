@@ -27,7 +27,7 @@ def global_purcell_filter_demo_chip(
     # Readout line
     start_straight_length: float = 500,
     end_straight_length: float = 500,
-    purcell_filter_length: float = 8350,
+    purcell_filter_length: float = 8550,
     capacitor_in: ComponentSpec = "interdigital_capacitor",
     capacitor_out: ComponentSpec = "interdigital_capacitor",
     # Layers

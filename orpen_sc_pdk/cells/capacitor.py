@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from itertools import chain
-from math import ceil
+from math import ceil, isfinite
 
 import gdsfactory as gf
 from gdsfactory.typings import CrossSectionSpec, Layer
@@ -19,6 +19,7 @@ def interdigital_capacitor(
     finger_gap: float = 3.3,
     finger_width: float = 3.3,
     taper_length: float = 150.0,
+    terminal_extension_length_um: float = 100.0,
     capacitor_ground_gap: float = 85.0,
     cpw_xs: CrossSectionSpec = "coplanar_waveguide",
     half: bool = False,
@@ -26,7 +27,11 @@ def interdigital_capacitor(
     etch_layer: Layer = LAYER.D0_TOP_M1_ETCH,
     ground_mask_layer: Layer = LAYER.D0_TOP_GROUND_MASK,
 ) -> gf.Component:
-    """Return a CPW-coupled interdigital capacitor with derived etch geometry."""
+    """Return an IDC with symmetric CPW terminal extensions and derived etch.
+
+    The public ports are the outer CPW cut planes: standalone terminals remain
+    open for Q3D extraction, while assembled CPW routes connect at those planes.
+    """
 
     xs = gf.get_cross_section(cpw_xs)
     cpw_width = xs["cpw_draw"].width
@@ -36,6 +41,11 @@ def interdigital_capacitor(
     core_capacitor_temp = gf.Component()
     if fingers < 1:
         raise ValueError("fingers must be at least 1.")
+    if not isfinite(terminal_extension_length_um) or terminal_extension_length_um <= 0:
+        raise ValueError(
+            "terminal_extension_length_um must be finite and positive, "
+            f"got {terminal_extension_length_um!r}."
+        )
 
     width = finger_length + finger_gap if not half else finger_length
     height = fingers * finger_width + (fingers - 1) * finger_gap
@@ -111,6 +121,16 @@ def interdigital_capacitor(
     )
     out_taper.movex(core_capacitor_temp.x)
 
+    terminal_extension = gf.path.extrude(
+        gf.path.straight(terminal_extension_length_um),
+        width=cpw_width,
+        layer=draw_layer,
+    )
+    in_extension = component << terminal_extension
+    in_extension.dmovex(in_taper.xmin - in_extension.xmax)
+    out_extension = component << terminal_extension
+    out_extension.dmovex(out_taper.xmax - out_extension.xmin)
+
     component.add_port(
         name="o_capacitor_in",
         center=(component.xmin, 0),
@@ -128,12 +148,16 @@ def interdigital_capacitor(
 
     mask_points = [
         (component.xmin, cpw_width / 2 + cpw_gap),
+        (in_taper.xmin, cpw_width / 2 + cpw_gap),
         (core_capacitor.xmin, height / 2 + capacitor_ground_gap),
         (core_capacitor.xmax, height / 2 + capacitor_ground_gap),
+        (out_taper.xmax, cpw_width / 2 + cpw_gap),
         (component.xmax, cpw_width / 2 + cpw_gap),
         (component.xmax, -cpw_width / 2 - cpw_gap),
+        (out_taper.xmax, -cpw_width / 2 - cpw_gap),
         (core_capacitor.xmax, -height / 2 - capacitor_ground_gap),
         (core_capacitor.xmin, -height / 2 - capacitor_ground_gap),
+        (in_taper.xmin, -cpw_width / 2 - cpw_gap),
         (component.xmin, -cpw_width / 2 - cpw_gap),
     ]
     component.add_polygon(points=mask_points, layer=ground_mask_layer)
