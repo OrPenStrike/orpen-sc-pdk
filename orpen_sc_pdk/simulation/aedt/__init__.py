@@ -56,6 +56,8 @@ File responsibility map:
   into the portable AEDT material context. It should not mutate AEDT projects.
 - ``hpc.py``: Notebook-side HPC resource/profile validation and ACF rendering.
   It should not launch AEDT or choose solver geometry.
+- ``geometry.py``: Notebook-side layout-copy preparation for AEDT/Q3D. It
+  should not open AEDT or create chip-level ground/coupon geometry.
 - ``package.py``: handoff directory writer, source copier, manifest/run-config
   writer, runtime bundle copier, launcher writer, and archive writer. It should
   not create PyAEDT sessions or solve recipes.
@@ -115,6 +117,7 @@ File responsibility map:
 
 from __future__ import annotations
 
+from .geometry import prepare_interdigital_capacitor_q3d_geometry
 from .hpc import (
     AedtAcfConfigSpec,
     AedtHpcProfileSpec,
@@ -264,6 +267,7 @@ __all__ = [
     "package_aedt_native_handoff",
     "prepare_aedt_native_handoff_package",
     "prepare_aedt_native_sweep_handoff_package",
+    "prepare_interdigital_capacitor_q3d_geometry",
     "render_aedt_acf_config",
     "validate_q2d_cross_section_payload",
     "write_q2d_cross_section_payload",

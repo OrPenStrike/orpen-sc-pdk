@@ -162,9 +162,11 @@ def interdigital_capacitor(
     ]
     component.add_polygon(points=mask_points, layer=ground_mask_layer)
 
-    return add_etch_for_component(
+    result = add_etch_for_component(
         component=component,
         draw_layer=draw_layer,
         mask_layer=ground_mask_layer,
         etch_layer=etch_layer,
     )
+    result.info["cpw_gap_um"] = float(cpw_gap)
+    return result
