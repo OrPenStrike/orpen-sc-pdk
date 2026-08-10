@@ -1893,7 +1893,7 @@ def q3d_json_safe(value):
 
 
 def assign_q3d_nets(q3d, recipe):
-    """Assign and independently read back exact Q3D signal and ground nets."""
+    """Assign and independently read back exact Q3D signal and optional ground nets."""
 
     if recipe.get("source_patterns"):
         raise RuntimeError(
@@ -1903,8 +1903,7 @@ def assign_q3d_nets(q3d, recipe):
     patterns_by_net = dict(recipe.get("net_patterns") or {})
     if not patterns_by_net:
         raise RuntimeError("Direct-GDS Q3D requires explicit net_patterns")
-    if not recipe.get("reference_patterns"):
-        raise RuntimeError("Direct-GDS Q3D requires reference_patterns for exactly one ground")
+    reference_patterns = list(recipe.get("reference_patterns") or ())
     if q3d.net_names:
         raise RuntimeError(
             "Direct-GDS Q3D target design already has nets; use a fresh project/design "
@@ -1929,27 +1928,29 @@ def assign_q3d_nets(q3d, recipe):
             object_owner[name] = net_name
         requested[net_name] = matches
 
-    ground_matches = match_patterns(
-        names,
-        recipe["reference_patterns"],
-        label="Q3D reference patterns",
-        min_count=1,
-    )
-    reference_nets = [
-        name for name, matches in requested.items() if set(matches).intersection(ground_matches)
-    ]
-    if len(reference_nets) != 1:
-        raise RuntimeError(
-            "Q3D reference patterns must identify exactly one requested net; "
-            f"reference={ground_matches}, matching_nets={reference_nets}, requested={requested}"
+    ground_net = None
+    if reference_patterns:
+        ground_matches = match_patterns(
+            names,
+            reference_patterns,
+            label="Q3D reference patterns",
+            min_count=1,
         )
-    ground_net = reference_nets[0]
-    if set(requested[ground_net]) != set(ground_matches):
-        raise RuntimeError(
-            "Q3D reference patterns must identify every object of their one requested net; "
-            f"ground_net={ground_net!r}, reference={ground_matches}, "
-            f"requested={requested[ground_net]}"
-        )
+        reference_nets = [
+            name for name, matches in requested.items() if set(matches).intersection(ground_matches)
+        ]
+        if len(reference_nets) != 1:
+            raise RuntimeError(
+                "Q3D reference patterns must identify exactly one requested net; "
+                f"reference={ground_matches}, matching_nets={reference_nets}, requested={requested}"
+            )
+        ground_net = reference_nets[0]
+        if set(requested[ground_net]) != set(ground_matches):
+            raise RuntimeError(
+                "Q3D reference patterns must identify every object of their one requested net; "
+                f"ground_net={ground_net!r}, reference={ground_matches}, "
+                f"requested={requested[ground_net]}"
+            )
 
     for net_name, matches in requested.items():
         net_type = "Ground" if net_name == ground_net else "Signal"
@@ -1985,7 +1986,7 @@ def assign_q3d_nets(q3d, recipe):
     return {
         "recipe_type": recipe["type"],
         "requested_patterns": patterns_by_net,
-        "reference_patterns": list(recipe["reference_patterns"]),
+        "reference_patterns": reference_patterns,
         "ground_net": ground_net,
         "requested_objects": requested,
         "readback": readback,

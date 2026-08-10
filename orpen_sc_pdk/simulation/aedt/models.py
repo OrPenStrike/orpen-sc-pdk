@@ -499,8 +499,6 @@ class AedtRecipeSpec(BaseModel):
                 )
             if not self.net_patterns:
                 raise ValueError("direct-GDS q3d_extraction recipes require net_patterns")
-            if not self.reference_patterns:
-                raise ValueError("direct-GDS q3d_extraction recipes require reference_patterns")
             if self.q3d_region is None:
                 raise ValueError(
                     "direct-GDS q3d_extraction recipes require q3d_region with explicit "
