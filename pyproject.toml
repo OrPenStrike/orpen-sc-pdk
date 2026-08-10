@@ -105,6 +105,7 @@ cells_no_model_expected = [
   "cpw_straight",
   "dicing_edge",
   "interdigital_capacitor",
+  "interdigital_capacitor_q3d_coupon",
   "launcher",
   "manhattan_style_junction",
   "martinis2022_differential_ribbon_capacitor",

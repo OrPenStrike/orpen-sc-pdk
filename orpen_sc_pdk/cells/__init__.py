@@ -1,7 +1,10 @@
 """Canonical public cell registry for the OrPen SC PDK."""
 
 from orpen_sc_pdk.cells.airbridge import airbridge
-from orpen_sc_pdk.cells.capacitor import interdigital_capacitor
+from orpen_sc_pdk.cells.capacitor import (
+    interdigital_capacitor,
+    interdigital_capacitor_q3d_coupon,
+)
 from orpen_sc_pdk.cells.chips.spring2025_intrinsic_individual_purcell_filter_test_chip import (
     spring2025_intrinsic_individual_purcell_filter_test_chip,
 )
@@ -41,6 +44,7 @@ __all__ = [
     "bend_euler",
     "dicing_edge",
     "interdigital_capacitor",
+    "interdigital_capacitor_q3d_coupon",
     "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators",
     "spring2025_intrinsic_individual_purcell_filter_test_chip",
     "launcher",
