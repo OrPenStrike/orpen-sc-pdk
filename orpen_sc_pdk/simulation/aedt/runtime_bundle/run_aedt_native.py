@@ -24,8 +24,10 @@ uses ``sweep.py`` to start subprocesses that call this same file with
 from __future__ import annotations
 
 import argparse
+import csv
 import fnmatch
 import json
+import math
 import os
 import re
 import sys
@@ -1462,6 +1464,7 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
         **aedt_constructor_kwargs(args),
     )
     ensure_design_modeler_units(q3d, recipe, recipe["type"])
+    design_reset = prepare_q3d_direct_gds_import(q3d)
     mapping_payload = load_layer_mapping(case, package_root)
     mapping_layers = q2d_import_mapping_layers(mapping_payload, recipe_modeler_units(recipe))
     material_context = load_aedt_material_context(case, package_root)
@@ -1486,6 +1489,7 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
         )
     if not ok:
         raise RuntimeError(f"Q3d.import_gds_3d failed for case {case['id']}")
+    import_refresh = refresh_modeler_object_ids(q3d, label="Q3d.import_gds_3d")
     renames = rename_modeler_objects_for_layer_stack(q3d, material_context, section_only=False)
     assign_imported_materials(
         q3d,
@@ -1495,6 +1499,8 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
     )
     imported_objects = object_inventory(q3d, material_context)
     write_json(result_dir / "object_inventory_imported.json", imported_objects)
+    substrate = readback_q3d_imported_substrate(q3d, mapping_payload, material_context, recipe)
+    q3d_region = create_and_readback_q3d_region(q3d, recipe)
     assignment = assign_q3d_nets(q3d, recipe)
     setup = create_q3d_setup(q3d, recipe)
     write_json(result_dir / "assignment_summary.json", assignment)
@@ -1511,6 +1517,8 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
         stage_timing = solve_status["stage_timing"]
         analyze_ok = timed_stage(stage_timing, "analyze_setup", q3d.analyze_setup, setup.name)
         solve_status["analyze_setup"] = {"setup": setup.name, "return_value": bool(analyze_ok)}
+        if not analyze_ok:
+            raise RuntimeError(f"Q3D analyze_setup failed for setup {setup.name}")
         matrix_exports = timed_stage(
             stage_timing,
             "export_q3d_matrices",
@@ -1539,10 +1547,16 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
             "source_identity": q3d_source_hashes(case, package_root),
             "import": {
                 "method": "Q3d.import_gds_3d",
+                "design_reset": design_reset,
                 "mapping_layers": mapping_layers,
+                "modeler_refresh": import_refresh,
                 "renames": renames,
                 "material_summary": material_summary,
                 "object_count": len(imported_objects),
+            },
+            "electrostatic_domain": {
+                "imported_substrate": substrate,
+                "background_region": q3d_region,
             },
             "net_definitions": assignment,
             "output_paths": {
@@ -1565,8 +1579,269 @@ def q3d_source_hashes(case, package_root):
     return source_hashes
 
 
+def prepare_q3d_direct_gds_import(q3d):
+    """Clear the generated Q3D recipe design before each direct-GDS import.
+
+    Direct-GDS Q3D has no incremental/adoption contract: an import creates the
+    complete conductor, dielectric, Region, net, and setup state for one
+    recipe.  Reopening a generated ``.aedt`` and importing again would retain
+    that state and create duplicate conductors.  Reset the recipe design
+    instead of attempting to identify or adopt prior objects.
+    """
+
+    clear_recipe_design(q3d, clear_setups=True)
+    modeler = getattr(q3d, "modeler", None)
+    refresh = getattr(modeler, "refresh_all_ids", None)
+    if not callable(refresh):
+        raise RuntimeError(
+            "Q3D direct-GDS design reset has no PyAEDT modeler.refresh_all_ids() API"
+        )
+    try:
+        refreshed_object_count = int(refresh())
+    except Exception as exc:
+        raise RuntimeError(
+            "Q3D direct-GDS design reset failed while refreshing PyAEDT modeler object IDs"
+        ) from exc
+
+    residual = {
+        "objects": modeler_object_names(q3d),
+        "setups": sorted(str(name) for name in getattr(q3d, "setup_names", []) or []),
+        "boundaries": sorted(
+            str(getattr(boundary, "name", boundary))
+            for boundary in getattr(q3d, "boundaries", []) or []
+        ),
+        "nets": sorted(str(name) for name in getattr(q3d, "net_names", []) or []),
+    }
+    nonempty = {name: value for name, value in residual.items() if value}
+    if nonempty:
+        raise RuntimeError(
+            "Q3D direct-GDS design reset left recipe state before import; "
+            f"refusing to merge a new GDS import: {nonempty}"
+        )
+    return {
+        "policy": "clear_recipe_design_before_every_direct_gds_import",
+        "api": "modeler.refresh_all_ids",
+        "refreshed_object_count": refreshed_object_count,
+        "residual": residual,
+    }
+
+
+def refresh_modeler_object_ids(app, *, label):
+    """Refresh PyAEDT's modeler cache once after a mutating import operation."""
+
+    modeler = getattr(app, "modeler", None)
+    refresh = getattr(modeler, "refresh_all_ids", None)
+    if not callable(refresh):
+        raise RuntimeError(f"{label} has no PyAEDT modeler.refresh_all_ids() API")
+    try:
+        object_count = int(refresh())
+    except Exception as exc:
+        raise RuntimeError(f"{label} failed while refreshing PyAEDT modeler object IDs") from exc
+    if object_count <= 0:
+        raise RuntimeError(
+            f"{label} completed but PyAEDT modeler refresh found no imported objects"
+        )
+    return {"api": "modeler.refresh_all_ids", "object_count": object_count}
+
+
+def readback_q3d_imported_substrate(q3d, mapping_payload, material_context, recipe):
+    """Fail closed unless the one GDS-extruded substrate matches its mapping row."""
+
+    rows = [
+        row
+        for row in mapping_payload.get("gds_import_layers", [])
+        if str(row.get("recommended_aedt_role") or "") == "dielectric_volume"
+    ]
+    if len(rows) != 1:
+        raise RuntimeError(
+            "Direct-GDS Q3D requires exactly one imported dielectric_volume substrate row; "
+            f"found {len(rows)}"
+        )
+    row = rows[0]
+    base_name = str(row.get("object_name_base") or "").strip()
+    if not base_name:
+        raise RuntimeError("Imported Q3D substrate row requires object_name_base")
+    names = modeler_object_names(q3d)
+    matches = match_patterns(
+        names,
+        (base_name, f"{base_name}_*"),
+        label="imported Q3D substrate",
+        exact_count=1,
+    )
+    substrate = q3d.modeler.get_object_from_name(matches[0])
+    if substrate is None:
+        raise RuntimeError(f"Imported Q3D substrate object is missing: {matches[0]!r}")
+    bbox = object_bounding_box(substrate)
+    if bbox is None or len(bbox) != 6:
+        raise RuntimeError(f"Imported Q3D substrate has no 3D bounding box: {matches[0]!r}")
+    units = recipe_modeler_units(recipe)
+    zmin = um_to_modeler_units(float(row["aedt_import_zmin_um"]), units)
+    thickness = um_to_modeler_units(float(row["aedt_import_thickness_um"]), units)
+    _assert_close_modeler_value(bbox[2], zmin, label="imported Q3D substrate zmin", units=units)
+    _assert_close_modeler_value(
+        bbox[5] - bbox[2], thickness, label="imported Q3D substrate thickness", units=units
+    )
+    expected_material = normalize_aedt_material(
+        material_context_material_for_row(row, material_context) or row.get("material")
+    )
+    actual_material = normalize_aedt_material(safe_material_name(substrate))
+    if actual_material.casefold() != expected_material.casefold():
+        raise RuntimeError(
+            "Imported Q3D substrate material mismatch: "
+            f"expected={expected_material!r}, actual={actual_material!r}"
+        )
+    return {
+        "name": matches[0],
+        "material": actual_material,
+        "bounding_box": bbox,
+        "zmin": bbox[2],
+        "thickness": bbox[5] - bbox[2],
+        "mapping": {
+            "layer_name": row.get("layer_name"),
+            "aedt_layer_number": row.get("aedt_layer_number"),
+            "zmin": zmin,
+            "thickness": thickness,
+            "material": expected_material,
+        },
+    }
+
+
+def create_and_readback_q3d_region(q3d, recipe):
+    """Create one explicit AEDT vacuum Region and verify its six offsets by bbox."""
+
+    region = dict(recipe.get("q3d_region") or {})
+    if not region:
+        raise RuntimeError(
+            "Direct-GDS Q3D requires q3d_region with explicit six-direction Absolute Offset padding"
+        )
+    directions = ("+X", "-X", "+Y", "-Y", "+Z", "-Z")
+    padding = dict(region.get("padding") or {})
+    if set(padding) != set(directions):
+        raise RuntimeError("Q3D Region padding must declare exactly six directions")
+    padding_type = str(region.get("padding_type") or "")
+    if padding_type != "Absolute Offset":
+        raise RuntimeError(f"Q3D Region requires Absolute Offset padding; got {padding_type!r}")
+    name = str(region.get("name") or "").strip()
+    material = normalize_aedt_material(region.get("material"))
+    if not name or not material:
+        raise RuntimeError("Q3D Region requires non-empty name and vacuum material")
+    if material.casefold() != "vacuum":
+        raise RuntimeError(f"Q3D background Region material must be Vacuum, got {material!r}")
+    if q3d.modeler.get_object_from_name(name) is not None:
+        raise RuntimeError(
+            f"Q3D Region {name!r} already exists; direct-GDS Q3D requires a fresh design"
+        )
+
+    source_bbox = combined_modeler_bounding_box(q3d, modeler_object_names(q3d))
+    units = recipe_modeler_units(recipe)
+    values = [str(padding[direction]) for direction in directions]
+    offsets = {
+        direction: aedt_length_to_modeler_units(value, units)
+        for direction, value in zip(directions, values, strict=True)
+    }
+    created = q3d.modeler.create_region(
+        pad_value=values,
+        pad_type=padding_type,
+        name=name,
+    )
+    if created is None:
+        raise RuntimeError(f"Q3D failed to create Region {name!r}")
+    try:
+        created.material_name = material
+    except Exception as exc:
+        raise RuntimeError(f"Q3D failed to set Region {name!r} material to {material!r}") from exc
+    actual = q3d.modeler.get_object_from_name(name)
+    if actual is None:
+        raise RuntimeError(f"Q3D Region {name!r} is absent from modeler readback")
+    actual_material = normalize_aedt_material(safe_material_name(actual))
+    if actual_material.casefold() != material.casefold():
+        raise RuntimeError(
+            f"Q3D Region material mismatch: expected={material!r}, actual={actual_material!r}"
+        )
+    actual_bbox = object_bounding_box(actual)
+    if actual_bbox is None or len(actual_bbox) != 6:
+        raise RuntimeError(f"Q3D Region {name!r} has no 3D bounding box")
+    expected_bbox = [
+        source_bbox[0] - offsets["-X"],
+        source_bbox[1] - offsets["-Y"],
+        source_bbox[2] - offsets["-Z"],
+        source_bbox[3] + offsets["+X"],
+        source_bbox[4] + offsets["+Y"],
+        source_bbox[5] + offsets["+Z"],
+    ]
+    for index, (actual_value, expected_value) in enumerate(
+        zip(actual_bbox, expected_bbox, strict=True)
+    ):
+        _assert_close_modeler_value(
+            actual_value,
+            expected_value,
+            label=f"Q3D Region bounding box[{index}]",
+            units=units,
+        )
+    return {
+        "name": name,
+        "background_material": actual_material,
+        "padding_type": padding_type,
+        "padding_requested": {direction: padding[direction] for direction in directions},
+        "padding_readback": offsets,
+        "source_bounding_box": source_bbox,
+        "bounding_box": actual_bbox,
+    }
+
+
+def combined_modeler_bounding_box(app, names):
+    """Return one [xmin, ymin, zmin, xmax, ymax, zmax] bbox for existing model objects."""
+
+    boxes = []
+    for name in names:
+        obj = app.modeler.get_object_from_name(name)
+        bbox = object_bounding_box(obj)
+        if bbox is None or len(bbox) != 6:
+            raise RuntimeError(f"AEDT object {name!r} has no 3D bounding box")
+        boxes.append(bbox)
+    if not boxes:
+        raise RuntimeError("Cannot create Q3D Region without imported model geometry")
+    return [
+        min(box[0] for box in boxes),
+        min(box[1] for box in boxes),
+        min(box[2] for box in boxes),
+        max(box[3] for box in boxes),
+        max(box[4] for box in boxes),
+        max(box[5] for box in boxes),
+    ]
+
+
+def aedt_length_to_modeler_units(value, modeler_units):
+    """Parse one explicit absolute AEDT length into the recipe modeler units."""
+
+    match = re.fullmatch(
+        r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([A-Za-z]+)\s*",
+        str(value),
+    )
+    if match is None:
+        raise RuntimeError(
+            f"Q3D Region absolute padding must be a numeric length with units, got {value!r}"
+        )
+    source_unit = normalize_modeler_units(match.group(2))
+    target_unit = normalize_modeler_units(modeler_units)
+    return (
+        float(match.group(1))
+        * AEDT_MODELER_UNIT_TO_UM[source_unit]
+        / AEDT_MODELER_UNIT_TO_UM[target_unit]
+    )
+
+
+def _assert_close_modeler_value(actual, expected, *, label, units):
+    tolerance = max(abs(float(expected)), 1.0) * 1e-9
+    if not math.isclose(float(actual), float(expected), rel_tol=0.0, abs_tol=tolerance):
+        raise RuntimeError(
+            f"{label} readback mismatch in {units}: expected={expected!r}, actual={actual!r}, "
+            f"tolerance={tolerance!r}"
+        )
+
+
 def create_q3d_setup(q3d, recipe):
-    """Create the requested Q3D setup without adding candidate convergence policy."""
+    """Create the requested Q3D setup and enable only requested matrix problems."""
 
     setup = q3d.create_setup(
         name=recipe.get("setup_name", "Setup1"),
@@ -1574,6 +1849,22 @@ def create_q3d_setup(q3d, recipe):
     )
     if setup is None:
         raise RuntimeError("Q3d.create_setup did not return a setup")
+    requested = set(recipe.get("matrix_problem_types", ("C", "AC RL")))
+    expected_modes = {
+        "capacitance_enabled": "C" in requested,
+        "ac_rl_enabled": "AC RL" in requested,
+        "dc_enabled": "DC RL" in requested,
+    }
+    for property_name, enabled in expected_modes.items():
+        setattr(setup, property_name, enabled)
+    actual_modes = {
+        property_name: bool(getattr(setup, property_name)) for property_name in expected_modes
+    }
+    if actual_modes != expected_modes:
+        raise RuntimeError(
+            "Q3D setup solution-mode readback mismatch: "
+            f"expected={expected_modes}, actual={actual_modes}"
+        )
     return setup
 
 
@@ -1582,6 +1873,11 @@ def q3d_setup_summary(recipe, setup):
 
     return {
         "name": setup.name,
+        "solution_modes": {
+            "capacitance_enabled": bool(setup.capacitance_enabled),
+            "ac_rl_enabled": bool(setup.ac_rl_enabled),
+            "dc_enabled": bool(setup.dc_enabled),
+        },
         "requested_options": dict(recipe.get("setup_options") or {}),
         "props": q3d_json_safe(getattr(setup, "props", {}) or {}),
     }
@@ -3404,16 +3700,24 @@ def export_q3d_matrices(app, recipe, result_dir):
     exports = []
     for problem_type in recipe.get("matrix_problem_types", ("C", "AC RL")):
         for matrix_type in recipe.get("matrix_types", ("Maxwell", "Couple")):
-            exports.append(
-                export_matrix_data_checked(
-                    app,
-                    result_dir,
-                    setup=recipe.get("setup_name", "Setup1"),
-                    requested_problem_type=problem_type,
-                    pyaedt_problem_type=problem_type,
-                    matrix_type=matrix_type,
-                )
+            record = export_matrix_data_checked(
+                app,
+                result_dir,
+                setup=recipe.get("setup_name", "Setup1"),
+                requested_problem_type=problem_type,
+                pyaedt_problem_type=problem_type,
+                matrix_type=matrix_type,
             )
+            expected_title = None
+            if problem_type == "C":
+                expected_title = {
+                    "Maxwell": "Capacitance Matrix",
+                    "Couple": "Capacitance Matrix Coupling Coefficient",
+                }.get(matrix_type)
+            record["matrix_table"] = read_nonempty_aedt_matrix_table(
+                record["file_name"], expected_title=expected_title
+            )
+            exports.append(record)
     return exports
 
 
@@ -3511,6 +3815,60 @@ def export_matrix_data_checked(
         raise RuntimeError(f"AEDT matrix export created an empty file: {file_name}")
     record["file_size"] = file_name.stat().st_size
     return record
+
+
+def read_nonempty_aedt_matrix_table(file_name, *, expected_title=None):
+    """Return one complete numeric AEDT matrix table or reject a header-only export."""
+
+    path = Path(file_name)
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    titles = []
+    for title_index, title in enumerate(lines):
+        if "Matrix" not in title or title.startswith("Reduce"):
+            continue
+        titles.append(title.strip())
+        if expected_title is not None and title.strip() != expected_title:
+            continue
+        header_index = title_index + 1
+        while header_index < len(lines) and not lines[header_index].strip():
+            header_index += 1
+        if header_index >= len(lines):
+            continue
+        header = [value.strip() for value in next(csv.reader([lines[header_index]]))]
+        while header and not header[-1]:
+            header.pop()
+        labels = header[1:] if header and not header[0] else []
+        if not labels or len(labels) != len(set(labels)) or any(not label for label in labels):
+            continue
+        row_labels = []
+        row_index = header_index + 1
+        while row_index < len(lines) and lines[row_index].strip():
+            values = [value.strip() for value in next(csv.reader([lines[row_index]]))]
+            if len(values) != len(labels) + 1 or values[0] not in labels:
+                raise RuntimeError(
+                    f"AEDT matrix export has an invalid row in {path}: {lines[row_index]!r}"
+                )
+            if values[0] in row_labels:
+                raise RuntimeError(f"AEDT matrix export repeats row {values[0]!r} in {path}")
+            try:
+                for value in values[1:]:
+                    if not Decimal(value).is_finite():
+                        raise ValueError(value)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"AEDT matrix export has a nonnumeric value in {path}: {lines[row_index]!r}"
+                ) from exc
+            row_labels.append(values[0])
+            row_index += 1
+        if row_labels != labels:
+            raise RuntimeError(
+                f"AEDT matrix export is incomplete in {path}: rows={row_labels}, columns={labels}"
+            )
+        return {"title": title.strip(), "labels": labels, "row_count": len(row_labels)}
+    raise RuntimeError(
+        "AEDT matrix export has no complete numeric matrix table in "
+        f"{path}; expected_title={expected_title!r}, titles={titles}"
+    )
 
 
 def q2d_expected_export_records(recipe):

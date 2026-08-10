@@ -35,19 +35,18 @@ from pathlib import Path
 
 import gdsfactory as gf
 import pandas as pd
-from gdsfactory import kdb
 from IPython.display import HTML, display
 
 import orpen_sc_pdk
-from orpen_sc_pdk.cells.capacitor import interdigital_capacitor
+from orpen_sc_pdk.cells.capacitor import interdigital_capacitor_q3d_coupon
 from orpen_sc_pdk.simulation.aedt import (
     AedtNativeCaseSpec,
     AedtNativePackageSpec,
     AedtRecipeSpec,
     AedtRuntimeSpec,
     prepare_aedt_native_handoff_package,
-    prepare_interdigital_capacitor_q3d_geometry,
 )
+from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 
 REPO_ROOT = Path.cwd().resolve()
 if not (REPO_ROOT / "orpen_sc_pdk" / "simulation" / "aedt").is_dir():
@@ -77,15 +76,28 @@ COUPON_MARGIN_UM = 100.0
 SUBSTRATE_THICKNESS_UM = 500.0
 METAL_THICKNESS_UM = 0.2
 
+# This is an AEDT notebook run control, not a convergence or scientific gate.
+# The GDS coupon owns the finite substrate footprint; only the enclosing vacuum
+# is created natively as an AEDT Region with these explicit absolute offsets.
+REGION_PADDING_UM = OUTER_VACUUM_THICKNESS_UM
+Q3D_REGION_PADDING = {
+    "+X": f"{REGION_PADDING_UM}um",
+    "-X": f"{REGION_PADDING_UM}um",
+    "+Y": f"{REGION_PADDING_UM}um",
+    "-Y": f"{REGION_PADDING_UM}um",
+    "+Z": f"{REGION_PADDING_UM}um",
+    "-Z": f"{REGION_PADDING_UM}um",
+}
+
 # %% [markdown]
 # ## Meshing Controls
 #
-# This coupon has no explicit mesh override.  Its direct-GDS layers define the
-# imported elevations and thicknesses; `prepare_interdigital_capacitor_q3d_geometry`
-# supplies the IDC terminal openings.
+# This coupon has no explicit mesh override.  The registered public component
+# owns its planar signal nodes, finite ground, terminal openings, and substrate
+# footprint; this notebook only maps those declared layers into Q3D.
 
 # %%
-idc = interdigital_capacitor(
+coupon = interdigital_capacitor_q3d_coupon(
     fingers=FINGERS,
     finger_length=FINGER_LENGTH_UM,
     finger_gap=FINGER_GAP_UM,
@@ -93,49 +105,102 @@ idc = interdigital_capacitor(
     taper_length=TAPER_LENGTH_UM,
     terminal_extension_length_um=TERMINAL_EXTENSION_LENGTH_UM,
     capacitor_ground_gap=CAPACITOR_GROUND_GAP_UM,
-)
-prepared_idc = prepare_interdigital_capacitor_q3d_geometry(
-    idc,
     terminal_open_clearance_um=TERMINAL_OPEN_CLEARANCE_UM,
+    coupon_margin_um=COUPON_MARGIN_UM,
 )
+q3d_coupon = dict(coupon.info.get("q3d_coupon") or {})
+if q3d_coupon.get("schema") != "orpen-idc-q3d-planar-coupon.v1":
+    raise RuntimeError("Registered Q3D coupon has no recognized q3d_coupon contract.")
+q3d_layers = dict(q3d_coupon.get("layers") or {})
+q3d_nodes = dict(q3d_coupon.get("node_ports") or {})
+if set(q3d_layers) != {"signal_1", "signal_2", "finite_ground", "substrate_footprint"}:
+    raise RuntimeError(f"Registered Q3D coupon layer contract is incomplete: {q3d_layers!r}")
+if q3d_nodes != {
+    "signal_1": "o_capacitor_in",
+    "signal_2": "o_capacitor_out",
+    "ground": None,
+}:
+    raise RuntimeError(f"Registered Q3D coupon node contract is unexpected: {q3d_nodes!r}")
 
-draw_region = prepared_idc.get_region((1, 0), merge=True)
-ground_opening = prepared_idc.get_region((110, 0), merge=True)
-signal_polygons = sorted(draw_region.each(), key=lambda polygon: polygon.bbox().left)
-if len(signal_polygons) != 2 or ground_opening.is_empty():
-    raise RuntimeError("Prepared IDC must contain two signal regions and a ground-mask opening.")
 
-coupon_bounds = (draw_region + ground_opening).bbox()
-margin_dbu = round(COUPON_MARGIN_UM / prepared_idc.kcl.dbu)
-coupon_box = kdb.Box(
-    coupon_bounds.left - margin_dbu,
-    coupon_bounds.bottom - margin_dbu,
-    coupon_bounds.right + margin_dbu,
-    coupon_bounds.top + margin_dbu,
-)
-ground_region = kdb.Region(coupon_box) - ground_opening
-if ground_region.is_empty():
-    raise RuntimeError("Coupon ground is empty after subtracting the prepared ground-mask opening.")
+def q3d_layer_tuple(name: str) -> tuple[int, int]:
+    """Return one public coupon layer as a strict GDS layer/datatype pair."""
 
-SIGNAL_1_LAYER = (101, 0)
-SIGNAL_2_LAYER = (102, 0)
-GROUND_LAYER = (103, 0)
-SUBSTRATE_LAYER = (104, 0)
-coupon = gf.Component("interdigital_capacitor_q3d_coupon")
-coupon.add_polygon(kdb.Region(signal_polygons[0]), layer=SIGNAL_1_LAYER)
-coupon.add_polygon(kdb.Region(signal_polygons[1]), layer=SIGNAL_2_LAYER)
-coupon.add_polygon(ground_region, layer=GROUND_LAYER)
-coupon.add_polygon(kdb.Region(coupon_box), layer=SUBSTRATE_LAYER)
-coupon.flatten(merge=True)
+    value = tuple(q3d_layers[name])
+    if len(value) != 2:
+        raise RuntimeError(f"Registered Q3D coupon layer {name!r} is not a GDS pair: {value!r}")
+    return int(value[0]), int(value[1])
 
+
+SIGNAL_1_LAYER = q3d_layer_tuple("signal_1")
+SIGNAL_2_LAYER = q3d_layer_tuple("signal_2")
+GROUND_LAYER = q3d_layer_tuple("finite_ground")
+SUBSTRATE_LAYER = q3d_layer_tuple("substrate_footprint")
+
+display(HTML("<h3>Registered component layer and node contract</h3>"))
 display(
-    pd.DataFrame(
-        (
-            {"object": "signal_1", "gds_layer": SIGNAL_1_LAYER, "region_count": 1},
-            {"object": "signal_2", "gds_layer": SIGNAL_2_LAYER, "region_count": 1},
-            {"object": "ground", "gds_layer": GROUND_LAYER, "region_count": ground_region.count()},
-            {"object": "substrate", "gds_layer": SUBSTRATE_LAYER, "region_count": 1},
-        )
+    HTML(
+        pd.DataFrame(
+            (
+                {
+                    "Q3D object": "signal_1",
+                    "component port/node": q3d_nodes["signal_1"],
+                    "GDS layer": f"{SIGNAL_1_LAYER[0]}/{SIGNAL_1_LAYER[1]}",
+                    "Q3D role": "SignalNet conductor",
+                },
+                {
+                    "Q3D object": "signal_2",
+                    "component port/node": q3d_nodes["signal_2"],
+                    "GDS layer": f"{SIGNAL_2_LAYER[0]}/{SIGNAL_2_LAYER[1]}",
+                    "Q3D role": "SignalNet conductor",
+                },
+                {
+                    "Q3D object": "finite_ground",
+                    "component port/node": "ground reference",
+                    "GDS layer": f"{GROUND_LAYER[0]}/{GROUND_LAYER[1]}",
+                    "Q3D role": "GroundNet conductor",
+                },
+                {
+                    "Q3D object": "substrate_footprint",
+                    "component port/node": "no electrical node",
+                    "GDS layer": f"{SUBSTRATE_LAYER[0]}/{SUBSTRATE_LAYER[1]}",
+                    "Q3D role": "finite dielectric footprint",
+                },
+            )
+        ).to_html(index=False, escape=True)
+    )
+)
+display(HTML("<h3>Q3D substrate and native vacuum Region controls</h3>"))
+display(
+    HTML(
+        pd.DataFrame(
+            (
+                {
+                    "domain member": "GDS substrate footprint",
+                    "construction": "import/extrude from substrate_footprint layer",
+                    "z / thickness": (
+                        f"{-SUBSTRATE_THICKNESS_UM:g} um / {SUBSTRATE_THICKNESS_UM:g} um"
+                    ),
+                    "material": "Si",
+                },
+                {
+                    "domain member": "AEDT Region",
+                    "construction": "PyAEDT create_region; absent from GDS",
+                    "z / thickness": "six explicit Absolute Offset paddings",
+                    "material": "Vacuum",
+                },
+            )
+        ).to_html(index=False, escape=True)
+    )
+)
+display(
+    HTML(
+        pd.DataFrame(
+            {
+                "Region direction": list(Q3D_REGION_PADDING),
+                "Absolute Offset": list(Q3D_REGION_PADDING.values()),
+            }
+        ).to_html(index=False, escape=True)
     )
 )
 
@@ -151,7 +216,7 @@ mapping_rows = [
         "layer_name": "signal_1",
         "aedt_layer_number": SIGNAL_1_LAYER[0],
         "aedt_datatype": SIGNAL_1_LAYER[1],
-        "aedt_layer_tuple": "101/0",
+        "aedt_layer_tuple": f"{SIGNAL_1_LAYER[0]}/{SIGNAL_1_LAYER[1]}",
         "aedt_import_policy": "gds_import",
         "aedt_import_zmin_um": 0.0,
         "aedt_import_thickness_um": METAL_THICKNESS_UM,
@@ -163,7 +228,7 @@ mapping_rows = [
         "layer_name": "signal_2",
         "aedt_layer_number": SIGNAL_2_LAYER[0],
         "aedt_datatype": SIGNAL_2_LAYER[1],
-        "aedt_layer_tuple": "102/0",
+        "aedt_layer_tuple": f"{SIGNAL_2_LAYER[0]}/{SIGNAL_2_LAYER[1]}",
         "aedt_import_policy": "gds_import",
         "aedt_import_zmin_um": 0.0,
         "aedt_import_thickness_um": METAL_THICKNESS_UM,
@@ -175,7 +240,7 @@ mapping_rows = [
         "layer_name": "ground",
         "aedt_layer_number": GROUND_LAYER[0],
         "aedt_datatype": GROUND_LAYER[1],
-        "aedt_layer_tuple": "103/0",
+        "aedt_layer_tuple": f"{GROUND_LAYER[0]}/{GROUND_LAYER[1]}",
         "aedt_import_policy": "gds_import",
         "aedt_import_zmin_um": 0.0,
         "aedt_import_thickness_um": METAL_THICKNESS_UM,
@@ -187,7 +252,7 @@ mapping_rows = [
         "layer_name": "substrate",
         "aedt_layer_number": SUBSTRATE_LAYER[0],
         "aedt_datatype": SUBSTRATE_LAYER[1],
-        "aedt_layer_tuple": "104/0",
+        "aedt_layer_tuple": f"{SUBSTRATE_LAYER[0]}/{SUBSTRATE_LAYER[1]}",
         "aedt_import_policy": "gds_import",
         "aedt_import_zmin_um": -SUBSTRATE_THICKNESS_UM,
         "aedt_import_thickness_um": SUBSTRATE_THICKNESS_UM,
@@ -209,7 +274,7 @@ display(pd.DataFrame(mapping_rows))
 #
 # The direct Q3D runtime imports this GDS with `Q3d.import_gds_3d`, creates the
 # diagnostic default setup, assigns the three exact nets, then saves the AEDT
-# project.  It exports only the Maxwell and Couple capacitance matrices.
+# project.  It exports the Maxwell capacitance matrix used below.
 
 # %%
 recipe = AedtRecipeSpec(
@@ -218,7 +283,7 @@ recipe = AedtRecipeSpec(
     setup_name="Setup1",
     design_name="idc_q3d_capacitance",
     matrix_problem_types=("C",),
-    matrix_types=("Maxwell", "Couple"),
+    matrix_types=("Maxwell",),
     net_patterns={
         "signal_1": ("signal_1*",),
         "signal_2": ("signal_2*",),
@@ -226,6 +291,12 @@ recipe = AedtRecipeSpec(
     },
     reference_patterns=("ground*",),
     modeler_units="um",
+    q3d_region={
+        "name": "Region",
+        "material": "Vacuum",
+        "padding_type": "Absolute Offset",
+        "padding": Q3D_REGION_PADDING,
+    },
 )
 package = prepare_aedt_native_handoff_package(
     AedtNativePackageSpec(
@@ -277,7 +348,24 @@ assignment_plan = {
         "ground": {"object_pattern": "ground*", "type": "GroundNet"},
     },
     "reference_patterns": list(recipe.reference_patterns),
-    "runtime": "Q3d.import_gds_3d -> assign_net -> create_setup -> analyze_setup",
+    "runtime": (
+        "Q3d.import_gds_3d -> imported-substrate readback -> "
+        "create/readback Vacuum Region -> assign_net -> create_setup -> analyze_setup"
+    ),
+    "electrostatic_domain": {
+        "substrate": {
+            "source": "GDS substrate_footprint layer",
+            "zmin_um": -SUBSTRATE_THICKNESS_UM,
+            "thickness_um": SUBSTRATE_THICKNESS_UM,
+            "material": "Si",
+        },
+        "background_region": {
+            "source": "PyAEDT create_region",
+            "material": "Vacuum",
+            "padding_type": "Absolute Offset",
+            "padding": Q3D_REGION_PADDING,
+        },
+    },
 }
 
 # %% [markdown]
@@ -321,8 +409,8 @@ provenance = {
     "schema_version": "idc-q3d-notebook-provenance.v1",
     "classification": "public reusable OrPen simulation workflow",
     "geometry_source": {
-        "component": "interdigital_capacitor",
-        "prepared_by": "prepare_interdigital_capacitor_q3d_geometry",
+        "component": "interdigital_capacitor_q3d_coupon",
+        "component_contract": q3d_coupon,
         "gds_path": str(GDS_PATH),
         "gds_sha256": hashlib.sha256(GDS_PATH.read_bytes()).hexdigest(),
         "parameters": {
@@ -336,6 +424,7 @@ provenance = {
             "coupon_margin_um": COUPON_MARGIN_UM,
             "substrate_thickness_um": SUBSTRATE_THICKNESS_UM,
             "metal_thickness_um": METAL_THICKNESS_UM,
+            "q3d_region_padding_um": REGION_PADDING_UM,
         },
     },
     "package": {
@@ -344,7 +433,7 @@ provenance = {
         "project": str(package.project_path),
         "runtime": recipe.type,
         "setup": recipe.setup_name,
-        "matrix_outputs": ["c_maxwell_matrix.csv", "c_couple_matrix.csv"],
+        "matrix_outputs": ["c_maxwell_matrix.csv"],
     },
     "assignment_plan": assignment_plan,
     "q3d_runtime_source_identity": CURRENT_Q3D_SOURCE_IDENTITY,
@@ -353,9 +442,6 @@ provenance = {
         "files": {
             "capacitor.py": source_file_identity(
                 REPO_ROOT / "orpen_sc_pdk" / "cells" / "capacitor.py"
-            ),
-            "geometry.py": source_file_identity(
-                REPO_ROOT / "orpen_sc_pdk" / "simulation" / "aedt" / "geometry.py"
             ),
             "run_aedt_native.py": source_file_identity(
                 REPO_ROOT
@@ -428,19 +514,18 @@ if RUN_SOLVER:
 # %% [markdown]
 # ## Validation And Failure Controls
 #
-# Matrix-derived capacitance is withheld unless a real solve, both exports, and
+# Matrix-derived capacitance is withheld unless a real solve, the Maxwell export, and
 # exact assignment readback are present.
 
 # %% [markdown]
 # ## Physics Analysis Results
 #
-# No capacitance is inferred without both real Q3D CSV exports and the runtime
+# No capacitance is inferred without the real Q3D Maxwell CSV export and the runtime
 # assignment readback.  Raw matrix units remain those written by AEDT.
 
 # %%
-RESULT_DIR = package.package_dir / "results" / "coupon" / "capacitance"
+RESULT_DIR = package.package_dir / "points" / "coupon" / "capacitance"
 MAXWELL_CSV = RESULT_DIR / "c_maxwell_matrix.csv"
-COUPLE_CSV = RESULT_DIR / "c_couple_matrix.csv"
 ASSIGNMENT_JSON = RESULT_DIR / "assignment_summary.json"
 
 
@@ -470,6 +555,8 @@ def read_q3d_matrix(path: Path) -> tuple[pd.DataFrame, dict[str, str]]:
     if header_index >= len(lines):
         raise RuntimeError(f"Q3D matrix title has no table header: {path}")
     header = [value.strip() for value in lines[header_index].split(",")]
+    while header and not header[-1]:
+        header.pop()
     labels = header[1:] if header and not header[0] else []
     if not labels or len(labels) != len(set(labels)) or any(not label for label in labels):
         raise RuntimeError(f"Q3D matrix has invalid column labels: {lines[header_index]!r}")
@@ -499,9 +586,12 @@ def raw_decimal(value: object) -> Decimal:
     """Parse one printed AEDT number without applying a unit conversion."""
 
     try:
-        return Decimal(str(value).strip())
+        parsed = Decimal(str(value).strip())
     except InvalidOperation as exc:
         raise RuntimeError(f"Q3D matrix entry is not a plain numeric value: {value!r}") from exc
+    if not parsed.is_finite():
+        raise RuntimeError(f"Q3D matrix entry is not finite: {value!r}")
+    return parsed
 
 
 def printed_resolution(value: object) -> Decimal:
@@ -623,6 +713,41 @@ result_reasons = []
 if not isinstance(result_metadata, dict):
     result_reasons.append("result metadata is not a mapping")
     result_metadata = {}
+domain_readback = result_metadata.get("electrostatic_domain")
+if isinstance(domain_readback, dict):
+    imported_substrate = domain_readback.get("imported_substrate")
+    background_region = domain_readback.get("background_region")
+    if isinstance(imported_substrate, dict) and isinstance(background_region, dict):
+        display(HTML("<h3>Q3D electrostatic-domain readback</h3>"))
+        display(
+            HTML(
+                pd.DataFrame(
+                    (
+                        {
+                            "domain member": "imported substrate",
+                            "name": imported_substrate.get("name"),
+                            "material": imported_substrate.get("material"),
+                            "bounding box": imported_substrate.get("bounding_box"),
+                            "geometry readback": (
+                                f"{imported_substrate.get('zmin')} / "
+                                f"{imported_substrate.get('thickness')}"
+                            ),
+                        },
+                        {
+                            "domain member": "AEDT background Region",
+                            "name": background_region.get("name"),
+                            "material": background_region.get("background_material"),
+                            "bounding box": background_region.get("bounding_box"),
+                            "geometry readback": background_region.get("padding_readback"),
+                        },
+                    )
+                ).to_html(index=False, escape=True)
+            )
+        )
+    else:
+        result_reasons.append("electrostatic-domain readback is incomplete")
+else:
+    result_reasons.append("electrostatic-domain readback is absent")
 solve_status = result_metadata.get("solve_status")
 analyze_setup = solve_status.get("analyze_setup") if isinstance(solve_status, dict) else None
 if not isinstance(analyze_setup, dict) or not analyze_setup.get("return_value"):
@@ -636,9 +761,8 @@ if (
 ):
     result_reasons.append("result setup options do not match the current recipe")
 real_solve = not result_reasons
-if MAXWELL_CSV.is_file() and COUPLE_CSV.is_file() and ASSIGNMENT_JSON.is_file() and real_solve:
+if MAXWELL_CSV.is_file() and ASSIGNMENT_JSON.is_file() and real_solve:
     maxwell, maxwell_metadata = read_q3d_matrix(MAXWELL_CSV)
-    couple, couple_metadata = read_q3d_matrix(COUPLE_CSV)
     assignment_readback = json.loads(ASSIGNMENT_JSON.read_text(encoding="utf-8"))
     capacitance, matrix_audit = capacitance_from_maxwell(maxwell, assignment_readback)
     derived = pd.DataFrame(
@@ -677,14 +801,8 @@ if MAXWELL_CSV.is_file() and COUPLE_CSV.is_file() and ASSIGNMENT_JSON.is_file() 
     analysis = {
         "schema_version": "idc-q3d-capacitance-analysis.v1",
         "maxwell_csv": str(MAXWELL_CSV),
-        "couple_csv_audit_only": str(COUPLE_CSV),
         "assignment_readback": assignment_readback,
         "maxwell": {**matrix_audit, **maxwell_metadata},
-        "couple_audit": {
-            "labels": list(couple.columns),
-            "shape": list(couple.shape),
-            **couple_metadata,
-        },
         "derived_csv": str(derived_csv),
         "aedt_preflight": json.loads(preflight_path.read_text(encoding="utf-8")),
         **capacitance,
@@ -698,22 +816,17 @@ if MAXWELL_CSV.is_file() and COUPLE_CSV.is_file() and ASSIGNMENT_JSON.is_file() 
         )
     )
     display(maxwell)
-    display(
-        HTML(f"<h3>Couple matrix — {couple_metadata['title']} ({couple_metadata['c_units']})</h3>")
-    )
-    display(couple)
     display(HTML("<h3>Derived capacitances</h3>"))
     display(derived)
     display(
         HTML(
             "<p><b>Q3D matrix interpretation:</b> "
-            f"{analysis['representation']}; {analysis['convention']}. "
-            "Couple matrix is recorded for audit only and is never a fallback.</p>"
+            f"{analysis['representation']}; {analysis['convention']}.</p>"
         )
     )
 else:
     missing_artifacts = [
-        path.name for path in (MAXWELL_CSV, COUPLE_CSV, ASSIGNMENT_JSON) if not path.is_file()
+        path.name for path in (MAXWELL_CSV, ASSIGNMENT_JSON) if not path.is_file()
     ]
     if missing_artifacts:
         result_reasons.append(f"missing {', '.join(missing_artifacts)}")

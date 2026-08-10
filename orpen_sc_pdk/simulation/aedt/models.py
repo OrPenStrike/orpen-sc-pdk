@@ -38,6 +38,7 @@ AedtGrpcMode = Literal["insecure", "secure", "auto"]
 AedtMatrixProblemType = Literal["C", "AC RL", "DC RL", "CG", "RL"]
 AedtQ2dMatrixProblemType = Literal["CG", "RL"]
 AedtQ3dMatrixProblemType = Literal["C", "AC RL", "DC RL"]
+AedtQ3dRegionPaddingType = Literal["Absolute Offset"]
 AedtMatrixType = Literal["Maxwell", "Couple", "Spice"]
 AedtQ2dAssignmentSource = Literal["q2d_conductors", "object_patterns"]
 AedtQ2dGeometryMode = Literal["hfss_section", "semantic_cross_section"]
@@ -144,6 +145,46 @@ class AedtQ2dRegionSpec(BaseModel):
         return {
             direction: str(value.get(direction, "0um")) for direction in ("+X", "-X", "+Y", "-Y")
         }
+
+
+class AedtQ3dRegionSpec(BaseModel):
+    """Explicit 3D vacuum Region contract for direct-GDS Q3D extraction.
+
+    The planar GDS import owns conductors and the extruded substrate.  This
+    spec owns only AEDT's enclosing Region, whose six absolute offsets must be
+    explicit so no solver default changes the electrostatic domain silently.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: str = "Region"
+    material: str = "Vacuum"
+    padding_type: AedtQ3dRegionPaddingType = "Absolute Offset"
+    padding: dict[str, str]
+
+    @field_validator("name", "material")
+    @classmethod
+    def _validate_text(cls, value: str) -> str:
+        text = str(value).strip()
+        if not text:
+            raise ValueError("Q3D Region text fields must not be empty")
+        return text
+
+    @field_validator("padding")
+    @classmethod
+    def _validate_padding(cls, value: dict[str, str]) -> dict[str, str]:
+        directions = ("+X", "-X", "+Y", "-Y", "+Z", "-Z")
+        unknown = sorted(set(value) - set(directions))
+        missing = [direction for direction in directions if direction not in value]
+        if unknown or missing:
+            raise ValueError(
+                "Q3D Region padding must specify exactly +X/-X/+Y/-Y/+Z/-Z; "
+                f"unknown={unknown}, missing={missing}"
+            )
+        normalized = {direction: str(value[direction]).strip() for direction in directions}
+        if any(not offset for offset in normalized.values()):
+            raise ValueError("Q3D Region padding values must not be empty")
+        return normalized
 
 
 class AedtMaterialPolicySpec(BaseModel):
@@ -368,6 +409,7 @@ class AedtRecipeSpec(BaseModel):
     matrix_types: tuple[AedtMatrixType, ...] = ("Maxwell", "Couple")
     q2d_setup: AedtQ2dSetupSpec = Field(default_factory=AedtQ2dSetupSpec)
     q2d_region: AedtQ2dRegionSpec = Field(default_factory=AedtQ2dRegionSpec)
+    q3d_region: AedtQ3dRegionSpec | None = None
     material_policy: AedtMaterialPolicySpec = Field(default_factory=AedtMaterialPolicySpec)
     modeler_units: str = "um"
 
@@ -459,6 +501,11 @@ class AedtRecipeSpec(BaseModel):
                 raise ValueError("direct-GDS q3d_extraction recipes require net_patterns")
             if not self.reference_patterns:
                 raise ValueError("direct-GDS q3d_extraction recipes require reference_patterns")
+            if self.q3d_region is None:
+                raise ValueError(
+                    "direct-GDS q3d_extraction recipes require q3d_region with explicit "
+                    "six-direction Absolute Offset padding"
+                )
             invalid = sorted(set(self.matrix_problem_types) - {"C", "AC RL", "DC RL"})
             if invalid:
                 raise ValueError(
@@ -689,6 +736,8 @@ __all__ = [
     "AedtQ2dRegionSpec",
     "AedtQ2dSetupSpec",
     "AedtQ3dMatrixProblemType",
+    "AedtQ3dRegionPaddingType",
+    "AedtQ3dRegionSpec",
     "AedtRecipeSpec",
     "AedtRecipeType",
     "AedtResumePolicy",

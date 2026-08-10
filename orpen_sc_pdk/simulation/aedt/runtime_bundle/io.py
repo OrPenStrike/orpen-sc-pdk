@@ -101,6 +101,30 @@ def _validate_manifest(manifest: dict[str, Any], path: str | Path) -> None:
             for key in ("id", "type", "design_name"):
                 if not str(recipe.get(key) or "").strip():
                     raise RuntimeError(f"AEDT manifest {path} recipe.{key} is required")
+            if recipe.get("type") == "q3d_extraction":
+                _validate_q3d_region_recipe(recipe, path)
+
+
+def _validate_q3d_region_recipe(recipe: dict[str, Any], path: str | Path) -> None:
+    """Reject direct-GDS Q3D manifests without an explicit six-sided vacuum Region."""
+
+    region = recipe.get("q3d_region")
+    if not isinstance(region, dict):
+        raise RuntimeError(f"AEDT manifest {path} q3d_extraction recipe.q3d_region is required")
+    if str(region.get("padding_type") or "") != "Absolute Offset":
+        raise RuntimeError(
+            f"AEDT manifest {path} Q3D Region requires padding_type='Absolute Offset'"
+        )
+    if str(region.get("material") or "").casefold() != "vacuum":
+        raise RuntimeError(f"AEDT manifest {path} Q3D Region material must be Vacuum")
+    padding = region.get("padding")
+    directions = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"}
+    if not isinstance(padding, dict) or set(padding) != directions:
+        raise RuntimeError(
+            f"AEDT manifest {path} Q3D Region requires exactly six padding directions"
+        )
+    if any(not str(value).strip() for value in padding.values()):
+        raise RuntimeError(f"AEDT manifest {path} Q3D Region padding values must not be empty")
 
 
 def package_path(package_root: str | Path, relative: str | Path) -> Path:
