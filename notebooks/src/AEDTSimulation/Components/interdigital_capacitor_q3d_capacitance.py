@@ -31,6 +31,7 @@ from time import perf_counter, sleep
 
 import gdsfactory as gf
 import pandas as pd
+import plotly.graph_objects as go
 from ansys.aedt.core import Q3d
 from IPython.display import HTML, Image, clear_output, display
 from IPython.utils.capture import capture_output
@@ -71,7 +72,7 @@ MATRIX_PATH = RUN_DIR / "c_maxwell_matrix.csv"
 TIMING_PATH = RUN_DIR / "solve_timing.json"
 CONVERGENCE_DIR = RUN_DIR / "adaptive_passes"
 CONVERGENCE_CSV_PATH = RUN_DIR / "capacitance_convergence.csv"
-CONVERGENCE_PLOT_PATH = RUN_DIR / "capacitance_convergence.png"
+CONVERGENCE_PLOT_PATH = RUN_DIR / "capacitance_convergence.html"
 Q3D_SETUP = {
     "name": "Setup1",
     "capacitance": {
@@ -384,13 +385,28 @@ if RUN_SOLVER:
         node_labels=("ground", "signal_1", "signal_2"),
         result_path=TIMING_PATH,
     ).show()
-    axis = capacitance_convergence.plot(marker="o", figsize=(9, 5), grid=True)
-    axis.set_title("Q3D capacitance convergence")
-    axis.set_xlabel("Adaptive pass")
-    axis.set_ylabel("Capacitance (fF)")
-    axis.figure.tight_layout()
-    axis.figure.savefig(CONVERGENCE_PLOT_PATH, dpi=180)
-    display(axis.figure)
+    figure = go.Figure()
+    for quantity, color, dash in (
+        ("C1G", "#2563eb", "solid"),
+        ("C2G", "#f59e0b", "dash"),
+        ("C12", "#7c3aed", "dot"),
+    ):
+        figure.add_scatter(
+            x=capacitance_convergence.index,
+            y=capacitance_convergence[quantity],
+            mode="lines+markers",
+            name=quantity,
+            line={"color": color, "dash": dash},
+        )
+    figure.update_layout(
+        title="Q3D capacitance convergence",
+        template="plotly_white",
+        hovermode="x unified",
+        xaxis_title="Adaptive pass",
+        yaxis_title="Capacitance (fF)",
+    )
+    figure.write_html(CONVERGENCE_PLOT_PATH, include_plotlyjs=True)
+    figure.show()
 else:
     print("Set RUN_SOLVER = True to solve, export, and display the Q3D result.")
 
