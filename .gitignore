@@ -7,9 +7,6 @@ __pycache__/
 build/
 dist/
 /batch.log
-docs/_build/
-docs/notebooks/
-docs/justfile_help.txt
 notebooks/*.ipynb
 orpen_sc_pdk/cells/privates/*
 !orpen_sc_pdk/cells/privates/.gitkeep

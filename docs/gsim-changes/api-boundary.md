@@ -49,4 +49,4 @@ Boundary change:
 - `gsim.palace.mesh` owns mesh artifacts and postprocessing helpers.
 - `gsim.palace.results` owns typed result objects and report display semantics.
 
-Related detailed ledger: {doc}`../issues/palace-api-responsibility-boundary`.
+Related detailed ledger: [../issues/palace-api-responsibility-boundary](../issues/palace-api-responsibility-boundary.md).

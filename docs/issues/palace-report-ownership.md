@@ -158,5 +158,5 @@ Remaining slices:
 
 Related features:
 
-- {doc}`../features/palace-reporting`
-- {doc}`../features/benchmark-cost-analysis`
+- [../features/palace-reporting](../features/palace-reporting.md)
+- [../features/benchmark-cost-analysis](../features/benchmark-cost-analysis.md)

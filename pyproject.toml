@@ -41,24 +41,10 @@ gdsfactoryplus = ["gdsfactoryplus", "httpx"]
 
 [dependency-groups]
 docs = [
+  "griffe<2",
   "ipykernel",
   "jupytext",
-  "linkify-it-py",
   "matplotlib",
-  "myst-nb>=1.0",
-  "nbconvert",
-  "pydata-sphinx-theme",
-  "sphinx>=9.0",
-  "sphinx-copybutton",
-  "sphinx-design",
-  "sphinx-github-alerts",
-  "sphinxcontrib-bibtex",
-  "sphinxcontrib-bibtex-urn",
-  "sphinxcontrib-mermaid",
-  "sphinxcontrib-svgbob",
-]
-docs-quarto = [
-  "griffe<2",
   "quartodoc",
 ]
 ecosystem-dev = [

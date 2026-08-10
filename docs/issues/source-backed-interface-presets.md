@@ -22,7 +22,7 @@ Problem:
 Proposed path:
 
 - keep public source review in
-  {doc}`../papers/surface-loss-participation`;
+  [../papers/surface-loss-participation](../papers/surface-loss-participation.md);
 - extract candidate values only from public sources, recording whether each
   thickness, permittivity/material, and loss tangent is measured, fitted,
   assumed, or scaled;
@@ -109,6 +109,6 @@ Acceptance checks:
 
 Related features:
 
-- {doc}`../features/material-db-overlay`
-- {doc}`../features/surface-q-index-mapping`
-- {doc}`../features/problem-type-notebook-suite`
+- [../features/material-db-overlay](../features/material-db-overlay.md)
+- [../features/surface-q-index-mapping](../features/surface-q-index-mapping.md)
+- [../features/problem-type-notebook-suite](../features/problem-type-notebook-suite.md)

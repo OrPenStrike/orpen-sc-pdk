@@ -82,4 +82,4 @@ Acceptance direction:
 
 Related issue:
 
-- {doc}`../issues/cad-mesh-identity-provenance`
+- [../issues/cad-mesh-identity-provenance](../issues/cad-mesh-identity-provenance.md)

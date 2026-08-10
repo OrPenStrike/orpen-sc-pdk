@@ -140,6 +140,6 @@ Acceptance direction:
 
 Related issues:
 
-- {doc}`../issues/palace-report-ownership`
-- {doc}`../issues/public-problem-type-notebook-coverage`
-- {doc}`../issues/palace-hpc-handoff-records`
+- [../issues/palace-report-ownership](../issues/palace-report-ownership.md)
+- [../issues/public-problem-type-notebook-coverage](../issues/public-problem-type-notebook-coverage.md)
+- [../issues/palace-hpc-handoff-records](../issues/palace-hpc-handoff-records.md)

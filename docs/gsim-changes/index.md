@@ -1,7 +1,7 @@
 # gsim Changes
 
 These pages are implementation notes under the
-{doc}`../features/gsim-resolve-results` capability. They explain reusable
+[../features/gsim-resolve-results](../features/gsim-resolve-results.qmd) capability. They explain reusable
 Palace workflow changes that belong in `gsim`, not in the public PDK.
 
 ## Suggested Review Slices
@@ -13,45 +13,10 @@ Palace workflow changes that belong in `gsim`, not in the public PDK.
 | 3 | Run, resolve, and results | This is the active product surface for completed Palace runs. |
 | 4 | Runtime handoff records | This is operational support; it should not change report semantics. |
 
-::::{grid} 1 1 2 2
-:gutter: 3
-
-:::{grid-item-card} API boundary
-:link: api-boundary
-:link-type: doc
-
-Why the Palace root API was narrowed before adding more helpers.
-:::
-
-:::{grid-item-card} Mesh and config provenance
-:link: mesh-config-provenance
-:link-type: doc
-
-How mesh manifests, index maps, and material provenance make solver artifacts
-reviewable.
-:::
-
-:::{grid-item-card} Run, resolve, and results
-:link: run-resolve-results
-:link-type: doc
-
-How run folders become typed reports and where visualization belongs.
-:::
-
-:::{grid-item-card} Runtime handoff records
-:link: runtime-handoff-records
-:link-type: doc
-
-How local runs, Slurm handoff, sweeps, and resource records stay in `gsim`.
-:::
-
-::::
-
-```{toctree}
-:hidden:
-
-api-boundary
-mesh-config-provenance
-run-resolve-results
-runtime-handoff-records
-```
+- [API boundary](api-boundary.md): Palace root API ownership.
+- [Mesh and config provenance](mesh-config-provenance.md): reviewable manifests,
+  index maps, and material identity.
+- [Run, resolve, and results](run-resolve-results.md): typed run reports and
+  visualization ownership.
+- [Runtime handoff records](runtime-handoff-records.md): local runs, Slurm,
+  sweeps, and resource records.

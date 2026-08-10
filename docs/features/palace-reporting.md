@@ -50,6 +50,6 @@ Current implemented baseline:
 
 Related issues:
 
-- {doc}`../issues/palace-report-ownership`
-- {doc}`../issues/palace-config-ownership`
-- {doc}`../issues/cad-mesh-identity-provenance`
+- [../issues/palace-report-ownership](../issues/palace-report-ownership.md)
+- [../issues/palace-config-ownership](../issues/palace-config-ownership.md)
+- [../issues/cad-mesh-identity-provenance](../issues/cad-mesh-identity-provenance.md)

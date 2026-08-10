@@ -122,6 +122,6 @@ Acceptance checks:
 
 Related issues:
 
-- {doc}`palace-config-ownership`
-- {doc}`gplugins-boundary`
-- {doc}`material-schema-boundary`
+- [palace-config-ownership](palace-config-ownership.md)
+- [gplugins-boundary](gplugins-boundary.md)
+- [material-schema-boundary](material-schema-boundary.md)

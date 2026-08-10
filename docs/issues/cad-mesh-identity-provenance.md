@@ -303,6 +303,6 @@ Acceptance checks:
 
 Related features:
 
-- {doc}`../features/surface-q-index-mapping`
-- {doc}`../features/palace-config-generation`
-- {doc}`../features/cad-xao-metadata-handoff`
+- [../features/surface-q-index-mapping](../features/surface-q-index-mapping.md)
+- [../features/palace-config-generation](../features/palace-config-generation.md)
+- [../features/cad-xao-metadata-handoff](../features/cad-xao-metadata-handoff.md)

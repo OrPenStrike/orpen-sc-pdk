@@ -92,4 +92,4 @@ The public PDK can accept an interface preset only after:
 
 Related issue:
 
-- {doc}`../issues/source-backed-interface-presets`
+- [../issues/source-backed-interface-presets](../issues/source-backed-interface-presets.md)

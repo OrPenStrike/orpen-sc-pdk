@@ -30,4 +30,4 @@ Private layout/IP belongs in a separate private layout repo. The private repo
 may export GF cells and chip assemblies, but the public PDK remains the owner of
 layer and process semantics.
 
-See {doc}`ecosystem-workspace` for the local workspace and contribution loop.
+See [ecosystem-workspace](ecosystem-workspace.md) for the local workspace and contribution loop.

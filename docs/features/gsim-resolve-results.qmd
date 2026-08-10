@@ -89,11 +89,11 @@ report.show_all_results()
 
 Use these notebooks to understand the current product:
 
-- {doc}`../notebooks/public_electrostatic_workflow`
-- {doc}`../notebooks/public_electrostatic_local_workflow`
+- [../notebooks/public_electrostatic_workflow](../notebooks/public_electrostatic_workflow.ipynb)
+- [../notebooks/public_electrostatic_local_workflow](../notebooks/public_electrostatic_local_workflow.ipynb)
 - `notebooks/Native_Masked_Surface_EPR/martinis2022_ribbon_native_mask_hpc_handoff.ipynb`
-- {doc}`../notebooks/public_driven_workflow`
-- {doc}`../notebooks/public_eigenmode_workflow`
+- [../notebooks/public_driven_workflow](../notebooks/public_driven_workflow.ipynb)
+- [../notebooks/public_eigenmode_workflow](../notebooks/public_eigenmode_workflow.ipynb)
 
 Driven and Eigenmode notebooks are secondary examples. The electrostatic and
 masked-surface handoff notebooks are the current path for C-matrix, domain-E,

@@ -3,7 +3,7 @@
 **Status:** superseded by the current development scope
 
 This page is kept only for older issue links. The active notebook direction now
-lives in {doc}`../developing-features` and {doc}`../notebooks`.
+lives in [../developing-features](../developing-features.md) and [../notebooks](../notebooks.qmd).
 
 Current notebook work has two jobs:
 
@@ -16,5 +16,5 @@ consumer surface for SGB and `gsim`, not a separate solver or report layer.
 
 Related active pages:
 
-- {doc}`semantic-geometry-builder`
-- {doc}`gsim-resolve-results`
+- [semantic-geometry-builder](semantic-geometry-builder.qmd)
+- [gsim-resolve-results](gsim-resolve-results.qmd)

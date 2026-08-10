@@ -132,7 +132,7 @@ Verified local changes:
   review rows for `MA`/`MS`/`SA` taxonomy, source-backed interface-loss
   extraction, transmon validation targets, and uncertainty-aware CPW
   interpretation;
-- {doc}`source-backed-interface-presets` now records the issue-level gate for
+- [source-backed-interface-presets](source-backed-interface-presets.md) now records the issue-level gate for
   converting those sources into public PDK preset records and later default
   selection without copying private NCUAS preset names;
 - local `gsim` now preserves caller preset name/source metadata in index maps
@@ -193,5 +193,5 @@ Remaining slices:
 
 Related docs:
 
-- {doc}`../features/material-db-overlay`
-- {doc}`source-backed-interface-presets`
+- [../features/material-db-overlay](../features/material-db-overlay.md)
+- [source-backed-interface-presets](source-backed-interface-presets.md)
