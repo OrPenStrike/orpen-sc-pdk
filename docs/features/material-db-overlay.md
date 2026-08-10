@@ -160,5 +160,5 @@ Remaining slices:
 
 Related issue:
 
-- {doc}`../issues/material-schema-boundary`
-- {doc}`../issues/source-backed-interface-presets`
+- [../issues/material-schema-boundary](../issues/material-schema-boundary.md)
+- [../issues/source-backed-interface-presets](../issues/source-backed-interface-presets.md)

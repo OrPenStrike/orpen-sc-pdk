@@ -47,6 +47,6 @@ Boundary change:
 
 Related detailed ledgers:
 
-- {doc}`../issues/cad-mesh-identity-provenance`
-- {doc}`../issues/palace-config-ownership`
-- {doc}`../issues/material-schema-boundary`
+- [../issues/cad-mesh-identity-provenance](../issues/cad-mesh-identity-provenance.md)
+- [../issues/palace-config-ownership](../issues/palace-config-ownership.md)
+- [../issues/material-schema-boundary](../issues/material-schema-boundary.md)

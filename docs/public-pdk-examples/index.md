@@ -12,36 +12,9 @@ how a public consumer uses `gsim`; they should not move solver ownership into
 | 2 | Simulation layer catalog | This supports the Purcell notebooks without changing `gsim` ownership. |
 | 3 | Evidence fixtures | This proves the examples stay public-safe and can trail the main docs. |
 
-::::{grid} 1 1 2 2
-:gutter: 3
-
-:::{grid-item-card} Problem notebooks
-:link: problem-notebooks
-:link-type: doc
-
-Driven, Eigenmode, Electrostatic, and Purcell workflows with public geometry.
-:::
-
-:::{grid-item-card} Simulation layer catalog
-:link: simulation-layer-catalog
-:link-type: doc
-
-Public layer names and layout-authored solver sheets for examples.
-:::
-
-:::{grid-item-card} Evidence fixtures
-:link: evidence-fixtures
-:link-type: doc
-
-Tests and evidence that prove the public examples stay publication-safe.
-:::
-
-::::
-
-```{toctree}
-:hidden:
-
-problem-notebooks
-simulation-layer-catalog
-evidence-fixtures
-```
+- [Problem notebooks](problem-notebooks.md): Driven, Eigenmode, Electrostatic,
+  and Purcell workflows with public geometry.
+- [Simulation layer catalog](simulation-layer-catalog.md): public layer names
+  and layout-authored solver sheets.
+- [Evidence fixtures](evidence-fixtures.md): checks that keep examples
+  publication-safe.

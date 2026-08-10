@@ -64,5 +64,5 @@ Acceptance direction:
 
 Related issue:
 
-- {doc}`../issues/palace-config-ownership`
-- {doc}`../issues/gsim-palace-branch-integration`
+- [../issues/palace-config-ownership](../issues/palace-config-ownership.md)
+- [../issues/gsim-palace-branch-integration](../issues/gsim-palace-branch-integration.md)

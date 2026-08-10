@@ -6,26 +6,12 @@ completed-run reporting.
 
 ## Active Capability Pages
 
-::::{grid} 1 1 2 2
-:gutter: 3
-
-:::{grid-item-card} Semantic Geometry Builder
-:link: features/semantic-geometry-builder
-:link-type: doc
-
-Preserve route, terminal, interface, and physical-group identity before `gsim`
-generates Palace mesh/config artifacts.
-:::
-
-:::{grid-item-card} gsim Resolve/Results
-:link: features/gsim-resolve-results
-:link-type: doc
-
-Turn completed Palace run folders into typed reports for capacitance, domain
-energy, surface-Q, and convergence review.
-:::
-
-::::
+- [Semantic Geometry Builder](features/semantic-geometry-builder.qmd) preserves
+  route, terminal, interface, and physical-group identity before `gsim`
+  generates Palace mesh/config artifacts.
+- [`gsim` Resolve/Results](features/gsim-resolve-results.qmd) turns completed
+  Palace run folders into typed reports for capacitance, domain energy,
+  surface-Q, and convergence review.
 
 ## Scope Boundary
 
@@ -43,12 +29,3 @@ energy, surface-Q, and convergence review.
 | 1 | Harden Resolve/Results | A public electrostatic notebook can point at a completed run folder and show C-matrix, domain-E, and surface-Q convergence through `gsim` report APIs. |
 | 2 | Minimize SGB | SGB emits only the semantic route/topology/terminal/interface sidecar needed by downstream mesh/config/report consumers. |
 | 3 | Update public notebooks | OrPen notebooks demonstrate the two capabilities through public fixtures and completed-run report paths. |
-
-```{toctree}
-:hidden:
-
-features/semantic-geometry-builder
-features/gsim-resolve-results
-gsim-changes/index
-notebooks
-```

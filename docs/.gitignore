@@ -1,5 +1,7 @@
 /.quarto/
+/_freeze/
 /_site/
-/reference/
+/justfile_help.txt
 /objects.json
+/reference/
 **/*.quarto_ipynb

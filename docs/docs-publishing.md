@@ -9,10 +9,9 @@ locally and published through GitHub Pages for `OrPenStrike/orpen-sc-pdk`.
 
 ## Tooling
 
-The docs stack follows a public PDK publication pattern:
+The docs stack follows a static public PDK publication pattern:
 
-- Sphinx for documentation builds.
-- MyST-NB for notebook pages.
+- Quarto for the searchable documentation site and notebook pages.
 - Jupytext `py:percent` notebooks stored in `notebooks/src/`.
 - `docs/docs.just` for docs helper commands.
 - GitHub Actions for pull request validation and Pages deployment.
@@ -27,30 +26,28 @@ Run:
 ```bash
 uv sync -p 3.12 --group docs --extra dev
 just docs
-just docs-latex
-just docs-pdf
 ```
 
-`just docs` builds HTML into `docs/_build/html`.
-`just docs-latex` builds LaTeX source into `docs/_build/latex`.
-`just docs-pdf` builds the PDF from the LaTeX source.
+`just docs` builds the static site into `docs/_site`. `just serve-docs` starts
+the Quarto preview server for local editing.
 
 The generated Just command reference is included below when the docs are built:
 
-```{literalinclude} justfile_help.txt
-:language: text
+```text
+just docs
+just serve-docs
+just clean-docs
 ```
 
 ## CI Contract
 
 The GitHub Pages workflow should:
 
-- build HTML docs on pull requests and pushes;
-- build LaTeX and PDF artifacts;
-- upload the HTML artifact for review;
-- upload the PDF artifact for review;
+- build the Quarto HTML site on pull requests and pushes;
+- upload the static site artifact for review;
 - deploy Pages only from `main`;
-- include the PDF in the published Pages output.
+- preserve notebook code and saved output in static HTML;
+- copy the browser-only layout viewer and its public SVG resources.
 
 Pull requests validate that architecture pages, notebook pages, and API pages
 render without requiring private layout repositories.

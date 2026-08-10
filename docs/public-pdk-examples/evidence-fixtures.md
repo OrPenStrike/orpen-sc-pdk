@@ -40,4 +40,4 @@ Boundary change:
 - Evidence generated under `build/` remains ignored local review output, not a
   committed public artifact.
 
-Related detailed ledger: {doc}`../issues/public-problem-type-notebook-coverage`.
+Related detailed ledger: [../issues/public-problem-type-notebook-coverage](../issues/public-problem-type-notebook-coverage.md).

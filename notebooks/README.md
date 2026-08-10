@@ -14,12 +14,10 @@ Convert one source file with:
 uvx jupytext --to ipynb notebooks/src/public_driven_workflow.py
 ```
 
-Build the documentation notebook pages and PDF docs with:
+Build the Quarto documentation and notebook pages with:
 
 ```bash
 just docs
-just docs-latex
-just docs-pdf
 ```
 
 Notebook examples in this public repo must not include private layout/IP, GDS

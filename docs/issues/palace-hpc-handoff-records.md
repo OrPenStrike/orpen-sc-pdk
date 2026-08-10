@@ -165,6 +165,6 @@ Acceptance checks:
 
 Related features:
 
-- {doc}`../features/benchmark-cost-analysis`
-- {doc}`../features/palace-config-generation`
-- {doc}`../features/problem-type-notebook-suite`
+- [../features/benchmark-cost-analysis](../features/benchmark-cost-analysis.md)
+- [../features/palace-config-generation](../features/palace-config-generation.md)
+- [../features/problem-type-notebook-suite](../features/problem-type-notebook-suite.md)

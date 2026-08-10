@@ -67,4 +67,4 @@ Acceptance checks:
 
 Related issue:
 
-- {doc}`palace-api-responsibility-boundary`
+- [palace-api-responsibility-boundary](palace-api-responsibility-boundary.md)

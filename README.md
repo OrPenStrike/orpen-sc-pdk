@@ -149,6 +149,9 @@ Build the static HTML docs:
 just docs
 ```
 
+The Quarto site includes searchable reference pages, rendered notebook cells
+and outputs, and a browser-only interactive viewer for public layout exports.
+
 Serve the built docs locally:
 
 ```bash

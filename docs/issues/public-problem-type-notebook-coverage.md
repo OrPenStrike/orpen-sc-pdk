@@ -324,9 +324,8 @@ Verified local changes:
   `build/notebook-review/` for `notebooks/public_driven_workflow.ipynb`,
   `notebooks/public_eigenmode_workflow.ipynb`, and
   `notebooks/public_electrostatic_workflow.ipynb`.
-- `just docs` converts the split public problem-type notebooks and renders them
-  in the docs build, while Sphinx excludes those notebooks from default
-  execution.
+- `just docs` converts the split public problem-type notebooks and lets Quarto
+  render their checked-in cells without executing solver-dependent paths.
 
 Remaining slices:
 
@@ -363,6 +362,6 @@ Acceptance checks:
 
 Related features:
 
-- {doc}`../features/palace-reporting`
-- {doc}`../features/palace-config-generation`
-- {doc}`../features/problem-type-notebook-suite`
+- [../features/palace-reporting](../features/palace-reporting.md)
+- [../features/palace-config-generation](../features/palace-config-generation.md)
+- [../features/problem-type-notebook-suite](../features/problem-type-notebook-suite.md)

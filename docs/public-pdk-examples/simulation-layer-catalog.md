@@ -42,5 +42,5 @@ Boundary change:
 
 Related pages:
 
-- {doc}`problem-notebooks`
-- {doc}`../gsim-changes/mesh-config-provenance`
+- [problem-notebooks](problem-notebooks.md)
+- [../gsim-changes/mesh-config-provenance](../gsim-changes/mesh-config-provenance.md)

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OrPen layout viewer</title>
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <header>
+    <label for="layout">Layout</label>
+    <select id="layout">
+      <option value="global_purcell_filter_demo_chip.svg">Purcell filter demo chip</option>
+      <option value="interdigital_capacitor.svg">Interdigital capacitor</option>
+      <option value="launcher.svg">Launcher</option>
+      <option value="martinis2022_differential_ribbon_capacitor.svg">Differential ribbon capacitor</option>
+      <option value="resonator.svg">Resonator</option>
+      <option value="sim_flip_chip_distance.svg">Flip-chip spacing</option>
+    </select>
+    <button id="reset" type="button">Reset view</button>
+  </header>
+  <main id="stage" aria-label="Pan and zoom layout canvas">
+    <img id="drawing" alt="Selected OrPen layout">
+  </main>
+  <p class="hint">Drag to pan · wheel or trackpad to zoom</p>
+  <script src="viewer.js"></script>
+</body>
+</html>

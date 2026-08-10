@@ -1,0 +1,30 @@
+---
+title: "Notebooks"
+description: "Publication-safe OrPen layout and simulation notebooks rendered with their code and saved outputs."
+---
+
+Quarto renders the checked-in Jupyter notebooks as ordinary documentation pages.
+Readers can inspect Markdown, cell code, and saved cell output in the static site;
+no Python kernel is required after the site is built.
+
+The notebooks remain executable development artifacts. A notebook that needs a
+solver, private run folder, or optional application must fail clearly when that
+dependency is unavailable; the docs build does not invent output.
+
+## Layout tutorials
+
+- [Public PDK component inventory](notebooks/Public_Docs/component_gallery.ipynb)
+- [Martinis ribbon, Route A](notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_a.ipynb)
+- [Martinis ribbon, Route B](notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_b.ipynb)
+- [Resonator, Route A](notebooks/SGB_Geometry_Tutorials/resonator_route_a.ipynb)
+- [Flip-chip spacing, Route A](notebooks/SGB_Geometry_Tutorials/sim_flip_chip_distance_route_a.ipynb)
+
+## Simulation notebooks
+
+- [Interdigital-capacitor Q3D capacitance](notebooks/AEDTSimulation/Components/interdigital_capacitor_q3d_capacitance.ipynb)
+- [Two-resonator response](notebooks/AEDTSimulation/Components/two_resonator_bare_and_coupled_response.ipynb)
+- [Native masked-surface EPR analysis](notebooks/Native_Masked_Surface_EPR/native_mask_surface_epr_analysis.ipynb)
+
+Checked-in outputs are embedded at build time. To execute a notebook before
+rendering, use `quarto render path/to/notebook.ipynb --execute` in an environment
+that provides its declared dependencies.

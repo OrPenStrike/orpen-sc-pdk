@@ -1,0 +1,38 @@
+---
+title: "OrPen SC PDK"
+description: "Public superconducting quantum and RF PDK documentation."
+---
+
+`orpen-sc-pdk` is the public superconducting quantum/RF PDK for contributors who
+need to keep a Primary Layout in a private repository while still improving
+shared GDSFactory ecosystem infrastructure.
+
+The public PDK does not migrate private layout/IP into a public repo. It owns
+the public process contract: layer names, layer views, the layer stack, material
+semantics, public CPW cross-sections, reusable layout helpers, public cells,
+static GF+ import mechanics, and
+publication-safe documentation. Private layout repositories keep real chip geometry, private
+parameters, private notebooks, GDS inputs from private designs, and private
+run evidence.
+
+The intended workflow is local and reviewable: open the private layout repo as
+the GF+ project, install `orpen-sc-pdk` as its base PDK, use private layouts to
+validate public infrastructure, then slice accepted public work into clean
+upstream PR branches.
+
+Palace source development is a separate solver-source lane. Most reusable
+Palace workflow work should go through `gsim`; direct Palace fork work is for
+solver-side outputs, postprocessing internals, or behavior that cannot be
+implemented reliably from the Python workflow layer.
+
+## Start By Task
+
+- [Use the public PDK](home/pdk-responsibilities.md): process semantics, cells,
+  materials, static GF+ import mechanics, and documentation.
+- [Connect a private layout repository](home/ecosystem-workspace.md) without
+  publishing private layout or IP.
+- [Develop ecosystem features](developing-features.md) through the current SGB
+  and `gsim` capability boundaries.
+- [Read public examples](public-pdk-examples/index.md), including notebooks,
+  simulation layers, and publication-safe evidence fixtures.
+- [Explore layout exports](layout-viewer.qmd) in the static interactive viewer.

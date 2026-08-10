@@ -164,14 +164,14 @@ Remaining slices:
 
 Related features:
 
-- {doc}`../features/palace-reporting`
-- {doc}`../features/material-db-overlay`
-- {doc}`../features/palace-config-generation`
-- {doc}`../features/problem-type-notebook-suite`
-- {doc}`../features/gsim-palace-branch-comparison`
+- [../features/palace-reporting](../features/palace-reporting.md)
+- [../features/material-db-overlay](../features/material-db-overlay.md)
+- [../features/palace-config-generation](../features/palace-config-generation.md)
+- [../features/problem-type-notebook-suite](../features/problem-type-notebook-suite.md)
+- [../features/gsim-palace-branch-comparison](../features/gsim-palace-branch-comparison.md)
 
 Related issue:
 
-- {doc}`palace-hpc-handoff-records`
-- {doc}`palace-api-responsibility-boundary`
-- {doc}`gsim-palace-branch-integration`
+- [palace-hpc-handoff-records](palace-hpc-handoff-records.md)
+- [palace-api-responsibility-boundary](palace-api-responsibility-boundary.md)
+- [gsim-palace-branch-integration](gsim-palace-branch-integration.md)
