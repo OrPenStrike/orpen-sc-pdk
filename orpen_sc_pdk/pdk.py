@@ -19,6 +19,7 @@ from orpen_sc_pdk.cells import (
     launcher,
     manhattan_style_junction,
     martinis2022_differential_ribbon_capacitor,
+    mtl_bend_coupling_section,
     n_trace_mtl_section,
     resonator,
     resonator_hanger,
@@ -66,6 +67,7 @@ _cells = {
         spring2025_intrinsic_individual_purcell_filter_test_chip
     ),
     "n_trace_mtl_section": n_trace_mtl_section,
+    "mtl_bend_coupling_section": mtl_bend_coupling_section,
     "dicing_edge": dicing_edge,
     "interdigital_capacitor": interdigital_capacitor,
     "launcher": launcher,

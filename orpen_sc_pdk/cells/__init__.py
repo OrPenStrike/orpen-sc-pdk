@@ -5,7 +5,13 @@ from orpen_sc_pdk.cells.capacitor import interdigital_capacitor
 from orpen_sc_pdk.cells.chips.spring2025_intrinsic_individual_purcell_filter_test_chip import (
     spring2025_intrinsic_individual_purcell_filter_test_chip,
 )
-from orpen_sc_pdk.cells.cpw import cpw_straight, cpw_t_junction, launcher, n_trace_mtl_section
+from orpen_sc_pdk.cells.cpw import (
+    cpw_straight,
+    cpw_t_junction,
+    launcher,
+    mtl_bend_coupling_section,
+    n_trace_mtl_section,
+)
 from orpen_sc_pdk.cells.dicing import dicing_edge
 from orpen_sc_pdk.cells.indium import indium_bump, indium_ground
 from orpen_sc_pdk.cells.junction import manhattan_style_junction
@@ -31,6 +37,7 @@ __all__ = [
     "cpw_straight",
     "cpw_t_junction",
     "n_trace_mtl_section",
+    "mtl_bend_coupling_section",
     "bend_euler",
     "dicing_edge",
     "interdigital_capacitor",

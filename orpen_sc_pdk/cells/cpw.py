@@ -149,6 +149,118 @@ def n_trace_mtl_section(
 
 
 @gf.cell(tags=["elements"])
+def mtl_bend_coupling_section(
+    coupled_length: float = 500.0,
+    inter_trace_ground_width: float = 3.0,
+    bend_radius: float = 100.0,
+    cross_section: CrossSectionSpec = "cpw_6_7_6",
+) -> gf.Component:
+    """Return two coupled CPW traces with four directly attached Euler bends.
+
+    Defaults are public GDSFactory+ preview settings, not design-target authority.
+    """
+
+    for name, value in (
+        ("coupled_length", coupled_length),
+        ("inter_trace_ground_width", inter_trace_ground_width),
+        ("bend_radius", bend_radius),
+    ):
+        if not isfinite(value) or value <= 0:
+            raise ValueError(f"{name} must be finite and positive, got {value!r}.")
+
+    xs = gf.get_cross_section(cross_section)
+    required_sections = (CPW_DRAW, CPW_ETCH_NEG, CPW_ETCH_POS, CPW_GROUND_MASK)
+    section_names = {section.name for section in xs.sections}
+    missing_sections = [name for name in required_sections if name not in section_names]
+    if missing_sections:
+        raise ValueError(
+            "cross_section must use OrPen CPW sections "
+            f"{', '.join(required_sections)}, missing {', '.join(missing_sections)}."
+        )
+
+    draw_section = xs[CPW_DRAW]
+    etch_neg_section = xs[CPW_ETCH_NEG]
+    etch_pos_section = xs[CPW_ETCH_POS]
+    ground_mask_section = xs[CPW_GROUND_MASK]
+    cpw_width = float(draw_section.width)
+    neg_gap = float(etch_neg_section.width)
+    pos_gap = float(etch_pos_section.width)
+    if not all(isfinite(value) and value > 0 for value in (cpw_width, neg_gap, pos_gap)):
+        raise ValueError(
+            "cross_section CPW draw width and etch gap widths must be finite and positive."
+        )
+    if neg_gap != pos_gap:
+        raise ValueError(
+            f"cross_section must have symmetric CPW etch gaps, got {neg_gap!r} and {pos_gap!r}."
+        )
+    etch_neg_layer = gf.get_layer_tuple(etch_neg_section.layer)
+    etch_pos_layer = gf.get_layer_tuple(etch_pos_section.layer)
+    if etch_neg_layer != etch_pos_layer:
+        raise ValueError(
+            "cross_section CPW etch sections must share one layer, "
+            f"got {etch_neg_layer!r} and {etch_pos_layer!r}."
+        )
+
+    mtl_xs = gf.get_cross_section(
+        "n_trace_coplanar_waveguide",
+        trace_widths=(cpw_width, cpw_width),
+        trace_gaps=(neg_gap, neg_gap),
+        inter_trace_ground_widths=(float(inter_trace_ground_width),),
+        trace_names=("p", "r"),
+        draw_layer=draw_section.layer,
+        etch_layer=etch_neg_section.layer,
+        ground_mask_layer=ground_mask_section.layer,
+        radius=bend_radius,
+    )
+
+    component = gf.Component()
+    coupled_ref = component << n_trace_mtl_section(
+        length=coupled_length,
+        cross_section=mtl_xs,
+    )
+    coupled_ref.dmovex(-coupled_length / 2)
+
+    bend = gf.path.extrude(
+        gf.path.euler(radius=bend_radius, angle=90, use_eff=True),
+        cross_section=xs,
+    )
+    p_left = component << bend
+    p_left.connect("o1", coupled_ref.ports["p_o1"])
+    r_left = component << bend
+    r_left.connect("o1", coupled_ref.ports["r_o1"], mirror=True)
+    p_right = component << bend
+    p_right.connect("o1", coupled_ref.ports["p_o2"], mirror=True)
+    r_right = component << bend
+    r_right.connect("o1", coupled_ref.ports["r_o2"])
+
+    component.add_port(name="r_left", port=r_left.ports["o2"])
+    component.add_port(name="r_right", port=r_right.ports["o2"])
+    component.add_port(name="p_left", port=p_left.ports["o2"])
+    component.add_port(name="p_right", port=p_right.ports["o2"])
+
+    component.info["topology"] = "mtl_bend_coupling_section"
+    component.info["coupled_length_um"] = float(coupled_length)
+    component.info["inter_trace_ground_width_um"] = float(inter_trace_ground_width)
+    component.info["bend_radius_um"] = float(bend_radius)
+    component.info["cross_section_name"] = xs.name
+    component.info["trace_order_bottom_to_top"] = ("p", "r")
+    component.info["ordered_port_names"] = ("r_left", "r_right", "p_left", "p_right")
+    component.info["port_orientations_deg"] = {
+        "r_left": 90,
+        "r_right": 90,
+        "p_left": 270,
+        "p_right": 270,
+    }
+    component.info["central_x_span_um"] = (-float(coupled_length) / 2, float(coupled_length) / 2)
+    component.info["layers"] = {
+        "draw": tuple(int(value) for value in gf.get_layer_tuple(draw_section.layer)),
+        "etch": tuple(int(value) for value in etch_neg_layer),
+        "ground_mask": tuple(int(value) for value in gf.get_layer_tuple(ground_mask_section.layer)),
+    }
+    return component
+
+
+@gf.cell(tags=["elements"])
 def launcher(
     pad_width: float = 150.0,
     pad_length: float = 150.0,
