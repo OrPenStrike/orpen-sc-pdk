@@ -126,6 +126,12 @@ from .hpc import (
     render_aedt_acf_config,
     write_aedt_hpc_artifacts,
 )
+from .idc_q3d import (
+    InterdigitalCapacitorQ3dSimulation,
+    Q3dCapacitanceResult,
+    load_q3d_capacitance_result,
+    prepare_interdigital_capacitor_q3d_simulation,
+)
 from .materials import (
     aedt_material_fallback_reason,
     aedt_material_name_for_physical_material,
@@ -272,6 +278,10 @@ __all__ = [
     "prepare_aedt_native_handoff_package",
     "prepare_aedt_native_sweep_handoff_package",
     "prepare_interdigital_capacitor_q3d_geometry",
+    "InterdigitalCapacitorQ3dSimulation",
+    "Q3dCapacitanceResult",
+    "load_q3d_capacitance_result",
+    "prepare_interdigital_capacitor_q3d_simulation",
     "render_aedt_acf_config",
     "validate_q2d_cross_section_payload",
     "write_q2d_cross_section_payload",
