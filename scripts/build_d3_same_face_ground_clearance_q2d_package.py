@@ -23,6 +23,12 @@ from typing import Any
 
 import yaml
 
+from orpen_sc_pdk.simulation.aedt.d3_q2d_material import (
+    CONDUCTOR_AEDT_MATERIAL,
+    SUBSTRATE_AEDT_MATERIAL,
+    d3_q2d_material_policy,
+    write_d3_q2d_material_context,
+)
 from orpen_sc_pdk.simulation.aedt.models import (
     AedtNativeCaseSpec,
     AedtNativePackageResult,
@@ -370,10 +376,14 @@ def build_package(
         matrix_problem_types=("CG", "RL"),
         matrix_types=("Maxwell",),
         q2d_setup=AedtQ2dSetupSpec(adaptive_frequency=ADAPTIVE_FREQUENCY),
+        material_policy=d3_q2d_material_policy(),
     )
 
     with TemporaryDirectory(prefix="orpen-d3-q2d-") as temporary_directory:
         source_dir = Path(temporary_directory)
+        material_context_path = write_d3_q2d_material_context(
+            source_dir / "aedt_material_context.json"
+        )
         cases = []
         for row in rows:
             case_id = str(row["point_slug"])
@@ -389,6 +399,8 @@ def build_package(
                 "air_height_um": AIR_HEIGHT_UM,
                 "ground_width_um": GROUND_WIDTH_UM,
                 "metal_thickness_um": METAL_THICKNESS_UM,
+                "substrate_material": SUBSTRATE_AEDT_MATERIAL,
+                "conductor_material": CONDUCTOR_AEDT_MATERIAL,
             }
             if role == "coupled_pair":
                 cross_section = make_q2d_same_face_two_trace_cross_section(
@@ -408,6 +420,7 @@ def build_package(
             cases.append(
                 AedtNativeCaseSpec(
                     id=case_id,
+                    aedt_material_context_path=material_context_path,
                     q2d_cross_section_json_path=cross_section_path,
                     recipes=(recipe,),
                 )

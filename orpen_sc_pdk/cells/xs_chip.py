@@ -6,6 +6,7 @@ import gdsfactory as gf
 from gdsfactory.cross_section import CrossSection
 from gdsfactory.typings import CrossSectionSpec
 
+from orpen_sc_pdk.cells.cpw import n_trace_mtl_section
 from orpen_sc_pdk.ports import add_q2d_conductor_port
 from orpen_sc_pdk.tech import (
     CPW_ETCH_NEG,
@@ -14,6 +15,7 @@ from orpen_sc_pdk.tech import (
     LAYER,
     LayerSpec,
     coplanar_waveguide,
+    n_trace_coplanar_waveguide,
 )
 
 
@@ -118,32 +120,31 @@ def two_trace_xs_chip(
     if length_um <= 0:
         raise ValueError(f"length_um must be positive, got {length_um!r}.")
     ground_gap_um, trace_width_um = _symmetric_gap_width_gap(cpw_gap_width_gap_um)
-    middle_ground_width_um = _two_trace_middle_ground_width(trace_gap_um, ground_gap_um)
+    inter_trace_ground_width_um = _two_trace_middle_ground_width(trace_gap_um, ground_gap_um)
     if len(signal_assignment_names) != 2 or any(
-        not str(name).strip() for name in signal_assignment_names
+        not isinstance(name, str) or not name.strip() for name in signal_assignment_names
     ):
         raise ValueError("signal_assignment_names must contain two non-empty names.")
 
     c = gf.Component()
-    trace1_center_y = -(trace_width_um + trace_gap_um) / 2
-    trace2_center_y = (trace_width_um + trace_gap_um) / 2
-    _add_two_trace_sections(
-        c,
-        length_um=length_um,
-        trace_width_um=trace_width_um,
-        ground_gap_um=ground_gap_um,
-        trace_gap_um=trace_gap_um,
+    trace_xs = n_trace_coplanar_waveguide(
+        trace_widths=(trace_width_um, trace_width_um),
+        trace_gaps=(ground_gap_um, ground_gap_um),
+        inter_trace_ground_widths=(inter_trace_ground_width_um,),
+        trace_names=signal_assignment_names,
         draw_layer=draw_layer,
         etch_layer=etch_layer,
         ground_mask_layer=ground_mask_layer,
-        y_offset_um=0.0,
     )
+    c << n_trace_mtl_section(length=length_um, cross_section=trace_xs)
+    trace1_center_y = -(trace_width_um + trace_gap_um) / 2
+    trace2_center_y = (trace_width_um + trace_gap_um) / 2
     _add_two_trace_markers(
         c,
         length_um=length_um,
         trace_width_um=trace_width_um,
-        ground_gap_um=ground_gap_um,
         trace_gap_um=trace_gap_um,
+        ground_gap_um=ground_gap_um,
         draw_layer=draw_layer,
         signal_assignment_names=signal_assignment_names,
         prefix="q2d_d0",
@@ -155,7 +156,7 @@ def two_trace_xs_chip(
     c.info["cpw_gap_um"] = ground_gap_um
     c.info["cpw_gap_width_gap_um"] = (ground_gap_um, trace_width_um, ground_gap_um)
     c.info["trace_gap_um"] = float(trace_gap_um)
-    c.info["middle_ground_width_um"] = middle_ground_width_um
+    c.info["middle_ground_width_um"] = inter_trace_ground_width_um
     c.info["minimum_middle_ground_width_um"] = _MIN_TWO_TRACE_MIDDLE_GROUND_WIDTH_UM
     c.info["trace_gap_process_note"] = (
         "trace_gap_um is signal-edge-to-signal-edge spacing; keep the gap-to-gap "
@@ -440,80 +441,6 @@ def _two_trace_middle_ground_width(trace_gap_um: float, cpw_gap_um: float) -> fl
             f"got {trace_gap_um:g}um."
         )
     return middle_ground_width_um
-
-
-def _add_two_trace_sections(
-    component: gf.Component,
-    *,
-    length_um: float,
-    trace_width_um: float,
-    ground_gap_um: float,
-    trace_gap_um: float,
-    draw_layer: LayerSpec,
-    etch_layer: LayerSpec,
-    ground_mask_layer: LayerSpec,
-    y_offset_um: float,
-) -> None:
-    trace1_min_y = y_offset_um - trace_gap_um / 2 - trace_width_um
-    trace1_max_y = y_offset_um - trace_gap_um / 2
-    trace2_min_y = y_offset_um + trace_gap_um / 2
-    trace2_max_y = y_offset_um + trace_gap_um / 2 + trace_width_um
-    _add_rect(
-        component,
-        x_min=0.0,
-        x_max=length_um,
-        y_min=trace1_min_y,
-        y_max=trace1_max_y,
-        layer=draw_layer,
-    )
-    _add_rect(
-        component,
-        x_min=0.0,
-        x_max=length_um,
-        y_min=trace2_min_y,
-        y_max=trace2_max_y,
-        layer=draw_layer,
-    )
-    _add_rect(
-        component,
-        x_min=0.0,
-        x_max=length_um,
-        y_min=trace1_min_y - ground_gap_um,
-        y_max=trace1_min_y,
-        layer=etch_layer,
-    )
-    _add_rect(
-        component,
-        x_min=0.0,
-        x_max=length_um,
-        y_min=trace1_max_y,
-        y_max=trace1_max_y + ground_gap_um,
-        layer=etch_layer,
-    )
-    _add_rect(
-        component,
-        x_min=0.0,
-        x_max=length_um,
-        y_min=trace2_min_y - ground_gap_um,
-        y_max=trace2_min_y,
-        layer=etch_layer,
-    )
-    _add_rect(
-        component,
-        x_min=0.0,
-        x_max=length_um,
-        y_min=trace2_max_y,
-        y_max=trace2_max_y + ground_gap_um,
-        layer=etch_layer,
-    )
-    _add_rect(
-        component,
-        x_min=0.0,
-        x_max=length_um,
-        y_min=trace1_min_y - ground_gap_um,
-        y_max=trace2_max_y + ground_gap_um,
-        layer=ground_mask_layer,
-    )
 
 
 def _add_two_trace_markers(

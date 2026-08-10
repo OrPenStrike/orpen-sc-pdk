@@ -89,4 +89,4 @@ docs and fixtures to consume the accepted API surface.
 
 Related issue:
 
-- {doc}`../issues/gsim-palace-branch-integration`
+- [../issues/gsim-palace-branch-integration](../issues/gsim-palace-branch-integration.md)

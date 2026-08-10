@@ -1,7 +1,7 @@
 # Issues
 
 This page tracks the current public follow-up issues for the
-`orpen-sc-pdk` workflow. It intentionally mirrors {doc}`developing-features`:
+`orpen-sc-pdk` workflow. It intentionally mirrors [developing-features](developing-features.md):
 there are two active development capabilities, not a long independent roadmap.
 
 ## Active Issue Clusters
@@ -13,55 +13,11 @@ there are two active development capabilities, not a long independent roadmap.
 
 ## Boundary Issues
 
-::::{grid} 1 1 2 2
-:gutter: 3
-
-:::{grid-item-card} CAD/mesh identity provenance
-:link: issues/cad-mesh-identity-provenance
-:link-type: doc
-
-Use this ledger only for historical identity-provenance context. Current SGB
-work owns the semantic handoff scope.
-:::
-
-:::{grid-item-card} Palace report ownership
-:link: issues/palace-report-ownership
-:link-type: doc
-
-Use this ledger for Resolve/Results ownership details. `gsim` owns report
-loading and display semantics.
-:::
-
-:::{grid-item-card} Palace config ownership
-:link: issues/palace-config-ownership
-:link-type: doc
-
-Use this ledger when config-generation identity affects Resolve/Results or SGB
-handoff.
-:::
-
-:::{grid-item-card} Public problem-type notebook coverage
-:link: issues/public-problem-type-notebook-coverage
-:link-type: doc
-
-Use this ledger as historical notebook coverage context. Public notebooks are
-now consumer examples for the two active capabilities.
-:::
-
-::::
-
-```{toctree}
-:hidden:
-
-issues/cad-mesh-identity-provenance
-issues/palace-report-ownership
-issues/palace-config-ownership
-issues/public-problem-type-notebook-coverage
-issues/gplugins-boundary
-issues/integration-branch-hygiene
-issues/material-schema-boundary
-issues/palace-api-responsibility-boundary
-issues/palace-hpc-handoff-records
-issues/gsim-palace-branch-integration
-issues/source-backed-interface-presets
-```
+- [CAD/mesh identity provenance](issues/cad-mesh-identity-provenance.md):
+  historical identity-provenance context for the SGB handoff.
+- [Palace report ownership](issues/palace-report-ownership.md): Resolve/Results
+  loading and display ownership.
+- [Palace config ownership](issues/palace-config-ownership.md): configuration
+  identity across Resolve/Results and SGB.
+- [Public notebook coverage](issues/public-problem-type-notebook-coverage.md):
+  publication-safe consumer examples.

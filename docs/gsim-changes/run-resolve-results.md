@@ -51,4 +51,4 @@ Boundary change:
 - Public PDK notebooks call the high-level path and do not manually assemble
   `missing_artifacts`, `config_path`, or `mesh_path` as their main output.
 
-Related detailed ledger: {doc}`../issues/palace-report-ownership`.
+Related detailed ledger: [../issues/palace-report-ownership](../issues/palace-report-ownership.md).

@@ -85,4 +85,4 @@ editable contributor dependency:
 
 Related feature:
 
-- {doc}`../features/gsim-palace-branch-comparison`
+- [../features/gsim-palace-branch-comparison](../features/gsim-palace-branch-comparison.md)

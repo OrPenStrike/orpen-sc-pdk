@@ -41,24 +41,10 @@ gdsfactoryplus = ["gdsfactoryplus", "httpx"]
 
 [dependency-groups]
 docs = [
+  "griffe<2",
   "ipykernel",
   "jupytext",
-  "linkify-it-py",
   "matplotlib",
-  "myst-nb>=1.0",
-  "nbconvert",
-  "pydata-sphinx-theme",
-  "sphinx>=9.0",
-  "sphinx-copybutton",
-  "sphinx-design",
-  "sphinx-github-alerts",
-  "sphinxcontrib-bibtex",
-  "sphinxcontrib-bibtex-urn",
-  "sphinxcontrib-mermaid",
-  "sphinxcontrib-svgbob",
-]
-docs-quarto = [
-  "griffe<2",
   "quartodoc",
 ]
 ecosystem-dev = [
@@ -105,6 +91,7 @@ cells_no_model_expected = [
   "cpw_straight",
   "dicing_edge",
   "interdigital_capacitor",
+  "interdigital_capacitor_q3d_coupon",
   "launcher",
   "manhattan_style_junction",
   "martinis2022_differential_ribbon_capacitor",

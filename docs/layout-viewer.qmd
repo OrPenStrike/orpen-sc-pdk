@@ -1,0 +1,17 @@
+---
+title: "Interactive Layout Viewer"
+description: "Explore public OrPen layout exports in a static browser-only viewer."
+---
+
+The viewer below is part of the generated static site. It supports panning,
+zooming, reset, and component selection entirely in the browser; it does not
+need Python, a notebook kernel, or a server-side layout service.
+
+<iframe class="layout-viewer-frame" src="layout-viewer/index.html" title="Interactive OrPen layout viewer"></iframe>
+
+::: {.callout-note}
+## Scope
+
+This first viewer uses the repository's publication-safe SVG exports. It is
+intended for visual inspection, not GDS sign-off or layer-rule verification.
+:::

@@ -49,5 +49,5 @@ Boundary change:
 
 Related detailed ledgers:
 
-- {doc}`../issues/palace-hpc-handoff-records`
-- {doc}`../features/benchmark-cost-analysis`
+- [../issues/palace-hpc-handoff-records](../issues/palace-hpc-handoff-records.md)
+- [../features/benchmark-cost-analysis](../features/benchmark-cost-analysis.md)

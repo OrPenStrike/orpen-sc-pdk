@@ -77,7 +77,7 @@ Route meaning:
 | SGB route fixtures | `../semantic_geometry_builder/tutorials/route_fixtures/` |
 | Public stack fixtures | `notebooks/assets/semantic_geometry_builder/` |
 | Public notebook wrappers | `notebooks/src/SGB_Geometry_Tutorials/` |
-| Rendered notebook entry | {doc}`../notebooks` |
+| Rendered notebook entry | [../notebooks](../notebooks.qmd) |
 
 ## Pipeline
 

@@ -1,0 +1,147 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - "*.qmd"
+    - "*.md"
+    - "home/*.md"
+    - "features/*.md"
+    - "public-pdk-examples/*.md"
+    - "papers/*.md"
+    - "issues/*.md"
+    - "gsim-changes/*.md"
+    - "detailed-ledgers/*.md"
+    - "notebooks/Public_Docs/component_gallery.ipynb"
+    - "notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_a.ipynb"
+    - "notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_b.ipynb"
+    - "notebooks/SGB_Geometry_Tutorials/resonator_route_a.ipynb"
+    - "notebooks/SGB_Geometry_Tutorials/sim_flip_chip_distance_route_a.ipynb"
+    - "notebooks/AEDTSimulation/Components/interdigital_capacitor_q3d_capacitance.ipynb"
+    - "notebooks/AEDTSimulation/Components/two_resonator_bare_and_coupled_response.ipynb"
+    - "notebooks/Native_Masked_Surface_EPR/native_mask_surface_epr_analysis.ipynb"
+    - "notebooks/public_electrostatic_workflow.ipynb"
+    - "notebooks/public_driven_workflow.ipynb"
+    - "notebooks/public_eigenmode_workflow.ipynb"
+    - "reference/*.qmd"
+  resources:
+    - _static/images/components/*.svg
+    - layout-viewer/*
+  pre-render:
+    - uv run --project .. --group docs quartodoc build
+
+website:
+  title: "OrPen SC PDK"
+  site-url: https://orpenstrike.github.io/orpen-sc-pdk/
+  favicon: assets/orpen-mark.svg
+  repo-url: https://github.com/OrPenStrike/orpen-sc-pdk
+  repo-actions: [edit, issue]
+  navbar:
+    logo: assets/orpen-mark.svg
+    search: true
+    left:
+      - text: Overview
+        href: index.qmd
+      - text: Features
+        href: developing-features.md
+      - text: Notebooks
+        href: notebooks.qmd
+      - text: Layout Viewer
+        href: layout-viewer.qmd
+      - text: API
+        href: reference/index.qmd
+  sidebar:
+    style: docked
+    contents:
+      - index.qmd
+      - section: Public PDK
+        contents:
+          - home/pdk-responsibilities.md
+          - home/ecosystem-workspace.md
+          - materials-and-technology.md
+          - models.md
+          - public-pdk-examples/index.md
+          - public-pdk-examples/problem-notebooks.md
+          - public-pdk-examples/simulation-layer-catalog.md
+          - public-pdk-examples/evidence-fixtures.md
+      - section: Features
+        contents:
+          - developing-features.md
+          - features/semantic-geometry-builder.qmd
+          - features/gsim-resolve-results.qmd
+          - features/aedt-native-package.md
+          - features/aedt-q2d-semantic-cross-section.md
+          - features/benchmark-cost-analysis.md
+          - features/cad-xao-metadata-handoff.md
+          - features/gdsfactoryplus-discovery.md
+          - features/gsim-palace-branch-comparison.md
+          - features/material-db-overlay.md
+          - features/native-masked-surface-epr-handoff.md
+          - features/palace-config-generation.md
+          - features/palace-reporting.md
+          - features/problem-type-notebook-suite.md
+          - features/surface-q-index-mapping.md
+      - section: Notebooks and Layouts
+        contents:
+          - notebooks.qmd
+          - layout-viewer.qmd
+          - notebooks/Public_Docs/component_gallery.ipynb
+          - notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_a.ipynb
+          - notebooks/SGB_Geometry_Tutorials/resonator_route_a.ipynb
+          - notebooks/AEDTSimulation/Components/interdigital_capacitor_q3d_capacitance.ipynb
+      - section: API Reference
+        contents:
+          - reference/index.qmd
+      - section: Development Records
+        contents:
+          - issues.md
+          - paper-review.md
+          - detailed-ledgers/index.md
+          - gsim-changes/index.md
+      - docs-publishing.md
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+
+execute:
+  freeze: auto
+
+quartodoc:
+  style: pkgdown
+  dir: reference
+  package: orpen_sc_pdk
+  title: API Reference
+  sections:
+    - title: Package
+      desc: Public package entry points.
+      contents:
+        - activate
+        - get_pdk
+        - get_sample_functions
+    - title: Cells
+      desc: Public superconducting and RF layout factories.
+      contents:
+        - cells.airbridge
+        - cells.interdigital_capacitor
+        - cells.interdigital_capacitor_q3d_coupon
+        - cells.cpw_straight
+        - cells.cpw_t_junction
+        - cells.launcher
+        - cells.mtl_bend_coupling_section
+        - cells.n_trace_mtl_section
+        - cells.resonator
+        - cells.resonator_hanger
+        - cells.resonator_meander
+        - cells.martinis2022_differential_ribbon_capacitor
+    - title: Materials
+      desc: Copy-returning public material and interface helpers.
+      contents:
+        - materials.get_material_records
+        - materials.get_material_alias_records
+        - materials.get_interface_preset_records
+        - materials.get_gsim_material_overlay
+        - materials.write_gsim_material_overlay

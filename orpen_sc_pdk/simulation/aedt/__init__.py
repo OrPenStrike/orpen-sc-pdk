@@ -56,6 +56,8 @@ File responsibility map:
   into the portable AEDT material context. It should not mutate AEDT projects.
 - ``hpc.py``: Notebook-side HPC resource/profile validation and ACF rendering.
   It should not launch AEDT or choose solver geometry.
+- ``geometry.py``: Notebook-side layout-copy preparation for AEDT/Q3D. It
+  should not open AEDT or create chip-level ground/coupon geometry.
 - ``package.py``: handoff directory writer, source copier, manifest/run-config
   writer, runtime bundle copier, launcher writer, and archive writer. It should
   not create PyAEDT sessions or solve recipes.
@@ -115,6 +117,7 @@ File responsibility map:
 
 from __future__ import annotations
 
+from .geometry import prepare_interdigital_capacitor_q3d_geometry
 from .hpc import (
     AedtAcfConfigSpec,
     AedtHpcProfileSpec,
@@ -122,6 +125,12 @@ from .hpc import (
     AedtHpcValidationSpec,
     render_aedt_acf_config,
     write_aedt_hpc_artifacts,
+)
+from .idc_q3d import (
+    InterdigitalCapacitorQ3dSimulation,
+    Q3dCapacitanceResult,
+    load_q3d_capacitance_result,
+    prepare_interdigital_capacitor_q3d_simulation,
 )
 from .materials import (
     aedt_material_fallback_reason,
@@ -155,6 +164,8 @@ from .models import (
     AedtQ2dRegionSpec,
     AedtQ2dSetupSpec,
     AedtQ3dMatrixProblemType,
+    AedtQ3dRegionPaddingType,
+    AedtQ3dRegionSpec,
     AedtRecipeSpec,
     AedtRecipeType,
     AedtResumePolicy,
@@ -226,6 +237,8 @@ __all__ = [
     "AedtQ2dRegionSpec",
     "AedtQ2dSetupSpec",
     "AedtQ3dMatrixProblemType",
+    "AedtQ3dRegionPaddingType",
+    "AedtQ3dRegionSpec",
     "AedtRecipeSpec",
     "AedtRecipeType",
     "AedtResumePolicy",
@@ -264,6 +277,11 @@ __all__ = [
     "package_aedt_native_handoff",
     "prepare_aedt_native_handoff_package",
     "prepare_aedt_native_sweep_handoff_package",
+    "prepare_interdigital_capacitor_q3d_geometry",
+    "InterdigitalCapacitorQ3dSimulation",
+    "Q3dCapacitanceResult",
+    "load_q3d_capacitance_result",
+    "prepare_interdigital_capacitor_q3d_simulation",
     "render_aedt_acf_config",
     "validate_q2d_cross_section_payload",
     "write_q2d_cross_section_payload",

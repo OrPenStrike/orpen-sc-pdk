@@ -1,7 +1,7 @@
 # Problem Notebooks
 
 The public notebooks show how a reviewer uses the two active capabilities from
-{doc}`../developing-features`: SGB geometry semantics and `gsim`
+[../developing-features](../developing-features.md): SGB geometry semantics and `gsim`
 Resolve/Results.
 
 ## Current Product Notebooks
@@ -25,6 +25,6 @@ Resolve/Results.
 
 ## Related Pages
 
-- {doc}`../features/semantic-geometry-builder`
-- {doc}`../features/gsim-resolve-results`
-- {doc}`../notebooks`
+- [../features/semantic-geometry-builder](../features/semantic-geometry-builder.qmd)
+- [../features/gsim-resolve-results](../features/gsim-resolve-results.qmd)
+- [../notebooks](../notebooks.qmd)

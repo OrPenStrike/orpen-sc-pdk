@@ -9,6 +9,8 @@ other way around.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections.abc import Mapping
 from pathlib import Path
@@ -36,6 +38,7 @@ AedtGrpcMode = Literal["insecure", "secure", "auto"]
 AedtMatrixProblemType = Literal["C", "AC RL", "DC RL", "CG", "RL"]
 AedtQ2dMatrixProblemType = Literal["CG", "RL"]
 AedtQ3dMatrixProblemType = Literal["C", "AC RL", "DC RL"]
+AedtQ3dRegionPaddingType = Literal["Absolute Offset"]
 AedtMatrixType = Literal["Maxwell", "Couple", "Spice"]
 AedtQ2dAssignmentSource = Literal["q2d_conductors", "object_patterns"]
 AedtQ2dGeometryMode = Literal["hfss_section", "semantic_cross_section"]
@@ -144,6 +147,46 @@ class AedtQ2dRegionSpec(BaseModel):
         }
 
 
+class AedtQ3dRegionSpec(BaseModel):
+    """Explicit 3D vacuum Region contract for direct-GDS Q3D extraction.
+
+    The planar GDS import owns conductors and the extruded substrate.  This
+    spec owns only AEDT's enclosing Region, whose six absolute offsets must be
+    explicit so no solver default changes the electrostatic domain silently.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: str = "Region"
+    material: str = "Vacuum"
+    padding_type: AedtQ3dRegionPaddingType = "Absolute Offset"
+    padding: dict[str, str]
+
+    @field_validator("name", "material")
+    @classmethod
+    def _validate_text(cls, value: str) -> str:
+        text = str(value).strip()
+        if not text:
+            raise ValueError("Q3D Region text fields must not be empty")
+        return text
+
+    @field_validator("padding")
+    @classmethod
+    def _validate_padding(cls, value: dict[str, str]) -> dict[str, str]:
+        directions = ("+X", "-X", "+Y", "-Y", "+Z", "-Z")
+        unknown = sorted(set(value) - set(directions))
+        missing = [direction for direction in directions if direction not in value]
+        if unknown or missing:
+            raise ValueError(
+                "Q3D Region padding must specify exactly +X/-X/+Y/-Y/+Z/-Z; "
+                f"unknown={unknown}, missing={missing}"
+            )
+        normalized = {direction: str(value[direction]).strip() for direction in directions}
+        if any(not offset for offset in normalized.values()):
+            raise ValueError("Q3D Region padding values must not be empty")
+        return normalized
+
+
 class AedtMaterialPolicySpec(BaseModel):
     """AEDT material assignment policy for one recipe."""
 
@@ -151,10 +194,14 @@ class AedtMaterialPolicySpec(BaseModel):
 
     conductor_material: str = "pec"
     material_condition: str = "cryogenic"
+    material_profile_id: str | None = None
+    readback_required: bool = False
 
-    @field_validator("conductor_material", "material_condition")
+    @field_validator("conductor_material", "material_condition", "material_profile_id")
     @classmethod
-    def _validate_text(cls, value: str) -> str:
+    def _validate_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
         text = str(value).strip()
         if not text:
             raise ValueError("AEDT material policy fields must not be empty")
@@ -259,8 +306,30 @@ class AedtMaterialContext(BaseModel):
     material_condition: str = "cryogenic"
     registry_hash: str | None = None
     layer_stack_hash: str | None = None
+    material_profile: dict[str, Any] | None = None
+    material_profile_hash: str | None = None
+    readback_required: bool = False
+    policy_source: dict[str, Any] | None = None
     bindings: tuple[AedtLayerMaterialBinding, ...] = ()
     compiled_materials: tuple[AedtCompiledMaterialSpec, ...] = ()
+
+    @model_validator(mode="after")
+    def _validate_material_profile_hash(self) -> AedtMaterialContext:
+        if self.material_profile is None:
+            if self.material_profile_hash is not None or self.readback_required:
+                raise ValueError("material profile hash/readback requires material_profile")
+            return self
+        if self.material_profile_hash is None:
+            raise ValueError("material_profile requires material_profile_hash")
+        encoded = json.dumps(
+            self.material_profile,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("utf-8")
+        if hashlib.sha256(encoded).hexdigest() != self.material_profile_hash:
+            raise ValueError("material_profile_hash does not match material_profile")
+        return self
 
 
 class AedtRuntimeSpec(BaseModel):
@@ -340,6 +409,7 @@ class AedtRecipeSpec(BaseModel):
     matrix_types: tuple[AedtMatrixType, ...] = ("Maxwell", "Couple")
     q2d_setup: AedtQ2dSetupSpec = Field(default_factory=AedtQ2dSetupSpec)
     q2d_region: AedtQ2dRegionSpec = Field(default_factory=AedtQ2dRegionSpec)
+    q3d_region: AedtQ3dRegionSpec | None = None
     material_policy: AedtMaterialPolicySpec = Field(default_factory=AedtMaterialPolicySpec)
     modeler_units: str = "um"
 
@@ -421,9 +491,19 @@ class AedtRecipeSpec(BaseModel):
             )
         if self.type == "hfss_eigenmode" and self.mode_count is None:
             raise ValueError("hfss_eigenmode recipes require mode_count")
-        if self.type == "q3d_extraction" and not (self.source_patterns or self.net_patterns):
-            raise ValueError("q3d_extraction recipes require source_patterns or net_patterns")
         if self.type == "q3d_extraction":
+            if self.source_patterns:
+                raise ValueError(
+                    "direct-GDS q3d_extraction recipes forbid source_patterns; "
+                    "use explicit net_patterns"
+                )
+            if not self.net_patterns:
+                raise ValueError("direct-GDS q3d_extraction recipes require net_patterns")
+            if self.q3d_region is None:
+                raise ValueError(
+                    "direct-GDS q3d_extraction recipes require q3d_region with explicit "
+                    "six-direction Absolute Offset padding"
+                )
             invalid = sorted(set(self.matrix_problem_types) - {"C", "AC RL", "DC RL"})
             if invalid:
                 raise ValueError(
@@ -493,13 +573,30 @@ class AedtNativeCaseSpec(BaseModel):
         recipe_ids = [recipe.id for recipe in self.recipes]
         if len(recipe_ids) != len(set(recipe_ids)):
             raise ValueError(f"case {self.id!r} has duplicate recipe ids")
-        requires_layout_artifacts = any(
+        requires_gds = any(
             recipe.type != "q2d_extraction" or recipe.q2d_geometry_mode != "semantic_cross_section"
             for recipe in self.recipes
         )
-        if requires_layout_artifacts and (self.gds_path is None or self.tech_path is None):
+        requires_tech = any(
+            recipe.type not in {"q3d_extraction", "q2d_extraction"}
+            or recipe.q2d_geometry_mode != "semantic_cross_section"
+            and recipe.type == "q2d_extraction"
+            for recipe in self.recipes
+        )
+        if requires_gds and requires_tech and self.gds_path is None and self.tech_path is None:
             raise ValueError(
                 f"case {self.id!r} has layout-backed recipes and requires gds_path and tech_path"
+            )
+        if requires_gds and self.gds_path is None:
+            raise ValueError(f"case {self.id!r} has layout-backed recipes and requires gds_path")
+        if requires_tech and self.tech_path is None:
+            raise ValueError(f"case {self.id!r} has TECH-backed recipes and requires tech_path")
+        if (
+            any(recipe.type == "q3d_extraction" for recipe in self.recipes)
+            and self.layer_mapping_json_path is None
+        ):
+            raise ValueError(
+                f"case {self.id!r} uses direct-GDS Q3D and requires layer_mapping_json_path"
             )
         if any(
             recipe.type == "q2d_extraction"
@@ -637,6 +734,8 @@ __all__ = [
     "AedtQ2dRegionSpec",
     "AedtQ2dSetupSpec",
     "AedtQ3dMatrixProblemType",
+    "AedtQ3dRegionPaddingType",
+    "AedtQ3dRegionSpec",
     "AedtRecipeSpec",
     "AedtRecipeType",
     "AedtResumePolicy",

@@ -24,8 +24,10 @@ uses ``sweep.py`` to start subprocesses that call this same file with
 from __future__ import annotations
 
 import argparse
+import csv
 import fnmatch
 import json
+import math
 import os
 import re
 import sys
@@ -60,6 +62,7 @@ from runtime_bundle.materials import (
     material_context_bindings,
     material_context_compiled_materials,
     material_context_material_for_row,
+    readback_aedt_project_materials,
 )
 from runtime_bundle.session import (
     AEDT_MODELER_UNIT_TO_UM,
@@ -1451,14 +1454,6 @@ def run_hfss_eigenmode(case, recipe, manifest, package_root, result_dir, log_dir
 
 @recipe_handler("q3d_extraction")
 def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir, args):
-    layout = import_gds_layout(case, recipe, manifest, package_root, result_dir, log_dir, args)
-    setup = create_layout_setup(layout, recipe)
-    export_file = result_dir / f"{case['id']}_{recipe['id']}.q3d"
-    try:
-        setup.export_to_q3d(str(export_file), keep_net_name=True, unite=True)
-    except AttributeError:
-        log(log_dir, "Setup3DLayout.export_to_q3d is unavailable in this PyAEDT version.")
-
     from ansys.aedt.core import Q3d
 
     q3d = create_aedt_app(
@@ -1466,20 +1461,51 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
         args,
         project=manifest["project"]["path"],
         design=recipe["design_name"],
-        **aedt_constructor_kwargs(args, new_desktop=False),
+        **aedt_constructor_kwargs(args),
     )
     ensure_design_modeler_units(q3d, recipe, recipe["type"])
+    design_reset = prepare_q3d_direct_gds_import(q3d)
+    mapping_payload = load_layer_mapping(case, package_root)
+    mapping_layers = q2d_import_mapping_layers(mapping_payload, recipe_modeler_units(recipe))
     material_context = load_aedt_material_context(case, package_root)
-    ensure_aedt_project_materials(q3d, material_context, result_dir)
-    names = object_names(q3d)
-    source_matches = []
-    if recipe.get("source_patterns"):
-        source_matches = match_patterns(
-            names,
-            recipe["source_patterns"],
-            label="Q3D source patterns",
-            min_count=1,
+    material_summary = ensure_aedt_project_materials(q3d, material_context, result_dir)
+    gds_path = package_path(package_root, case["gds"])
+    with aedt_blocking_stage_heartbeat(
+        log_dir,
+        "q3d_import_gds_3d",
+        project_path=manifest["project"]["path"],
+        extra_paths={"gds": gds_path, "result_dir": result_dir},
+        metadata={
+            "case_id": case["id"],
+            "recipe_id": recipe["id"],
+            "design": recipe["design_name"],
+        },
+    ):
+        ok = q3d.import_gds_3d(
+            str(gds_path),
+            mapping_layers,
+            units=recipe_modeler_units(recipe),
+            import_method=1,
         )
+    if not ok:
+        raise RuntimeError(f"Q3d.import_gds_3d failed for case {case['id']}")
+    import_refresh = refresh_modeler_object_ids(q3d, label="Q3d.import_gds_3d")
+    renames = rename_modeler_objects_for_layer_stack(q3d, material_context, section_only=False)
+    assign_imported_materials(
+        q3d,
+        mapping_payload.get("gds_import_layers", []),
+        recipe,
+        material_context,
+    )
+    imported_objects = object_inventory(q3d, material_context)
+    write_json(result_dir / "object_inventory_imported.json", imported_objects)
+    substrate = readback_q3d_imported_substrate(q3d, mapping_payload, material_context, recipe)
+    q3d_region = create_and_readback_q3d_region(q3d, recipe)
+    assignment = assign_q3d_nets(q3d, recipe)
+    setup = create_q3d_setup(q3d, recipe)
+    write_json(result_dir / "assignment_summary.json", assignment)
+    if not q3d.save_project():
+        raise RuntimeError("Q3D failed to save the pre-solve GUI-auditable project")
     solve_status = {
         "mode": args.mode,
         "analyze_setup": None,
@@ -1489,9 +1515,10 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
     }
     if args.mode == "solve":
         stage_timing = solve_status["stage_timing"]
-        setup_name = recipe.get("setup_name", "Setup1")
-        analyze_ok = timed_stage(stage_timing, "analyze_setup", q3d.analyze_setup, setup_name)
-        solve_status["analyze_setup"] = {"setup": setup_name, "return_value": bool(analyze_ok)}
+        analyze_ok = timed_stage(stage_timing, "analyze_setup", q3d.analyze_setup, setup.name)
+        solve_status["analyze_setup"] = {"setup": setup.name, "return_value": bool(analyze_ok)}
+        if not analyze_ok:
+            raise RuntimeError(f"Q3D analyze_setup failed for setup {setup.name}")
         matrix_exports = timed_stage(
             stage_timing,
             "export_q3d_matrices",
@@ -1503,26 +1530,467 @@ def run_q3d_extraction(case, recipe, manifest, package_root, result_dir, log_dir
         solve_status["matrix_exports"] = matrix_exports
         solve_status["benchmark_exports"] = export_aedt_benchmark_artifacts(
             q3d,
-            setup_name,
+            setup.name,
             result_dir,
             solver_type=recipe["type"],
             problem_types=recipe.get("matrix_problem_types", ("C", "AC RL")),
             stage_timing=stage_timing,
         )
         write_json(result_dir / "solve_timing.json", {"stage_timing": stage_timing})
-    write_json(
-        result_dir / "assignment_summary.json",
-        {"recipe_type": recipe["type"], "source_matches": source_matches},
-    )
+        if not q3d.save_project():
+            raise RuntimeError("Q3D failed to save the exported GUI-auditable project")
     write_json(
         result_dir / "simulation_metadata.json",
         {
             "recipe_type": recipe["type"],
-            "setup": recipe.get("setup_name", "Setup1"),
+            "setup": q3d_setup_summary(recipe, setup),
+            "source_identity": q3d_source_hashes(case, package_root),
+            "import": {
+                "method": "Q3d.import_gds_3d",
+                "design_reset": design_reset,
+                "mapping_layers": mapping_layers,
+                "modeler_refresh": import_refresh,
+                "renames": renames,
+                "material_summary": material_summary,
+                "object_count": len(imported_objects),
+            },
+            "electrostatic_domain": {
+                "imported_substrate": substrate,
+                "background_region": q3d_region,
+            },
+            "net_definitions": assignment,
+            "output_paths": {
+                "result_dir": str(result_dir),
+                "project_path": str(manifest["project"]["path"]),
+            },
             "solve_status": solve_status,
         },
     )
-    q3d.save_project()
+
+
+def q3d_source_hashes(case, package_root):
+    """Return the immutable source identities consumed by direct-GDS Q3D."""
+
+    keys = ("gds", "layer_mapping_json", "aedt_material_context")
+    source_hashes = {
+        key: file_sha256(package_path(package_root, case[key])) for key in keys if case.get(key)
+    }
+    source_hashes["runtime_bundle_run_aedt_native_py"] = file_sha256(Path(__file__).resolve())
+    return source_hashes
+
+
+def prepare_q3d_direct_gds_import(q3d):
+    """Clear the generated Q3D recipe design before each direct-GDS import.
+
+    Direct-GDS Q3D has no incremental/adoption contract: an import creates the
+    complete conductor, dielectric, Region, net, and setup state for one
+    recipe.  Reopening a generated ``.aedt`` and importing again would retain
+    that state and create duplicate conductors.  Reset the recipe design
+    instead of attempting to identify or adopt prior objects.
+    """
+
+    clear_recipe_design(q3d, clear_setups=True)
+    modeler = getattr(q3d, "modeler", None)
+    refresh = getattr(modeler, "refresh_all_ids", None)
+    if not callable(refresh):
+        raise RuntimeError(
+            "Q3D direct-GDS design reset has no PyAEDT modeler.refresh_all_ids() API"
+        )
+    try:
+        refreshed_object_count = int(refresh())
+    except Exception as exc:
+        raise RuntimeError(
+            "Q3D direct-GDS design reset failed while refreshing PyAEDT modeler object IDs"
+        ) from exc
+
+    residual = {
+        "objects": modeler_object_names(q3d),
+        "setups": sorted(str(name) for name in getattr(q3d, "setup_names", []) or []),
+        "boundaries": sorted(
+            str(getattr(boundary, "name", boundary))
+            for boundary in getattr(q3d, "boundaries", []) or []
+        ),
+        "nets": sorted(str(name) for name in getattr(q3d, "net_names", []) or []),
+    }
+    nonempty = {name: value for name, value in residual.items() if value}
+    if nonempty:
+        raise RuntimeError(
+            "Q3D direct-GDS design reset left recipe state before import; "
+            f"refusing to merge a new GDS import: {nonempty}"
+        )
+    return {
+        "policy": "clear_recipe_design_before_every_direct_gds_import",
+        "api": "modeler.refresh_all_ids",
+        "refreshed_object_count": refreshed_object_count,
+        "residual": residual,
+    }
+
+
+def refresh_modeler_object_ids(app, *, label):
+    """Refresh PyAEDT's modeler cache once after a mutating import operation."""
+
+    modeler = getattr(app, "modeler", None)
+    refresh = getattr(modeler, "refresh_all_ids", None)
+    if not callable(refresh):
+        raise RuntimeError(f"{label} has no PyAEDT modeler.refresh_all_ids() API")
+    try:
+        object_count = int(refresh())
+    except Exception as exc:
+        raise RuntimeError(f"{label} failed while refreshing PyAEDT modeler object IDs") from exc
+    if object_count <= 0:
+        raise RuntimeError(
+            f"{label} completed but PyAEDT modeler refresh found no imported objects"
+        )
+    return {"api": "modeler.refresh_all_ids", "object_count": object_count}
+
+
+def readback_q3d_imported_substrate(q3d, mapping_payload, material_context, recipe):
+    """Fail closed unless the one GDS-extruded substrate matches its mapping row."""
+
+    rows = [
+        row
+        for row in mapping_payload.get("gds_import_layers", [])
+        if str(row.get("recommended_aedt_role") or "") == "dielectric_volume"
+    ]
+    if len(rows) != 1:
+        raise RuntimeError(
+            "Direct-GDS Q3D requires exactly one imported dielectric_volume substrate row; "
+            f"found {len(rows)}"
+        )
+    row = rows[0]
+    base_name = str(row.get("object_name_base") or "").strip()
+    if not base_name:
+        raise RuntimeError("Imported Q3D substrate row requires object_name_base")
+    names = modeler_object_names(q3d)
+    matches = match_patterns(
+        names,
+        (base_name, f"{base_name}_*"),
+        label="imported Q3D substrate",
+        exact_count=1,
+    )
+    substrate = q3d.modeler.get_object_from_name(matches[0])
+    if substrate is None:
+        raise RuntimeError(f"Imported Q3D substrate object is missing: {matches[0]!r}")
+    bbox = object_bounding_box(substrate)
+    if bbox is None or len(bbox) != 6:
+        raise RuntimeError(f"Imported Q3D substrate has no 3D bounding box: {matches[0]!r}")
+    units = recipe_modeler_units(recipe)
+    zmin = um_to_modeler_units(float(row["aedt_import_zmin_um"]), units)
+    thickness = um_to_modeler_units(float(row["aedt_import_thickness_um"]), units)
+    _assert_close_modeler_value(bbox[2], zmin, label="imported Q3D substrate zmin", units=units)
+    _assert_close_modeler_value(
+        bbox[5] - bbox[2], thickness, label="imported Q3D substrate thickness", units=units
+    )
+    expected_material = normalize_aedt_material(
+        material_context_material_for_row(row, material_context) or row.get("material")
+    )
+    actual_material = normalize_aedt_material(safe_material_name(substrate))
+    if actual_material.casefold() != expected_material.casefold():
+        raise RuntimeError(
+            "Imported Q3D substrate material mismatch: "
+            f"expected={expected_material!r}, actual={actual_material!r}"
+        )
+    return {
+        "name": matches[0],
+        "material": actual_material,
+        "bounding_box": bbox,
+        "zmin": bbox[2],
+        "thickness": bbox[5] - bbox[2],
+        "mapping": {
+            "layer_name": row.get("layer_name"),
+            "aedt_layer_number": row.get("aedt_layer_number"),
+            "zmin": zmin,
+            "thickness": thickness,
+            "material": expected_material,
+        },
+    }
+
+
+def create_and_readback_q3d_region(q3d, recipe):
+    """Create one explicit AEDT vacuum Region and verify its six offsets by bbox."""
+
+    region = dict(recipe.get("q3d_region") or {})
+    if not region:
+        raise RuntimeError(
+            "Direct-GDS Q3D requires q3d_region with explicit six-direction Absolute Offset padding"
+        )
+    directions = ("+X", "-X", "+Y", "-Y", "+Z", "-Z")
+    padding = dict(region.get("padding") or {})
+    if set(padding) != set(directions):
+        raise RuntimeError("Q3D Region padding must declare exactly six directions")
+    padding_type = str(region.get("padding_type") or "")
+    if padding_type != "Absolute Offset":
+        raise RuntimeError(f"Q3D Region requires Absolute Offset padding; got {padding_type!r}")
+    name = str(region.get("name") or "").strip()
+    material = normalize_aedt_material(region.get("material"))
+    if not name or not material:
+        raise RuntimeError("Q3D Region requires non-empty name and vacuum material")
+    if material.casefold() != "vacuum":
+        raise RuntimeError(f"Q3D background Region material must be Vacuum, got {material!r}")
+    if q3d.modeler.get_object_from_name(name) is not None:
+        raise RuntimeError(
+            f"Q3D Region {name!r} already exists; direct-GDS Q3D requires a fresh design"
+        )
+
+    source_bbox = combined_modeler_bounding_box(q3d, modeler_object_names(q3d))
+    units = recipe_modeler_units(recipe)
+    values = [str(padding[direction]) for direction in directions]
+    offsets = {
+        direction: aedt_length_to_modeler_units(value, units)
+        for direction, value in zip(directions, values, strict=True)
+    }
+    created = q3d.modeler.create_region(
+        pad_value=values,
+        pad_type=padding_type,
+        name=name,
+    )
+    if created is None:
+        raise RuntimeError(f"Q3D failed to create Region {name!r}")
+    try:
+        created.material_name = material
+    except Exception as exc:
+        raise RuntimeError(f"Q3D failed to set Region {name!r} material to {material!r}") from exc
+    actual = q3d.modeler.get_object_from_name(name)
+    if actual is None:
+        raise RuntimeError(f"Q3D Region {name!r} is absent from modeler readback")
+    actual_material = normalize_aedt_material(safe_material_name(actual))
+    if actual_material.casefold() != material.casefold():
+        raise RuntimeError(
+            f"Q3D Region material mismatch: expected={material!r}, actual={actual_material!r}"
+        )
+    actual_bbox = object_bounding_box(actual)
+    if actual_bbox is None or len(actual_bbox) != 6:
+        raise RuntimeError(f"Q3D Region {name!r} has no 3D bounding box")
+    expected_bbox = [
+        source_bbox[0] - offsets["-X"],
+        source_bbox[1] - offsets["-Y"],
+        source_bbox[2] - offsets["-Z"],
+        source_bbox[3] + offsets["+X"],
+        source_bbox[4] + offsets["+Y"],
+        source_bbox[5] + offsets["+Z"],
+    ]
+    for index, (actual_value, expected_value) in enumerate(
+        zip(actual_bbox, expected_bbox, strict=True)
+    ):
+        _assert_close_modeler_value(
+            actual_value,
+            expected_value,
+            label=f"Q3D Region bounding box[{index}]",
+            units=units,
+        )
+    return {
+        "name": name,
+        "background_material": actual_material,
+        "padding_type": padding_type,
+        "padding_requested": {direction: padding[direction] for direction in directions},
+        "padding_readback": offsets,
+        "source_bounding_box": source_bbox,
+        "bounding_box": actual_bbox,
+    }
+
+
+def combined_modeler_bounding_box(app, names):
+    """Return one [xmin, ymin, zmin, xmax, ymax, zmax] bbox for existing model objects."""
+
+    boxes = []
+    for name in names:
+        obj = app.modeler.get_object_from_name(name)
+        bbox = object_bounding_box(obj)
+        if bbox is None or len(bbox) != 6:
+            raise RuntimeError(f"AEDT object {name!r} has no 3D bounding box")
+        boxes.append(bbox)
+    if not boxes:
+        raise RuntimeError("Cannot create Q3D Region without imported model geometry")
+    return [
+        min(box[0] for box in boxes),
+        min(box[1] for box in boxes),
+        min(box[2] for box in boxes),
+        max(box[3] for box in boxes),
+        max(box[4] for box in boxes),
+        max(box[5] for box in boxes),
+    ]
+
+
+def aedt_length_to_modeler_units(value, modeler_units):
+    """Parse one explicit absolute AEDT length into the recipe modeler units."""
+
+    match = re.fullmatch(
+        r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([A-Za-z]+)\s*",
+        str(value),
+    )
+    if match is None:
+        raise RuntimeError(
+            f"Q3D Region absolute padding must be a numeric length with units, got {value!r}"
+        )
+    source_unit = normalize_modeler_units(match.group(2))
+    target_unit = normalize_modeler_units(modeler_units)
+    return (
+        float(match.group(1))
+        * AEDT_MODELER_UNIT_TO_UM[source_unit]
+        / AEDT_MODELER_UNIT_TO_UM[target_unit]
+    )
+
+
+def _assert_close_modeler_value(actual, expected, *, label, units):
+    tolerance = max(abs(float(expected)), 1.0) * 1e-9
+    if not math.isclose(float(actual), float(expected), rel_tol=0.0, abs_tol=tolerance):
+        raise RuntimeError(
+            f"{label} readback mismatch in {units}: expected={expected!r}, actual={actual!r}, "
+            f"tolerance={tolerance!r}"
+        )
+
+
+def create_q3d_setup(q3d, recipe):
+    """Create the requested Q3D setup and enable only requested matrix problems."""
+
+    setup = q3d.create_setup(
+        name=recipe.get("setup_name", "Setup1"),
+        **dict(recipe.get("setup_options") or {}),
+    )
+    if setup is None:
+        raise RuntimeError("Q3d.create_setup did not return a setup")
+    requested = set(recipe.get("matrix_problem_types", ("C", "AC RL")))
+    expected_modes = {
+        "capacitance_enabled": "C" in requested,
+        "ac_rl_enabled": "AC RL" in requested,
+        "dc_enabled": "DC RL" in requested,
+    }
+    for property_name, enabled in expected_modes.items():
+        setattr(setup, property_name, enabled)
+    actual_modes = {
+        property_name: bool(getattr(setup, property_name)) for property_name in expected_modes
+    }
+    if actual_modes != expected_modes:
+        raise RuntimeError(
+            "Q3D setup solution-mode readback mismatch: "
+            f"expected={expected_modes}, actual={actual_modes}"
+        )
+    return setup
+
+
+def q3d_setup_summary(recipe, setup):
+    """Return setup provenance while preserving AEDT's actual defaults."""
+
+    return {
+        "name": setup.name,
+        "solution_modes": {
+            "capacitance_enabled": bool(setup.capacitance_enabled),
+            "ac_rl_enabled": bool(setup.ac_rl_enabled),
+            "dc_enabled": bool(setup.dc_enabled),
+        },
+        "requested_options": dict(recipe.get("setup_options") or {}),
+        "props": q3d_json_safe(getattr(setup, "props", {}) or {}),
+    }
+
+
+def q3d_json_safe(value):
+    """Normalize PyAEDT setup values before they cross the JSON audit boundary."""
+
+    try:
+        return json.loads(json.dumps(value, default=str, allow_nan=False))
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def assign_q3d_nets(q3d, recipe):
+    """Assign and independently read back exact Q3D signal and optional ground nets."""
+
+    if recipe.get("source_patterns"):
+        raise RuntimeError(
+            "Direct-GDS Q3D requires net_patterns; source_patterns are not a permissive "
+            "fallback. Regenerate the package with explicit net assignments."
+        )
+    patterns_by_net = dict(recipe.get("net_patterns") or {})
+    if not patterns_by_net:
+        raise RuntimeError("Direct-GDS Q3D requires explicit net_patterns")
+    reference_patterns = list(recipe.get("reference_patterns") or ())
+    if q3d.net_names:
+        raise RuntimeError(
+            "Direct-GDS Q3D target design already has nets; use a fresh project/design "
+            "rather than merging assignments."
+        )
+
+    names = modeler_object_names(q3d)
+    requested = {}
+    object_owner = {}
+    for net_name, patterns in sorted(patterns_by_net.items()):
+        matches = match_patterns(
+            names,
+            patterns,
+            label=f"Q3D net {net_name!r}",
+            min_count=1,
+        )
+        for name in matches:
+            if name in object_owner:
+                raise RuntimeError(
+                    f"Q3D net patterns overlap on {name!r}: {object_owner[name]!r} and {net_name!r}"
+                )
+            object_owner[name] = net_name
+        requested[net_name] = matches
+
+    ground_net = None
+    if reference_patterns:
+        ground_matches = match_patterns(
+            names,
+            reference_patterns,
+            label="Q3D reference patterns",
+            min_count=1,
+        )
+        reference_nets = [
+            name for name, matches in requested.items() if set(matches).intersection(ground_matches)
+        ]
+        if len(reference_nets) != 1:
+            raise RuntimeError(
+                "Q3D reference patterns must identify exactly one requested net; "
+                f"reference={ground_matches}, matching_nets={reference_nets}, requested={requested}"
+            )
+        ground_net = reference_nets[0]
+        if set(requested[ground_net]) != set(ground_matches):
+            raise RuntimeError(
+                "Q3D reference patterns must identify every object of their one requested net; "
+                f"ground_net={ground_net!r}, reference={ground_matches}, "
+                f"requested={requested[ground_net]}"
+            )
+
+    for net_name, matches in requested.items():
+        net_type = "Ground" if net_name == ground_net else "Signal"
+        boundary = q3d.assign_net(matches, net_name=net_name, net_type=net_type)
+        if boundary is None:
+            raise RuntimeError(f"Q3D failed to assign net {net_name!r}")
+
+    readback = {}
+    actual_names = set(q3d.net_names)
+    expected_names = set(requested)
+    if actual_names != expected_names:
+        raise RuntimeError(
+            f"Q3D net readback mismatch: expected={expected_names}, actual={actual_names}"
+        )
+    for net_name in sorted(expected_names):
+        boundary = q3d.design_nets.get(net_name)
+        if boundary is None:
+            raise RuntimeError(f"Q3D net {net_name!r} is absent from design-net readback")
+        objects_by_net = q3d.objects_from_nets(net_name)
+        if not isinstance(objects_by_net, dict):
+            raise RuntimeError(
+                f"Q3D net {net_name!r} object readback is not a mapping: {objects_by_net!r}"
+            )
+        actual_objects = sorted(objects_by_net.get(net_name, []))
+        expected_objects = requested[net_name]
+        expected_type = "GroundNet" if net_name == ground_net else "SignalNet"
+        if actual_objects != expected_objects or boundary.type != expected_type:
+            raise RuntimeError(
+                f"Q3D net {net_name!r} readback mismatch: expected objects={expected_objects}, "
+                f"type={expected_type}; actual objects={actual_objects}, type={boundary.type}"
+            )
+        readback[net_name] = {"objects": actual_objects, "type": boundary.type}
+    return {
+        "recipe_type": recipe["type"],
+        "requested_patterns": patterns_by_net,
+        "reference_patterns": reference_patterns,
+        "ground_net": ground_net,
+        "requested_objects": requested,
+        "readback": readback,
+    }
 
 
 @recipe_handler("q2d_extraction")
@@ -1829,6 +2297,50 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                     exported_files=list(exported_files),
                 )
             )
+        save_ok = q2d.save_project()
+        if save_ok is False:
+            raise RuntimeError("AEDT project save returned False before material readback")
+        material_readback = None
+        if material_context.get("readback_required"):
+            if semantic_geometry_plan is None:
+                raise RuntimeError("Required D3 material readback needs semantic geometry")
+            expected_substrates = [
+                str(rectangle["name"])
+                for rectangle in semantic_geometry_plan["rectangles"]
+                if rectangle.get("kind") == "dielectric"
+            ]
+            material_readback = readback_aedt_project_materials(
+                q2d,
+                material_context,
+                expected_substrates,
+                result_dir,
+                {
+                    "case_id": case["id"],
+                    "recipe_id": recipe["id"],
+                    "project_name": manifest["project"]["name"],
+                    "design_name": recipe["design_name"],
+                    "q2d_geometry_mode": geometry_mode,
+                    "source_hashes": source_hashes,
+                    "material_context_hash": source_hashes.get("aedt_material_context"),
+                    "cross_section_hash": source_hashes.get("q2d_cross_section"),
+                    "layer_stack_hash": sha256_text(
+                        stable_json(
+                            {
+                                "die_spans": semantic_geometry_plan["die_spans"],
+                                "stack_height_um": semantic_geometry_plan["stack_height_um"],
+                                "region_padding_um": semantic_geometry_plan[
+                                    "region_padding_um"
+                                ],
+                            }
+                        )
+                    ),
+                    "geometry_settings_hash": geometry_settings_hash,
+                    "recipe_settings_hash": recipe_settings_hash,
+                },
+            )
+            detection["stages"].append(
+                stage_record("material_readback", "created", readback_status="PASS")
+            )
         write_json(
             result_dir / "simulation_metadata.json",
             {
@@ -1849,6 +2361,26 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                     "layer_stack_hash": material_context.get("layer_stack_hash"),
                     "binding_count": len(material_context_bindings(material_context)),
                     "material_count": len(material_context_compiled_materials(material_context)),
+                    "material_profile_id": (
+                        material_context.get("material_profile") or {}
+                    ).get("material_profile_id"),
+                    "material_profile_hash": material_context.get("material_profile_hash"),
+                    "readback_required": material_context.get("readback_required", False),
+                    "readback_status": (
+                        material_readback.get("status") if material_readback else "NOT_REQUIRED"
+                    ),
+                    "data_class": (material_context.get("material_profile") or {}).get(
+                        "data_class"
+                    ),
+                    "allowed_consumers": (material_context.get("material_profile") or {}).get(
+                        "allowed_consumers"
+                    ),
+                    "publication_state": (material_context.get("material_profile") or {}).get(
+                        "publication_state"
+                    ),
+                    "promotion_eligible": (material_context.get("material_profile") or {}).get(
+                        "promotion_eligible"
+                    ),
                 },
                 "q2d_region": region_summary,
                 "q2d_setup": setup_summary(recipe, setup),
@@ -1872,7 +2404,6 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
         )
         workflow_state["stage_decisions"] = list(detection["stages"])
         write_q2d_stage_outputs(log_dir, detection, workflow_state)
-        q2d.save_project()
     except Exception:
         detection["error"] = traceback.format_exc()
         workflow_state["stage_decisions"] = list(detection["stages"])
@@ -3170,16 +3701,24 @@ def export_q3d_matrices(app, recipe, result_dir):
     exports = []
     for problem_type in recipe.get("matrix_problem_types", ("C", "AC RL")):
         for matrix_type in recipe.get("matrix_types", ("Maxwell", "Couple")):
-            exports.append(
-                export_matrix_data_checked(
-                    app,
-                    result_dir,
-                    setup=recipe.get("setup_name", "Setup1"),
-                    requested_problem_type=problem_type,
-                    pyaedt_problem_type=problem_type,
-                    matrix_type=matrix_type,
-                )
+            record = export_matrix_data_checked(
+                app,
+                result_dir,
+                setup=recipe.get("setup_name", "Setup1"),
+                requested_problem_type=problem_type,
+                pyaedt_problem_type=problem_type,
+                matrix_type=matrix_type,
             )
+            expected_title = None
+            if problem_type == "C":
+                expected_title = {
+                    "Maxwell": "Capacitance Matrix",
+                    "Couple": "Capacitance Matrix Coupling Coefficient",
+                }.get(matrix_type)
+            record["matrix_table"] = read_nonempty_aedt_matrix_table(
+                record["file_name"], expected_title=expected_title
+            )
+            exports.append(record)
     return exports
 
 
@@ -3279,6 +3818,60 @@ def export_matrix_data_checked(
     return record
 
 
+def read_nonempty_aedt_matrix_table(file_name, *, expected_title=None):
+    """Return one complete numeric AEDT matrix table or reject a header-only export."""
+
+    path = Path(file_name)
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    titles = []
+    for title_index, title in enumerate(lines):
+        if "Matrix" not in title or title.startswith("Reduce"):
+            continue
+        titles.append(title.strip())
+        if expected_title is not None and title.strip() != expected_title:
+            continue
+        header_index = title_index + 1
+        while header_index < len(lines) and not lines[header_index].strip():
+            header_index += 1
+        if header_index >= len(lines):
+            continue
+        header = [value.strip() for value in next(csv.reader([lines[header_index]]))]
+        while header and not header[-1]:
+            header.pop()
+        labels = header[1:] if header and not header[0] else []
+        if not labels or len(labels) != len(set(labels)) or any(not label for label in labels):
+            continue
+        row_labels = []
+        row_index = header_index + 1
+        while row_index < len(lines) and lines[row_index].strip():
+            values = [value.strip() for value in next(csv.reader([lines[row_index]]))]
+            if len(values) != len(labels) + 1 or values[0] not in labels:
+                raise RuntimeError(
+                    f"AEDT matrix export has an invalid row in {path}: {lines[row_index]!r}"
+                )
+            if values[0] in row_labels:
+                raise RuntimeError(f"AEDT matrix export repeats row {values[0]!r} in {path}")
+            try:
+                for value in values[1:]:
+                    if not Decimal(value).is_finite():
+                        raise ValueError(value)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"AEDT matrix export has a nonnumeric value in {path}: {lines[row_index]!r}"
+                ) from exc
+            row_labels.append(values[0])
+            row_index += 1
+        if row_labels != labels:
+            raise RuntimeError(
+                f"AEDT matrix export is incomplete in {path}: rows={row_labels}, columns={labels}"
+            )
+        return {"title": title.strip(), "labels": labels, "row_count": len(row_labels)}
+    raise RuntimeError(
+        "AEDT matrix export has no complete numeric matrix table in "
+        f"{path}; expected_title={expected_title!r}, titles={titles}"
+    )
+
+
 def q2d_expected_export_records(recipe):
     records = []
     for problem_type in recipe.get("matrix_problem_types", ("CG", "RL")):
@@ -3314,10 +3907,18 @@ def q2d_solve_completion_status(result_dir, log_dir, recipe):
     solve_status = metadata.get("solve_status") if isinstance(metadata, dict) else {}
     analyze_setup = solve_status.get("analyze_setup") if isinstance(solve_status, dict) else None
     analyze_ok = bool(analyze_setup and analyze_setup.get("return_value"))
+    material_policy = recipe.get("material_policy") or {}
+    readback_required = material_policy.get("readback_required") is True
+    material_metadata = metadata.get("aedt_material_context") or {}
+    readback_ok = (
+        material_metadata.get("readback_required") is True
+        and material_metadata.get("readback_status") == "PASS"
+        and (result_dir / "aedt_material_readback.json").is_file()
+    )
     failure_exists = (log_dir / "failure.json").is_file()
     if recipe_settings_stale:
         completion_status = "stale"
-    elif analyze_ok and not missing_exports:
+    elif analyze_ok and not missing_exports and (not readback_required or readback_ok):
         completion_status = "complete"
     elif failure_exists:
         completion_status = "failed"
@@ -3326,6 +3927,8 @@ def q2d_solve_completion_status(result_dir, log_dir, recipe):
     return {
         "completion_status": completion_status,
         "analyze_setup_ok": analyze_ok,
+        "material_readback_required": readback_required,
+        "material_readback_ok": readback_ok,
         "expected_exports": expected_exports,
         "missing_required_exports": missing_exports,
         "simulation_metadata_exists": bool(metadata),

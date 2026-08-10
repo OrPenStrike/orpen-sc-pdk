@@ -71,26 +71,60 @@ def _validate_manifest(manifest: dict[str, Any], path: str | Path) -> None:
         recipes = case.get("recipes")
         if not isinstance(recipes, list) or not recipes:
             raise RuntimeError(f"AEDT manifest {path} case {case.get('id')!r} needs recipes")
-        requires_layout_artifacts = any(
-            recipe.get("type") != "q2d_extraction"
-            or recipe.get("q2d_geometry_mode") != "semantic_cross_section"
+        layout_recipes = [
+            recipe
             for recipe in recipes
             if isinstance(recipe, dict)
-        )
-        if requires_layout_artifacts:
+            and (
+                recipe.get("type") != "q2d_extraction"
+                or recipe.get("q2d_geometry_mode") != "semantic_cross_section"
+            )
+        ]
+        if not layout_recipes:
+            if not str(case.get("q2d_cross_section") or "").strip():
+                raise RuntimeError(
+                    f"AEDT manifest {path} semantic Q2D case.q2d_cross_section is required"
+                )
+        elif any(recipe.get("type") == "q3d_extraction" for recipe in layout_recipes):
+            for key in ("gds", "layer_mapping_json"):
+                if not str(case.get(key) or "").strip():
+                    raise RuntimeError(
+                        f"AEDT manifest {path} direct-GDS Q3D case.{key} is required"
+                    )
+        if any(recipe.get("type") != "q3d_extraction" for recipe in layout_recipes):
             for key in ("gds", "tech"):
                 if not str(case.get(key) or "").strip():
                     raise RuntimeError(f"AEDT manifest {path} case.{key} is required")
-        elif not str(case.get("q2d_cross_section") or "").strip():
-            raise RuntimeError(
-                f"AEDT manifest {path} semantic Q2D case.q2d_cross_section is required"
-            )
         for recipe in recipes:
             if not isinstance(recipe, dict):
                 raise RuntimeError(f"AEDT manifest {path} recipes must contain mappings")
             for key in ("id", "type", "design_name"):
                 if not str(recipe.get(key) or "").strip():
                     raise RuntimeError(f"AEDT manifest {path} recipe.{key} is required")
+            if recipe.get("type") == "q3d_extraction":
+                _validate_q3d_region_recipe(recipe, path)
+
+
+def _validate_q3d_region_recipe(recipe: dict[str, Any], path: str | Path) -> None:
+    """Reject direct-GDS Q3D manifests without an explicit six-sided vacuum Region."""
+
+    region = recipe.get("q3d_region")
+    if not isinstance(region, dict):
+        raise RuntimeError(f"AEDT manifest {path} q3d_extraction recipe.q3d_region is required")
+    if str(region.get("padding_type") or "") != "Absolute Offset":
+        raise RuntimeError(
+            f"AEDT manifest {path} Q3D Region requires padding_type='Absolute Offset'"
+        )
+    if str(region.get("material") or "").casefold() != "vacuum":
+        raise RuntimeError(f"AEDT manifest {path} Q3D Region material must be Vacuum")
+    padding = region.get("padding")
+    directions = {"+X", "-X", "+Y", "-Y", "+Z", "-Z"}
+    if not isinstance(padding, dict) or set(padding) != directions:
+        raise RuntimeError(
+            f"AEDT manifest {path} Q3D Region requires exactly six padding directions"
+        )
+    if any(not str(value).strip() for value in padding.values()):
+        raise RuntimeError(f"AEDT manifest {path} Q3D Region padding values must not be empty")
 
 
 def package_path(package_root: str | Path, relative: str | Path) -> Path:

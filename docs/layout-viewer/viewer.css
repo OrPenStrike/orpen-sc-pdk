@@ -1,0 +1,9 @@
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #171a1f; color: #eef1f4; }
+header { display: flex; gap: .75rem; align-items: center; padding: .75rem; background: #252a31; }
+select, button { font: inherit; padding: .4rem .55rem; }
+#stage { height: min(68vh, 640px); overflow: hidden; cursor: grab; touch-action: none; }
+#stage:active { cursor: grabbing; }
+#drawing { display: block; width: 100%; height: 100%; object-fit: contain; transform-origin: 0 0; user-select: none; pointer-events: none; }
+.hint { margin: 0; padding: .55rem .75rem; color: #bac2cb; font-size: .9rem; }
