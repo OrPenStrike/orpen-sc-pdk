@@ -12,9 +12,6 @@ from orpen_sc_pdk.cells.chips.sim_flip_chip_distance_keepout_routing_demo import
     sim_flip_chip_distance_keepout_routing_demo,
 )
 from orpen_sc_pdk.cells.chips.small_airbridge_chip import small_airbridge_chip
-from orpen_sc_pdk.cells.chips.spring2025_intrinsic_individual_purcell_filter_test_chip import (
-    spring2025_intrinsic_individual_purcell_filter_test_chip,
-)
 
 __all__ = [
     "global_purcell_filter_demo_chip",
@@ -23,5 +20,4 @@ __all__ = [
     "sim_flip_chip_distance_keepout_global_routing_demo",
     "sim_flip_chip_distance_keepout_routing_demo",
     "small_airbridge_chip",
-    "spring2025_intrinsic_individual_purcell_filter_test_chip",
 ]

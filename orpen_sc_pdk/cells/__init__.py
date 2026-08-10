@@ -5,9 +5,6 @@ from orpen_sc_pdk.cells.capacitor import (
     interdigital_capacitor,
     interdigital_capacitor_q3d_coupon,
 )
-from orpen_sc_pdk.cells.chips.spring2025_intrinsic_individual_purcell_filter_test_chip import (
-    spring2025_intrinsic_individual_purcell_filter_test_chip,
-)
 from orpen_sc_pdk.cells.cpw import (
     cpw_straight,
     cpw_t_junction,
@@ -46,7 +43,6 @@ __all__ = [
     "interdigital_capacitor",
     "interdigital_capacitor_q3d_coupon",
     "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators",
-    "spring2025_intrinsic_individual_purcell_filter_test_chip",
     "launcher",
     "manhattan_style_junction",
     "martinis2022_differential_ribbon_capacitor",
