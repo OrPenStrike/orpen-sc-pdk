@@ -28,6 +28,7 @@
 from __future__ import annotations
 
 import json
+from math import cos, isfinite, pi, sin
 from pathlib import Path
 from time import perf_counter
 
@@ -35,11 +36,18 @@ import gdsfactory as gf
 import pandas as pd
 import plotly.graph_objects as go
 from ansys.aedt.core import Hfss
+from gdsfactory import kdb
 from IPython.display import display
 
 import orpen_sc_pdk
+from orpen_sc_pdk.cells.cpw import mtl_straight_bend_coupling_section
 from orpen_sc_pdk.simulation.aedt import aedt_material_name_from_physical_key
-from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
+from orpen_sc_pdk.tech import (
+    CPW_ETCH_NEG,
+    CPW_GROUND_MASK,
+    OUTER_VACUUM_THICKNESS_UM,
+    SUBSTRATE_THICKNESS_UM,
+)
 
 REPO_ROOT = Path(orpen_sc_pdk.__file__).resolve().parent.parent
 if not (REPO_ROOT / "orpen_sc_pdk").is_dir():
@@ -51,6 +59,206 @@ D_UM = 3.0
 TERMINAL_OPEN_CLEARANCE_UM = None  # None uses the selected CPW cross-section gap.
 SUBSTRATE_KEY = "Si"
 REGION_PADDING_UM = OUTER_VACUUM_THICKNESS_UM
+
+# HFSS-only GDS layers are local to this coupon and not fabrication layers.
+HFSS_SIGNAL_P_LAYER = (905, 0)
+HFSS_SIGNAL_R_LAYER = (906, 0)
+HFSS_GROUND_LAYER = (907, 0)
+HFSS_SUBSTRATE_LAYER = (908, 0)
+HFSS_PORT_SHEET_LAYER = (202, 1)
+
+
+def _signal_polygon_at_port(signal_region: kdb.Region, *, port, dbu_um: float) -> kdb.Polygon:
+    """Return the one signal polygon connected inside a named MTL terminal."""
+
+    if port.orientation is None:
+        raise ValueError(f"{port.name} must have an orientation.")
+    probe_distance_um = max(dbu_um, float(port.width) / 4)
+    angle = float(port.orientation) * pi / 180
+    probe = kdb.Point(
+        round((float(port.x) - probe_distance_um * cos(angle)) / dbu_um),
+        round((float(port.y) - probe_distance_um * sin(angle)) / dbu_um),
+    )
+    matches = [polygon for polygon in signal_region.each() if polygon.inside(probe)]
+    if len(matches) != 1:
+        raise ValueError(
+            f"{port.name} must identify exactly one connected signal conductor, got {len(matches)}."
+        )
+    return matches[0]
+
+
+def build_hfss_coupon(
+    *,
+    coupled_length: float,
+    inter_trace_ground_width: float,
+    terminal_open_clearance_um: float | None,
+    bend_radius: float = 100.0,
+    coupon_margin_um: float = 100.0,
+    cross_section: str = "cpw_6_7_6",
+) -> gf.Component:
+    """Build this notebook's four-port HFSS exchange coupon directly."""
+
+    xs = gf.get_cross_section(cross_section)
+    clearance_um = (
+        float(xs[CPW_ETCH_NEG].width)
+        if terminal_open_clearance_um is None
+        else float(terminal_open_clearance_um)
+    )
+    for name, value in (
+        ("terminal_open_clearance_um", clearance_um),
+        ("coupon_margin_um", coupon_margin_um),
+    ):
+        if not isfinite(value) or value <= 0:
+            raise ValueError(f"{name} must be finite and positive, got {value!r}.")
+
+    geometry = mtl_straight_bend_coupling_section(
+        coupled_length=coupled_length,
+        inter_trace_ground_width=inter_trace_ground_width,
+        bend_radius=bend_radius,
+        cross_section=cross_section,
+    )
+    layers = geometry.info["layers"]
+    draw_layer = tuple(layers["draw"])
+    ground_mask_layer = tuple(layers["ground_mask"])
+    signals = geometry.get_region(draw_layer, merge=True)
+    ground_opening = geometry.get_region(ground_mask_layer, merge=True)
+    if signals.count() != 2 or ground_opening.is_empty():
+        raise ValueError("SB geometry must contain two signals and its ground-mask opening.")
+
+    signal_polygons = {
+        "signal_p": _signal_polygon_at_port(
+            signals, port=geometry.ports["p_left"], dbu_um=geometry.kcl.dbu
+        ),
+        "signal_r": _signal_polygon_at_port(
+            signals, port=geometry.ports["r_left"], dbu_um=geometry.kcl.dbu
+        ),
+    }
+    if signal_polygons["signal_p"] == signal_polygons["signal_r"]:
+        raise ValueError("SB traces must remain separate conductors.")
+
+    opening_width_um = float(xs[CPW_GROUND_MASK].width)
+    clearance_rectangle = gf.components.rectangle(
+        size=(clearance_um, opening_width_um),
+        centered=True,
+        layer=ground_mask_layer,
+    )
+    clearances = gf.Component()
+    for name in geometry.info["ordered_port_names"]:
+        port = geometry.ports[name]
+        angle = float(port.orientation) * pi / 180
+        clearance = clearances << clearance_rectangle
+        clearance.drotate(float(port.orientation))
+        clearance.dmove(
+            (
+                float(port.x) + clearance_um / 2 * cos(angle),
+                float(port.y) + clearance_um / 2 * sin(angle),
+            )
+        )
+    ground_opening += clearances.get_region(ground_mask_layer, merge=True)
+    ground_opening.merge()
+
+    bounds = ground_opening.bbox()
+    margin_dbu = round(coupon_margin_um / geometry.kcl.dbu)
+    coupon_box = kdb.Box(
+        bounds.left - margin_dbu,
+        bounds.bottom - margin_dbu,
+        bounds.right + margin_dbu,
+        bounds.top + margin_dbu,
+    )
+    ground = kdb.Region(coupon_box) - ground_opening
+    if ground.is_empty():
+        raise ValueError("Coupon ground is empty after subtracting the ground-mask opening.")
+
+    coupon = gf.Component()
+    signal_layers = {"signal_p": HFSS_SIGNAL_P_LAYER, "signal_r": HFSS_SIGNAL_R_LAYER}
+    for name, polygon in signal_polygons.items():
+        coupon.add_polygon(kdb.Region(polygon), layer=signal_layers[name])
+    coupon.add_polygon(ground, layer=HFSS_GROUND_LAYER)
+    coupon.add_polygon(kdb.Region(coupon_box), layer=HFSS_SUBSTRATE_LAYER)
+    coupon.add_polygon(clearances.get_region(ground_mask_layer), layer=HFSS_PORT_SHEET_LAYER)
+    coupon.flatten(merge=True)
+
+    port_signals = {
+        "r_left": "signal_r",
+        "r_right": "signal_r",
+        "p_left": "signal_p",
+        "p_right": "signal_p",
+    }
+    for name in geometry.info["ordered_port_names"]:
+        coupon.add_port(
+            name=name,
+            port=geometry.ports[name],
+            layer=signal_layers[port_signals[name]],
+        )
+
+    bbox_um = {
+        "xmin": coupon_box.left * geometry.kcl.dbu,
+        "ymin": coupon_box.bottom * geometry.kcl.dbu,
+        "xmax": coupon_box.right * geometry.kcl.dbu,
+        "ymax": coupon_box.top * geometry.kcl.dbu,
+    }
+    terminal_ports = {}
+    for name in geometry.info["ordered_port_names"]:
+        port = geometry.ports[name]
+        angle = float(port.orientation) * pi / 180
+        dx = clearance_um * cos(angle)
+        dy = clearance_um * sin(angle)
+        terminal_ports[name] = {
+            "signal": port_signals[name],
+            "reference": "finite_ground",
+            "sheet": "port_sheets",
+            "sheet_center_um": (float(port.x) + dx / 2, float(port.y) + dy / 2, 0.0),
+            "integration_line_um": (
+                (float(port.x), float(port.y), 0.0),
+                (float(port.x) + dx, float(port.y) + dy, 0.0),
+            ),
+            "center_um": tuple(float(value) for value in port.center),
+            "orientation_deg": int(port.orientation),
+        }
+    coupon.info["hfss_coupon"] = {
+        "schema": "orpen-mtl-straight-bend-coupling-section-hfss-coupon.v1",
+        "topology": "mtl_straight_bend_coupling_section",
+        "terminal_order": geometry.info["ordered_port_names"],
+        "layers": {
+            "signal_p": {
+                "layer": HFSS_SIGNAL_P_LAYER,
+                "material_role": "metal",
+                "zmin": 0.0,
+                "thickness": 0.0,
+            },
+            "signal_r": {
+                "layer": HFSS_SIGNAL_R_LAYER,
+                "material_role": "metal",
+                "zmin": 0.0,
+                "thickness": 0.0,
+            },
+            "finite_ground": {
+                "layer": HFSS_GROUND_LAYER,
+                "material_role": "metal",
+                "zmin": 0.0,
+                "thickness": 0.0,
+            },
+            "substrate": {
+                "layer": HFSS_SUBSTRATE_LAYER,
+                "material_role": "substrate",
+                "zmin": -SUBSTRATE_THICKNESS_UM,
+                "thickness": SUBSTRATE_THICKNESS_UM,
+            },
+            "port_sheets": {
+                "layer": HFSS_PORT_SHEET_LAYER,
+                "material_role": "boundary",
+                "zmin": 0.0,
+                "thickness": 0.0,
+            },
+        },
+        "terminal_ports": terminal_ports,
+        "coupon_bbox_um": bbox_um,
+        "substrate_footprint_bbox_um": bbox_um,
+        "coupon_margin_um": float(coupon_margin_um),
+        "terminal_open_clearance_um": clearance_um,
+        "vacuum_geometry": "PyAEDT Region; intentionally absent from GDS",
+    }
+    return coupon
 
 # %% [markdown]
 # ## Sweep Parameter Controls
@@ -119,9 +327,8 @@ ACF_PATH = REPO_ROOT / "notebooks" / "AEDTSimulation" / "HFSS_Local.acf"
 # %% [markdown]
 # ## Validation And Failure Controls
 #
-# The registered coupon owns the GDS layer and four-terminal metadata. Do not
-# replace a missing factory with notebook-local geometry: that would make this
-# run differ from the PDK component it is meant to review.
+# This notebook owns its HFSS-only GDS layers and four-terminal metadata while
+# directly consuming the reusable MTL geometry callable.
 
 # %%
 EXPECTED_COUPON_SCHEMA = "orpen-mtl-straight-bend-coupling-section-hfss-coupon.v1"
@@ -144,8 +351,7 @@ EVIDENCE_STATUS = "diagnostic"
 # ## Review Coupon Before AEDT
 
 # %%
-coupon = gf.get_component(
-    "mtl_straight_bend_coupling_section_hfss_coupon",
+coupon = build_hfss_coupon(
     coupled_length=LC_UM,
     inter_trace_ground_width=D_UM,
     terminal_open_clearance_um=TERMINAL_OPEN_CLEARANCE_UM,

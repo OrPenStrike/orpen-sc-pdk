@@ -11,7 +11,6 @@ from orpen_sc_pdk.cells.cpw import (
     launcher,
     mtl_bend_coupling_section,
     mtl_straight_bend_coupling_section,
-    mtl_straight_bend_coupling_section_hfss_coupon,
     n_trace_mtl_section,
 )
 from orpen_sc_pdk.cells.dicing import dicing_edge
@@ -41,7 +40,6 @@ __all__ = [
     "n_trace_mtl_section",
     "mtl_bend_coupling_section",
     "mtl_straight_bend_coupling_section",
-    "mtl_straight_bend_coupling_section_hfss_coupon",
     "bend_euler",
     "dicing_edge",
     "interdigital_capacitor",
