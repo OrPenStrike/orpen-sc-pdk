@@ -69,9 +69,13 @@ INTERPOLATION_MAX_SOLUTIONS = 250
 
 # %% [markdown]
 # ## Meshing Controls
+#
+# These are the default controls for future HFSS Setups and can be overridden
+# in this notebook before preparing or solving the coupon.
 
 # %%
-MAX_ADAPTIVE_PASSES = 12
+MAX_ADAPTIVE_PASSES = 99
+MINIMUM_CONVERGED_PASSES = 2
 MAX_DELTA_S = 0.02
 
 # %% [markdown]
@@ -169,6 +173,7 @@ display(
                 "frequency_range_GHz": f"{FREQUENCY_START_GHZ}–{FREQUENCY_STOP_GHZ}",
                 "output_points": FREQUENCY_POINT_COUNT,
                 "max_adaptive_passes": MAX_ADAPTIVE_PASSES,
+                "minimum_converged_passes": MINIMUM_CONVERGED_PASSES,
                 "max_delta_S": MAX_DELTA_S,
                 "terminal_open_clearance_um": coupon.info["hfss_coupon"][
                     "terminal_open_clearance_um"
@@ -357,6 +362,10 @@ if RUN_AEDT:
         max_delta_s=MAX_DELTA_S,
     ):
         raise RuntimeError("HFSS broadband adaptive setup configuration failed.")
+    # PyAEDT's broadband helper has no minimum-converged-passes argument.
+    setup.props["MinimumConvergedPasses"] = MINIMUM_CONVERGED_PASSES
+    if not setup.update():
+        raise RuntimeError("HFSS minimum-converged-passes update failed.")
     configured_sweeps = {
         sweep_name.rsplit(" : ", 1)[-1] for sweep_name in hfss.get_sweeps(HFSS_SETUP_NAME)
     }
