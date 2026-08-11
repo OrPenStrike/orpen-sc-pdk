@@ -613,6 +613,14 @@ def n_trace_coplanar_waveguide(
     section_centers += first_trace_width
     sections.append(
         gf.Section(
+            width=first_trace_width + 2 * first_left_gap,
+            offset=first_trace_offset,
+            layer=ground_mask_layer,
+            name=CPW_GROUND_MASK,
+        )
+    )
+    sections.append(
+        gf.Section(
             width=first_left_gap,
             offset=-(section_centers + first_left_gap / 2),
             layer=etch_layer,
@@ -645,6 +653,15 @@ def n_trace_coplanar_waveguide(
                 port_names=(f"{trace_name}_o1", f"{trace_name}_o2"),
             )
         )
+        trace_offset = -(section_centers + trace_width / 2)
+        sections.append(
+            gf.Section(
+                width=trace_width + 2 * left_gap,
+                offset=trace_offset,
+                layer=ground_mask_layer,
+                name=f"{trace_name}_ground_mask",
+            )
+        )
         section_centers += trace_width
         sections.append(
             gf.Section(
@@ -658,15 +675,6 @@ def n_trace_coplanar_waveguide(
         if trace_index < n_traces - 1:
             inter_ground = inter_trace_ground_widths_f[trace_index]
             section_centers += inter_ground
-    sections.append(
-        gf.Section(
-            width=total_footprint_width,
-            offset=0.0,
-            layer=ground_mask_layer,
-            name=CPW_GROUND_MASK,
-        )
-    )
-
     return gf.cross_section.cross_section(
         width=trace_widths_f[0],
         layer=draw_layer,

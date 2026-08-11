@@ -21,6 +21,8 @@ from orpen_sc_pdk.cells import (
     manhattan_style_junction,
     martinis2022_differential_ribbon_capacitor,
     mtl_bend_coupling_section,
+    mtl_straight_bend_coupling_section,
+    mtl_straight_bend_coupling_section_hfss_coupon,
     n_trace_mtl_section,
     resonator,
     resonator_hanger,
@@ -65,6 +67,10 @@ _cells = {
     ),
     "n_trace_mtl_section": n_trace_mtl_section,
     "mtl_bend_coupling_section": mtl_bend_coupling_section,
+    "mtl_straight_bend_coupling_section": mtl_straight_bend_coupling_section,
+    "mtl_straight_bend_coupling_section_hfss_coupon": (
+        mtl_straight_bend_coupling_section_hfss_coupon
+    ),
     "dicing_edge": dicing_edge,
     "interdigital_capacitor": interdigital_capacitor,
     "interdigital_capacitor_q3d_coupon": interdigital_capacitor_q3d_coupon,
