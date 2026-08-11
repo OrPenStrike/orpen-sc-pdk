@@ -107,7 +107,7 @@ RUN_AEDT = PREPARE_AEDT_SETUP or RUN_SOLVER
 # ### Output / Run Identity
 
 # %%
-RUN_ID = "2026-08-11-mtl-straight-bend-coupling-section-hfss-sheet-v1"
+RUN_ID = "2026-08-12-mtl-straight-bend-coupling-section-hfss-closed-v1"
 RUN_DIR = REPO_ROOT / "build" / "simulation" / "aedt" / "mtl_straight_bend_coupling" / RUN_ID
 GDS_PATH = RUN_DIR / "mtl_straight_bend_coupling_section.gds"
 PROJECT_PATH = RUN_DIR / "mtl_straight_bend_coupling_section.aedt"
