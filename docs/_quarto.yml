@@ -41,6 +41,8 @@ website:
     left:
       - text: Overview
         href: index.qmd
+      - text: SCQ Design Kit
+        href: https://github.com/arfiligol/SCQ_Design
       - text: Features
         href: developing-features.md
       - text: Notebooks
@@ -60,6 +62,8 @@ website:
           - materials-and-technology.md
           - models.md
           - public-pdk-examples/index.md
+          - public-pdk-examples/component-authoring.md
+          - public-pdk-examples/palace-hpc-handoff.md
           - public-pdk-examples/problem-notebooks.md
           - public-pdk-examples/simulation-layer-catalog.md
           - public-pdk-examples/evidence-fixtures.md

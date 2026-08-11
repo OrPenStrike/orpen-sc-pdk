@@ -36,3 +36,5 @@ implemented reliably from the Python workflow layer.
 - [Read public examples](public-pdk-examples/index.md), including notebooks,
   simulation layers, and publication-safe evidence fixtures.
 - [Explore layout exports](layout-viewer.qmd) in the static interactive viewer.
+- [Open SCQ Design Kit](https://github.com/arfiligol/SCQ_Design), the canonical
+  workspace source for cross-repository Design Targets and Knowledge.
