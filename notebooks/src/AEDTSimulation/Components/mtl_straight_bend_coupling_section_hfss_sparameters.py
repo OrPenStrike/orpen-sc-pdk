@@ -272,7 +272,8 @@ if RUN_AEDT and build_model:
         name="Region",
     )
     region.material_name = "vacuum"
-    hfss.assign_radiation_boundary_to_objects(region.name, name="Radiation")
+    # This coupon intentionally uses HFSS's default closed outer boundary.
+    # No Radiation or PML boundary is assigned to the Vacuum Region.
     conductor_names = ["signal_p", "signal_r", "finite_ground"]
     hfss.assign_perfect_e(conductor_names, name="PerfectE")
 
