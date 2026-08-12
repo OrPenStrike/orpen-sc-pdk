@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from itertools import chain
 from math import ceil, cos, isfinite, radians, sin
 
 import gdsfactory as gf
-from gdsfactory import kdb
 from gdsfactory.typings import CrossSectionSpec, Layer
 
 from orpen_sc_pdk.helpers.layout import add_etch_for_component
@@ -18,6 +18,8 @@ IDC_Q3D_SIGNAL_1_LAYER: Layer = (901, 0)
 IDC_Q3D_SIGNAL_2_LAYER: Layer = (902, 0)
 IDC_Q3D_GROUND_LAYER: Layer = (903, 0)
 IDC_Q3D_SUBSTRATE_FOOTPRINT_LAYER: Layer = (904, 0)
+_Q3D_BBOX_LAYER: Layer = (9701, 0)
+_PORT_PROBE_LAYER: Layer = (9702, 0)
 
 
 @gf.cell(tags=["elements"])
@@ -206,7 +208,14 @@ def prepare_interdigital_capacitor_q3d_geometry(
     cpw_gap_um = float(component.info.get("cpw_gap_um", 0.0))
     if not isfinite(cpw_gap_um) or cpw_gap_um <= 0:
         raise ValueError("component must record a finite positive cpw_gap_um.")
-    if component.get_region(draw_layer, merge=True).count() != 2:
+    source = component.copy() if getattr(component, "locked", False) else component
+    signal_polygons_by_layer = source.get_polygons_points(
+        merge=True,
+        by="tuple",
+        layers=[draw_layer],
+    )
+    signal_polygon_count = sum(len(polygons) for polygons in signal_polygons_by_layer.values())
+    if signal_polygon_count != 2:
         raise ValueError("component must contain exactly two IDC signal conductors.")
     if component.get_region(ground_mask_layer, merge=True).is_empty():
         raise ValueError("component must contain an IDC ground-mask opening.")
@@ -237,28 +246,56 @@ def prepare_interdigital_capacitor_q3d_geometry(
 
 
 def _signal_polygon_at_port(
-    signal_region: kdb.Region,
+    signal_polygons: list[Sequence[tuple[float, float]]],
     *,
     port: gf.Port,
+    bind_layer: Layer,
     dbu_um: float,
-) -> kdb.Polygon:
+) -> list[tuple[float, float]]:
     """Return the unique signal polygon connected just inside one named IDC port."""
 
     orientation = port.orientation
     if orientation is None:
         raise ValueError(f"{port.name} must have an orientation.")
+    if not signal_polygons:
+        raise ValueError("signal_polygons must contain at least one polygon.")
     probe_distance_um = max(dbu_um, float(port.width) / 4)
     angle = radians(float(orientation))
-    probe = kdb.Point(
-        round((float(port.x) - probe_distance_um * cos(angle)) / dbu_um),
-        round((float(port.y) - probe_distance_um * sin(angle)) / dbu_um),
+    probe = (
+        float(port.x) - probe_distance_um * cos(angle),
+        float(port.y) - probe_distance_um * sin(angle),
     )
-    matches = [polygon for polygon in signal_region.each() if polygon.inside(probe)]
+    probe_shape = gf.components.rectangle(
+        size=(dbu_um, dbu_um),
+        centered=True,
+        layer=bind_layer,
+    )
+    matches = []
+    for polygon in signal_polygons:
+        polygon_shape = gf.Component()
+        polygon_shape.add_polygon(points=polygon, layer=bind_layer)
+
+        probe_component = gf.Component()
+        probe_ref = probe_component << probe_shape
+        probe_ref.dmove(probe)
+
+        # `gf.boolean` is used only as a boolean probe; keep the temporary
+        # construction local so no intermediate artifacts are retained.
+        overlap = gf.boolean(
+            A=polygon_shape,
+            B=probe_ref,
+            operation="and",
+            layer=bind_layer,
+            layer1=bind_layer,
+            layer2=bind_layer,
+        )
+        if not overlap.get_region(bind_layer, merge=True).is_empty():
+            matches.append([(float(point[0]), float(point[1])) for point in polygon])
     if len(matches) != 1:
         raise ValueError(
             f"{port.name} must identify exactly one connected signal conductor, got {len(matches)}."
         )
-    return matches[0]
+    return [(float(point[0]), float(point[1])) for point in matches[0]]
 
 
 @gf.cell(tags=["simulation"])
@@ -314,34 +351,82 @@ def interdigital_capacitor_q3d_coupon(
         etch_layer=etch_layer,
         ground_mask_layer=ground_mask_layer,
     )
-    signals = prepared.get_region(draw_layer, merge=True)
+    signal_polygons_by_layer = prepared.get_polygons_points(
+        merge=True,
+        by="tuple",
+        layers=[draw_layer],
+    )
+    signal_polygons = [
+        polygon for polygons in signal_polygons_by_layer.values() for polygon in polygons
+    ]
     ground_opening = prepared.get_region(ground_mask_layer, merge=True)
-    if signals.count() != 2 or ground_opening.is_empty():
+    if len(signal_polygons) != 2 or ground_opening.is_empty():
         raise ValueError("Prepared IDC must contain two signals and a non-empty ground opening.")
 
     signal_1 = _signal_polygon_at_port(
-        signals,
+        signal_polygons,
         port=prepared.ports["o_capacitor_in"],
+        bind_layer=_PORT_PROBE_LAYER,
         dbu_um=prepared.kcl.dbu,
     )
     signal_2 = _signal_polygon_at_port(
-        signals,
+        signal_polygons,
         port=prepared.ports["o_capacitor_out"],
+        bind_layer=_PORT_PROBE_LAYER,
         dbu_um=prepared.kcl.dbu,
     )
     if signal_1 == signal_2:
         raise ValueError("IDC public ports must bind distinct signal conductors.")
 
-    bounds = (signals + ground_opening).bbox()
-    margin_dbu = round(coupon_margin_um / prepared.kcl.dbu)
-    coupon_box = kdb.Box(
-        bounds.left - margin_dbu,
-        bounds.bottom - margin_dbu,
-        bounds.right + margin_dbu,
-        bounds.top + margin_dbu,
-    )
+    footprint = gf.Component()
+    for polygons in prepared.get_polygons_points(
+        merge=True,
+        by="tuple",
+        layers=[draw_layer, ground_mask_layer],
+    ).values():
+        for polygon in polygons:
+            footprint.add_polygon(points=polygon, layer=_Q3D_BBOX_LAYER)
+    bbox_um = footprint.dbbox()
+    if bbox_um is None:
+        raise ValueError("Failed to evaluate capacitor footprint for Q3D coupon bounds.")
+    dbu = prepared.kcl.dbu
+    margin_dbu = round(coupon_margin_um / dbu)
+    coupon_box_snapped = {
+        "left": (round(bbox_um.left / dbu) - margin_dbu) * dbu,
+        "bottom": (round(bbox_um.bottom / dbu) - margin_dbu) * dbu,
+        "right": (round(bbox_um.right / dbu) + margin_dbu) * dbu,
+        "top": (round(bbox_um.top / dbu) + margin_dbu) * dbu,
+    }
+    coupon_box_width = coupon_box_snapped["right"] - coupon_box_snapped["left"]
+    coupon_box_height = coupon_box_snapped["top"] - coupon_box_snapped["bottom"]
+
     domain = gf.Component()
-    domain.add_polygon(kdb.Region(coupon_box), layer=ground_layer)
+    domain_shape = gf.components.rectangle(
+        size=(coupon_box_width, coupon_box_height),
+        centered=False,
+        layer=ground_layer,
+    )
+    domain_ref = domain << domain_shape
+    domain_ref.dmove((coupon_box_snapped["left"], coupon_box_snapped["bottom"]))
+    domain_box = domain.dbbox()
+    if domain_box is None:
+        raise ValueError("Failed to compute domain physical dbbox during Q3D coupon assembly.")
+    domain_expected = {
+        "xmin": coupon_box_snapped["left"],
+        "ymin": coupon_box_snapped["bottom"],
+        "xmax": coupon_box_snapped["right"],
+        "ymax": coupon_box_snapped["top"],
+    }
+    domain_actual = {
+        "xmin": domain_box.left,
+        "ymin": domain_box.bottom,
+        "xmax": domain_box.right,
+        "ymax": domain_box.top,
+    }
+    if any(
+        abs(domain_actual[key] - domain_expected[key]) > prepared.kcl.dbu for key in domain_expected
+    ):
+        raise ValueError("Q3D domain dbbox deviates from requested physical coupon box.")
     ground = gf.boolean(
         A=domain,
         B=prepared,
@@ -354,10 +439,34 @@ def interdigital_capacitor_q3d_coupon(
         raise ValueError("Coupon ground is empty after subtracting the ground-mask opening.")
 
     coupon = gf.Component()
-    coupon.add_polygon(kdb.Region(signal_1), layer=signal_1_layer)
-    coupon.add_polygon(kdb.Region(signal_2), layer=signal_2_layer)
+    coupon.add_polygon(points=signal_1, layer=signal_1_layer)
+    coupon.add_polygon(points=signal_2, layer=signal_2_layer)
     coupon << ground
-    coupon.add_polygon(kdb.Region(coupon_box), layer=substrate_footprint_layer)
+    substrate_footprint = gf.components.rectangle(
+        size=(coupon_box_width, coupon_box_height),
+        centered=False,
+        layer=substrate_footprint_layer,
+    )
+    substrate_ref = coupon << substrate_footprint
+    substrate_ref.dmove((coupon_box_snapped["left"], coupon_box_snapped["bottom"]))
+    substrate_box = substrate_ref.dbbox()
+    if substrate_box is None:
+        raise ValueError(
+            "Failed to compute substrate reference physical dbbox during Q3D coupon assembly."
+        )
+    substrate_actual = {
+        "xmin": substrate_box.left,
+        "ymin": substrate_box.bottom,
+        "xmax": substrate_box.right,
+        "ymax": substrate_box.top,
+    }
+    if any(
+        abs(substrate_actual[key] - domain_actual[key]) > prepared.kcl.dbu
+        for key in domain_expected
+    ):
+        raise ValueError(
+            "Q3D substrate reference dbbox deviates from requested physical coupon box."
+        )
     coupon.flatten(merge=True)
 
     coupon.add_port(
@@ -370,12 +479,23 @@ def interdigital_capacitor_q3d_coupon(
         port=prepared.ports["o_capacitor_out"],
         layer=signal_2_layer,
     )
-    bbox_um = {
-        "xmin": coupon_box.left * prepared.kcl.dbu,
-        "ymin": coupon_box.bottom * prepared.kcl.dbu,
-        "xmax": coupon_box.right * prepared.kcl.dbu,
-        "ymax": coupon_box.top * prepared.kcl.dbu,
+    coupon_box_check = coupon.dbbox()
+    if coupon_box_check is None:
+        raise ValueError("Failed to compute final Q3D coupon dbbox.")
+    coupon_actual = {
+        "xmin": coupon_box_check.left,
+        "ymin": coupon_box_check.bottom,
+        "xmax": coupon_box_check.right,
+        "ymax": coupon_box_check.top,
     }
+    coupon_box_um = {
+        "xmin": domain_actual["xmin"],
+        "ymin": domain_actual["ymin"],
+        "xmax": domain_actual["xmax"],
+        "ymax": domain_actual["ymax"],
+    }
+    if any(abs(coupon_actual[key] - coupon_box_um[key]) > coupon.kcl.dbu for key in coupon_box_um):
+        raise ValueError("Q3D final coupon dbbox deviates from requested physical coupon box.")
     coupon.info["q3d_coupon"] = {
         "schema": "orpen-idc-q3d-planar-coupon.v1",
         "node_ports": {
@@ -389,8 +509,8 @@ def interdigital_capacitor_q3d_coupon(
             "finite_ground": ground_layer,
             "substrate_footprint": substrate_footprint_layer,
         },
-        "coupon_bbox_um": bbox_um,
-        "substrate_footprint_bbox_um": bbox_um,
+        "coupon_bbox_um": coupon_box_um,
+        "substrate_footprint_bbox_um": coupon_box_um,
         "terminal_open_clearance_um": float(terminal_open_clearance_um),
         "coupon_margin_um": float(coupon_margin_um),
         "vacuum_geometry": "PyAEDT Region; intentionally absent from GDS",

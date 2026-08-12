@@ -3,7 +3,6 @@
 import math
 
 import gdsfactory as gf
-from klayout import db as kdb
 
 from orpen_sc_pdk.tech import LAYER, Layer
 
@@ -46,7 +45,7 @@ def indium_ground(
     margin: float = 90.0,
     indium_bump_size: float = 20.0,
     under_bump_size: float = 40.0,
-    keepout_region: kdb.Region | None = None,
+    keepout_region: gf.Region | None = None,
     # Layers
     indium_bump_layer: Layer = LAYER.D0_D1_INDIUM_BUMP,
     under_bump_layer: Layer = LAYER.D0_D1_UNDER_BUMP,
@@ -108,7 +107,10 @@ def indium_ground(
         x = x0 + column * pitch
         for row in range(rows):
             y = y0 + row * pitch
-            candidate_footprint = bump_footprint.moved(round(x * 1e3), round(y * 1e3))
+            candidate_footprint = bump_footprint.moved(
+                round(x / bump_temp.kcl.dbu),
+                round(y / bump_temp.kcl.dbu),
+            )
             if not (candidate_footprint & keepout_region).is_empty():
                 continue
 

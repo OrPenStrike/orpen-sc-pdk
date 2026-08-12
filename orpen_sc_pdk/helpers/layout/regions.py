@@ -4,14 +4,13 @@ from collections.abc import Sequence
 
 import gdsfactory as gf
 from gdsfactory.typings import LayerSpec
-from klayout import db as kdb
 
 
 def get_keepout_region(
     component: gf.Component,
     layers: Sequence[LayerSpec],
     clearance_um: float = 5.0,
-) -> kdb.Region:
+) -> gf.Region:
     """Build a merged expanded keepout Region from selected component layers."""
 
     if clearance_um < 0:
@@ -20,13 +19,13 @@ def get_keepout_region(
     temp = component.copy()
     temp.flatten()
 
-    keepout_region = kdb.Region()
+    keepout_region = gf.Region()
     for layer in layers:
         keepout_region += temp.get_region(layer, merge=True)
 
     keepout_region = keepout_region.merged()
     if clearance_um > 0:
-        keepout_region = keepout_region.size(d=round(clearance_um * 1e3))
+        keepout_region = keepout_region.size(d=round(clearance_um / component.kcl.dbu))
 
     return keepout_region.merged()
 
@@ -95,7 +94,7 @@ def get_keepout_region_from_targets(
     targets: Sequence[gf.Component | gf.ComponentReference],
     layers: Sequence[LayerSpec],
     clearance_um: float = 5.0,
-) -> kdb.Region:
+) -> gf.Region:
     """Build one expanded keepout Region from many components or references."""
 
     temp = gf.Component()
