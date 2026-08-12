@@ -152,6 +152,12 @@ def _deembed_mm(deembed_length_um: float) -> float:
     return deembed_length_um / 1000.0
 
 
+def _deembed_um(deembed_length_um: float) -> str:
+    if deembed_length_um < 0:
+        raise ValueError(f"DEEMBED_LENGTH_UM must be >= 0, got {deembed_length_um!r}.")
+    return f"{deembed_length_um:g}um"
+
+
 def _deembed_example_mm() -> float:
     return max(0.0, LEAD_LENGTH_UM - GUARD_LENGTH_UM) / 1000.0
 
@@ -460,14 +466,14 @@ def _create_wave_port(
     physical_port: str,
     face_id: int,
     boundary_name: str,
-    deembed_mm: float,
+    deembed_distance: float | str,
     prior_terminals: set[str],
 ) -> TerminalRecord:
     boundary = app.wave_port(
         face_id,
         reference=ground_references,
         name=boundary_name,
-        deembed=deembed_mm,
+        deembed=deembed_distance,
         terminals_rename=True,
     )
     if not boundary:
@@ -500,7 +506,7 @@ def _assign_ports(
     transition_kind: str,
     assignments: list[PortRecord],
     ground_references: list[str],
-    deembed_mm: float,
+    deembed_distance: float | str,
 ) -> list[TerminalRecord]:
     expected = _side_map(transition_kind)
     region_faces = {
@@ -523,7 +529,7 @@ def _assign_ports(
             physical_port="seam",
             face_id=seam_region_face,
             boundary_name="seam",
-            deembed_mm=deembed_mm,
+            deembed_distance=deembed_distance,
             prior_terminals=prior,
         )
     )
@@ -540,7 +546,7 @@ def _assign_ports(
                 terminal_names=[rec.physical_port],
                 terminal_object_map={rec.physical_port: _object_map()[rec.physical_port]},
                 boundary_name=f"{rec.physical_port}_wave_port",
-                deembed_mm=deembed_mm,
+                deembed_distance=deembed_distance,
                 prior_terminals=prior,
             )
         )
@@ -560,10 +566,12 @@ def _assign_ports(
 # %%
 TRANSITION_KIND = _normalize_transition_kind(TRANSITION_KIND)
 DEEMBED_MM_EXPLICIT = _deembed_mm(DEEMBED_LENGTH_UM)
+DEEMBED_UM_EXPLICIT = _deembed_um(DEEMBED_LENGTH_UM)
 DEEMBED_MM_FROM_GUARD = _deembed_example_mm()
 
 print(f"Transition kind: {TRANSITION_KIND}")
 print(f"DEEMBED (explicit UI value): {DEEMBED_MM_EXPLICIT:.6f} mm")
+print(f"DEEMBED for PyAEDT wave_port: {DEEMBED_UM_EXPLICIT}")
 print(
     f"Guard-convention example: max(0, {LEAD_LENGTH_UM} - {GUARD_LENGTH_UM})/1000 = "
     f"{DEEMBED_MM_FROM_GUARD:.6f} mm"
@@ -702,7 +710,7 @@ if RUN_AEDT and build_model:
         transition_kind=TRANSITION_KIND,
         assignments=port_records,
         ground_references=ground_references,
-        deembed_mm=DEEMBED_MM_EXPLICIT,
+        deembed_distance=DEEMBED_UM_EXPLICIT,
     )
 
     all_terminals = list(hfss.oboundary.GetExcitationsOfType("Terminal"))
@@ -716,6 +724,7 @@ if RUN_AEDT and build_model:
         "lead_length_um": float(LEAD_LENGTH_UM),
         "guard_length_um": float(GUARD_LENGTH_UM),
         "deembed_length_um": float(DEEMBED_LENGTH_UM),
+        "deembed_um_explicit": DEEMBED_UM_EXPLICIT,
         "deembed_mm_explicit": DEEMBED_MM_EXPLICIT,
         "deembed_mm_from_guard": DEEMBED_MM_FROM_GUARD,
         "explicit_deembed_note": (
