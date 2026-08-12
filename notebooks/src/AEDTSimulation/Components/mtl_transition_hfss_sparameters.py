@@ -66,9 +66,8 @@ SWEEP_LENGTH_UM_OPTIONS = (50, 60, 80, 100, 200)
 
 FREQUENCY_START_GHZ = 3.0
 FREQUENCY_STOP_GHZ = 8.0
-FREQUENCY_POINT_COUNT = 201
-INTERPOLATION_TOLERANCE_PERCENT = 0.5
-INTERPOLATION_MAX_SOLUTIONS = 250
+FREQUENCY_POINT_COUNT = 20_000
+SWEEP_TYPE = "Fast"
 SWEEP_NAME = "S"
 
 MAX_ADAPTIVE_PASSES = 99
@@ -725,7 +724,7 @@ if RUN_AEDT and build_model:
             "and remains the source-of-truth parameter."
         ),
         "frequency_ghz": [FREQUENCY_START_GHZ, FREQUENCY_STOP_GHZ, FREQUENCY_POINT_COUNT],
-        "frequency_sweep_type": "Interpolating",
+        "frequency_sweep_type": SWEEP_TYPE,
         "sweep_name": SWEEP_NAME,
         "expected_terminal_order": CANONICAL_TERMINAL_ORDER,
         "physical_port_faces": {
@@ -818,8 +817,21 @@ if RUN_AEDT and build_model:
     if not setup.update():
         raise BuildError("Failed to write min converged pass count.")
 
-    configured = {name.rsplit(" : ", 1)[-1] for name in hfss.get_sweeps(SOLVER_SETUP_NAME)}
-    if SWEEP_NAME not in configured:
+    sweep = setup.get_sweep(SWEEP_NAME)
+    if sweep:
+        sweep.props.update(
+            {
+                "RangeType": "LinearCount",
+                "RangeStart": f"{FREQUENCY_START_GHZ}GHz",
+                "RangeEnd": f"{FREQUENCY_STOP_GHZ}GHz",
+                "RangeCount": FREQUENCY_POINT_COUNT,
+                "Type": SWEEP_TYPE,
+                "SaveFields": False,
+                "SaveRadFields": False,
+            }
+        )
+        sweep.update()
+    else:
         sweep = hfss.create_linear_count_sweep(
             SOLVER_SETUP_NAME,
             "GHz",
@@ -828,12 +840,10 @@ if RUN_AEDT and build_model:
             num_of_freq_points=FREQUENCY_POINT_COUNT,
             name=SWEEP_NAME,
             save_fields=False,
-            sweep_type="Interpolating",
-            interpolation_tol=INTERPOLATION_TOLERANCE_PERCENT,
-            interpolation_max_solutions=INTERPOLATION_MAX_SOLUTIONS,
+            sweep_type=SWEEP_TYPE,
         )
         if not sweep:
-            raise BuildError("Failed to create interpolating frequency sweep.")
+            raise BuildError(f"Failed to create {SWEEP_TYPE} frequency sweep.")
 
     hfss.save_project()
 
