@@ -33,7 +33,6 @@ import plotly.express as px
 from ansys.aedt.core import Hfss
 from IPython.display import HTML, clear_output, display
 from skrf import Network
-from skrf.io.touchstone import hfss_touchstone_2_gamma_z0
 
 import orpen_sc_pdk
 from orpen_sc_pdk.simulation.aedt import aedt_material_name_from_physical_key
@@ -547,13 +546,29 @@ if RUN_AEDT:
             encoding="utf-8",
         )
 
-        _, gamma, z0 = hfss_touchstone_2_gamma_z0(str(RAW_TOUCHSTONE_PATH))
-        gamma = gamma.copy()
-        z0 = z0.copy()
-
         network = Network(str(RAW_TOUCHSTONE_PATH))
         if not network.port_names:
             raise RuntimeError("Touchstone has no readable port names")
+
+        # Terminal Touchstone owns St(...). Wave-port characteristic impedance
+        # and propagation constant come from Modal Solution Data, not from the
+        # Touchstone `! Port Impedance` comments or Terminal Zot(...).
+        modal_data = hfss.post.get_solution_data(
+            expressions=["Zo(o1)", "Zo(o2)", "Gamma(o1)", "Gamma(o2)"],
+            setup_sweep_name=f"{SOLVER_SETUP_NAME} : {SWEEP_NAME}",
+            report_category="Modal Solution Data",
+        )
+        if not modal_data:
+            raise RuntimeError("Modal Port Zo/Gamma extraction failed")
+
+        modal_frequency_ghz, portzo_o1_real = modal_data.get_expression_data("Zo(o1)", "real")
+        _, portzo_o1_imag = modal_data.get_expression_data("Zo(o1)", "imag")
+        _, portzo_o2_real = modal_data.get_expression_data("Zo(o2)", "real")
+        _, portzo_o2_imag = modal_data.get_expression_data("Zo(o2)", "imag")
+        _, gamma_o1_real = modal_data.get_expression_data("Gamma(o1)", "real")
+        _, gamma_o1_imag = modal_data.get_expression_data("Gamma(o1)", "imag")
+        _, gamma_o2_real = modal_data.get_expression_data("Gamma(o2)", "real")
+        _, gamma_o2_imag = modal_data.get_expression_data("Gamma(o2)", "imag")
 
         desired_terminals = [
             entry["terminal_name"]
@@ -567,12 +582,15 @@ if RUN_AEDT:
         if permutation != [0, 1]:
             network.s = network.s[:, permutation, :][:, :, permutation]
             network.z0 = network.z0[:, permutation]
-            gamma = gamma[:, permutation]
-            z0 = z0[:, permutation]
             network.port_names = desired_terminals
             terminal_order = "normalized"
         else:
             terminal_order = "original"
+
+        if len(modal_frequency_ghz) != len(network.f) or max(
+            abs(modal_frequency_ghz - network.f / 1e9)
+        ) > 1e-9:
+            raise RuntimeError("Modal PortZo and Terminal S frequency grids differ")
 
         df = pd.DataFrame(
             {
@@ -580,16 +598,16 @@ if RUN_AEDT:
                 "frequency_ghz": network.f / 1e9,
                 "S11_abs": [abs(s) for s in network.s[:, 0, 0]],
                 "S21_abs": [abs(s) for s in network.s[:, 1, 0]],
-                "Re(Z0_o1)": [complex(v).real for v in z0[:, 0]],
-                "Im(Z0_o1)": [complex(v).imag for v in z0[:, 0]],
-                "Re(gamma_o1)": [complex(v).real for v in gamma[:, 0]],
-                "Im(gamma_o1)": [complex(v).imag for v in gamma[:, 0]],
-                "beta_o1": [complex(v).imag for v in gamma[:, 0]],
-                "Re(Z0_o2)": [complex(v).real for v in z0[:, 1]],
-                "Im(Z0_o2)": [complex(v).imag for v in z0[:, 1]],
-                "Re(gamma_o2)": [complex(v).real for v in gamma[:, 1]],
-                "Im(gamma_o2)": [complex(v).imag for v in gamma[:, 1]],
-                "beta_o2": [complex(v).imag for v in gamma[:, 1]],
+                "Re(PortZo_o1)": portzo_o1_real,
+                "Im(PortZo_o1)": portzo_o1_imag,
+                "Re(Gamma_o1)": gamma_o1_real,
+                "Im(Gamma_o1)": gamma_o1_imag,
+                "beta_o1": gamma_o1_imag,
+                "Re(PortZo_o2)": portzo_o2_real,
+                "Im(PortZo_o2)": portzo_o2_imag,
+                "Re(Gamma_o2)": gamma_o2_real,
+                "Im(Gamma_o2)": gamma_o2_imag,
+                "beta_o2": gamma_o2_imag,
             }
         )
         DERIVED_CSV_PATH.write_text(df.to_csv(index=False), encoding="utf-8")
@@ -612,6 +630,10 @@ if RUN_AEDT:
             "region_padding_um": [0.0, 0.0, 0.0, 0.0, REGION_PAD, REGION_PAD],
             "wave_ports": terminal_records,
             "terminal_order": terminal_order,
+            "quantity_authority": {
+                "S": "Terminal Solution Data / Terminal Touchstone St(...) data",
+                "characteristic_impedance": "Modal Solution Data / Port Zo / Zo(o1), Zo(o2)",
+            },
             "sweep": {
                 "start_ghz": FREQUENCY_START_GHZ,
                 "stop_ghz": FREQUENCY_STOP_GHZ,
@@ -644,11 +666,10 @@ else:
 # %% [markdown]
 # ### Physics Analysis Results
 #
-# > **Diagnostic scope.** These traces use the current one-terminal Driven
-# > Terminal port with both disconnected side grounds listed as references.
-# > Until the CPW common-mode port definition is selected and rerun, use the
-# > table below to diagnose port consistency; do not use it to select a ground
-# > width.
+# > **Quantity authority.** Scattering uses Driven Terminal `St(...)` data.
+# > Wave-port characteristic impedance uses Modal Solution Data `Port Zo`
+# > (`Zo(o1)` and `Zo(o2)`). Touchstone `! Port Impedance` comments and
+# > Terminal `Zot(...)` are not reported as characteristic impedance.
 
 # %%
 result_frames = []
@@ -665,10 +686,14 @@ if result_frames:
     result_df = result_df.sort_values(["ground_width_um", "frequency_ghz"]).reset_index(drop=True)
     result_df["S11_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S11_abs"].diff()
     result_df["S21_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S21_abs"].diff()
-    result_df["Re(Z0)_mean"] = (result_df["Re(Z0_o1)"] + result_df["Re(Z0_o2)"]) / 2
-    result_df["Re(Z0)_port_difference"] = (result_df["Re(Z0_o1)"] - result_df["Re(Z0_o2)"]).abs()
-    result_df["Re(Z0)_delta_from_prev_width"] = result_df.groupby("frequency_ghz")[
-        "Re(Z0)_mean"
+    result_df["Re(PortZo)_mean"] = (
+        result_df["Re(PortZo_o1)"] + result_df["Re(PortZo_o2)"]
+    ) / 2
+    result_df["Re(PortZo)_port_difference"] = (
+        result_df["Re(PortZo_o1)"] - result_df["Re(PortZo_o2)"]
+    ).abs()
+    result_df["Re(PortZo)_delta_from_prev_width"] = result_df.groupby("frequency_ghz")[
+        "Re(PortZo)_mean"
     ].diff()
 
     s_parameters = result_df.melt(
@@ -690,7 +715,7 @@ if result_frames:
 
     port_impedance = result_df.melt(
         id_vars=["frequency_ghz", "ground_width_um"],
-        value_vars=["Re(Z0_o1)", "Re(Z0_o2)"],
+        value_vars=["Re(PortZo_o1)", "Re(PortZo_o2)"],
         var_name="port",
         value_name="impedance_ohm",
     )
@@ -701,15 +726,15 @@ if result_frames:
             y="impedance_ohm",
             color="ground_width_um",
             line_dash="port",
-            title="Finite-ground CPW W10/S6 port impedance",
+            title="Finite-ground CPW W10/S6 modal PortZo",
         )
     )
 
     band_summary = result_df.groupby("ground_width_um", as_index=False).agg(
         S11_abs_max=("S11_abs", "max"),
         S21_abs_min=("S21_abs", "min"),
-        Re_Z0_mean_ohm=("Re(Z0)_mean", "mean"),
-        Re_Z0_port_difference_max_ohm=("Re(Z0)_port_difference", "max"),
+        Re_PortZo_mean_ohm=("Re(PortZo)_mean", "mean"),
+        Re_PortZo_port_difference_max_ohm=("Re(PortZo)_port_difference", "max"),
         S11_change_from_previous_width_max=(
             "S11_delta_from_prev_width",
             lambda values: values.abs().max(),
@@ -718,8 +743,8 @@ if result_frames:
             "S21_delta_from_prev_width",
             lambda values: values.abs().max(),
         ),
-        Re_Z0_change_from_previous_width_max_ohm=(
-            "Re(Z0)_delta_from_prev_width",
+        Re_PortZo_change_from_previous_width_max_ohm=(
+            "Re(PortZo)_delta_from_prev_width",
             lambda values: values.abs().max(),
         ),
     )
