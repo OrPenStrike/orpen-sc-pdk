@@ -423,19 +423,12 @@ def _build_hfss_coupon_from_transition(
 
 
 def _region_padding_for_kind(kind: str) -> list[float]:
-    pad = [REGION_PAD] * 6
-    if kind == "straight_bend":
-        pad[0] = 0.0
-        pad[1] = 0.0
-        pad[2] = 0.0
-        pad[3] = REGION_PAD
-    elif kind == "bend_bend":
-        pad[1] = 0.0
-        pad[2] = 0.0
-        pad[3] = 0.0
-    else:
+    # PyAEDT assigns the Wave Port to the whole selected Region face, so XY padding would grow
+    # the face aperture. Keep XY pads zero so both kinds share equal external cross-sections;
+    # keep only Z padding explicit for vertical clearance.
+    if kind not in {"straight_bend", "bend_bend"}:
         raise BuildError(f"Unsupported transition kind {kind!r}.")
-    return pad
+    return [0.0, 0.0, 0.0, 0.0, REGION_PAD, REGION_PAD]
 
 
 def _find_region_face_on_side(app: Hfss, side: str) -> int:
