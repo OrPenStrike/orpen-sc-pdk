@@ -21,7 +21,7 @@
 # `RUN_SOLVER` are `False` by default for safe GUI review.
 
 # %% [markdown]
-# ## Controls
+# ## Setup and Imports
 
 # %%
 from __future__ import annotations
@@ -37,8 +37,8 @@ import gdsfactory as gf
 import pandas as pd
 import skrf
 from ansys.aedt.core import Hfss
-from gdsfactory import kdb
 from IPython.display import HTML, clear_output, display
+from matplotlib.path import Path as PolygonPath
 
 import orpen_sc_pdk
 from orpen_sc_pdk.cells.cpw import mtl_bend_bend_transition, mtl_straight_bend_transition
@@ -54,6 +54,11 @@ REPO_ROOT = Path(orpen_sc_pdk.__file__).resolve().parent.parent
 if not (REPO_ROOT / "orpen_sc_pdk").is_dir():
     raise RuntimeError("Active orpen_sc_pdk checkout is invalid for notebook replay.")
 orpen_sc_pdk.activate()
+
+# %% [markdown]
+# ## Setup and Run Controls
+
+# %%
 
 TRANSITION_KIND = "straight_bend"  # {"straight_bend", "bend_bend"}
 LEAD_LENGTH_UM = 50.0
@@ -283,18 +288,16 @@ def _build_transition_component(kind: str) -> tuple[gf.Component, list[str]]:
     return component, ordered
 
 
-def _signal_polygon_at_port(
-    signal_region: kdb.Region, *, port: gf.Port, dbu_um: float
-) -> kdb.Polygon:
+def _signal_polygon_at_port(signal_polygons: list[Any], *, port: gf.Port) -> Any:
     if port.orientation is None:
         raise BuildError(f"Port {port.name!r} must expose orientation.")
-    probe_distance_um = max(dbu_um, float(port.width) / 4)
+    probe_distance_um = float(port.width) / 4
     angle = float(port.orientation) * pi / 180
-    probe = kdb.Point(
-        round((float(port.x) - probe_distance_um * cos(angle)) / dbu_um),
-        round((float(port.y) - probe_distance_um * sin(angle)) / dbu_um),
+    probe = (
+        float(port.x) - probe_distance_um * cos(angle),
+        float(port.y) - probe_distance_um * sin(angle),
     )
-    matches = [polygon for polygon in signal_region.each() if polygon.inside(probe)]
+    matches = [polygon for polygon in signal_polygons if PolygonPath(polygon).contains_point(probe)]
     if len(matches) != 1:
         raise BuildError(
             f"Port {port.name!r} must match exactly one signal polygon, got {len(matches)}."
@@ -304,18 +307,23 @@ def _signal_polygon_at_port(
 
 def _select_region_layer_ports(
     component: gf.Component,
-) -> tuple[kdb.Region, kdb.Region]:
+) -> tuple[list[Any], list[Any]]:
     xs = gf.get_cross_section("cpw_6_7_6")
     draw_layer = tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_DRAW].layer))
     gm_layer = tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_GROUND_MASK].layer))
 
-    signal_region = component.get_region(draw_layer, merge=True)
-    ground_mask_region = component.get_region(gm_layer, merge=True)
-    if signal_region.count() == 0:
+    polygons = component.dup()
+    signal_polygons = polygons.get_polygons_points(merge=True, by="tuple", layers=[draw_layer])[
+        draw_layer
+    ]
+    ground_mask_polygons = polygons.get_polygons_points(
+        merge=True, by="tuple", layers=[gm_layer]
+    )[gm_layer]
+    if not signal_polygons:
         raise BuildError("Transition has no signal region on CPW draw layer.")
-    if ground_mask_region.count() == 0:
+    if not ground_mask_polygons:
         raise BuildError("Transition has no ground-mask region on CPW ground mask layer.")
-    return signal_region, ground_mask_region
+    return signal_polygons, ground_mask_polygons
 
 
 def _build_hfss_coupon_from_transition(
@@ -323,41 +331,49 @@ def _build_hfss_coupon_from_transition(
     *,
     transition_kind: str,
 ) -> tuple[gf.Component, list[PortRecord]]:
-    signal_region, ground_mask_region = _select_region_layer_ports(component)
+    signal_polygons, ground_mask_polygons = _select_region_layer_ports(component)
 
-    signal_polygons = {
+    selected_signals = {
         "signal_1": _signal_polygon_at_port(
-            signal_region, port=component.ports["o1"], dbu_um=component.kcl.dbu
+            signal_polygons, port=component.ports["o1"]
         ),
         "signal_2": _signal_polygon_at_port(
-            signal_region, port=component.ports["o2"], dbu_um=component.kcl.dbu
+            signal_polygons, port=component.ports["o2"]
         ),
     }
-    if signal_polygons["signal_1"] == signal_polygons["signal_2"]:
+    if selected_signals["signal_1"] is selected_signals["signal_2"]:
         raise BuildError("Coupled traces collapsed; expected separate seam traces.")
 
-    trace_bbox = signal_region.bbox()
-    mask_bbox = ground_mask_region.bbox()
-    left = min(trace_bbox.left, mask_bbox.left)
-    bottom = min(trace_bbox.bottom, mask_bbox.bottom)
-    right = max(trace_bbox.right, mask_bbox.right)
-    top = max(trace_bbox.top, mask_bbox.top)
-    coupon_box = kdb.Box(
-        left,
-        bottom,
-        right,
-        top,
+    bbox = component.dbbox()
+    left, bottom, right, top = (
+        float(bbox.left),
+        float(bbox.bottom),
+        float(bbox.right),
+        float(bbox.top),
+    )
+    size = (right - left, top - bottom)
+
+    coupon_rectangle = gf.components.rectangle(size=size, layer=HFSS_SUBSTRATE_LAYER)
+    coupon_rectangle_ref = gf.Component()
+    coupon_rectangle_ref.add_ref(coupon_rectangle).dmove((left, bottom))
+    ground_mask = gf.Component()
+    for polygon in ground_mask_polygons:
+        ground_mask.add_polygon(polygon, layer=HFSS_GROUND_LAYER)
+    finite_ground = gf.boolean(
+        coupon_rectangle_ref,
+        ground_mask,
+        operation="not",
+        layer=HFSS_GROUND_LAYER,
+        layer1=HFSS_SUBSTRATE_LAYER,
+        layer2=HFSS_GROUND_LAYER,
     )
 
-    ground_region = kdb.Region(coupon_box) - ground_mask_region
-    if ground_region.is_empty():
-        raise BuildError("Finite ground region is empty; geometry subtraction failed.")
-
     hfss_coupon = gf.Component()
-    hfss_coupon.add_polygon(kdb.Region(signal_polygons["signal_1"]), layer=HFSS_SIGNAL_P_LAYER)
-    hfss_coupon.add_polygon(kdb.Region(signal_polygons["signal_2"]), layer=HFSS_SIGNAL_R_LAYER)
-    hfss_coupon.add_polygon(ground_region, layer=HFSS_GROUND_LAYER)
-    hfss_coupon.add_polygon(kdb.Region(coupon_box), layer=HFSS_SUBSTRATE_LAYER)
+    hfss_coupon.add_polygon(selected_signals["signal_1"], layer=HFSS_SIGNAL_P_LAYER)
+    hfss_coupon.add_polygon(selected_signals["signal_2"], layer=HFSS_SIGNAL_R_LAYER)
+    hfss_coupon.add_ref(finite_ground)
+    substrate = hfss_coupon.add_ref(coupon_rectangle)
+    substrate.dmove((left, bottom))
 
     hfss_coupon.add_port(
         name="o1",
@@ -400,10 +416,10 @@ def _build_hfss_coupon_from_transition(
             "substrate": "Si",
         },
         "bbox_um": {
-            "xmin": coupon_box.left * component.kcl.dbu,
-            "xmax": coupon_box.right * component.kcl.dbu,
-            "ymin": coupon_box.bottom * component.kcl.dbu,
-            "ymax": coupon_box.top * component.kcl.dbu,
+            "xmin": left,
+            "xmax": right,
+            "ymin": bottom,
+            "ymax": top,
         },
     }
 
@@ -553,7 +569,7 @@ def _assign_ports(
 
 
 # %% [markdown]
-# ## Review table and de-embed examples
+# ### De-embed control readback
 
 # %%
 TRANSITION_KIND = _normalize_transition_kind(TRANSITION_KIND)
@@ -576,7 +592,7 @@ print(f"Reference lead sweep options: {SWEEP_LENGTH_UM_OPTIONS}")
 
 
 # %% [markdown]
-# ## Build Transition Coupon
+# ## Create Simulation Component / Coupon
 
 # %%
 transition, ordered_ports = _build_transition_component(TRANSITION_KIND)
@@ -610,7 +626,7 @@ print(f"Public ordered ports from cell: {ordered_ports}")
 
 
 # %% [markdown]
-# ## Initialize HFSS App
+# ## Initialize AEDT Project / App
 
 # %%
 if RUN_AEDT:
@@ -634,7 +650,7 @@ else:
 
 
 # %% [markdown]
-# ## Import geometry, region, and assign wave ports
+# ## Import GDS and Build the HFSS/Q3D/Q2D Model
 
 # %%
 if RUN_AEDT and build_model:
@@ -657,7 +673,6 @@ if RUN_AEDT and build_model:
         (HFSS_GROUND_LAYER[0], "finite_ground"),
         (HFSS_SUBSTRATE_LAYER[0], "substrate"),
     )
-    substrate_material_name = aedt_material_name_from_physical_key(SUBSTRATE_KEY)
     imported = {}
     ground_references = []
     for layer_number, expected_name in expected:
@@ -683,12 +698,31 @@ if RUN_AEDT and build_model:
         selected = matches[0]
         imported_obj = hfss.modeler.get_object_from_name(selected)
         imported_obj.name = expected_name
-        if expected_name == "substrate":
-            imported_obj.material_name = substrate_material_name
         imported[expected_name] = imported_obj.name
 
     hfss.modeler.refresh_all_ids()
 
+
+# %% [markdown]
+# ## Geometry Verification
+
+# %%
+if RUN_AEDT and build_model:
+    display(
+        pd.DataFrame(
+            {"role": list(imported), "object": [str(imported[role]) for role in imported]}
+        )
+    )
+
+
+# %% [markdown]
+# ## Materials and Boundaries
+
+# %%
+if RUN_AEDT and build_model:
+    hfss.modeler.get_object_from_name(
+        "substrate"
+    ).material_name = aedt_material_name_from_physical_key(SUBSTRATE_KEY)
     region = hfss.modeler.create_region(
         pad_value=_region_padding_for_kind(TRANSITION_KIND),
         pad_type="Absolute Offset",
@@ -697,6 +731,12 @@ if RUN_AEDT and build_model:
     region.material_name = "vacuum"
     hfss.assign_perfect_e(["signal_1", "signal_2", *ground_references], name="PerfectE")
 
+
+# %% [markdown]
+# ## Ports / Nets / Excitations
+
+# %%
+if RUN_AEDT and build_model:
     terminal_records = _assign_ports(
         hfss,
         transition_kind=TRANSITION_KIND,
@@ -767,7 +807,7 @@ if RUN_AEDT and build_model:
 
 
 # %% [markdown]
-# ## Geometry and metadata validation
+# ### Port assignment readback
 
 # %%
 if RUN_AEDT and build_model:
@@ -792,7 +832,7 @@ if RUN_AEDT and build_model:
 
 
 # %% [markdown]
-# ## Setup
+# ## Simulation Setup
 
 # %%
 if RUN_AEDT and build_model:
@@ -817,6 +857,11 @@ if RUN_AEDT and build_model:
     if not setup.update():
         raise BuildError("Failed to write min converged pass count.")
 
+
+# %% [markdown]
+# ## Simulation Configuration
+
+# %%
 if RUN_AEDT:
     setup = hfss.get_setup(SOLVER_SETUP_NAME)
     sweep = setup.get_sweep(SWEEP_NAME)
@@ -866,16 +911,17 @@ if RUN_AEDT:
 
 
 # %% [markdown]
-# ## Simulation and outputs
+# ## Solve and Export
 
 # %%
 if RUN_SOLVER and RUN_AEDT:
     setup = hfss.get_setup(SOLVER_SETUP_NAME)
+    # Lead length changes the geometry, so every run starts from a fresh mesh.
+    hfss.oanalysis.RevertSetupToInitial(SOLVER_SETUP_NAME)
     started = perf_counter()
     solved = hfss.analyze_setup(
-        SOLVER_SETUP_NAME,
+        name=None,
         acf_file=str(ACF_PATH),
-        revert_to_initial_mesh=False,
         blocking=False,
     )
     if not solved:
@@ -883,9 +929,16 @@ if RUN_SOLVER and RUN_AEDT:
 
     # A blocking Analyze call makes a Human-run notebook look frozen. Poll the
     # same adaptive-pass profile shown in AEDT while the native solve continues.
-    sleep(1)
+    # AEDT 2024.2 may report idle briefly while handing a Fast sweep to a
+    # background worker. Wait for a running state, then three idle polls.
+    seen_running = False
+    idle_polls = 0
     completed_passes = 0
-    while hfss.are_there_simulations_running:
+    while not seen_running or idle_polls < 3:
+        sleep(5)
+        running = bool(hfss.desktop_class.are_there_simulations_running)
+        seen_running = seen_running or running
+        idle_polls = 0 if running else idle_polls + 1
         profiles = setup.get_profile()
         completed_passes = (
             max((profile.num_adaptive_passes for profile in profiles.values()), default=0)
@@ -895,12 +948,11 @@ if RUN_SOLVER and RUN_AEDT:
         clear_output(wait=True)
         display(
             HTML(
-                f"<b>HFSS is running</b> &middot; "
+                f"<b>HFSS is {'running' if running else 'finishing'}</b> &middot; "
                 f"{completed_passes} adaptive passes completed &middot; "
                 f"{perf_counter() - started:.1f} s elapsed"
             )
         )
-        sleep(5)
 
     completed_passes = max(
         (profile.num_adaptive_passes for profile in setup.get_profile().values()),
@@ -958,7 +1010,20 @@ elif not RUN_SOLVER:
 
 
 # %% [markdown]
-# ## Physics Analysis Output Table
+# ## Adaptive-Pass Convergence / Solver Diagnostics
+
+# %%
+if TIMING_PATH.exists():
+    print(TIMING_PATH.read_text(encoding="utf-8"))
+else:
+    print("No timing data yet; run with RUN_SOLVER=True.")
+
+
+# %% [markdown]
+# ## Results: Plots and Readable Tables
+
+# %% [markdown]
+# ### Physics Analysis Results
 
 # %%
 if METADATA_PATH.exists():
@@ -998,7 +1063,17 @@ if METADATA_PATH.exists():
 
 
 # %% [markdown]
-# ## Close
+# ### Simulation Performance / Benchmarks
+
+# %%
+if TIMING_PATH.exists():
+    display(pd.DataFrame([json.loads(TIMING_PATH.read_text(encoding="utf-8"))]))
+else:
+    print("No timing data available.")
+
+
+# %% [markdown]
+# ## Save and Release AEDT
 
 # %%
 if RUN_AEDT:

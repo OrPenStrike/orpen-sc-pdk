@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import json
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 from time import perf_counter, sleep
 
@@ -61,6 +62,11 @@ FREQUENCY_POINT_COUNT = 20_000
 SWEEP_TYPE = "Fast"
 SWEEP_NAME = "S"
 
+AEDT_VERSION = "2024.2"
+PYAEDT_REQUIREMENT = "pyaedt[all]==1.3.0"
+PYAEDT_VERSION = distribution_version("pyaedt")
+PYAEDT_API_SOURCE = "https://github.com/ansys/pyaedt/tree/v1.3.0"
+
 MAX_ADAPTIVE_PASSES = 99
 MINIMUM_CONVERGED_PASSES = 2
 MAX_DELTA_S = 0.02
@@ -76,12 +82,7 @@ RUN_SOLVER = False
 RUN_AEDT = RUN_PREPARE or RUN_SOLVER
 
 RUN_ROOT = (
-    REPO_ROOT
-    / "build"
-    / "simulation"
-    / "aedt"
-    / "cpw_finite_ground_hfss_convergence"
-    / "w10_s6"
+    REPO_ROOT / "build" / "simulation" / "aedt" / "cpw_finite_ground_hfss_convergence" / "w10_s6"
 )
 RUN_ROOT.mkdir(parents=True, exist_ok=True)
 
@@ -108,6 +109,7 @@ CANONICAL_PHYSICAL_PORTS = ("o1", "o2")
 
 # %% [markdown]
 # ## Create Simulation Component / Coupon
+
 
 # %%
 def _build_cpw_component(ground_width_um: float):
@@ -212,8 +214,8 @@ if not RUN_AEDT:
     hfss = None
     print("AEDT is not started. Set RUN_PREPARE or RUN_SOLVER to initialize HFSS app.")
 else:
-    # Prepare builds geometry/materials/ports/setup from scratch.
-    # Solve-only reuses existing prepared project and mesh.
+    # Prepare builds geometry/materials/ports/setup from scratch. Solve-only
+    # reuses that prepared model; the solve cell rebuilds its adaptive mesh.
     if RUN_SOLVER and not RUN_PREPARE and not PROJECT_PATH.exists():
         raise RuntimeError(
             f"RUN_SOLVER=True without RUN_PREPARE requires existing project {PROJECT_PATH!s}"
@@ -222,10 +224,16 @@ else:
         project=str(PROJECT_PATH),
         design=DESIGN_NAME,
         solution_type=SOLUTION_TYPE,
+        version=AEDT_VERSION,
         non_graphical=NON_GRAPHICAL,
         new_desktop=True,
         close_on_exit=False,
     )
+    if hfss.desktop_class.aedt_version_id != AEDT_VERSION:
+        raise RuntimeError(
+            f"AEDT version mismatch: requested {AEDT_VERSION!r}, "
+            f"connected {hfss.desktop_class.aedt_version_id!r}."
+        )
     hfss.modeler.model_units = "um"
 
 # %% [markdown]
@@ -248,12 +256,8 @@ if RUN_PREPARE:
     hfss.modeler.refresh_all_ids()
     object_names = hfss.modeler.object_names
 
-    signal_candidates = [
-        n for n in object_names if n.startswith(f"signal{HFSS_SIGNAL_LAYER[0]}_")
-    ]
-    ground_candidates = [
-        n for n in object_names if n.startswith(f"signal{HFSS_GROUND_LAYER[0]}_")
-    ]
+    signal_candidates = [n for n in object_names if n.startswith(f"signal{HFSS_SIGNAL_LAYER[0]}_")]
+    ground_candidates = [n for n in object_names if n.startswith(f"signal{HFSS_GROUND_LAYER[0]}_")]
     substrate_candidates = [
         n for n in object_names if n.startswith(f"signal{HFSS_SUBSTRATE_LAYER[0]}_")
     ]
@@ -298,9 +302,9 @@ if RUN_PREPARE:
         ["signal", "finite_ground_1", "finite_ground_2"],
         name="PerfectE",
     )
-    hfss.modeler.get_object_from_name("substrate").material_name = (
-        aedt_material_name_from_physical_key(SUBSTRATE_MATERIAL)
-    )
+    hfss.modeler.get_object_from_name(
+        "substrate"
+    ).material_name = aedt_material_name_from_physical_key(SUBSTRATE_MATERIAL)
 
 # %% [markdown]
 # ## Ports / Nets / Excitations
@@ -479,27 +483,43 @@ if RUN_AEDT:
     hfss.save_project()
 
     if RUN_SOLVER:
-        analyze_started = hfss.analyze_setup(
-            SOLVER_SETUP_NAME,
+        # Each width is a different geometry: discard the old adaptive mesh and
+        # let HFSS refine a new mesh from its default initial mesh.
+        hfss.oanalysis.RevertSetupToInitial(SOLVER_SETUP_NAME)
+        start_time = perf_counter()
+        solve_started = hfss.analyze_setup(
+            name=None,
             acf_file=str(ACF_PATH),
-            revert_to_initial_mesh=False,
             blocking=False,
         )
-        if not analyze_started:
+        if not solve_started:
             raise RuntimeError("HFSS analyze_setup failed")
 
-        start_time = perf_counter()
+        # AEDT 2024.2 can briefly report idle while handing the Fast sweep to a
+        # background DSO worker. Require three consecutive idle polls only after
+        # the solve has been observed running, while keeping progress visible.
+        seen_running = False
+        idle_polls = 0
         completed_passes = 0
-        while hfss.are_there_simulations_running:
-            profile = hfss.get_setup(SOLVER_SETUP_NAME).get_profile()
-            if profile:
-                completed_passes = max(
-                    (entry.num_adaptive_passes for entry in profile.values()),
-                    default=completed_passes,
-                )
-            clear_output(wait=True)
-            display(HTML(f"HFSS running {RUN_TAG} · passes: {completed_passes}"))
+        while not seen_running or idle_polls < 3:
             sleep(5)
+            running = bool(hfss.desktop_class.are_there_simulations_running)
+            seen_running = seen_running or running
+            idle_polls = 0 if running else idle_polls + 1
+            profile = hfss.get_setup(SOLVER_SETUP_NAME).get_profile()
+            completed_passes = max(
+                (entry.num_adaptive_passes for entry in profile.values()),
+                default=completed_passes,
+            )
+            clear_output(wait=True)
+            display(
+                HTML(
+                    f"HFSS {'running' if running else 'finishing'} {RUN_TAG} "
+                    f"· adaptive passes: {completed_passes} "
+                    f"· elapsed: {perf_counter() - start_time:.1f} s"
+                )
+            )
+        elapsed = perf_counter() - start_time
 
         hfss.export_touchstone(
             setup=SOLVER_SETUP_NAME,
@@ -511,7 +531,6 @@ if RUN_AEDT:
         if not RAW_TOUCHSTONE_PATH.exists():
             raise RuntimeError("Touchstone export missing")
 
-        elapsed = perf_counter() - start_time
         TIMING_PATH.write_text(
             json.dumps(
                 {
@@ -577,6 +596,14 @@ if RUN_AEDT:
 
         metadata = {
             "kind": "cpw_finite_ground_hfss_convergence",
+            "authority": "diagnostic_current_terminal_port_definition",
+            "software": {
+                "pyaedt_requirement": PYAEDT_REQUIREMENT,
+                "pyaedt_version": PYAEDT_VERSION,
+                "pyaedt_api_source": PYAEDT_API_SOURCE,
+                "requested_aedt_version": AEDT_VERSION,
+                "connected_aedt_version": hfss.desktop_class.aedt_version_id,
+            },
             "run_tag": RUN_TAG,
             "ground_width_um": GROUND_WIDTH_UM,
             "trace_width_um": SIGNAL_WIDTH_UM,
@@ -616,6 +643,12 @@ else:
 
 # %% [markdown]
 # ### Physics Analysis Results
+#
+# > **Diagnostic scope.** These traces use the current one-terminal Driven
+# > Terminal port with both disconnected side grounds listed as references.
+# > Until the CPW common-mode port definition is selected and rerun, use the
+# > table below to diagnose port consistency; do not use it to select a ground
+# > width.
 
 # %%
 result_frames = []
@@ -632,38 +665,67 @@ if result_frames:
     result_df = result_df.sort_values(["ground_width_um", "frequency_ghz"]).reset_index(drop=True)
     result_df["S11_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S11_abs"].diff()
     result_df["S21_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S21_abs"].diff()
+    result_df["Re(Z0)_mean"] = (result_df["Re(Z0_o1)"] + result_df["Re(Z0_o2)"]) / 2
+    result_df["Re(Z0)_port_difference"] = (result_df["Re(Z0_o1)"] - result_df["Re(Z0_o2)"]).abs()
+    result_df["Re(Z0)_delta_from_prev_width"] = result_df.groupby("frequency_ghz")[
+        "Re(Z0)_mean"
+    ].diff()
 
-    melted = result_df.melt(
+    s_parameters = result_df.melt(
         id_vars=["frequency_ghz", "ground_width_um"],
-        value_vars=[
-            "S11_abs",
-            "S21_abs",
-            "Re(Z0_o1)",
-            "Im(Z0_o1)",
-            "Re(gamma_o1)",
-            "Im(gamma_o1)",
-            "beta_o1",
-            "Re(Z0_o2)",
-            "Im(Z0_o2)",
-            "Re(gamma_o2)",
-            "Im(gamma_o2)",
-            "beta_o2",
-        ],
+        value_vars=["S11_abs", "S21_abs"],
         var_name="metric",
         value_name="value",
     )
-    fig = px.line(
-        melted,
-        x="frequency_ghz",
-        y="value",
-        color="ground_width_um",
-        facet_row="metric",
-        title="Finite-ground CPW W10/S6 diagnostics",
+    display(
+        px.line(
+            s_parameters,
+            x="frequency_ghz",
+            y="value",
+            color="ground_width_um",
+            facet_row="metric",
+            title="Finite-ground CPW W10/S6 scattering",
+        ).update_layout(height=650)
     )
-    fig.update_layout(height=1400)
-    display(fig)
+
+    port_impedance = result_df.melt(
+        id_vars=["frequency_ghz", "ground_width_um"],
+        value_vars=["Re(Z0_o1)", "Re(Z0_o2)"],
+        var_name="port",
+        value_name="impedance_ohm",
+    )
+    display(
+        px.line(
+            port_impedance,
+            x="frequency_ghz",
+            y="impedance_ohm",
+            color="ground_width_um",
+            line_dash="port",
+            title="Finite-ground CPW W10/S6 port impedance",
+        )
+    )
+
+    band_summary = result_df.groupby("ground_width_um", as_index=False).agg(
+        S11_abs_max=("S11_abs", "max"),
+        S21_abs_min=("S21_abs", "min"),
+        Re_Z0_mean_ohm=("Re(Z0)_mean", "mean"),
+        Re_Z0_port_difference_max_ohm=("Re(Z0)_port_difference", "max"),
+        S11_change_from_previous_width_max=(
+            "S11_delta_from_prev_width",
+            lambda values: values.abs().max(),
+        ),
+        S21_change_from_previous_width_max=(
+            "S21_delta_from_prev_width",
+            lambda values: values.abs().max(),
+        ),
+        Re_Z0_change_from_previous_width_max_ohm=(
+            "Re(Z0)_delta_from_prev_width",
+            lambda values: values.abs().max(),
+        ),
+    )
+    display(band_summary)
+
     COMBINED_CSV_PATH.write_text(result_df.to_csv(index=False), encoding="utf-8")
-    display(result_df.head())
 else:
     print("No solved cases found yet; run with RUN_SOLVER=True.")
 
