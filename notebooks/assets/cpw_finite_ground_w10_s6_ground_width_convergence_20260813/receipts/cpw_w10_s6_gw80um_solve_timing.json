@@ -1,0 +1,9 @@
+{
+  "run_tag": "cpw_w10_s6_gw80um_all-conductor-length-1m-ground-fine-sweep-v1",
+  "analyze_setup_seconds": 126.60417737599346,
+  "completed_adaptive_passes": 3,
+  "ground_width_um": 80.0,
+  "frequency_start_ghz": 3.0,
+  "frequency_stop_ghz": 8.0,
+  "frequency_point_count": 20000
+}

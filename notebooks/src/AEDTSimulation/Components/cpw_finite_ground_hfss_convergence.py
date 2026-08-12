@@ -51,7 +51,10 @@ SIGNAL_WIDTH_UM = 10.0
 GAP_UM = 6.0
 TRACE_LENGTH_UM = 500.0
 GROUND_WIDTH_OPTIONS = (10.0, 20.0, 40.0, 80.0, 160.0)
-GROUND_WIDTH_UM = 10.0
+# The all-conductor mesh sweep selected 80 um as the current W10/S6 working
+# width: the mean modal Port Zo is nearly unchanged by the 160 um extension,
+# while the smaller footprint is less likely to overlap nearby structures.
+GROUND_WIDTH_UM = 80.0
 if GROUND_WIDTH_UM not in GROUND_WIDTH_OPTIONS:
     raise ValueError(f"Unsupported ground width {GROUND_WIDTH_UM!r}")
 
@@ -70,6 +73,11 @@ MAX_ADAPTIVE_PASSES = 99
 MINIMUM_CONVERGED_PASSES = 2
 MAX_DELTA_S = 0.02
 
+CPW_CONDUCTOR_LENGTH_MESH_UM = SIGNAL_WIDTH_UM
+CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS = 1_000_000
+GROUND_SURFACE_MESH_LEVEL = 9  # Fine resolution / large mesh count.
+MESH_PROFILE = "all-conductor-length-1m-ground-fine-sweep-v1"
+
 SOLVER_SETUP_NAME = "Setup1"
 SOLVER_SETUP_TYPE = "DrivenTerminal"
 SOLUTION_TYPE = "Terminal"
@@ -85,7 +93,7 @@ RUN_ROOT = (
 )
 RUN_ROOT.mkdir(parents=True, exist_ok=True)
 
-RUN_TAG = f"cpw_w10_s6_gw{GROUND_WIDTH_UM:g}um"
+RUN_TAG = f"cpw_w10_s6_gw{GROUND_WIDTH_UM:g}um_{MESH_PROFILE}"
 CASE_DIR = RUN_ROOT / RUN_TAG
 CASE_DIR.mkdir(parents=True, exist_ok=True)
 PROJECT_PATH = CASE_DIR / f"{RUN_TAG}.aedt"
@@ -389,6 +397,59 @@ elif RUN_SOLVER and not RUN_PREPARE:
 # %% [markdown]
 # ## Simulation Setup
 
+# %% [markdown]
+# ### Mesh Operations
+#
+# The element ceiling applies to this one operation across the signal and both
+# ground sheets. Reaching it stops this refinement; it does not cancel the HFSS
+# solve. The separate ground surface approximation remains as an independent
+# shape-approximation control.
+
+# %%
+cpw_conductor_length_mesh = None
+ground_surface_mesh = None
+if RUN_PREPARE:
+    cpw_conductor_length_mesh = hfss.mesh.assign_length_mesh(
+        assignment=["signal", "finite_ground_1", "finite_ground_2"],
+        inside_selection=False,
+        maximum_length=f"{CPW_CONDUCTOR_LENGTH_MESH_UM:g}um",
+        maximum_elements=CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS,
+        name="cpw_conductor_length_mesh",
+    )
+    ground_surface_mesh = hfss.mesh.assign_surface_mesh(
+        assignment=["finite_ground_1", "finite_ground_2"],
+        level=GROUND_SURFACE_MESH_LEVEL,
+        name="ground_surface_fine_large",
+    )
+    if not cpw_conductor_length_mesh or not ground_surface_mesh:
+        raise RuntimeError("HFSS mesh-operation assignment failed")
+
+    display(
+        pd.DataFrame(
+            [
+                {
+                    "operation": cpw_conductor_length_mesh.name,
+                    "assignment": "signal, finite_ground_1, finite_ground_2",
+                    "setting": (
+                        f"maximum length {CPW_CONDUCTOR_LENGTH_MESH_UM:g} um; "
+                        f"up to {CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS:,} "
+                        "additional elements"
+                    ),
+                },
+                {
+                    "operation": ground_surface_mesh.name,
+                    "assignment": "finite_ground_1, finite_ground_2",
+                    "setting": (
+                        f"surface approximation level {GROUND_SURFACE_MESH_LEVEL} (Fine / Large)"
+                    ),
+                },
+            ]
+        )
+    )
+
+# %% [markdown]
+# ### Adaptive Setup and Sweep
+
 # %%
 setup = None
 if RUN_PREPARE:
@@ -587,9 +648,10 @@ if RUN_AEDT:
         else:
             terminal_order = "original"
 
-        if len(modal_frequency_ghz) != len(network.f) or max(
-            abs(modal_frequency_ghz - network.f / 1e9)
-        ) > 1e-9:
+        if (
+            len(modal_frequency_ghz) != len(network.f)
+            or max(abs(modal_frequency_ghz - network.f / 1e9)) > 1e-9
+        ):
             raise RuntimeError("Modal PortZo and Terminal S frequency grids differ")
 
         df = pd.DataFrame(
@@ -646,6 +708,15 @@ if RUN_AEDT:
                 "min_converged_passes": MINIMUM_CONVERGED_PASSES,
                 "max_delta_s": MAX_DELTA_S,
             },
+            "mesh": {
+                "profile": MESH_PROFILE,
+                "cpw_conductor_length_mesh_um": CPW_CONDUCTOR_LENGTH_MESH_UM,
+                "cpw_conductor_length_mesh_max_additional_elements": (
+                    CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS
+                ),
+                "ground_surface_mesh_level": GROUND_SURFACE_MESH_LEVEL,
+                "ground_surface_mesh_label": "Fine resolution / large mesh count",
+            },
         }
         METADATA_PATH.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
@@ -674,7 +745,7 @@ else:
 # %%
 result_frames = []
 for width in GROUND_WIDTH_OPTIONS:
-    run_tag = f"cpw_w10_s6_gw{width:g}um"
+    run_tag = f"cpw_w10_s6_gw{width:g}um_{MESH_PROFILE}"
     csv_path = RUN_ROOT / run_tag / "derived_diagnostics.csv"
     if csv_path.exists():
         frame = pd.read_csv(csv_path)
@@ -686,9 +757,7 @@ if result_frames:
     result_df = result_df.sort_values(["ground_width_um", "frequency_ghz"]).reset_index(drop=True)
     result_df["S11_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S11_abs"].diff()
     result_df["S21_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S21_abs"].diff()
-    result_df["Re(PortZo)_mean"] = (
-        result_df["Re(PortZo_o1)"] + result_df["Re(PortZo_o2)"]
-    ) / 2
+    result_df["Re(PortZo)_mean"] = (result_df["Re(PortZo_o1)"] + result_df["Re(PortZo_o2)"]) / 2
     result_df["Re(PortZo)_port_difference"] = (
         result_df["Re(PortZo_o1)"] - result_df["Re(PortZo_o2)"]
     ).abs()
@@ -760,7 +829,7 @@ else:
 # %%
 timing_frames = []
 for width in GROUND_WIDTH_OPTIONS:
-    run_tag = f"cpw_w10_s6_gw{width:g}um"
+    run_tag = f"cpw_w10_s6_gw{width:g}um_{MESH_PROFILE}"
     timing_path = RUN_ROOT / run_tag / "solve_timing.json"
     if timing_path.exists():
         with timing_path.open(encoding="utf-8") as handle:

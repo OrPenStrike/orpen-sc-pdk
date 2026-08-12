@@ -1,0 +1,62 @@
+{
+  "kind": "cpw_finite_ground_hfss_convergence",
+  "authority": "diagnostic_current_terminal_port_definition",
+  "software": {
+    "pyaedt_requirement": "pyaedt[all]==1.3.0",
+    "pyaedt_version": "1.3.0",
+    "pyaedt_api_source": "https://github.com/ansys/pyaedt/tree/v1.3.0",
+    "requested_aedt_version": "2024.2",
+    "connected_aedt_version": "2024.2"
+  },
+  "run_tag": "cpw_w10_s6_gw20um_all-conductor-length-1m-ground-fine-sweep-v1",
+  "ground_width_um": 20.0,
+  "trace_width_um": 10.0,
+  "gap_um": 6.0,
+  "trace_length_um": 500.0,
+  "region_padding_um": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1000.0,
+    1000.0
+  ],
+  "wave_ports": [
+    {
+      "physical_port": "o1",
+      "boundary_name": "o1",
+      "terminal_name": "signal_T1",
+      "face_id": 71
+    },
+    {
+      "physical_port": "o2",
+      "boundary_name": "o2",
+      "terminal_name": "signal_T2",
+      "face_id": 73
+    }
+  ],
+  "terminal_order": "original",
+  "quantity_authority": {
+    "S": "Terminal Solution Data / Terminal Touchstone St(...) data",
+    "characteristic_impedance": "Modal Solution Data / Port Zo / Zo(o1), Zo(o2)"
+  },
+  "sweep": {
+    "start_ghz": 3.0,
+    "stop_ghz": 8.0,
+    "point_count": 20000,
+    "sweep_type": "Fast"
+  },
+  "setup": {
+    "type": "DrivenTerminal",
+    "max_adaptive_passes": 99,
+    "min_converged_passes": 2,
+    "max_delta_s": 0.02
+  },
+  "mesh": {
+    "profile": "all-conductor-length-1m-ground-fine-sweep-v1",
+    "cpw_conductor_length_mesh_um": 10.0,
+    "cpw_conductor_length_mesh_max_additional_elements": 1000000,
+    "ground_surface_mesh_level": 9,
+    "ground_surface_mesh_label": "Fine resolution / large mesh count"
+  }
+}
