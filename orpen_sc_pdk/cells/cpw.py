@@ -354,9 +354,16 @@ def mtl_straight_bend_transition(
     straight_length: float = 100.0,
     inter_trace_ground_width: float = 3.0,
     bend_radius: float = 100.0,
+    lead_length: float = 0.0,
     cross_section: CrossSectionSpec = "cpw_6_7_6",
 ) -> gf.Component:
-    """Return a four-port MTL-seam to straight-and-bend transition."""
+    """Return a four-port MTL-seam-to-straight-and-bend transition.
+
+    EM coupon simulations should use ``lead_length >= 50.0`` for test
+    fidelity. A value of ``0.0`` preserves existing transition geometry for
+    existing coupling-section composition; positive values add shared MTL leads on
+    the seam and CPW leads on both outers.
+    """
     for name, value in (
         ("straight_length", straight_length),
         ("inter_trace_ground_width", inter_trace_ground_width),
@@ -364,10 +371,14 @@ def mtl_straight_bend_transition(
     ):
         if not isfinite(value) or value <= 0:
             raise ValueError(f"{name} must be finite and positive, got {value!r}.")
+    if not isfinite(lead_length) or lead_length < 0:
+        raise ValueError(
+            "lead_length must be finite and greater than or equal to 0, "
+            f"got {lead_length!r}."
+        )
 
     xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
     seam = n_trace_mtl_section(length=1.0, cross_section=mtl_xs)
-
     component = gf.Component()
 
     p_straight = component << gf.path.extrude(
@@ -378,19 +389,53 @@ def mtl_straight_bend_transition(
         gf.path.euler(radius=bend_radius, angle=90, use_eff=True),
         cross_section=xs,
     )
-
     p_straight.dmovey(seam.ports["p_o1"].center[1])
     r_bend.dmovey(seam.ports["r_o1"].center[1])
 
-    component.add_port(name="p_mtl", port=p_straight.ports["o1"])
-    component.add_port(name="r_mtl", port=r_bend.ports["o1"])
-    component.add_port(name="p_outer", port=p_straight.ports["o2"])
-    component.add_port(name="r_outer", port=r_bend.ports["o2"])
+    p_mtl_body = p_straight.ports["o1"]
+    r_mtl_body = r_bend.ports["o1"]
+    p_outer_body = p_straight.ports["o2"]
+    r_outer_body = r_bend.ports["o2"]
+
+    if lead_length > 0:
+        seam_lead = component << n_trace_mtl_section(length=lead_length, cross_section=mtl_xs)
+        seam_lead.connect("p_o2", p_mtl_body)
+
+        p_outer = component << gf.path.extrude(
+            gf.path.straight(lead_length),
+            cross_section=xs,
+        )
+        p_outer.connect("o1", p_outer_body)
+        r_outer = component << gf.path.extrude(
+            gf.path.straight(lead_length),
+            cross_section=xs,
+        )
+        r_outer.connect("o1", r_outer_body)
+
+        p_mtl_port = seam_lead.ports["p_o1"]
+        r_mtl_port = seam_lead.ports["r_o1"]
+        p_outer_port = p_outer.ports["o2"]
+        r_outer_port = r_outer.ports["o2"]
+    else:
+        p_mtl_port = p_mtl_body
+        r_mtl_port = r_mtl_body
+        p_outer_port = p_outer_body
+        r_outer_port = r_outer_body
+
+    component.add_port(name="p_mtl", port=p_mtl_port)
+    component.add_port(name="r_mtl", port=r_mtl_port)
+    component.add_port(name="p_outer", port=p_outer_port)
+    component.add_port(name="r_outer", port=r_outer_port)
 
     component.info["topology"] = "mtl_straight_bend_transition"
+    component.info["lead_length_um"] = float(lead_length)
     component.info["cross_section_name"] = xs.name
     component.info["trace_order_bottom_to_top"] = ("p", "r")
     component.info["transition_seam_facing_deg"] = 180.0
+    component.info["discontinuity_seam_centers_um"] = {
+        "p": tuple(float(value) for value in seam.ports["p_o1"].center),
+        "r": tuple(float(value) for value in seam.ports["r_o1"].center),
+    }
     component.info["ordered_port_names"] = ("p_mtl", "r_mtl", "p_outer", "r_outer")
     component.info["ordered_orientation_deg"] = {
         "p_mtl": int(component.ports["p_mtl"].orientation),
@@ -405,15 +450,20 @@ def mtl_straight_bend_transition(
 def mtl_bend_bend_transition(
     bend_radius: float = 100.0,
     inter_trace_ground_width: float = 3.0,
+    lead_length: float = 0.0,
     cross_section: CrossSectionSpec = "cpw_6_7_6",
 ) -> gf.Component:
     """Return a four-port MTL-seam to opposing-bend transition."""
     if not isfinite(bend_radius) or bend_radius <= 0:
         raise ValueError(f"bend_radius must be finite and positive, got {bend_radius!r}.")
+    if not isfinite(lead_length) or lead_length < 0:
+        raise ValueError(
+            "lead_length must be finite and greater than or equal to 0, "
+            f"got {lead_length!r}."
+        )
 
     xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
     seam = n_trace_mtl_section(length=1.0, cross_section=mtl_xs)
-
     component = gf.Component()
 
     p_bend = component << gf.path.extrude(
@@ -424,19 +474,53 @@ def mtl_bend_bend_transition(
         gf.path.euler(radius=bend_radius, angle=90, use_eff=True),
         cross_section=xs,
     )
-
     p_bend.dmovey(seam.ports["p_o1"].center[1])
     r_bend.dmovey(seam.ports["r_o1"].center[1])
 
-    component.add_port(name="p_mtl", port=p_bend.ports["o1"])
-    component.add_port(name="r_mtl", port=r_bend.ports["o1"])
-    component.add_port(name="p_outer", port=p_bend.ports["o2"])
-    component.add_port(name="r_outer", port=r_bend.ports["o2"])
+    p_mtl_body = p_bend.ports["o1"]
+    r_mtl_body = r_bend.ports["o1"]
+    p_outer_body = p_bend.ports["o2"]
+    r_outer_body = r_bend.ports["o2"]
+
+    if lead_length > 0:
+        seam_lead = component << n_trace_mtl_section(length=lead_length, cross_section=mtl_xs)
+        seam_lead.connect("p_o2", p_mtl_body)
+
+        p_outer = component << gf.path.extrude(
+            gf.path.straight(lead_length),
+            cross_section=xs,
+        )
+        p_outer.connect("o1", p_outer_body)
+        r_outer = component << gf.path.extrude(
+            gf.path.straight(lead_length),
+            cross_section=xs,
+        )
+        r_outer.connect("o1", r_outer_body)
+
+        p_mtl_port = seam_lead.ports["p_o1"]
+        r_mtl_port = seam_lead.ports["r_o1"]
+        p_outer_port = p_outer.ports["o2"]
+        r_outer_port = r_outer.ports["o2"]
+    else:
+        p_mtl_port = p_mtl_body
+        r_mtl_port = r_mtl_body
+        p_outer_port = p_outer_body
+        r_outer_port = r_outer_body
+
+    component.add_port(name="p_mtl", port=p_mtl_port)
+    component.add_port(name="r_mtl", port=r_mtl_port)
+    component.add_port(name="p_outer", port=p_outer_port)
+    component.add_port(name="r_outer", port=r_outer_port)
 
     component.info["topology"] = "mtl_bend_bend_transition"
+    component.info["lead_length_um"] = float(lead_length)
     component.info["cross_section_name"] = xs.name
     component.info["trace_order_bottom_to_top"] = ("p", "r")
     component.info["transition_seam_facing_deg"] = 180.0
+    component.info["discontinuity_seam_centers_um"] = {
+        "p": tuple(float(value) for value in seam.ports["p_o1"].center),
+        "r": tuple(float(value) for value in seam.ports["r_o1"].center),
+    }
     component.info["ordered_port_names"] = ("p_mtl", "r_mtl", "p_outer", "r_outer")
     component.info["ordered_orientation_deg"] = {
         "p_mtl": int(component.ports["p_mtl"].orientation),
