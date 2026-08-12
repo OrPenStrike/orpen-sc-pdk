@@ -235,32 +235,32 @@ def mtl_bend_coupling_section(
         inter_trace_ground_width=inter_trace_ground_width,
         cross_section=cross_section,
     )
-    left_transition.connect("p_mtl", coupled_ref.ports["p_o1"], mirror=True)
+    left_transition.connect("o1", coupled_ref.ports["p_o1"], mirror=True)
 
     right_transition = component << mtl_bend_bend_transition(
         bend_radius=bend_radius,
         inter_trace_ground_width=inter_trace_ground_width,
         cross_section=cross_section,
     )
-    right_transition.connect("p_mtl", coupled_ref.ports["p_o2"])
+    right_transition.connect("o1", coupled_ref.ports["p_o2"])
 
-    component.add_port(name="r_left", port=left_transition.ports["r_outer"])
-    component.add_port(name="r_right", port=right_transition.ports["r_outer"])
-    component.add_port(name="p_left", port=left_transition.ports["p_outer"])
-    component.add_port(name="p_right", port=right_transition.ports["p_outer"])
+    component.add_port(name="o1", port=left_transition.ports["o4"])
+    component.add_port(name="o2", port=left_transition.ports["o3"])
+    component.add_port(name="o3", port=right_transition.ports["o3"])
+    component.add_port(name="o4", port=right_transition.ports["o4"])
 
     component.info["topology"] = "mtl_bend_coupling_section"
     component.info["coupled_length_um"] = float(coupled_length)
     component.info["inter_trace_ground_width_um"] = float(inter_trace_ground_width)
     component.info["bend_radius_um"] = float(bend_radius)
     component.info["cross_section_name"] = xs.name
-    component.info["trace_order_bottom_to_top"] = ("p", "r")
-    component.info["ordered_port_names"] = ("r_left", "r_right", "p_left", "p_right")
+    component.info["trace_order_bottom_to_top"] = ("trace_1", "trace_2")
+    component.info["ordered_port_names"] = ("o1", "o2", "o3", "o4")
     component.info["port_orientations_deg"] = {
-        "r_left": 90,
-        "r_right": 90,
-        "p_left": 270,
-        "p_right": 270,
+        "o1": int(component.ports["o1"].orientation),
+        "o2": int(component.ports["o2"].orientation),
+        "o3": int(component.ports["o3"].orientation),
+        "o4": int(component.ports["o4"].orientation),
     }
     component.info["central_x_span_um"] = (-float(coupled_length) / 2, float(coupled_length) / 2)
     component.info["layers"] = {
@@ -307,7 +307,7 @@ def mtl_straight_bend_coupling_section(
         inter_trace_ground_width=inter_trace_ground_width,
         cross_section=cross_section,
     )
-    left_transition.connect("p_mtl", coupled_ref.ports["p_o1"], mirror=True)
+    left_transition.connect("o1", coupled_ref.ports["p_o1"], mirror=True)
 
     right_transition = component << mtl_straight_bend_transition(
         straight_length=bend_radius,
@@ -315,12 +315,12 @@ def mtl_straight_bend_coupling_section(
         inter_trace_ground_width=inter_trace_ground_width,
         cross_section=cross_section,
     )
-    right_transition.connect("p_mtl", coupled_ref.ports["p_o2"])
+    right_transition.connect("o1", coupled_ref.ports["p_o2"])
 
-    component.add_port(name="r_left", port=left_transition.ports["r_outer"])
-    component.add_port(name="r_right", port=right_transition.ports["r_outer"])
-    component.add_port(name="p_left", port=left_transition.ports["p_outer"])
-    component.add_port(name="p_right", port=right_transition.ports["p_outer"])
+    component.add_port(name="o1", port=left_transition.ports["o4"])
+    component.add_port(name="o2", port=left_transition.ports["o3"])
+    component.add_port(name="o3", port=right_transition.ports["o3"])
+    component.add_port(name="o4", port=right_transition.ports["o4"])
 
     component.info["topology"] = "mtl_straight_bend_coupling_section"
     component.info["coupled_length_um"] = float(coupled_length)
@@ -328,14 +328,14 @@ def mtl_straight_bend_coupling_section(
     component.info["bend_radius_um"] = float(bend_radius)
     component.info["straight_extension_length_um"] = float(bend_radius)
     component.info["cross_section_name"] = xs.name
-    component.info["trace_order_bottom_to_top"] = ("p", "r")
+    component.info["trace_order_bottom_to_top"] = ("trace_1", "trace_2")
     component.info["terminal_paths"] = {
-        "p_left": "straight",
-        "p_right": "straight",
-        "r_left": "euler_90",
-        "r_right": "euler_90",
+        "o1": "straight",
+        "o4": "straight",
+        "o2": "euler_90",
+        "o3": "euler_90",
     }
-    component.info["ordered_port_names"] = ("r_left", "r_right", "p_left", "p_right")
+    component.info["ordered_port_names"] = ("o1", "o2", "o3", "o4")
     component.info["port_orientations_deg"] = {
         name: int(component.ports[name].orientation)
         for name in component.info["ordered_port_names"]
@@ -373,8 +373,7 @@ def mtl_straight_bend_transition(
             raise ValueError(f"{name} must be finite and positive, got {value!r}.")
     if not isfinite(lead_length) or lead_length < 0:
         raise ValueError(
-            "lead_length must be finite and greater than or equal to 0, "
-            f"got {lead_length!r}."
+            f"lead_length must be finite and greater than or equal to 0, got {lead_length!r}."
         )
 
     xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
@@ -422,26 +421,26 @@ def mtl_straight_bend_transition(
         p_outer_port = p_outer_body
         r_outer_port = r_outer_body
 
-    component.add_port(name="p_mtl", port=p_mtl_port)
-    component.add_port(name="r_mtl", port=r_mtl_port)
-    component.add_port(name="p_outer", port=p_outer_port)
-    component.add_port(name="r_outer", port=r_outer_port)
+    component.add_port(name="o1", port=p_mtl_port)
+    component.add_port(name="o2", port=r_mtl_port)
+    component.add_port(name="o3", port=r_outer_port)
+    component.add_port(name="o4", port=p_outer_port)
 
     component.info["topology"] = "mtl_straight_bend_transition"
     component.info["lead_length_um"] = float(lead_length)
     component.info["cross_section_name"] = xs.name
-    component.info["trace_order_bottom_to_top"] = ("p", "r")
+    component.info["trace_order_bottom_to_top"] = ("trace_1", "trace_2")
     component.info["transition_seam_facing_deg"] = 180.0
     component.info["discontinuity_seam_centers_um"] = {
-        "p": tuple(float(value) for value in seam.ports["p_o1"].center),
-        "r": tuple(float(value) for value in seam.ports["r_o1"].center),
+        "trace_1": tuple(float(value) for value in seam.ports["p_o1"].center),
+        "trace_2": tuple(float(value) for value in seam.ports["r_o1"].center),
     }
-    component.info["ordered_port_names"] = ("p_mtl", "r_mtl", "p_outer", "r_outer")
+    component.info["ordered_port_names"] = ("o1", "o2", "o3", "o4")
     component.info["ordered_orientation_deg"] = {
-        "p_mtl": int(component.ports["p_mtl"].orientation),
-        "r_mtl": int(component.ports["r_mtl"].orientation),
-        "p_outer": int(component.ports["p_outer"].orientation),
-        "r_outer": int(component.ports["r_outer"].orientation),
+        "o1": int(component.ports["o1"].orientation),
+        "o2": int(component.ports["o2"].orientation),
+        "o3": int(component.ports["o3"].orientation),
+        "o4": int(component.ports["o4"].orientation),
     }
     return component
 
@@ -458,8 +457,7 @@ def mtl_bend_bend_transition(
         raise ValueError(f"bend_radius must be finite and positive, got {bend_radius!r}.")
     if not isfinite(lead_length) or lead_length < 0:
         raise ValueError(
-            "lead_length must be finite and greater than or equal to 0, "
-            f"got {lead_length!r}."
+            f"lead_length must be finite and greater than or equal to 0, got {lead_length!r}."
         )
 
     xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
@@ -507,26 +505,26 @@ def mtl_bend_bend_transition(
         p_outer_port = p_outer_body
         r_outer_port = r_outer_body
 
-    component.add_port(name="p_mtl", port=p_mtl_port)
-    component.add_port(name="r_mtl", port=r_mtl_port)
-    component.add_port(name="p_outer", port=p_outer_port)
-    component.add_port(name="r_outer", port=r_outer_port)
+    component.add_port(name="o1", port=p_mtl_port)
+    component.add_port(name="o2", port=r_mtl_port)
+    component.add_port(name="o3", port=r_outer_port)
+    component.add_port(name="o4", port=p_outer_port)
 
     component.info["topology"] = "mtl_bend_bend_transition"
     component.info["lead_length_um"] = float(lead_length)
     component.info["cross_section_name"] = xs.name
-    component.info["trace_order_bottom_to_top"] = ("p", "r")
+    component.info["trace_order_bottom_to_top"] = ("trace_1", "trace_2")
     component.info["transition_seam_facing_deg"] = 180.0
     component.info["discontinuity_seam_centers_um"] = {
-        "p": tuple(float(value) for value in seam.ports["p_o1"].center),
-        "r": tuple(float(value) for value in seam.ports["r_o1"].center),
+        "trace_1": tuple(float(value) for value in seam.ports["p_o1"].center),
+        "trace_2": tuple(float(value) for value in seam.ports["r_o1"].center),
     }
-    component.info["ordered_port_names"] = ("p_mtl", "r_mtl", "p_outer", "r_outer")
+    component.info["ordered_port_names"] = ("o1", "o2", "o3", "o4")
     component.info["ordered_orientation_deg"] = {
-        "p_mtl": int(component.ports["p_mtl"].orientation),
-        "r_mtl": int(component.ports["r_mtl"].orientation),
-        "p_outer": int(component.ports["p_outer"].orientation),
-        "r_outer": int(component.ports["r_outer"].orientation),
+        "o1": int(component.ports["o1"].orientation),
+        "o2": int(component.ports["o2"].orientation),
+        "o3": int(component.ports["o3"].orientation),
+        "o4": int(component.ports["o4"].orientation),
     }
     return component
 
