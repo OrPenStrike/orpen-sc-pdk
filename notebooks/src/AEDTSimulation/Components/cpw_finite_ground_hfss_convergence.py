@@ -409,6 +409,12 @@ if RUN_PREPARE:
     if not setup.update():
         raise RuntimeError("Setup update failed")
 
+elif RUN_SOLVER and not RUN_PREPARE:
+    if SOLVER_SETUP_NAME not in hfss.setup_names:
+        raise RuntimeError("Solve-only run expects existing setup; run with RUN_PREPARE=True first")
+    setup = hfss.get_setup(SOLVER_SETUP_NAME)
+
+if RUN_AEDT:
     sweep = setup.get_sweep(SWEEP_NAME)
     if sweep:
         sweep.props.update(
@@ -436,10 +442,21 @@ if RUN_PREPARE:
         )
         if not sweep:
             raise RuntimeError("Could not create sweep")
-elif RUN_SOLVER and not RUN_PREPARE:
-    if SOLVER_SETUP_NAME not in hfss.setup_names:
-        raise RuntimeError("Solve-only run expects existing setup; run with RUN_PREPARE=True first")
-    setup = hfss.get_setup(SOLVER_SETUP_NAME)
+
+    sweep_readback = {
+        "type": str(sweep.props["Type"]),
+        "start": str(sweep.props["RangeStart"]),
+        "stop": str(sweep.props["RangeEnd"]),
+        "point_count": int(sweep.props["RangeCount"]),
+    }
+    display(pd.DataFrame([sweep_readback]))
+    if sweep_readback != {
+        "type": SWEEP_TYPE,
+        "start": f"{FREQUENCY_START_GHZ}GHz",
+        "stop": f"{FREQUENCY_STOP_GHZ}GHz",
+        "point_count": FREQUENCY_POINT_COUNT,
+    }:
+        raise RuntimeError(f"HFSS sweep readback mismatch: {sweep_readback}")
 
 # %% [markdown]
 # ## Simulation Configuration

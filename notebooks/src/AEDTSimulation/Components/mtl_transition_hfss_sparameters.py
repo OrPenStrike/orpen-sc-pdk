@@ -817,6 +817,8 @@ if RUN_AEDT and build_model:
     if not setup.update():
         raise BuildError("Failed to write min converged pass count.")
 
+if RUN_AEDT:
+    setup = hfss.get_setup(SOLVER_SETUP_NAME)
     sweep = setup.get_sweep(SWEEP_NAME)
     if sweep:
         sweep.props.update(
@@ -844,6 +846,21 @@ if RUN_AEDT and build_model:
         )
         if not sweep:
             raise BuildError(f"Failed to create {SWEEP_TYPE} frequency sweep.")
+
+    sweep_readback = {
+        "type": str(sweep.props["Type"]),
+        "start": str(sweep.props["RangeStart"]),
+        "stop": str(sweep.props["RangeEnd"]),
+        "point_count": int(sweep.props["RangeCount"]),
+    }
+    display(pd.DataFrame([sweep_readback]))
+    if sweep_readback != {
+        "type": SWEEP_TYPE,
+        "start": f"{FREQUENCY_START_GHZ}GHz",
+        "stop": f"{FREQUENCY_STOP_GHZ}GHz",
+        "point_count": FREQUENCY_POINT_COUNT,
+    }:
+        raise BuildError(f"HFSS sweep readback mismatch: {sweep_readback}")
 
     hfss.save_project()
 
