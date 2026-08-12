@@ -76,11 +76,13 @@ MAX_DELTA_S = 0.02
 CPW_CONDUCTOR_LENGTH_MESH_UM = SIGNAL_WIDTH_UM
 CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS = 1_000_000
 GROUND_SURFACE_MESH_LEVEL = 9  # Fine resolution / large mesh count.
-MESH_PROFILE = "all-conductor-length-1m-ground-fine-sweep-v1"
+MESH_PROFILE = "all-conductor-length-1m-ground-fine-zpi-zpv-v2"
 
 SOLVER_SETUP_NAME = "Setup1"
 SOLVER_SETUP_TYPE = "DrivenTerminal"
+MODAL_SOLVER_SETUP_TYPE = "DrivenModal"
 SOLUTION_TYPE = "Terminal"
+MODAL_SOLUTION_TYPE = "Modal"
 NON_GRAPHICAL = True
 CLOSE_DESKTOP = False
 
@@ -97,11 +99,12 @@ RUN_TAG = f"cpw_w10_s6_gw{GROUND_WIDTH_UM:g}um_{MESH_PROFILE}"
 CASE_DIR = RUN_ROOT / RUN_TAG
 CASE_DIR.mkdir(parents=True, exist_ok=True)
 PROJECT_PATH = CASE_DIR / f"{RUN_TAG}.aedt"
-DESIGN_NAME = RUN_TAG
+TERMINAL_DESIGN_NAME = f"{RUN_TAG}_HFSS_Terminal"
+MODAL_DESIGN_NAME = f"{RUN_TAG}_HFSS_Modal_Zpv"
 GDS_PATH = CASE_DIR / f"{RUN_TAG}.gds"
 METADATA_PATH = CASE_DIR / "diagnostic_metadata.json"
 TIMING_PATH = CASE_DIR / "solve_timing.json"
-RAW_TOUCHSTONE_PATH = CASE_DIR / "cpw_finite_ground.s2p"
+TERMINAL_TOUCHSTONE_PATH = CASE_DIR / "cpw_finite_ground_terminal.s2p"
 DERIVED_CSV_PATH = CASE_DIR / "derived_diagnostics.csv"
 COMBINED_CSV_PATH = RUN_ROOT / "combined_diagnostics.csv"
 
@@ -229,7 +232,7 @@ else:
         )
     hfss = Hfss(
         project=str(PROJECT_PATH),
-        design=DESIGN_NAME,
+        design=TERMINAL_DESIGN_NAME,
         solution_type=SOLUTION_TYPE,
         version=AEDT_VERSION,
         non_graphical=NON_GRAPHICAL,
@@ -320,6 +323,7 @@ if RUN_PREPARE:
 # Port face is the external Region face. Any XY padding changes the face aperture,
 # so XY padding stays zero and both ports share the same cross-section as the coupon.
 terminal_records = []
+modal_port_records = []
 if RUN_PREPARE:
     region = hfss.modeler.get_object_from_name("Region")
     face_candidates = []
@@ -379,19 +383,45 @@ elif RUN_SOLVER and not RUN_PREPARE:
             f"Solve-only run expects {len(CANONICAL_PHYSICAL_PORTS)} existing terminals, "
             f"got {terminal_names!r}"
         )
+    region_faces = sorted(
+        (
+            (float(face.center[0]), int(face.id))
+            for face in hfss.modeler.get_object_from_name("Region").faces
+            if abs(float(face.center[1])) <= 1e-6 and abs(float(face.center[0])) > 1e-6
+        ),
+        key=lambda item: item[0],
+    )
+    if len(region_faces) < 2:
+        raise RuntimeError("Solve-only run could not locate the two Region port faces")
     terminal_records = [
         {
             "physical_port": "o1",
             "boundary_name": "o1",
             "terminal_name": terminal_names[0],
-            "face_id": None,
+            "face_id": region_faces[0][1],
         },
         {
             "physical_port": "o2",
             "boundary_name": "o2",
             "terminal_name": terminal_names[1],
-            "face_id": None,
+            "face_id": region_faces[-1][1],
         },
+    ]
+    modal_port_records = [
+        {
+            "physical_port": physical_port,
+            "boundary_name": physical_port,
+            "face_id": face_id,
+            "integration_line_um": [
+                [port_x, SIGNAL_WIDTH_UM / 2, 0.0],
+                [port_x, SIGNAL_WIDTH_UM / 2 + GAP_UM, 0.0],
+            ],
+            "selected_characteristic_impedance": "Zpv",
+        }
+        for physical_port, port_x, face_id in (
+            ("o1", -TRACE_LENGTH_UM / 2, region_faces[0][1]),
+            ("o2", TRACE_LENGTH_UM / 2, region_faces[-1][1]),
+        )
     ]
 
 # %% [markdown]
@@ -522,6 +552,64 @@ if RUN_AEDT:
     }:
         raise RuntimeError(f"HFSS sweep readback mismatch: {sweep_readback}")
 
+    if RUN_PREPARE:
+        # Duplicate only after the Terminal design owns the complete geometry,
+        # materials, boundaries, mesh, setup, and Fast sweep. The Modal design
+        # therefore differs only in solution type and Wave Port definition.
+        if MODAL_DESIGN_NAME in hfss.design_list:
+            hfss.delete_design(MODAL_DESIGN_NAME, fallback_design=TERMINAL_DESIGN_NAME)
+        hfss.set_active_design(TERMINAL_DESIGN_NAME)
+        if not hfss.duplicate_design(MODAL_DESIGN_NAME):
+            raise RuntimeError(f"Could not create {MODAL_DESIGN_NAME!r}")
+
+        for boundary in list(hfss.boundaries):
+            if boundary.type in {"Wave Port", "Terminal"}:
+                boundary.delete()
+        hfss.solution_type = MODAL_SOLUTION_TYPE
+
+        region = hfss.modeler.get_object_from_name("Region")
+        modal_faces = [
+            (float(face.center[0]), int(face.id))
+            for face in region.faces
+            if abs(float(face.center[1])) <= 1e-6 and abs(float(face.center[0])) > 1e-6
+        ]
+        modal_setup_faces = {
+            "o1": min(modal_faces, key=lambda item: item[0])[1],
+            "o2": max(modal_faces, key=lambda item: item[0])[1],
+        }
+        port_x = {"o1": -TRACE_LENGTH_UM / 2, "o2": TRACE_LENGTH_UM / 2}
+        for physical_port in CANONICAL_PHYSICAL_PORTS:
+            integration_line = [
+                [port_x[physical_port], SIGNAL_WIDTH_UM / 2, 0.0],
+                [port_x[physical_port], SIGNAL_WIDTH_UM / 2 + GAP_UM, 0.0],
+            ]
+            boundary = hfss.wave_port(
+                modal_setup_faces[physical_port],
+                name=physical_port,
+                integration_line=integration_line,
+                modes=1,
+                characteristic_impedance="Zpv",
+                renormalize=False,
+                deembed=0.0,
+            )
+            if not boundary:
+                raise RuntimeError(f"Modal Zpv Wave Port failed for {physical_port}")
+            modal_port_records.append(
+                {
+                    "physical_port": physical_port,
+                    "boundary_name": boundary.name,
+                    "face_id": modal_setup_faces[physical_port],
+                    "integration_line_um": integration_line,
+                    "selected_characteristic_impedance": "Zpv",
+                }
+            )
+
+        modal_setup = hfss.get_setup(SOLVER_SETUP_NAME)
+        modal_setup.props["SolveType"] = MODAL_SOLVER_SETUP_TYPE
+        if not modal_setup.update():
+            raise RuntimeError("Modal setup update failed")
+        hfss.set_active_design(TERMINAL_DESIGN_NAME)
+
 # %% [markdown]
 # ## Simulation Configuration
 
@@ -543,93 +631,76 @@ if RUN_AEDT:
     hfss.save_project()
 
     if RUN_SOLVER:
-        # Each width is a different geometry: discard the old adaptive mesh and
-        # let HFSS refine a new mesh from its default initial mesh.
-        hfss.oanalysis.RevertSetupToInitial(SOLVER_SETUP_NAME)
-        start_time = perf_counter()
-        solve_started = hfss.analyze_setup(
-            name=None,
-            acf_file=str(ACF_PATH),
-            blocking=False,
-        )
-        if not solve_started:
-            raise RuntimeError("HFSS analyze_setup failed")
+        design_timings = {}
+        for design_name in (TERMINAL_DESIGN_NAME, MODAL_DESIGN_NAME):
+            hfss.set_active_design(design_name)
+            # Ground width changes the geometry, so each design starts from a
+            # fresh adaptive mesh and lets HFSS refine it independently.
+            hfss.oanalysis.RevertSetupToInitial(SOLVER_SETUP_NAME)
+            start_time = perf_counter()
+            if not hfss.analyze_setup(
+                name=None,
+                acf_file=str(ACF_PATH),
+                blocking=False,
+            ):
+                raise RuntimeError(f"HFSS analyze_setup failed for {design_name}")
 
-        # AEDT 2024.2 can briefly report idle while handing the Fast sweep to a
-        # background DSO worker. Require three consecutive idle polls only after
-        # the solve has been observed running, while keeping progress visible.
-        seen_running = False
-        idle_polls = 0
-        completed_passes = 0
-        while not seen_running or idle_polls < 3:
-            sleep(5)
-            running = bool(hfss.desktop_class.are_there_simulations_running)
-            seen_running = seen_running or running
-            idle_polls = 0 if running else idle_polls + 1
-            profile = hfss.get_setup(SOLVER_SETUP_NAME).get_profile()
-            completed_passes = max(
-                (entry.num_adaptive_passes for entry in profile.values()),
-                default=completed_passes,
-            )
-            clear_output(wait=True)
-            display(
-                HTML(
-                    f"HFSS {'running' if running else 'finishing'} {RUN_TAG} "
-                    f"· adaptive passes: {completed_passes} "
-                    f"· elapsed: {perf_counter() - start_time:.1f} s"
+            seen_running = False
+            idle_polls = 0
+            completed_passes = 0
+            while not seen_running or idle_polls < 3:
+                sleep(5)
+                running = bool(hfss.desktop_class.are_there_simulations_running)
+                seen_running = seen_running or running
+                idle_polls = 0 if running else idle_polls + 1
+                profile = hfss.get_setup(SOLVER_SETUP_NAME).get_profile()
+                completed_passes = max(
+                    (entry.num_adaptive_passes for entry in profile.values()),
+                    default=completed_passes,
                 )
-            )
-        elapsed = perf_counter() - start_time
+                clear_output(wait=True)
+                display(
+                    HTML(
+                        f"HFSS {'running' if running else 'finishing'} {design_name} "
+                        f"· adaptive passes: {completed_passes} "
+                        f"· elapsed: {perf_counter() - start_time:.1f} s"
+                    )
+                )
+            design_timings[design_name] = {
+                "analyze_setup_seconds": perf_counter() - start_time,
+                "completed_adaptive_passes": completed_passes,
+            }
 
+        hfss.set_active_design(TERMINAL_DESIGN_NAME)
         hfss.export_touchstone(
             setup=SOLVER_SETUP_NAME,
             sweep=SWEEP_NAME,
-            output_file=str(RAW_TOUCHSTONE_PATH),
+            output_file=str(TERMINAL_TOUCHSTONE_PATH),
             renormalization=False,
             gamma_impedance_comments=True,
         )
-        if not RAW_TOUCHSTONE_PATH.exists():
-            raise RuntimeError("Touchstone export missing")
-
-        TIMING_PATH.write_text(
-            json.dumps(
-                {
-                    "run_tag": RUN_TAG,
-                    "analyze_setup_seconds": elapsed,
-                    "completed_adaptive_passes": completed_passes,
-                    "ground_width_um": GROUND_WIDTH_UM,
-                    "frequency_start_ghz": FREQUENCY_START_GHZ,
-                    "frequency_stop_ghz": FREQUENCY_STOP_GHZ,
-                    "frequency_point_count": FREQUENCY_POINT_COUNT,
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-
-        network = Network(str(RAW_TOUCHSTONE_PATH))
+        network = Network(str(TERMINAL_TOUCHSTONE_PATH))
         if not network.port_names:
-            raise RuntimeError("Touchstone has no readable port names")
+            raise RuntimeError("Terminal Touchstone has no readable port names")
 
-        # Terminal Touchstone owns St(...). Wave-port characteristic impedance
-        # and propagation constant come from Modal Solution Data, not from the
-        # Touchstone `! Port Impedance` comments or Terminal Zot(...).
-        modal_data = hfss.post.get_solution_data(
+        # In the Terminal design no impedance line exists, so Modal Solution
+        # Data Port Zo is the HFSS Zpi definition.
+        zpi_data = hfss.post.get_solution_data(
             expressions=["Zo(o1)", "Zo(o2)", "Gamma(o1)", "Gamma(o2)"],
             setup_sweep_name=f"{SOLVER_SETUP_NAME} : {SWEEP_NAME}",
             report_category="Modal Solution Data",
         )
-        if not modal_data:
-            raise RuntimeError("Modal Port Zo/Gamma extraction failed")
+        if not zpi_data:
+            raise RuntimeError("Terminal-design Modal Port Zo (Zpi) extraction failed")
 
-        modal_frequency_ghz, portzo_o1_real = modal_data.get_expression_data("Zo(o1)", "real")
-        _, portzo_o1_imag = modal_data.get_expression_data("Zo(o1)", "imag")
-        _, portzo_o2_real = modal_data.get_expression_data("Zo(o2)", "real")
-        _, portzo_o2_imag = modal_data.get_expression_data("Zo(o2)", "imag")
-        _, gamma_o1_real = modal_data.get_expression_data("Gamma(o1)", "real")
-        _, gamma_o1_imag = modal_data.get_expression_data("Gamma(o1)", "imag")
-        _, gamma_o2_real = modal_data.get_expression_data("Gamma(o2)", "real")
-        _, gamma_o2_imag = modal_data.get_expression_data("Gamma(o2)", "imag")
+        zpi_frequency_ghz, zpi_o1_real = zpi_data.get_expression_data("Zo(o1)", "real")
+        _, zpi_o1_imag = zpi_data.get_expression_data("Zo(o1)", "imag")
+        _, zpi_o2_real = zpi_data.get_expression_data("Zo(o2)", "real")
+        _, zpi_o2_imag = zpi_data.get_expression_data("Zo(o2)", "imag")
+        _, gamma_o1_real = zpi_data.get_expression_data("Gamma(o1)", "real")
+        _, gamma_o1_imag = zpi_data.get_expression_data("Gamma(o1)", "imag")
+        _, gamma_o2_real = zpi_data.get_expression_data("Gamma(o2)", "real")
+        _, gamma_o2_imag = zpi_data.get_expression_data("Gamma(o2)", "imag")
 
         desired_terminals = [
             entry["terminal_name"]
@@ -648,25 +719,51 @@ if RUN_AEDT:
         else:
             terminal_order = "original"
 
-        if (
-            len(modal_frequency_ghz) != len(network.f)
-            or max(abs(modal_frequency_ghz - network.f / 1e9)) > 1e-9
-        ):
-            raise RuntimeError("Modal PortZo and Terminal S frequency grids differ")
+        if max(abs(zpi_frequency_ghz - network.f / 1e9)) > 1e-9:
+            raise RuntimeError("Terminal S and Terminal-design Zpi frequency grids differ")
+
+        hfss.set_active_design(MODAL_DESIGN_NAME)
+        port_zo_quantities = hfss.post.available_report_quantities(
+            report_category="Modal Solution Data",
+            solution=f"{SOLVER_SETUP_NAME} : {SWEEP_NAME}",
+            quantities_category="Port Zo",
+        )
+        zpv_expressions = ["Zo(o1)", "Zo(o2)"]
+        if not all(expression in port_zo_quantities for expression in zpv_expressions):
+            raise RuntimeError(f"Unexpected Modal Zpv Port Zo quantities: {port_zo_quantities}")
+        zpv_data = hfss.post.get_solution_data(
+            expressions=zpv_expressions,
+            setup_sweep_name=f"{SOLVER_SETUP_NAME} : {SWEEP_NAME}",
+            report_category="Modal Solution Data",
+        )
+        if not zpv_data:
+            raise RuntimeError("Modal-design Port Zo (Zpv) extraction failed")
+        zpv_frequency_ghz, zpv_o1_real = zpv_data.get_expression_data("Zo(o1)", "real")
+        _, zpv_o1_imag = zpv_data.get_expression_data("Zo(o1)", "imag")
+        _, zpv_o2_real = zpv_data.get_expression_data("Zo(o2)", "real")
+        _, zpv_o2_imag = zpv_data.get_expression_data("Zo(o2)", "imag")
+        if max(abs(zpv_frequency_ghz - network.f / 1e9)) > 1e-9:
+            raise RuntimeError("Terminal S and Modal-design Zpv frequency grids differ")
 
         df = pd.DataFrame(
             {
                 "ground_width_um": [GROUND_WIDTH_UM] * len(network.f),
                 "frequency_ghz": network.f / 1e9,
-                "S11_abs": [abs(s) for s in network.s[:, 0, 0]],
-                "S21_abs": [abs(s) for s in network.s[:, 1, 0]],
-                "Re(PortZo_o1)": portzo_o1_real,
-                "Im(PortZo_o1)": portzo_o1_imag,
+                "abs_St_o1_o1": [abs(s) for s in network.s[:, 0, 0]],
+                "abs_St_o2_o2": [abs(s) for s in network.s[:, 1, 1]],
+                "abs_St_o2_o1": [abs(s) for s in network.s[:, 1, 0]],
+                "abs_St_o1_o2": [abs(s) for s in network.s[:, 0, 1]],
+                "Re(Zpi_o1)": zpi_o1_real,
+                "Im(Zpi_o1)": zpi_o1_imag,
+                "Re(Zpi_o2)": zpi_o2_real,
+                "Im(Zpi_o2)": zpi_o2_imag,
+                "Re(Zpv_o1)": zpv_o1_real,
+                "Im(Zpv_o1)": zpv_o1_imag,
+                "Re(Zpv_o2)": zpv_o2_real,
+                "Im(Zpv_o2)": zpv_o2_imag,
                 "Re(Gamma_o1)": gamma_o1_real,
                 "Im(Gamma_o1)": gamma_o1_imag,
                 "beta_o1": gamma_o1_imag,
-                "Re(PortZo_o2)": portzo_o2_real,
-                "Im(PortZo_o2)": portzo_o2_imag,
                 "Re(Gamma_o2)": gamma_o2_real,
                 "Im(Gamma_o2)": gamma_o2_imag,
                 "beta_o2": gamma_o2_imag,
@@ -676,7 +773,7 @@ if RUN_AEDT:
 
         metadata = {
             "kind": "cpw_finite_ground_hfss_convergence",
-            "authority": "diagnostic_current_terminal_port_definition",
+            "authority": "diagnostic_terminal_st_and_modal_zpi_zpv",
             "software": {
                 "pyaedt_requirement": PYAEDT_REQUIREMENT,
                 "pyaedt_version": PYAEDT_VERSION,
@@ -690,11 +787,23 @@ if RUN_AEDT:
             "gap_um": GAP_UM,
             "trace_length_um": TRACE_LENGTH_UM,
             "region_padding_um": [0.0, 0.0, 0.0, 0.0, REGION_PAD, REGION_PAD],
-            "wave_ports": terminal_records,
+            "terminal_design": TERMINAL_DESIGN_NAME,
+            "modal_zpv_design": MODAL_DESIGN_NAME,
+            "terminal_wave_ports": terminal_records,
+            "modal_zpv_wave_ports": modal_port_records,
             "terminal_order": terminal_order,
             "quantity_authority": {
-                "S": "Terminal Solution Data / Terminal Touchstone St(...) data",
-                "characteristic_impedance": "Modal Solution Data / Port Zo / Zo(o1), Zo(o2)",
+                "terminal_scattering": (
+                    "HFSS_Terminal / Terminal Solution Data / St(...) / Terminal Touchstone"
+                ),
+                "zpi": (
+                    "HFSS_Terminal / Modal Solution Data / Port Zo / Zo(o1), Zo(o2); "
+                    "no impedance line"
+                ),
+                "zpv": (
+                    "HFSS_Modal_Zpv / Modal Solution Data / Port Zo / Zo(o1), Zo(o2); "
+                    "selected Zpv with explicit signal-to-+Y-ground impedance line"
+                ),
             },
             "sweep": {
                 "start_ghz": FREQUENCY_START_GHZ,
@@ -703,7 +812,8 @@ if RUN_AEDT:
                 "sweep_type": SWEEP_TYPE,
             },
             "setup": {
-                "type": SOLVER_SETUP_TYPE,
+                "terminal_type": SOLVER_SETUP_TYPE,
+                "modal_type": MODAL_SOLVER_SETUP_TYPE,
                 "max_adaptive_passes": MAX_ADAPTIVE_PASSES,
                 "min_converged_passes": MINIMUM_CONVERGED_PASSES,
                 "max_delta_s": MAX_DELTA_S,
@@ -717,8 +827,10 @@ if RUN_AEDT:
                 "ground_surface_mesh_level": GROUND_SURFACE_MESH_LEVEL,
                 "ground_surface_mesh_label": "Fine resolution / large mesh count",
             },
+            "timing": design_timings,
         }
         METADATA_PATH.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+        TIMING_PATH.write_text(json.dumps(design_timings, indent=2), encoding="utf-8")
 
         hfss.save_project()
 
@@ -737,10 +849,12 @@ else:
 # %% [markdown]
 # ### Physics Analysis Results
 #
-# > **Quantity authority.** Scattering uses Driven Terminal `St(...)` data.
-# > Wave-port characteristic impedance uses Modal Solution Data `Port Zo`
-# > (`Zo(o1)` and `Zo(o2)`). Touchstone `! Port Impedance` comments and
-# > Terminal `Zot(...)` are not reported as characteristic impedance.
+# > **Quantity authority.** `|St|` comes from the HFSS Terminal design and
+# > Terminal Solution Data. `Zpi` is the Terminal design's Modal Solution Data
+# > `Port Zo` with no impedance line. `Zpv` is the Modal design's Modal Solution
+# > Data `Port Zo`, selected with an explicit impedance line across the +Y CPW
+# > slot. Touchstone impedance comments and Terminal `Zot(...)` are not used as
+# > characteristic impedance.
 
 # %%
 result_frames = []
@@ -755,65 +869,77 @@ for width in GROUND_WIDTH_OPTIONS:
 if result_frames:
     result_df = pd.concat(result_frames, ignore_index=True)
     result_df = result_df.sort_values(["ground_width_um", "frequency_ghz"]).reset_index(drop=True)
-    result_df["S11_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S11_abs"].diff()
-    result_df["S21_delta_from_prev_width"] = result_df.groupby("frequency_ghz")["S21_abs"].diff()
-    result_df["Re(PortZo)_mean"] = (result_df["Re(PortZo_o1)"] + result_df["Re(PortZo_o2)"]) / 2
-    result_df["Re(PortZo)_port_difference"] = (
-        result_df["Re(PortZo_o1)"] - result_df["Re(PortZo_o2)"]
-    ).abs()
-    result_df["Re(PortZo)_delta_from_prev_width"] = result_df.groupby("frequency_ghz")[
-        "Re(PortZo)_mean"
+    result_df["Re(Zpi)_mean"] = (result_df["Re(Zpi_o1)"] + result_df["Re(Zpi_o2)"]) / 2
+    result_df["Re(Zpv)_mean"] = (result_df["Re(Zpv_o1)"] + result_df["Re(Zpv_o2)"]) / 2
+    result_df["Re(Zpi)_delta_from_prev_width"] = result_df.groupby("frequency_ghz")[
+        "Re(Zpi)_mean"
+    ].diff()
+    result_df["Re(Zpv)_delta_from_prev_width"] = result_df.groupby("frequency_ghz")[
+        "Re(Zpv)_mean"
     ].diff()
 
     s_parameters = result_df.melt(
         id_vars=["frequency_ghz", "ground_width_um"],
-        value_vars=["S11_abs", "S21_abs"],
-        var_name="metric",
-        value_name="value",
+        value_vars=["abs_St_o1_o1", "abs_St_o2_o2", "abs_St_o2_o1", "abs_St_o1_o2"],
+        var_name="Terminal Solution Data quantity",
+        value_name="magnitude",
     )
     display(
         px.line(
             s_parameters,
             x="frequency_ghz",
-            y="value",
+            y="magnitude",
             color="ground_width_um",
-            facet_row="metric",
-            title="Finite-ground CPW W10/S6 scattering",
+            facet_row="Terminal Solution Data quantity",
+            title="HFSS_Terminal · Terminal Solution Data · St",
         ).update_layout(height=650)
     )
 
-    port_impedance = result_df.melt(
+    zpi_impedance = result_df.melt(
         id_vars=["frequency_ghz", "ground_width_um"],
-        value_vars=["Re(PortZo_o1)", "Re(PortZo_o2)"],
+        value_vars=["Re(Zpi_o1)", "Re(Zpi_o2)"],
         var_name="port",
         value_name="impedance_ohm",
     )
     display(
         px.line(
-            port_impedance,
+            zpi_impedance,
             x="frequency_ghz",
             y="impedance_ohm",
             color="ground_width_um",
             line_dash="port",
-            title="Finite-ground CPW W10/S6 modal PortZo",
+            title="HFSS_Terminal · Modal Solution Data · Port Zo = Zpi",
+        )
+    )
+
+    zpv_impedance = result_df.melt(
+        id_vars=["frequency_ghz", "ground_width_um"],
+        value_vars=["Re(Zpv_o1)", "Re(Zpv_o2)"],
+        var_name="port",
+        value_name="impedance_ohm",
+    )
+    display(
+        px.line(
+            zpv_impedance,
+            x="frequency_ghz",
+            y="impedance_ohm",
+            color="ground_width_um",
+            line_dash="port",
+            title="HFSS_Modal_Zpv · Modal Solution Data · Port Zo = Zpv",
         )
     )
 
     band_summary = result_df.groupby("ground_width_um", as_index=False).agg(
-        S11_abs_max=("S11_abs", "max"),
-        S21_abs_min=("S21_abs", "min"),
-        Re_PortZo_mean_ohm=("Re(PortZo)_mean", "mean"),
-        Re_PortZo_port_difference_max_ohm=("Re(PortZo)_port_difference", "max"),
-        S11_change_from_previous_width_max=(
-            "S11_delta_from_prev_width",
+        abs_St_o1_o1_max=("abs_St_o1_o1", "max"),
+        abs_St_o2_o1_min=("abs_St_o2_o1", "min"),
+        Re_Zpi_mean_ohm=("Re(Zpi)_mean", "mean"),
+        Re_Zpv_mean_ohm=("Re(Zpv)_mean", "mean"),
+        Re_Zpi_change_from_previous_width_max_ohm=(
+            "Re(Zpi)_delta_from_prev_width",
             lambda values: values.abs().max(),
         ),
-        S21_change_from_previous_width_max=(
-            "S21_delta_from_prev_width",
-            lambda values: values.abs().max(),
-        ),
-        Re_PortZo_change_from_previous_width_max_ohm=(
-            "Re(PortZo)_delta_from_prev_width",
+        Re_Zpv_change_from_previous_width_max_ohm=(
+            "Re(Zpv)_delta_from_prev_width",
             lambda values: values.abs().max(),
         ),
     )
@@ -833,10 +959,20 @@ for width in GROUND_WIDTH_OPTIONS:
     timing_path = RUN_ROOT / run_tag / "solve_timing.json"
     if timing_path.exists():
         with timing_path.open(encoding="utf-8") as handle:
-            timing_frames.append(json.loads(handle.read()))
+            timing_frames.append((width, json.loads(handle.read())))
 
 if timing_frames:
-    timing_df = pd.DataFrame(timing_frames)
+    timing_rows = []
+    for width, timing in timing_frames:
+        for design_name, values in timing.items():
+            timing_rows.append(
+                {
+                    "ground_width_um": width,
+                    "design": design_name,
+                    **values,
+                }
+            )
+    timing_df = pd.DataFrame(timing_rows)
     display(timing_df)
 else:
     print("No timing data found yet; run with RUN_SOLVER=True.")

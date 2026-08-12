@@ -1,6 +1,6 @@
 {
   "kind": "cpw_finite_ground_hfss_convergence",
-  "authority": "diagnostic_current_terminal_port_definition",
+  "authority": "diagnostic_terminal_st_and_modal_zpi_zpv",
   "software": {
     "pyaedt_requirement": "pyaedt[all]==1.3.0",
     "pyaedt_version": "1.3.0",
@@ -8,7 +8,7 @@
     "requested_aedt_version": "2024.2",
     "connected_aedt_version": "2024.2"
   },
-  "run_tag": "cpw_w10_s6_gw20um_all-conductor-length-1m-ground-fine-sweep-v1",
+  "run_tag": "cpw_w10_s6_gw20um_all-conductor-length-1m-ground-fine-zpi-zpv-v2",
   "ground_width_um": 20.0,
   "trace_width_um": 10.0,
   "gap_um": 6.0,
@@ -21,7 +21,9 @@
     1000.0,
     1000.0
   ],
-  "wave_ports": [
+  "terminal_design": "cpw_w10_s6_gw20um_all-conductor-length-1m-ground-fine-zpi-zpv-v2_HFSS_Terminal",
+  "modal_zpv_design": "cpw_w10_s6_gw20um_all-conductor-length-1m-ground-fine-zpi-zpv-v2_HFSS_Modal_Zpv",
+  "terminal_wave_ports": [
     {
       "physical_port": "o1",
       "boundary_name": "o1",
@@ -35,10 +37,49 @@
       "face_id": 73
     }
   ],
+  "modal_zpv_wave_ports": [
+    {
+      "physical_port": "o1",
+      "boundary_name": "o1",
+      "face_id": 71,
+      "integration_line_um": [
+        [
+          -250.0,
+          5.0,
+          0.0
+        ],
+        [
+          -250.0,
+          11.0,
+          0.0
+        ]
+      ],
+      "selected_characteristic_impedance": "Zpv"
+    },
+    {
+      "physical_port": "o2",
+      "boundary_name": "o2",
+      "face_id": 73,
+      "integration_line_um": [
+        [
+          250.0,
+          5.0,
+          0.0
+        ],
+        [
+          250.0,
+          11.0,
+          0.0
+        ]
+      ],
+      "selected_characteristic_impedance": "Zpv"
+    }
+  ],
   "terminal_order": "original",
   "quantity_authority": {
-    "S": "Terminal Solution Data / Terminal Touchstone St(...) data",
-    "characteristic_impedance": "Modal Solution Data / Port Zo / Zo(o1), Zo(o2)"
+    "terminal_scattering": "HFSS_Terminal / Terminal Solution Data / St(...) / Terminal Touchstone",
+    "zpi": "HFSS_Terminal / Modal Solution Data / Port Zo / Zo(o1), Zo(o2); no impedance line",
+    "zpv": "HFSS_Modal_Zpv / Modal Solution Data / Port Zo / Zo(o1), Zo(o2); selected Zpv with explicit signal-to-+Y-ground impedance line"
   },
   "sweep": {
     "start_ghz": 3.0,
@@ -47,16 +88,27 @@
     "sweep_type": "Fast"
   },
   "setup": {
-    "type": "DrivenTerminal",
+    "terminal_type": "DrivenTerminal",
+    "modal_type": "DrivenModal",
     "max_adaptive_passes": 99,
     "min_converged_passes": 2,
     "max_delta_s": 0.02
   },
   "mesh": {
-    "profile": "all-conductor-length-1m-ground-fine-sweep-v1",
+    "profile": "all-conductor-length-1m-ground-fine-zpi-zpv-v2",
     "cpw_conductor_length_mesh_um": 10.0,
     "cpw_conductor_length_mesh_max_additional_elements": 1000000,
     "ground_surface_mesh_level": 9,
     "ground_surface_mesh_label": "Fine resolution / large mesh count"
+  },
+  "timing": {
+    "cpw_w10_s6_gw20um_all-conductor-length-1m-ground-fine-zpi-zpv-v2_HFSS_Terminal": {
+      "analyze_setup_seconds": 77.32503883799654,
+      "completed_adaptive_passes": 3
+    },
+    "cpw_w10_s6_gw20um_all-conductor-length-1m-ground-fine-zpi-zpv-v2_HFSS_Modal_Zpv": {
+      "analyze_setup_seconds": 46.19061449600849,
+      "completed_adaptive_passes": 3
+    }
   }
 }
