@@ -148,6 +148,59 @@ def n_trace_mtl_section(
     return gf.path.extrude(path, cross_section=xs)
 
 
+def _coupled_mtl_cross_section(
+    cross_section: CrossSectionSpec,
+    inter_trace_ground_width: float,
+) -> tuple:
+    """Return the single-CPW and matching two-trace MTL cross-sections."""
+    xs = gf.get_cross_section(cross_section)
+    required_sections = (CPW_DRAW, CPW_ETCH_NEG, CPW_ETCH_POS, CPW_GROUND_MASK)
+    section_names = {section.name for section in xs.sections}
+    missing_sections = [name for name in required_sections if name not in section_names]
+    if missing_sections:
+        raise ValueError(
+            "cross_section must use OrPen CPW sections "
+            f"{', '.join(required_sections)}, missing {', '.join(missing_sections)}."
+        )
+
+    draw_section = xs[CPW_DRAW]
+    etch_neg_section = xs[CPW_ETCH_NEG]
+    etch_pos_section = xs[CPW_ETCH_POS]
+    ground_mask_section = xs[CPW_GROUND_MASK]
+
+    cpw_width = float(draw_section.width)
+    neg_gap = float(etch_neg_section.width)
+    pos_gap = float(etch_pos_section.width)
+    if not all(isfinite(value) and value > 0 for value in (cpw_width, neg_gap, pos_gap)):
+        raise ValueError(
+            "cross_section CPW draw width and etch gap widths must be finite and positive."
+        )
+    if neg_gap != pos_gap:
+        raise ValueError(
+            f"cross_section must have symmetric CPW etch gaps, got {neg_gap!r} and {pos_gap!r}."
+        )
+
+    etch_neg_layer = gf.get_layer_tuple(etch_neg_section.layer)
+    etch_pos_layer = gf.get_layer_tuple(etch_pos_section.layer)
+    if etch_neg_layer != etch_pos_layer:
+        raise ValueError(
+            "cross_section CPW etch sections must share one layer, "
+            f"got {etch_neg_layer!r} and {etch_pos_layer!r}."
+        )
+
+    mtl_xs = gf.get_cross_section(
+        "n_trace_coplanar_waveguide",
+        trace_widths=(cpw_width, cpw_width),
+        trace_gaps=(neg_gap, neg_gap),
+        inter_trace_ground_widths=(float(inter_trace_ground_width),),
+        trace_names=("p", "r"),
+        draw_layer=draw_section.layer,
+        etch_layer=etch_neg_section.layer,
+        ground_mask_layer=ground_mask_section.layer,
+    )
+    return xs, mtl_xs
+
+
 @gf.cell(tags=["elements"])
 def mtl_bend_coupling_section(
     coupled_length: float = 500.0,
@@ -168,50 +221,7 @@ def mtl_bend_coupling_section(
         if not isfinite(value) or value <= 0:
             raise ValueError(f"{name} must be finite and positive, got {value!r}.")
 
-    xs = gf.get_cross_section(cross_section)
-    required_sections = (CPW_DRAW, CPW_ETCH_NEG, CPW_ETCH_POS, CPW_GROUND_MASK)
-    section_names = {section.name for section in xs.sections}
-    missing_sections = [name for name in required_sections if name not in section_names]
-    if missing_sections:
-        raise ValueError(
-            "cross_section must use OrPen CPW sections "
-            f"{', '.join(required_sections)}, missing {', '.join(missing_sections)}."
-        )
-
-    draw_section = xs[CPW_DRAW]
-    etch_neg_section = xs[CPW_ETCH_NEG]
-    etch_pos_section = xs[CPW_ETCH_POS]
-    ground_mask_section = xs[CPW_GROUND_MASK]
-    cpw_width = float(draw_section.width)
-    neg_gap = float(etch_neg_section.width)
-    pos_gap = float(etch_pos_section.width)
-    if not all(isfinite(value) and value > 0 for value in (cpw_width, neg_gap, pos_gap)):
-        raise ValueError(
-            "cross_section CPW draw width and etch gap widths must be finite and positive."
-        )
-    if neg_gap != pos_gap:
-        raise ValueError(
-            f"cross_section must have symmetric CPW etch gaps, got {neg_gap!r} and {pos_gap!r}."
-        )
-    etch_neg_layer = gf.get_layer_tuple(etch_neg_section.layer)
-    etch_pos_layer = gf.get_layer_tuple(etch_pos_section.layer)
-    if etch_neg_layer != etch_pos_layer:
-        raise ValueError(
-            "cross_section CPW etch sections must share one layer, "
-            f"got {etch_neg_layer!r} and {etch_pos_layer!r}."
-        )
-
-    mtl_xs = gf.get_cross_section(
-        "n_trace_coplanar_waveguide",
-        trace_widths=(cpw_width, cpw_width),
-        trace_gaps=(neg_gap, neg_gap),
-        inter_trace_ground_widths=(float(inter_trace_ground_width),),
-        trace_names=("p", "r"),
-        draw_layer=draw_section.layer,
-        etch_layer=etch_neg_section.layer,
-        ground_mask_layer=ground_mask_section.layer,
-        radius=bend_radius,
-    )
+    xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
 
     component = gf.Component()
     coupled_ref = component << n_trace_mtl_section(
@@ -220,23 +230,24 @@ def mtl_bend_coupling_section(
     )
     coupled_ref.dmovex(-coupled_length / 2)
 
-    bend = gf.path.extrude(
-        gf.path.euler(radius=bend_radius, angle=90, use_eff=True),
-        cross_section=xs,
+    left_transition = component << mtl_bend_bend_transition(
+        bend_radius=bend_radius,
+        inter_trace_ground_width=inter_trace_ground_width,
+        cross_section=cross_section,
     )
-    p_left = component << bend
-    p_left.connect("o1", coupled_ref.ports["p_o1"])
-    r_left = component << bend
-    r_left.connect("o1", coupled_ref.ports["r_o1"], mirror=True)
-    p_right = component << bend
-    p_right.connect("o1", coupled_ref.ports["p_o2"], mirror=True)
-    r_right = component << bend
-    r_right.connect("o1", coupled_ref.ports["r_o2"])
+    left_transition.connect("p_mtl", coupled_ref.ports["p_o1"], mirror=True)
 
-    component.add_port(name="r_left", port=r_left.ports["o2"])
-    component.add_port(name="r_right", port=r_right.ports["o2"])
-    component.add_port(name="p_left", port=p_left.ports["o2"])
-    component.add_port(name="p_right", port=p_right.ports["o2"])
+    right_transition = component << mtl_bend_bend_transition(
+        bend_radius=bend_radius,
+        inter_trace_ground_width=inter_trace_ground_width,
+        cross_section=cross_section,
+    )
+    right_transition.connect("p_mtl", coupled_ref.ports["p_o2"])
+
+    component.add_port(name="r_left", port=left_transition.ports["r_outer"])
+    component.add_port(name="r_right", port=right_transition.ports["r_outer"])
+    component.add_port(name="p_left", port=left_transition.ports["p_outer"])
+    component.add_port(name="p_right", port=right_transition.ports["p_outer"])
 
     component.info["topology"] = "mtl_bend_coupling_section"
     component.info["coupled_length_um"] = float(coupled_length)
@@ -253,9 +264,9 @@ def mtl_bend_coupling_section(
     }
     component.info["central_x_span_um"] = (-float(coupled_length) / 2, float(coupled_length) / 2)
     component.info["layers"] = {
-        "draw": tuple(int(value) for value in gf.get_layer_tuple(draw_section.layer)),
-        "etch": tuple(int(value) for value in etch_neg_layer),
-        "ground_mask": tuple(int(value) for value in gf.get_layer_tuple(ground_mask_section.layer)),
+        "draw": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_DRAW].layer)),
+        "etch": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_ETCH_NEG].layer)),
+        "ground_mask": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_GROUND_MASK].layer)),
     }
     return component
 
@@ -267,11 +278,10 @@ def mtl_straight_bend_coupling_section(
     bend_radius: float = 100.0,
     cross_section: CrossSectionSpec = "cpw_6_7_6",
 ) -> gf.Component:
-    """Return one full four-port straight--bend coupled-MTL geometry.
+    """Return a four-port straight--bend pair around a uniform MTL section.
 
     The lower ``p`` trace extends straight at both sides. The upper ``r``
     trace leaves each side through a directly attached 90-degree Euler bend.
-    This is one layout/EM block, not a cascade of separate bend and MTL cells.
     """
 
     for name, value in (
@@ -282,50 +292,7 @@ def mtl_straight_bend_coupling_section(
         if not isfinite(value) or value <= 0:
             raise ValueError(f"{name} must be finite and positive, got {value!r}.")
 
-    xs = gf.get_cross_section(cross_section)
-    required_sections = (CPW_DRAW, CPW_ETCH_NEG, CPW_ETCH_POS, CPW_GROUND_MASK)
-    section_names = {section.name for section in xs.sections}
-    missing_sections = [name for name in required_sections if name not in section_names]
-    if missing_sections:
-        raise ValueError(
-            "cross_section must use OrPen CPW sections "
-            f"{', '.join(required_sections)}, missing {', '.join(missing_sections)}."
-        )
-
-    draw_section = xs[CPW_DRAW]
-    etch_neg_section = xs[CPW_ETCH_NEG]
-    etch_pos_section = xs[CPW_ETCH_POS]
-    ground_mask_section = xs[CPW_GROUND_MASK]
-    cpw_width = float(draw_section.width)
-    neg_gap = float(etch_neg_section.width)
-    pos_gap = float(etch_pos_section.width)
-    if not all(isfinite(value) and value > 0 for value in (cpw_width, neg_gap, pos_gap)):
-        raise ValueError(
-            "cross_section CPW draw width and etch gap widths must be finite and positive."
-        )
-    if neg_gap != pos_gap:
-        raise ValueError(
-            f"cross_section must have symmetric CPW etch gaps, got {neg_gap!r} and {pos_gap!r}."
-        )
-    etch_neg_layer = gf.get_layer_tuple(etch_neg_section.layer)
-    etch_pos_layer = gf.get_layer_tuple(etch_pos_section.layer)
-    if etch_neg_layer != etch_pos_layer:
-        raise ValueError(
-            "cross_section CPW etch sections must share one layer, "
-            f"got {etch_neg_layer!r} and {etch_pos_layer!r}."
-        )
-
-    mtl_xs = gf.get_cross_section(
-        "n_trace_coplanar_waveguide",
-        trace_widths=(cpw_width, cpw_width),
-        trace_gaps=(neg_gap, neg_gap),
-        inter_trace_ground_widths=(float(inter_trace_ground_width),),
-        trace_names=("p", "r"),
-        draw_layer=draw_section.layer,
-        etch_layer=etch_neg_section.layer,
-        ground_mask_layer=ground_mask_section.layer,
-        radius=bend_radius,
-    )
+    xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
 
     component = gf.Component()
     coupled_ref = component << n_trace_mtl_section(
@@ -334,25 +301,26 @@ def mtl_straight_bend_coupling_section(
     )
     coupled_ref.dmovex(-coupled_length / 2)
 
-    straight = gf.path.extrude(gf.path.straight(bend_radius), cross_section=xs)
-    p_left = component << straight
-    p_left.connect("o2", coupled_ref.ports["p_o1"])
-    p_right = component << straight
-    p_right.connect("o1", coupled_ref.ports["p_o2"])
-
-    bend = gf.path.extrude(
-        gf.path.euler(radius=bend_radius, angle=90, use_eff=True),
-        cross_section=xs,
+    left_transition = component << mtl_straight_bend_transition(
+        straight_length=bend_radius,
+        bend_radius=bend_radius,
+        inter_trace_ground_width=inter_trace_ground_width,
+        cross_section=cross_section,
     )
-    r_left = component << bend
-    r_left.connect("o1", coupled_ref.ports["r_o1"], mirror=True)
-    r_right = component << bend
-    r_right.connect("o1", coupled_ref.ports["r_o2"])
+    left_transition.connect("p_mtl", coupled_ref.ports["p_o1"], mirror=True)
 
-    component.add_port(name="r_left", port=r_left.ports["o2"])
-    component.add_port(name="r_right", port=r_right.ports["o2"])
-    component.add_port(name="p_left", port=p_left.ports["o1"])
-    component.add_port(name="p_right", port=p_right.ports["o2"])
+    right_transition = component << mtl_straight_bend_transition(
+        straight_length=bend_radius,
+        bend_radius=bend_radius,
+        inter_trace_ground_width=inter_trace_ground_width,
+        cross_section=cross_section,
+    )
+    right_transition.connect("p_mtl", coupled_ref.ports["p_o2"])
+
+    component.add_port(name="r_left", port=left_transition.ports["r_outer"])
+    component.add_port(name="r_right", port=right_transition.ports["r_outer"])
+    component.add_port(name="p_left", port=left_transition.ports["p_outer"])
+    component.add_port(name="p_right", port=right_transition.ports["p_outer"])
 
     component.info["topology"] = "mtl_straight_bend_coupling_section"
     component.info["coupled_length_um"] = float(coupled_length)
@@ -374,9 +342,107 @@ def mtl_straight_bend_coupling_section(
     }
     component.info["central_x_span_um"] = (-float(coupled_length) / 2, float(coupled_length) / 2)
     component.info["layers"] = {
-        "draw": tuple(int(value) for value in gf.get_layer_tuple(draw_section.layer)),
-        "etch": tuple(int(value) for value in etch_neg_layer),
-        "ground_mask": tuple(int(value) for value in gf.get_layer_tuple(ground_mask_section.layer)),
+        "draw": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_DRAW].layer)),
+        "etch": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_ETCH_NEG].layer)),
+        "ground_mask": tuple(int(value) for value in gf.get_layer_tuple(xs[CPW_GROUND_MASK].layer)),
+    }
+    return component
+
+
+@gf.cell(tags=["elements"])
+def mtl_straight_bend_transition(
+    straight_length: float = 100.0,
+    inter_trace_ground_width: float = 3.0,
+    bend_radius: float = 100.0,
+    cross_section: CrossSectionSpec = "cpw_6_7_6",
+) -> gf.Component:
+    """Return a four-port MTL-seam to straight-and-bend transition."""
+    for name, value in (
+        ("straight_length", straight_length),
+        ("inter_trace_ground_width", inter_trace_ground_width),
+        ("bend_radius", bend_radius),
+    ):
+        if not isfinite(value) or value <= 0:
+            raise ValueError(f"{name} must be finite and positive, got {value!r}.")
+
+    xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
+    seam = n_trace_mtl_section(length=1.0, cross_section=mtl_xs)
+
+    component = gf.Component()
+
+    p_straight = component << gf.path.extrude(
+        gf.path.straight(straight_length),
+        cross_section=xs,
+    )
+    r_bend = component << gf.path.extrude(
+        gf.path.euler(radius=bend_radius, angle=90, use_eff=True),
+        cross_section=xs,
+    )
+
+    p_straight.dmovey(seam.ports["p_o1"].center[1])
+    r_bend.dmovey(seam.ports["r_o1"].center[1])
+
+    component.add_port(name="p_mtl", port=p_straight.ports["o1"])
+    component.add_port(name="r_mtl", port=r_bend.ports["o1"])
+    component.add_port(name="p_outer", port=p_straight.ports["o2"])
+    component.add_port(name="r_outer", port=r_bend.ports["o2"])
+
+    component.info["topology"] = "mtl_straight_bend_transition"
+    component.info["cross_section_name"] = xs.name
+    component.info["trace_order_bottom_to_top"] = ("p", "r")
+    component.info["transition_seam_facing_deg"] = 180.0
+    component.info["ordered_port_names"] = ("p_mtl", "r_mtl", "p_outer", "r_outer")
+    component.info["ordered_orientation_deg"] = {
+        "p_mtl": int(component.ports["p_mtl"].orientation),
+        "r_mtl": int(component.ports["r_mtl"].orientation),
+        "p_outer": int(component.ports["p_outer"].orientation),
+        "r_outer": int(component.ports["r_outer"].orientation),
+    }
+    return component
+
+
+@gf.cell(tags=["elements"])
+def mtl_bend_bend_transition(
+    bend_radius: float = 100.0,
+    inter_trace_ground_width: float = 3.0,
+    cross_section: CrossSectionSpec = "cpw_6_7_6",
+) -> gf.Component:
+    """Return a four-port MTL-seam to opposing-bend transition."""
+    if not isfinite(bend_radius) or bend_radius <= 0:
+        raise ValueError(f"bend_radius must be finite and positive, got {bend_radius!r}.")
+
+    xs, mtl_xs = _coupled_mtl_cross_section(cross_section, inter_trace_ground_width)
+    seam = n_trace_mtl_section(length=1.0, cross_section=mtl_xs)
+
+    component = gf.Component()
+
+    p_bend = component << gf.path.extrude(
+        gf.path.euler(radius=bend_radius, angle=-90, use_eff=True),
+        cross_section=xs,
+    )
+    r_bend = component << gf.path.extrude(
+        gf.path.euler(radius=bend_radius, angle=90, use_eff=True),
+        cross_section=xs,
+    )
+
+    p_bend.dmovey(seam.ports["p_o1"].center[1])
+    r_bend.dmovey(seam.ports["r_o1"].center[1])
+
+    component.add_port(name="p_mtl", port=p_bend.ports["o1"])
+    component.add_port(name="r_mtl", port=r_bend.ports["o1"])
+    component.add_port(name="p_outer", port=p_bend.ports["o2"])
+    component.add_port(name="r_outer", port=r_bend.ports["o2"])
+
+    component.info["topology"] = "mtl_bend_bend_transition"
+    component.info["cross_section_name"] = xs.name
+    component.info["trace_order_bottom_to_top"] = ("p", "r")
+    component.info["transition_seam_facing_deg"] = 180.0
+    component.info["ordered_port_names"] = ("p_mtl", "r_mtl", "p_outer", "r_outer")
+    component.info["ordered_orientation_deg"] = {
+        "p_mtl": int(component.ports["p_mtl"].orientation),
+        "r_mtl": int(component.ports["r_mtl"].orientation),
+        "p_outer": int(component.ports["p_outer"].orientation),
+        "r_outer": int(component.ports["r_outer"].orientation),
     }
     return component
 

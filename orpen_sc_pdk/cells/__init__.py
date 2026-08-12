@@ -9,8 +9,10 @@ from orpen_sc_pdk.cells.cpw import (
     cpw_straight,
     cpw_t_junction,
     launcher,
+    mtl_bend_bend_transition,
     mtl_bend_coupling_section,
     mtl_straight_bend_coupling_section,
+    mtl_straight_bend_transition,
     n_trace_mtl_section,
 )
 from orpen_sc_pdk.cells.dicing import dicing_edge
@@ -40,6 +42,8 @@ __all__ = [
     "n_trace_mtl_section",
     "mtl_bend_coupling_section",
     "mtl_straight_bend_coupling_section",
+    "mtl_straight_bend_transition",
+    "mtl_bend_bend_transition",
     "bend_euler",
     "dicing_edge",
     "interdigital_capacitor",
