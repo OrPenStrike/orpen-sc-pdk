@@ -1,0 +1,10 @@
+{
+  "cpw_w10_s6_gw40um_all-conductor-length-1m-ground-fine-zpi-zpv-v2_HFSS_Terminal": {
+    "analyze_setup_seconds": 91.52698189698276,
+    "completed_adaptive_passes": 3
+  },
+  "cpw_w10_s6_gw40um_all-conductor-length-1m-ground-fine-zpi-zpv-v2_HFSS_Modal_Zpv": {
+    "analyze_setup_seconds": 56.335316041018814,
+    "completed_adaptive_passes": 3
+  }
+}

@@ -32,6 +32,31 @@ def test_pdk_activates_and_builds_public_cells() -> None:
     assert dicing_edge()
 
 
+def test_flip_chip_layer_metadata() -> None:
+    assert {name for name in LAYER_STACK.layers if "UNDER_BUMP" in name} == {"D0_D1_UNDER_BUMP"}
+    assert LAYER_STACK.layers["D0_TOP_M1"].info == {
+        "layer_type": "conductor",
+        "part_role": "face_metal",
+        "net_id": "Ground",
+        "equipotential_id": "Ground",
+    }
+    assert LAYER_STACK.layers["D1_BOTTOM_M1"].info == {
+        "layer_type": "conductor",
+        "part_role": "face_metal",
+        "net_id": "Ground",
+        "equipotential_id": "Ground",
+    }
+    assert LAYER_STACK.layers["D0_D1_INDIUM_BUMP"].info == {
+        "layer_type": "via",
+        "part_role": "bump_body",
+        "net_id": "Ground",
+        "equipotential_id": "Ground",
+    }
+    assert LAYER_STACK.layers["D0_D1_UNDER_BUMP"].info == {
+        "exclude_from_simulation": True,
+    }
+
+
 def test_public_pdk_has_no_private_imports_or_gds() -> None:
     package_root = Path(__file__).resolve().parents[1] / "orpen_sc_pdk"
     source_text = "\n".join(path.read_text() for path in package_root.rglob("*.py"))

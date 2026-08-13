@@ -7,7 +7,7 @@ $begin 'Configs'
 				$begin 'DSOMachineInfo'
 					MachineName='localhost'
 					NumEngines=1
-					NumCores=16
+					NumCores=30
 					IsEnabled=true
 					RAMPercent=45
 					NumJobCores=0

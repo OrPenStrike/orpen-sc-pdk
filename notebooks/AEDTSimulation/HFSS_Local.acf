@@ -7,14 +7,14 @@ $begin 'Configs'
 				$begin 'DSOMachineInfo'
 					MachineName='localhost'
 					NumEngines=1
-					NumCores=60
+					NumCores=30
 					IsEnabled=true
-					RAMPercent=90
+					RAMPercent=45
 					NumJobCores=0
 					NumGPUs=1
 				$end 'DSOMachineInfo'
 			$end 'DSOMachineList'
-			UseAutoSettings=true
+			UseAutoSettings=false
 			NumVariationsToDistribute=1
 			$begin 'DSOJobDistributionInfo'
 				AllowedDistributionTypes[5: 'Variations', 'Frequencies', 'Mesh Assembly', 'Transient Excitations', 'Domain Solver']
