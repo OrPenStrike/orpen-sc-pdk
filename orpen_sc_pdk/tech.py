@@ -162,7 +162,12 @@ def _m1_layer_level(
     face_z: float,
     outward: int,
     mesh_order: int,
+    info: dict[str, Any] | None = None,
 ) -> LayerLevel:
+    kwargs: dict[str, Any] = {}
+    if info is not None:
+        kwargs["info"] = info
+
     return LayerLevel(
         name=name,
         layer=_derived_m1_layer(
@@ -180,6 +185,7 @@ def _m1_layer_level(
         ),
         material="Al",
         mesh_order=mesh_order,
+        **kwargs,
     )
 
 
@@ -244,6 +250,7 @@ def _face_layer_levels(
     airbridge_via_layer: Layer,
     sim_boundary_layer: Layer,
     mesh_order: int,
+    m1_info: dict[str, Any] | None = None,
 ) -> dict[str, LayerLevel]:
     prefix = f"{die}_{face}"
     return {
@@ -255,6 +262,7 @@ def _face_layer_levels(
             face_z=face_z,
             outward=outward,
             mesh_order=mesh_order,
+            info=m1_info,
         ),
         f"{prefix}_AIRBRIDGE_VIA": _face_layer_level(
             name=f"{prefix}_AIRBRIDGE_VIA",
@@ -352,6 +360,12 @@ def get_layer_stack() -> LayerStack:
                 airbridge_via_layer=L.D0_TOP_AB_VIA,
                 sim_boundary_layer=L.D0_TOP_SIM_BOUNDARY,
                 mesh_order=10,
+                m1_info={
+                    "layer_type": "conductor",
+                    "part_role": "face_metal",
+                    "net_id": "Ground",
+                    "equipotential_id": "Ground",
+                },
             ),
             **_face_layer_levels(
                 die="D1",
@@ -365,6 +379,12 @@ def get_layer_stack() -> LayerStack:
                 airbridge_via_layer=L.D1_BOTTOM_AB_VIA,
                 sim_boundary_layer=L.D1_BOTTOM_SIM_BOUNDARY,
                 mesh_order=12,
+                m1_info={
+                    "layer_type": "conductor",
+                    "part_role": "face_metal",
+                    "net_id": "Ground",
+                    "equipotential_id": "Ground",
+                },
             ),
             **_face_layer_levels(
                 die="D1",
@@ -422,6 +442,12 @@ def get_layer_stack() -> LayerStack:
                 zmin=METAL_THICKNESS_UM,
                 material="In",
                 mesh_order=3,
+                info={
+                    "layer_type": "via",
+                    "part_role": "bump_body",
+                    "net_id": "Ground",
+                    "equipotential_id": "Ground",
+                },
             ),
             "D0_D1_UNDER_BUMP": LayerLevel(
                 name="D0_D1_UNDER_BUMP",
@@ -430,6 +456,13 @@ def get_layer_stack() -> LayerStack:
                 zmin=0.0,
                 material="In",
                 mesh_order=3,
+                info={
+                    "layer_type": "conductor",
+                    "part_role": "contact_pad",
+                    "attached_face_metal_semantic_id": "D0_TOP_M1",
+                    "net_id": "Ground",
+                    "equipotential_id": "Ground",
+                },
             ),
         }
     )
