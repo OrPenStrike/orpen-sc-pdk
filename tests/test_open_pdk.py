@@ -53,11 +53,7 @@ def test_flip_chip_layer_metadata() -> None:
         "equipotential_id": "Ground",
     }
     assert LAYER_STACK.layers["D0_D1_UNDER_BUMP"].info == {
-        "layer_type": "conductor",
-        "part_role": "contact_pad",
-        "attached_face_metal_semantic_id": "D0_TOP_M1",
-        "net_id": "Ground",
-        "equipotential_id": "Ground",
+        "exclude_from_simulation": True,
     }
 
 

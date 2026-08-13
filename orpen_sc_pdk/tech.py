@@ -457,11 +457,7 @@ def get_layer_stack() -> LayerStack:
                 material="In",
                 mesh_order=3,
                 info={
-                    "layer_type": "conductor",
-                    "part_role": "contact_pad",
-                    "attached_face_metal_semantic_id": "D0_TOP_M1",
-                    "net_id": "Ground",
-                    "equipotential_id": "Ground",
+                    "exclude_from_simulation": True,
                 },
             ),
         }
