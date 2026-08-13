@@ -65,6 +65,7 @@ website:
           - public-pdk-examples/component-authoring.md
           - public-pdk-examples/palace-hpc-handoff.md
           - public-pdk-examples/problem-notebooks.md
+          - public-pdk-examples/palace-gmsh-notebook-controls.md
           - public-pdk-examples/simulation-layer-catalog.md
           - public-pdk-examples/evidence-fixtures.md
       - section: Features
