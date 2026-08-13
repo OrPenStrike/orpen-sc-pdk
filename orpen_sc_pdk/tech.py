@@ -353,6 +353,9 @@ def get_layer_stack() -> LayerStack:
                 face="TOP",
                 face_z=d0_top_face_z,
                 outward=1,
+                # Structured SGB/gsim consumes typed LayerLevel.info, not display names.
+                # M1 is Route-A / Route-B finite PEC shell; default Ground is residual
+                # identity and selectors can override.
                 m1_domain_layer=L.D0_TOP_M1_DOMAIN,
                 m1_draw_layer=L.D0_TOP_M1_DRAW,
                 m1_etch_layer=L.D0_TOP_M1_ETCH,
@@ -372,6 +375,9 @@ def get_layer_stack() -> LayerStack:
                 face="BOTTOM",
                 face_z=d1_bottom_face_z,
                 outward=-1,
+                # Structured SGB/gsim consumes typed LayerLevel.info, not display names.
+                # M1 is Route-A / Route-B finite PEC shell; default Ground is residual
+                # identity and selectors can override.
                 m1_domain_layer=L.D1_BOTTOM_M1_DOMAIN,
                 m1_draw_layer=L.D1_BOTTOM_M1_DRAW,
                 m1_etch_layer=L.D1_BOTTOM_M1_ETCH,
@@ -449,6 +455,9 @@ def get_layer_stack() -> LayerStack:
                     "equipotential_id": "Ground",
                 },
             ),
+            # Bump info records are structured SGB/gsim targets; finite shell remains.
+            # UBM is excluded for the accepted consumers; selectors may still
+            # override identities.
             "D0_D1_UNDER_BUMP": LayerLevel(
                 name="D0_D1_UNDER_BUMP",
                 layer=L.D0_D1_UNDER_BUMP,
