@@ -145,8 +145,16 @@ def kosen2024_flip_chip_xmon_qubit(
     ``qubit_pad_length`` and ``qubit_pad_width`` size both crossed bars together.
     The pad and four independent qubit-coupling electrodes share the Q-chip
     metal face. XY drive and readout geometry belong to the facing C-chip and
-    are intentionally excluded. Defaults are neutral previews, not paper-mask
-    authority.
+    are intentionally excluded.
+
+    Source: S. Kosen et al., "Signal Crosstalk in a Flip-Chip Quantum
+    Processor," PRX Quantum 5, 030350 (2024),
+    https://doi.org/10.1103/PRXQuantum.5.030350. The published work is available
+    under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), which
+    requires attribution and identification of changes. This cell is an
+    independent parametric adaptation, not an author-supplied mask or an
+    endorsed implementation. Its defaults are neutral public preview values,
+    not paper-mask dimensions.
     """
 
     for name, value in (
@@ -245,6 +253,8 @@ def kosen2024_flip_chip_xmon_qubit(
             bump_ref = c << bump
             bump_ref.dmove(center)
 
+    # Keep the paper provenance on the exported component as well as in the
+    # docstring so downstream GDSFactory consumers do not lose the attribution.
     c.info["topology"] = (
         "D1 Xmon cross with four independent D1 qubit-coupling electrodes and bump ring"
     )
