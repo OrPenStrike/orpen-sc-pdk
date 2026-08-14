@@ -13,6 +13,7 @@ from math import isfinite
 import gdsfactory as gf
 
 from orpen_sc_pdk.cells.indium import indium_bump
+from orpen_sc_pdk.cells.junction import manhattan_style_junction
 from orpen_sc_pdk.helpers.layout import add_etch_for_component
 from orpen_sc_pdk.tech import D0_D1_METAL_FACE_GAP_UM, LAYER, Layer
 
@@ -28,22 +29,16 @@ def _xmon_qubit_pad(
     width: float,
     gap: float,
     draw_layer: Layer,
-    etch_layer: Layer,
     ground_mask_layer: Layer,
 ) -> gf.Component:
-    """Return two equal crossed bars and their surrounding ground gap."""
+    """Return two equal crossed bars and their surrounding ground-gap mask."""
 
     c = gf.Component()
     for size in ((length, width), (width, length)):
         c << gf.components.rectangle(size=size, layer=draw_layer, centered=True)
     for size in ((length + 2 * gap, width + 2 * gap), (width + 2 * gap, length + 2 * gap)):
         c << gf.components.rectangle(size=size, layer=ground_mask_layer, centered=True)
-    return add_etch_for_component(
-        component=c,
-        draw_layer=draw_layer,
-        mask_layer=ground_mask_layer,
-        etch_layer=etch_layer,
-    )
+    return c
 
 
 @gf.cell
@@ -56,7 +51,6 @@ def _xmon_coupling_electrode(
     insertion_length: float,
     port_length: float,
     draw_layer: Layer,
-    etch_layer: Layer,
     ground_mask_layer: Layer,
 ) -> gf.Component:
     """Return the north-facing U electrode used on each side of the Xmon."""
@@ -110,12 +104,7 @@ def _xmon_coupling_electrode(
         layer=draw_layer,
         port_type="electrical",
     )
-    return add_etch_for_component(
-        component=c,
-        draw_layer=draw_layer,
-        mask_layer=ground_mask_layer,
-        etch_layer=etch_layer,
-    )
+    return c
 
 
 @gf.cell(tags=["qubits", "flip_chip"])
@@ -125,9 +114,12 @@ def kosen2024_flip_chip_xmon_qubit(
     qubit_gap: float = 20.0,
     coupling_electrode_to_qubit_distance: float = 20.0,
     coupling_electrode_gap: float = 10.0,
-    coupling_electrode_insertion_length: float = 80.0,
+    coupling_electrode_insertion_length: float = 60.0,
     coupling_electrode_width: float = 16.0,
     coupling_electrode_port_length: float = 80.0,
+    junction_width: float = 0.09,
+    junction_length: float = 5.0,
+    junction_arm_width: float = 2.0,
     bump_ring_offset: float = 60.0,
     bump_ring_count_per_side: int = 4,
     indium_bump_size: float = 20.0,
@@ -137,6 +129,8 @@ def kosen2024_flip_chip_xmon_qubit(
     q_chip_draw_layer: Layer = LAYER.D1_BOTTOM_M1_DRAW,
     q_chip_etch_layer: Layer = LAYER.D1_BOTTOM_M1_ETCH,
     q_chip_ground_mask_layer: Layer = LAYER.D1_BOTTOM_GROUND_MASK,
+    junction_draw_layer: Layer = LAYER.D1_BOTTOM_JJ_DRAW,
+    junction_sim_port_layer: Layer = LAYER.D1_BOTTOM_SIM_BOUNDARY,
     indium_bump_layer: Layer = LAYER.D0_D1_INDIUM_BUMP,
     under_bump_layer: Layer = LAYER.D0_D1_UNDER_BUMP,
 ) -> gf.Component:
@@ -146,6 +140,8 @@ def kosen2024_flip_chip_xmon_qubit(
     The pad and four independent qubit-coupling electrodes share the Q-chip
     metal face. XY drive and readout geometry belong to the facing C-chip and
     are intentionally excluded.
+    The default fixed-frequency topology has one lower-left D1 Manhattan
+    junction joining pad to ground through two short M1 arms.
 
     Source: S. Kosen et al., "Signal Crosstalk in a Flip-Chip Quantum
     Processor," PRX Quantum 5, 030350 (2024),
@@ -166,6 +162,9 @@ def kosen2024_flip_chip_xmon_qubit(
         ("coupling_electrode_insertion_length", coupling_electrode_insertion_length),
         ("coupling_electrode_width", coupling_electrode_width),
         ("coupling_electrode_port_length", coupling_electrode_port_length),
+        ("junction_width", junction_width),
+        ("junction_length", junction_length),
+        ("junction_arm_width", junction_arm_width),
         ("bump_ring_offset", bump_ring_offset),
         ("indium_bump_size", indium_bump_size),
         ("under_bump_size", under_bump_size),
@@ -192,14 +191,12 @@ def kosen2024_flip_chip_xmon_qubit(
         raise ValueError(
             "coupling_electrode_insertion_length leaves insufficient corner clearance."
         )
-
     c = gf.Component()
     c << _xmon_qubit_pad(
         length=qubit_pad_length,
         width=qubit_pad_width,
         gap=qubit_gap,
         draw_layer=q_chip_draw_layer,
-        etch_layer=q_chip_etch_layer,
         ground_mask_layer=q_chip_ground_mask_layer,
     )
 
@@ -212,13 +209,69 @@ def kosen2024_flip_chip_xmon_qubit(
         insertion_length=coupling_electrode_insertion_length,
         port_length=coupling_electrode_port_length,
         draw_layer=q_chip_draw_layer,
-        etch_layer=q_chip_etch_layer,
         ground_mask_layer=q_chip_ground_mask_layer,
     )
     for name, angle in (("o1", 0), ("o2", -90), ("o3", 180), ("o4", 90)):
         electrode_ref = c << electrode
         electrode_ref.rotate(angle)
         c.add_port(name=name, port=electrode_ref.ports["o1"])
+
+    half_pad_length = qubit_pad_length / 2
+    half_pad_width = qubit_pad_width / 2
+    left_inner_segment_start = -half_pad_length + coupling_electrode_insertion_length
+    central_cross_edge = -half_pad_width
+    pad_lower_edge = -half_pad_width
+    outer_gap_lower_edge = pad_lower_edge - qubit_gap
+    junction_lumped_center = (
+        (left_inner_segment_start + central_cross_edge) / 2,
+        (pad_lower_edge + outer_gap_lower_edge) / 2,
+    )
+    junction = manhattan_style_junction(
+        width=junction_width,
+        length=junction_length,
+        open_side="left-bottom",
+        draw_layer=junction_draw_layer,
+        sim_port_layer=junction_sim_port_layer,
+    )
+    junction_ref = c << junction
+    junction_ref.dmirror_y(0)
+    junction_ref.dmove(
+        (
+            junction_lumped_center[0] - junction_ref.ports["o_junction_lumped"].center[0],
+            junction_lumped_center[1] - junction_ref.ports["o_junction_lumped"].center[1],
+        )
+    )
+    c.add_port(name="o_junction_lumped", port=junction_ref.ports["o_junction_lumped"])
+
+    up_arm_start = junction_ref.ports["o_arm2"].center
+    up_arm_end = pad_lower_edge + junction_arm_width
+    c.add_polygon(
+        [
+            (up_arm_start[0] - junction_arm_width / 2, up_arm_start[1]),
+            (up_arm_start[0] + junction_arm_width / 2, up_arm_start[1]),
+            (up_arm_start[0] + junction_arm_width / 2, up_arm_end),
+            (up_arm_start[0] - junction_arm_width / 2, up_arm_end),
+        ],
+        layer=q_chip_draw_layer,
+    )
+    lower_arm_start = junction_ref.ports["o_arm1"].center
+    lower_arm_end = outer_gap_lower_edge - junction_arm_width
+    c.add_polygon(
+        [
+            (lower_arm_start[0] - junction_arm_width / 2, lower_arm_end),
+            (lower_arm_start[0] + junction_arm_width / 2, lower_arm_end),
+            (lower_arm_start[0] + junction_arm_width / 2, lower_arm_start[1]),
+            (lower_arm_start[0] - junction_arm_width / 2, lower_arm_start[1]),
+        ],
+        layer=q_chip_draw_layer,
+    )
+
+    c = add_etch_for_component(
+        component=c,
+        draw_layer=q_chip_draw_layer,
+        mask_layer=q_chip_ground_mask_layer,
+        etch_layer=q_chip_etch_layer,
+    )
 
     outer_edge = (
         qubit_pad_length / 2
@@ -256,7 +309,8 @@ def kosen2024_flip_chip_xmon_qubit(
     # Keep the paper provenance on the exported component as well as in the
     # docstring so downstream GDSFactory consumers do not lose the attribution.
     c.info["topology"] = (
-        "D1 Xmon cross with four independent D1 qubit-coupling electrodes and bump ring"
+        "D1 Xmon cross with four independent D1 qubit-coupling electrodes, "
+        "one Manhattan junction, and bump ring"
     )
     c.info["source_doi"] = "10.1103/PRXQuantum.5.030350"
     c.info["source_license"] = "CC BY 4.0"
@@ -274,15 +328,29 @@ def kosen2024_flip_chip_xmon_qubit(
     c.info["instantiated_indium_bump_size_um"] = float(indium_bump_size)
     c.info["instantiated_under_bump_size_um"] = float(under_bump_size)
     c.info["bump_count"] = 4 * bump_ring_count_per_side
+    c.info["junction_topology"] = "single fixed-frequency lower-left Manhattan junction"
+    c.info["junction_lumped_center_um"] = tuple(float(value) for value in junction_lumped_center)
+    c.info["junction_width_um"] = float(junction_width)
+    c.info["junction_length_um"] = float(junction_length)
+    c.info["junction_arm_width_um"] = float(junction_arm_width)
+    c.info["junction_lumped_port_name"] = "o_junction_lumped"
     c.info["projected_q_chip_ground_between_pad_and_electrode_um"] = max(
         coupling_electrode_to_qubit_distance - qubit_gap, 0.0
     )
-    c.info["ordered_port_names"] = ("o1", "o2", "o3", "o4")
-    c.info["port_orientations_deg"] = {"o1": 90, "o2": 0, "o3": 270, "o4": 180}
+    c.info["ordered_port_names"] = ("o1", "o2", "o3", "o4", "o_junction_lumped")
+    c.info["port_orientations_deg"] = {
+        "o1": 90,
+        "o2": 0,
+        "o3": 270,
+        "o4": 180,
+        "o_junction_lumped": float(c.ports["o_junction_lumped"].orientation),
+    }
     c.info["layers"] = {
         "q_chip_draw": tuple(int(value) for value in q_chip_draw_layer),
         "q_chip_etch": tuple(int(value) for value in q_chip_etch_layer),
         "q_chip_ground_mask": tuple(int(value) for value in q_chip_ground_mask_layer),
+        "junction_draw": tuple(int(value) for value in junction_draw_layer),
+        "junction_sim_port": tuple(int(value) for value in junction_sim_port_layer),
     }
 
     return c
