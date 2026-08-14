@@ -1,0 +1,163 @@
+{
+  "transition_kind": "straight_bend",
+  "lead_length_um": 100.0,
+  "guard_length_um": 50.0,
+  "deembed_length_um": 100.0,
+  "finite_ground_width_um": 80.0,
+  "deembed_um_explicit": "100um",
+  "deembed_mm_explicit": 0.1,
+  "deembed_mm_from_guard": 0.05,
+  "explicit_deembed_note": "Guard formula is an example only. In this notebook DEEMBED_LENGTH_UM is used directly and remains the source-of-truth parameter.",
+  "frequency_ghz": [
+    3.0,
+    8.0,
+    20000
+  ],
+  "frequency_sweep_type": "Fast",
+  "sweep_name": "S",
+  "airbridge": {
+    "enabled": false
+  },
+  "airbridge_objects": [],
+  "expected_terminal_order": [
+    "o1",
+    "o2",
+    "g_center",
+    "o3",
+    "o4"
+  ],
+  "use_seam_center_terminal": true,
+  "terminal_count": 5,
+  "seam_reference_grounds": [
+    "finite_ground_1",
+    "finite_ground_2"
+  ],
+  "physical_port_faces": {
+    "seam": {
+      "side": "-X",
+      "face_id": 7347,
+      "expected_terminal_count": 3,
+      "mode_count": 3
+    },
+    "o3": {
+      "side": "+Y",
+      "face_id": 7348,
+      "expected_terminal_count": 1,
+      "mode_count": 1
+    },
+    "o4": {
+      "side": "+X",
+      "face_id": 7349,
+      "expected_terminal_count": 1,
+      "mode_count": 1
+    }
+  },
+  "physical_port_faces_with_actual_order": [
+    {
+      "physical_port": "seam",
+      "boundary_name": "seam",
+      "face_id": 7347,
+      "reference_conductors": [
+        "finite_ground_1",
+        "finite_ground_2"
+      ],
+      "expected_terminal_count": 3,
+      "mode_count": 3,
+      "terminal_names": [
+        "o1",
+        "o2",
+        "g_center"
+      ],
+      "terminal_objects": {
+        "o1": "signal_1",
+        "o2": "signal_2",
+        "g_center": "finite_ground_3"
+      }
+    },
+    {
+      "physical_port": "o3",
+      "boundary_name": "o3_wave_port",
+      "face_id": 7348,
+      "reference_conductors": [
+        "finite_ground_1",
+        "finite_ground_2",
+        "finite_ground_3"
+      ],
+      "expected_terminal_count": 1,
+      "mode_count": 1,
+      "terminal_names": [
+        "o3"
+      ],
+      "terminal_objects": {
+        "o3": "signal_2"
+      }
+    },
+    {
+      "physical_port": "o4",
+      "boundary_name": "o4_wave_port",
+      "face_id": 7349,
+      "reference_conductors": [
+        "finite_ground_1",
+        "finite_ground_2",
+        "finite_ground_3"
+      ],
+      "expected_terminal_count": 1,
+      "mode_count": 1,
+      "terminal_names": [
+        "o4"
+      ],
+      "terminal_objects": {
+        "o4": "signal_1"
+      }
+    }
+  ],
+  "seam_subports": [
+    "o1",
+    "o2",
+    "g_center"
+  ],
+  "region_padding_um": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1000.0,
+    1000.0
+  ],
+  "solver_setup": {
+    "name": "Setup1",
+    "solution_type": "Terminal",
+    "max_adaptive_passes": 99,
+    "minimum_converged_passes": 2,
+    "max_delta_s": 0.02,
+    "maximum_delta_zo_percent": 1.0,
+    "cpw_conductor_length_mesh_um": 7.0,
+    "cpw_conductor_length_mesh_max_additional_elements": 1000000,
+    "ground_surface_mesh_level": 9
+  },
+  "touchstone_path": "/home/ili/Githubs/SCQ_Design/orpen_sc_pdk/build/simulation/aedt/mtl_transition_hfss_sparameters/straight_bend/straight_bend_lead100um_ground80um_deembed100um_dzo1pct_terminalmodes_seam5p/mtl_transition.s5p",
+  "touchstone_normalization": {
+    "original_port_order": [
+      "o3",
+      "o4",
+      "g_center",
+      "o1",
+      "o2"
+    ],
+    "normalized_port_order": [
+      "o1",
+      "o2",
+      "g_center",
+      "o3",
+      "o4"
+    ],
+    "was_reordered": true
+  },
+  "touchstone_form": "ma",
+  "touchstone_reference_ohm": 50.0,
+  "modal_port_zo_zpi_path": "/home/ili/Githubs/SCQ_Design/orpen_sc_pdk/build/simulation/aedt/mtl_transition_hfss_sparameters/straight_bend/straight_bend_lead100um_ground80um_deembed100um_dzo1pct_terminalmodes_seam5p/modal_port_zo_zpi.csv",
+  "quantity_authority": {
+    "terminal_scattering": "Terminal Solution Data / St(...) / Terminal Touchstone",
+    "port_zo_zpi": "Modal Solution Data / Port Zo / Zo(o1, o2, g_center, o3, o4); no impedance line"
+  }
+}
