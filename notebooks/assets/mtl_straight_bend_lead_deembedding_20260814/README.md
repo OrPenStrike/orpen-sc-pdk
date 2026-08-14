@@ -3,6 +3,10 @@
 Status: **CONVERGING research checkpoint**. These files are diagnostic evidence,
 not the final reusable S-matrix model.
 
+- Data classification: **public**
+- Allowed consumers: public OrPen developers, researchers, and reviewers
+- Evidence status: **diagnostic**
+
 This checkpoint preserves five completed HFSS Driven Terminal runs for equal
 lead/de-embedding lengths of 100, 150, 200, 300, and 400 um. Every point uses
 W7/S6 CPW, 80 um finite ground, a five-terminal seam with explicit
@@ -45,5 +49,5 @@ beside the existing committed CPW convergence dataset. Rebuildable solver work
 continues to belong under ignored `build/`; only explicitly selected research
 checkpoints belong here.
 
-Some JSON receipts retain the original absolute LTlab paths as provenance.
-Those paths are not runtime dependencies.
+JSON receipt paths are dataset-relative and resolve within each `lead_*um/`
+directory; no machine-local path is required.

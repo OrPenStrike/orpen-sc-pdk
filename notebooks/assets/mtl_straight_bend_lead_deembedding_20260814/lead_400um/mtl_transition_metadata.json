@@ -135,7 +135,7 @@
     "cpw_conductor_length_mesh_max_additional_elements": 1000000,
     "ground_surface_mesh_level": 9
   },
-  "touchstone_path": "/home/ili/Githubs/SCQ_Design/orpen_sc_pdk/build/simulation/aedt/mtl_transition_hfss_sparameters/straight_bend/straight_bend_lead400um_ground80um_deembed400um_dzo1pct_terminalmodes_seam5p/mtl_transition.s5p",
+  "touchstone_path": "raw_terminal.s5p",
   "touchstone_normalization": {
     "original_port_order": [
       "o3",
@@ -155,7 +155,7 @@
   },
   "touchstone_form": "ma",
   "touchstone_reference_ohm": 50.0,
-  "modal_port_zo_zpi_path": "/home/ili/Githubs/SCQ_Design/orpen_sc_pdk/build/simulation/aedt/mtl_transition_hfss_sparameters/straight_bend/straight_bend_lead400um_ground80um_deembed400um_dzo1pct_terminalmodes_seam5p/modal_port_zo_zpi.csv",
+  "modal_port_zo_zpi_path": "modal_zpi_full_sweep.csv",
   "quantity_authority": {
     "terminal_scattering": "Terminal Solution Data / St(...) / Terminal Touchstone",
     "port_zo_zpi": "Modal Solution Data / Port Zo / Zo(o1, o2, g_center, o3, o4); no impedance line"

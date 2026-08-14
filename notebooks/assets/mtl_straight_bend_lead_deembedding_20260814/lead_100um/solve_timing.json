@@ -6,8 +6,8 @@
   "deembed_length_um": 100.0,
   "guard_length_um": 50.0,
   "maximum_delta_zo_percent": 1.0,
-  "touchstone_path": "/home/ili/Githubs/SCQ_Design/orpen_sc_pdk/build/simulation/aedt/mtl_transition_hfss_sparameters/straight_bend/straight_bend_lead100um_ground80um_deembed100um_dzo1pct_terminalmodes_seam5p/mtl_transition.s5p",
-  "modal_port_zo_zpi_path": "/home/ili/Githubs/SCQ_Design/orpen_sc_pdk/build/simulation/aedt/mtl_transition_hfss_sparameters/straight_bend/straight_bend_lead100um_ground80um_deembed100um_dzo1pct_terminalmodes_seam5p/modal_port_zo_zpi.csv",
+  "touchstone_path": "raw_terminal.s5p",
+  "modal_port_zo_zpi_path": "modal_zpi_full_sweep.csv",
   "touchstone_original_port_order": [
     "o3",
     "o4",
