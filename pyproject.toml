@@ -37,7 +37,7 @@ dev = [
   "ruff>=0.15.11",
 ]
 fem-aedt = ["pyaedt[all]==1.3.0"]
-gdsfactoryplus = ["gdsfactoryplus", "httpx"]
+gdsfactoryplus = ["gdsfactoryplus==1.8.20", "httpx"]
 
 [dependency-groups]
 docs = [
