@@ -23,6 +23,7 @@ from orpen_sc_pdk.cells.primitives import bend_circular, bend_euler, straight
 from orpen_sc_pdk.cells.purcell import (
     capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators,
 )
+from orpen_sc_pdk.cells.qubit import kosen2024_flip_chip_xmon_qubit
 from orpen_sc_pdk.cells.resonator import resonator
 from orpen_sc_pdk.cells.resonator_hanger import resonator_hanger
 from orpen_sc_pdk.cells.resonator_meander import resonator_meander
@@ -49,6 +50,7 @@ __all__ = [
     "interdigital_capacitor",
     "interdigital_capacitor_q3d_coupon",
     "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators",
+    "kosen2024_flip_chip_xmon_qubit",
     "launcher",
     "manhattan_style_junction",
     "martinis2022_differential_ribbon_capacitor",
