@@ -10,7 +10,8 @@ from __future__ import annotations
 import tarfile
 from pathlib import Path
 
-from gsim.palace import DrivenSim, PalaceRunHandle, resolve_palace_result
+from gsim.palace import DrivenSim, resolve_palace_result
+from gsim.palace.run_stage import PalaceRunHandle
 
 from orpen_sc_pdk.simulation import (
     list_public_palace_run_profiles,

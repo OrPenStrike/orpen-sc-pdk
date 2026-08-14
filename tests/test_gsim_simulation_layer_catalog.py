@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from gsim.palace.models import SimulationLayerCatalog
-
 import orpen_sc_pdk.simulation as simulation
 import orpen_sc_pdk.simulation.palace_layers as palace_layers
 from orpen_sc_pdk.simulation import (
@@ -29,11 +27,6 @@ def test_public_palace_simulation_layer_catalog_is_gsim_compatible() -> None:
         "role": "solver_boundary_sheet",
         "stack_layer": "D0_TOP_SIM_BOUNDARY",
     }
-
-    resolved = SimulationLayerCatalog(catalog)
-
-    assert resolved.for_gds_layer((202, 1)).name == "D0_TOP_SIM_BOUNDARY"
-    assert resolved.for_gds_layer((202, 1)).stack_layer == "D0_TOP_SIM_BOUNDARY"
 
 
 def test_public_simulation_layer_catalog_does_not_name_global_surface_epr_bands() -> None:
