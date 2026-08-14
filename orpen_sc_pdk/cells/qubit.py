@@ -1,7 +1,8 @@
 """Public flip-chip Xmon preview cell.
 
 Independent parametric adaptation inspired by Kosen et al., *PRX Quantum* 5,
-030350 (2024), https://doi.org/10.1103/PRXQuantum.5.030350 (CC BY 4.0).
+030350 (2024), https://doi.org/10.1103/PRXQuantum.5.030350, used under
+CC BY 4.0, https://creativecommons.org/licenses/by/4.0/.
 This is not an author-supplied mask. The neutral preview dimensions below are
 not paper mask authority; the paper's 8 um die gap and 25 um pre-compression
 indium diameter are retained as provenance metadata only.
@@ -249,7 +250,11 @@ def kosen2024_flip_chip_xmon_qubit(
     )
     c.info["source_doi"] = "10.1103/PRXQuantum.5.030350"
     c.info["source_license"] = "CC BY 4.0"
-    c.info["source_attribution"] = "Independent parametric adaptation; not an author-supplied mask."
+    c.info["source_license_url"] = "https://creativecommons.org/licenses/by/4.0/"
+    c.info["source_attribution"] = (
+        "Independent parametric adaptation from Kosen et al.; "
+        "not an author-supplied mask or endorsed implementation."
+    )
     c.info["preview_default_provenance"] = (
         "Neutral public preview defaults; not paper mask authority."
     )
