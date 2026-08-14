@@ -28,6 +28,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
 from math import cos, pi, sin
 from pathlib import Path
 from time import perf_counter, sleep
@@ -41,9 +43,12 @@ from IPython.display import HTML, clear_output, display
 from matplotlib.path import Path as PolygonPath
 
 import orpen_sc_pdk
+from orpen_sc_pdk.cells.airbridge import airbridge
 from orpen_sc_pdk.cells.cpw import mtl_bend_bend_transition, mtl_straight_bend_transition
 from orpen_sc_pdk.simulation.aedt import aedt_material_name_from_physical_key
 from orpen_sc_pdk.tech import (
+    AIRBRIDGE_THICKNESS_UM,
+    AIRBRIDGE_VIA_THICKNESS_UM,
     CPW_DRAW,
     CPW_GROUND_MASK,
     OUTER_VACUUM_THICKNESS_UM,
@@ -61,13 +66,21 @@ orpen_sc_pdk.activate()
 # %%
 
 TRANSITION_KIND = "straight_bend"  # {"straight_bend", "bend_bend"}
-LEAD_LENGTH_UM = 50.0
-GUARD_LENGTH_UM = 50.0
-DEEMBED_LENGTH_UM = 0.0
+MTL_LEAD_LENGTH_UM = 400.0
+SINGLE_TRACE_LEAD_LENGTH_UM = 600.0
+MTL_DEEMBED_LENGTH_UM = 400.0
+SINGLE_TRACE_DEEMBED_LENGTH_UM = 600.0
+FINITE_GROUND_WIDTH_UM = 80.0
 SUBSTRATE_KEY = "Si"
 
-# Lead lengths currently swept in formal studies; this notebook is single-point review only.
-SWEEP_LENGTH_UM_OPTIONS = (50, 60, 80, 100, 200)
+# Diagnostic only: tie the three finite-ground rails together halfway along the
+# uniform coupled lead. The 3 um center landing matches the inter-trace ground.
+ADD_GROUND_AIRBRIDGE = False
+AIRBRIDGE_WIDTH_UM = 12.0
+AIRBRIDGE_VIA_SIZE_UM = 3.0
+
+# Experimental seam-center terminalization can be switched on/off here.
+USE_SEAM_CENTER_GROUND_TERMINAL = True
 
 FREQUENCY_START_GHZ = 3.0
 FREQUENCY_STOP_GHZ = 8.0
@@ -78,17 +91,55 @@ SWEEP_NAME = "S"
 MAX_ADAPTIVE_PASSES = 99
 MINIMUM_CONVERGED_PASSES = 2
 MAX_DELTA_S = 0.02
+MAXIMUM_DELTA_ZO_PERCENT = 1.0
+CPW_CONDUCTOR_LENGTH_MESH_UM = 7.0
+CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS = 1_000_000
+GROUND_SURFACE_MESH_LEVEL = 9
 
 SOLVER_SETUP_NAME = "Setup1"
 SOLUTION_TYPE = "Terminal"
+AEDT_VERSION = "2024.2"
 NON_GRAPHICAL = True
 CLOSE_DESKTOP = False
+PYAEDT_EXPECTED_VERSION = "1.3.0"
+PYAEDT_DOCS_URL = "https://aedt.docs.pyansys.com/version/1.3.0/"
+PYAEDT_SOURCE_URL = "https://github.com/ansys/pyaedt/tags"
+
+
+def _resolve_pyaedt_version(expected_version: str) -> str:
+    try:
+        installed_version = package_version("pyaedt")
+    except PackageNotFoundError as exc:
+        raise RuntimeError(
+            "PyAEDT distribution 'pyaedt' is not installed in this environment; "
+            f"expected version {expected_version!r}."
+        ) from exc
+
+    if installed_version != expected_version:
+        message = (
+            f"PyAEDT version mismatch: installed {installed_version!r}, "
+            f"expected {expected_version!r}. "
+            f"See {PYAEDT_DOCS_URL} and {PYAEDT_SOURCE_URL}."
+        )
+        raise RuntimeError(message)
+
+    return installed_version
+
+
+PYAEDT_INSTALLED_VERSION = _resolve_pyaedt_version(PYAEDT_EXPECTED_VERSION)
 
 # Execution controls are intentionally off in committed notebook.
 RUN_PREPARE = False
 RUN_SOLVER = False
 RUN_AEDT = RUN_PREPARE or RUN_SOLVER
 
+CASE_NAME = (
+    f"{TRANSITION_KIND}_mtl{MTL_LEAD_LENGTH_UM:g}_single{SINGLE_TRACE_LEAD_LENGTH_UM:g}_"
+    f"ground{FINITE_GROUND_WIDTH_UM:g}_mtlde{MTL_DEEMBED_LENGTH_UM:g}_"
+    f"singlede{SINGLE_TRACE_DEEMBED_LENGTH_UM:g}_dzo{MAXIMUM_DELTA_ZO_PERCENT:g}pct_terminalmodes"
+    f"{'_airbridge' if ADD_GROUND_AIRBRIDGE else ''}"
+    f"{'_seam5p' if USE_SEAM_CENTER_GROUND_TERMINAL else ''}"
+)
 RUN_DIR = (
     REPO_ROOT
     / "build"
@@ -96,11 +147,14 @@ RUN_DIR = (
     / "aedt"
     / "mtl_transition_hfss_sparameters"
     / TRANSITION_KIND
-    / f"lead_{LEAD_LENGTH_UM:g}um_deembed_{DEEMBED_LENGTH_UM:g}um"
+    / CASE_NAME
 )
-GDS_PATH = RUN_DIR / f"mtl_transition_{TRANSITION_KIND}.gds"
-PROJECT_PATH = RUN_DIR / f"mtl_transition_{TRANSITION_KIND}.aedt"
-TOUCHSTONE_PATH = RUN_DIR / "mtl_transition.s4p"
+GDS_PATH = RUN_DIR / f"{CASE_NAME}.gds"
+PROJECT_PATH = RUN_DIR / f"{CASE_NAME}.aedt"
+TOUCHSTONE_PATH = RUN_DIR / (
+    "mtl_transition.s5p" if USE_SEAM_CENTER_GROUND_TERMINAL else "mtl_transition.s4p"
+)
+PORT_ZO_PATH = RUN_DIR / "modal_port_zo_zpi.csv"
 TIMING_PATH = RUN_DIR / "solve_timing.json"
 S_PARAMETER_PLOT_PATH = RUN_DIR / "sparameters.html"
 METADATA_PATH = RUN_DIR / "mtl_transition_metadata.json"
@@ -111,12 +165,25 @@ HFSS_SIGNAL_P_LAYER = (905, 0)
 HFSS_SIGNAL_R_LAYER = (906, 0)
 HFSS_GROUND_LAYER = (907, 0)
 HFSS_SUBSTRATE_LAYER = (908, 0)
+HFSS_AIRBRIDGE_LAYER = (909, 0)
+HFSS_AIRBRIDGE_VIA_LAYER = (910, 0)
 
 # Region padding order is [+X, -X, +Y, -Y, +Z, -Z].
 REGION_PAD = OUTER_VACUUM_THICKNESS_UM
 
 # Terminal names as emitted by PyAEDT's created boundary objects.
-CANONICAL_TERMINAL_ORDER = ("o1", "o2", "o3", "o4")
+CANONICAL_TERMINAL_ORDER = (
+    (
+        "o1",
+        "o2",
+        "g_center",
+        "o3",
+        "o4",
+    )
+    if USE_SEAM_CENTER_GROUND_TERMINAL
+    else ("o1", "o2", "o3", "o4")
+)
+MIN_STRAIGHT_BEND_LEAD_UM = FINITE_GROUND_WIDTH_UM + 6.0 + 7.0 / 2
 
 
 class BuildError(RuntimeError):
@@ -139,8 +206,10 @@ class TerminalRecord:
     boundary_name: str
     terminal_names: list[str]
     terminal_objects: dict[str, str]
+    reference_conductors: list[str]
     face_id: int
     expected_terminal_count: int
+    mode_count: int
 
 
 def _normalize_transition_kind(kind: str) -> str:
@@ -152,18 +221,14 @@ def _normalize_transition_kind(kind: str) -> str:
 
 def _deembed_mm(deembed_length_um: float) -> float:
     if deembed_length_um < 0:
-        raise ValueError(f"DEEMBED_LENGTH_UM must be >= 0, got {deembed_length_um!r}.")
+        raise ValueError(f"deembed_length_um must be >= 0, got {deembed_length_um!r}.")
     return deembed_length_um / 1000.0
 
 
 def _deembed_um(deembed_length_um: float) -> str:
     if deembed_length_um < 0:
-        raise ValueError(f"DEEMBED_LENGTH_UM must be >= 0, got {deembed_length_um!r}.")
+        raise ValueError(f"deembed_length_um must be >= 0, got {deembed_length_um!r}.")
     return f"{deembed_length_um:g}um"
-
-
-def _deembed_example_mm() -> float:
-    return max(0.0, LEAD_LENGTH_UM - GUARD_LENGTH_UM) / 1000.0
 
 
 def _normalization_index(
@@ -255,19 +320,32 @@ def _object_map() -> dict[str, str]:
     }
 
 
-def _build_transition_component(kind: str) -> tuple[gf.Component, list[str]]:
+def _build_transition_component(
+    kind: str,
+    mtl_lead_length_um: float,
+    single_trace_lead_length_um: float,
+) -> tuple[gf.Component, list[str]]:
     if kind == "straight_bend":
+        if single_trace_lead_length_um < MIN_STRAIGHT_BEND_LEAD_UM:
+            raise BuildError(
+                "straight_bend single-trace lead is too short for the requested "
+                "boundary-face ground: "
+                f"need at least {MIN_STRAIGHT_BEND_LEAD_UM:g} um for W7/S6 and "
+                f"{FINITE_GROUND_WIDTH_UM:g} um ground, got {single_trace_lead_length_um:g} um."
+            )
         component = mtl_straight_bend_transition(
             straight_length=100.0,
             inter_trace_ground_width=3.0,
             bend_radius=100.0,
-            lead_length=LEAD_LENGTH_UM,
+            mtl_lead_length=mtl_lead_length_um,
+            single_trace_lead_length=single_trace_lead_length_um,
         )
     elif kind == "bend_bend":
         component = mtl_bend_bend_transition(
             bend_radius=100.0,
             inter_trace_ground_width=3.0,
-            lead_length=LEAD_LENGTH_UM,
+            mtl_lead_length=mtl_lead_length_um,
+            single_trace_lead_length=single_trace_lead_length_um,
         )
     else:
         raise ValueError(f"Unsupported transition kind {kind!r}.")
@@ -316,9 +394,9 @@ def _select_region_layer_ports(
     signal_polygons = polygons.get_polygons_points(merge=True, by="tuple", layers=[draw_layer])[
         draw_layer
     ]
-    ground_mask_polygons = polygons.get_polygons_points(
-        merge=True, by="tuple", layers=[gm_layer]
-    )[gm_layer]
+    ground_mask_polygons = polygons.get_polygons_points(merge=True, by="tuple", layers=[gm_layer])[
+        gm_layer
+    ]
     if not signal_polygons:
         raise BuildError("Transition has no signal region on CPW draw layer.")
     if not ground_mask_polygons:
@@ -330,35 +408,60 @@ def _build_hfss_coupon_from_transition(
     component: gf.Component,
     *,
     transition_kind: str,
+    mtl_lead_length_um: float,
+    single_trace_lead_length_um: float,
+    mtl_deembed_length_um: float,
+    single_trace_deembed_length_um: float,
 ) -> tuple[gf.Component, list[PortRecord]]:
     signal_polygons, ground_mask_polygons = _select_region_layer_ports(component)
 
     selected_signals = {
-        "signal_1": _signal_polygon_at_port(
-            signal_polygons, port=component.ports["o1"]
-        ),
-        "signal_2": _signal_polygon_at_port(
-            signal_polygons, port=component.ports["o2"]
-        ),
+        "signal_1": _signal_polygon_at_port(signal_polygons, port=component.ports["o1"]),
+        "signal_2": _signal_polygon_at_port(signal_polygons, port=component.ports["o2"]),
     }
     if selected_signals["signal_1"] is selected_signals["signal_2"]:
         raise BuildError("Coupled traces collapsed; expected separate seam traces.")
 
-    bbox = component.dbbox()
-    left, bottom, right, top = (
-        float(bbox.left),
-        float(bbox.bottom),
-        float(bbox.right),
-        float(bbox.top),
+    ground_mask = gf.Component()
+    for polygon in ground_mask_polygons:
+        ground_mask.add_polygon(polygon, layer=HFSS_GROUND_LAYER)
+
+    # Lead length controls the longitudinal uniform CPW.  Finite-ground width is
+    # transverse: extend the coupon on sides without a Wave Port, while keeping
+    # every port side flush with its reference plane.
+    mask_bbox = ground_mask.dbbox()
+    port_sides = _side_map(transition_kind)
+    side_ports = {
+        side: [
+            component.ports[name] for name, mapped_side in port_sides.items() if mapped_side == side
+        ]
+        for side in {"-X", "+X", "-Y", "+Y"}
+    }
+    left = (
+        min(float(port.x) for port in side_ports["-X"])
+        if side_ports["-X"]
+        else float(mask_bbox.left) - FINITE_GROUND_WIDTH_UM
+    )
+    right = (
+        max(float(port.x) for port in side_ports["+X"])
+        if side_ports["+X"]
+        else float(mask_bbox.right) + FINITE_GROUND_WIDTH_UM
+    )
+    bottom = (
+        min(float(port.y) for port in side_ports["-Y"])
+        if side_ports["-Y"]
+        else float(mask_bbox.bottom) - FINITE_GROUND_WIDTH_UM
+    )
+    top = (
+        max(float(port.y) for port in side_ports["+Y"])
+        if side_ports["+Y"]
+        else float(mask_bbox.top) + FINITE_GROUND_WIDTH_UM
     )
     size = (right - left, top - bottom)
 
     coupon_rectangle = gf.components.rectangle(size=size, layer=HFSS_SUBSTRATE_LAYER)
     coupon_rectangle_ref = gf.Component()
     coupon_rectangle_ref.add_ref(coupon_rectangle).dmove((left, bottom))
-    ground_mask = gf.Component()
-    for polygon in ground_mask_polygons:
-        ground_mask.add_polygon(polygon, layer=HFSS_GROUND_LAYER)
     finite_ground = gf.boolean(
         coupon_rectangle_ref,
         ground_mask,
@@ -374,6 +477,35 @@ def _build_hfss_coupon_from_transition(
     hfss_coupon.add_ref(finite_ground)
     substrate = hfss_coupon.add_ref(coupon_rectangle)
     substrate.dmove((left, bottom))
+
+    airbridge_metadata: dict[str, Any] = {"enabled": False}
+    if ADD_GROUND_AIRBRIDGE:
+        seam_x = float(component.ports["o1"].x)
+        seam_y = (float(component.ports["o1"].y) + float(component.ports["o2"].y)) / 2
+        trace_offset = abs(float(component.ports["o2"].y) - float(component.ports["o1"].y)) / 2
+        bridge_span = 2 * trace_offset
+        bridge_x = seam_x + mtl_lead_length_um / 2
+
+        for bridge_y in (seam_y - trace_offset, seam_y + trace_offset):
+            bridge = hfss_coupon.add_ref(
+                airbridge(
+                    bridge_span=bridge_span,
+                    bridge_width=AIRBRIDGE_WIDTH_UM,
+                    via_size=AIRBRIDGE_VIA_SIZE_UM,
+                    airbridge_draw_layer=HFSS_AIRBRIDGE_LAYER,
+                    airbridge_via_layer=HFSS_AIRBRIDGE_VIA_LAYER,
+                )
+            )
+            bridge.dmove((bridge_x, bridge_y))
+
+        airbridge_metadata = {
+            "enabled": True,
+            "x_um": bridge_x,
+            "bridge_span_um": bridge_span,
+            "bridge_width_um": AIRBRIDGE_WIDTH_UM,
+            "via_size_um": AIRBRIDGE_VIA_SIZE_UM,
+            "role": "connect lower, center, and upper finite-ground rails",
+        }
 
     hfss_coupon.add_port(
         name="o1",
@@ -400,22 +532,29 @@ def _build_hfss_coupon_from_transition(
     side_map = _side_map(transition_kind)
     hfss_coupon.info["hfss_coupon"] = {
         "transition_kind": transition_kind,
-        "lead_length_um": float(LEAD_LENGTH_UM),
-        "guard_length_um": float(GUARD_LENGTH_UM),
-        "deembed_length_um": float(DEEMBED_LENGTH_UM),
+        "mtl_lead_length_um": float(mtl_lead_length_um),
+        "single_trace_lead_length_um": float(single_trace_lead_length_um),
+        "deembed_mtl_length_um": float(mtl_deembed_length_um),
+        "deembed_single_trace_length_um": float(single_trace_deembed_length_um),
+        "finite_ground_width_um": float(FINITE_GROUND_WIDTH_UM),
         "hfss_layers": {
             "signal_1": HFSS_SIGNAL_P_LAYER,
             "signal_2": HFSS_SIGNAL_R_LAYER,
             "finite_ground": HFSS_GROUND_LAYER,
             "substrate": HFSS_SUBSTRATE_LAYER,
+            "airbridge": HFSS_AIRBRIDGE_LAYER,
+            "airbridge_via": HFSS_AIRBRIDGE_VIA_LAYER,
         },
         "materials": {
             "signal_1": "PEC",
             "signal_2": "PEC",
             "finite_ground": "PEC",
             "substrate": "Si",
+            "airbridge": "PEC",
+            "airbridge_via": "PEC",
         },
-        "bbox_um": {
+        "airbridge": airbridge_metadata,
+        "coupon_bbox_um": {
             "xmin": left,
             "xmax": right,
             "ymin": bottom,
@@ -444,6 +583,73 @@ def _region_padding_for_kind(kind: str) -> list[float]:
     if kind not in {"straight_bend", "bend_bend"}:
         raise BuildError(f"Unsupported transition kind {kind!r}.")
     return [0.0, 0.0, 0.0, 0.0, REGION_PAD, REGION_PAD]
+
+
+def _get_object_bbox(app: Hfss, object_name: str) -> dict[str, float]:
+    obj = app.modeler.get_object_from_name(object_name)
+    if not obj:
+        raise BuildError(f"Missing AEDT object {object_name!r}.")
+    bbox = obj.bounding_box
+    if len(bbox) != 6:
+        raise BuildError(f"Unexpected bounding_box result for {object_name!r}: {bbox!r}")
+    return {
+        "xmin": float(bbox[0]),
+        "ymin": float(bbox[1]),
+        "zmin": float(bbox[2]),
+        "xmax": float(bbox[3]),
+        "ymax": float(bbox[4]),
+        "zmax": float(bbox[5]),
+        "x_center": 0.5 * (float(bbox[0]) + float(bbox[3])),
+        "y_center": 0.5 * (float(bbox[1]) + float(bbox[4])),
+    }
+
+
+def _select_central_seam_ground(
+    app: Hfss,
+    ground_references: list[str],
+    seam_port_records: list[PortRecord],
+) -> str:
+    seam_ports = [record for record in seam_port_records if record.physical_port in {"o1", "o2"}]
+    if len(seam_ports) != 2:
+        raise BuildError(f"Expected seam ports o1/o2 in assignments, got {seam_ports!r}.")
+
+    seam_candidates: list[tuple[str, float, float]] = []
+
+    seam_axis = seam_ports[0].axis
+    seam_transverse_idx = 1 if seam_axis == "X" else 0
+    seam_position = seam_ports[0].port_center_um[0 if seam_axis == "X" else 1]
+    seam_mid_transverse = sum(port.port_center_um[seam_transverse_idx] for port in seam_ports) / 2.0
+
+    for ground_name in ground_references:
+        obj = app.modeler.get_object_from_name(ground_name)
+        if not obj:
+            raise BuildError(f"Missing imported finite-ground object {ground_name!r}.")
+
+        # The center rail is the only finite ground crossing the midpoint between
+        # o1 and o2 on the seam plane; object numbering is not geometrical authority.
+        seam_axis_points = [
+            tuple(float(value) for value in vertex.position)
+            for vertex in obj.vertices
+            if abs(float(vertex.position[0 if seam_axis == "X" else 1]) - seam_position) <= 1e-6
+        ]
+
+        if not seam_axis_points:
+            continue
+
+        seam_transverse = [point[seam_transverse_idx] for point in seam_axis_points]
+        seam_min = min(seam_transverse)
+        seam_max = max(seam_transverse)
+        if seam_min <= seam_mid_transverse <= seam_max:
+            seam_candidates.append((ground_name, seam_min, seam_max))
+
+    if len(seam_candidates) != 1:
+        raise BuildError(
+            "Expected exactly one central finite-ground seam candidate; "
+            f"found {len(seam_candidates)}: {seam_candidates!r}, "
+            f"from ground references {ground_references!r} at seam {seam_axis}{seam_position:g}."
+        )
+
+    return seam_candidates[0][0]
 
 
 def _find_region_face_on_side(app: Hfss, side: str) -> int:
@@ -477,6 +683,7 @@ def _create_wave_port(
     deembed_distance: float | str,
     prior_terminals: set[str],
 ) -> TerminalRecord:
+    expected_terminal_count = len(terminal_names)
     boundary = app.wave_port(
         face_id,
         reference=ground_references,
@@ -487,9 +694,15 @@ def _create_wave_port(
     if not boundary:
         raise BuildError(f"PyAEDT wave_port() returned None for {boundary_name!r}.")
 
+    # PyAEDT 1.3's Driven-Terminal reference-conductor path ignores the public
+    # ``modes=`` argument. HFSS requires one terminal mode per terminal, so bind
+    # NumModes explicitly after creation (three at the coupled seam, one outside).
+    boundary.props["NumModes"] = expected_terminal_count
+    if not boundary.update():
+        raise BuildError(f"Could not set {boundary_name!r} to {expected_terminal_count} mode(s).")
+
     post = list(app.oboundary.GetExcitationsOfType("Terminal"))
     new_terms = [term for term in post if term not in prior_terminals]
-    expected_terminal_count = len(terminal_names)
     if len(new_terms) != expected_terminal_count:
         raise BuildError(
             f"Physical port {physical_port!r} expected {expected_terminal_count} terminal(s), "
@@ -504,8 +717,10 @@ def _create_wave_port(
         boundary_name=boundary_name,
         terminal_names=terminal_names,
         terminal_objects=terminal_object_map,
+        reference_conductors=list(ground_references),
         face_id=face_id,
         expected_terminal_count=expected_terminal_count,
+        mode_count=int(boundary.props["NumModes"]),
     )
 
 
@@ -514,13 +729,31 @@ def _assign_ports(
     transition_kind: str,
     assignments: list[PortRecord],
     ground_references: list[str],
-    deembed_distance: float | str,
+    mtl_deembed_distance: float | str,
+    single_trace_deembed_distance: float | str,
 ) -> list[TerminalRecord]:
     expected = _side_map(transition_kind)
-    region_faces = {
-        name: _find_region_face_on_side(app, expected[name])
-        for name in expected
-    }
+    region_faces = {name: _find_region_face_on_side(app, expected[name]) for name in expected}
+
+    if USE_SEAM_CENTER_GROUND_TERMINAL:
+        if len(ground_references) < 3:
+            raise BuildError(
+                "Center-ground seam topology requires at least three finite-ground objects. "
+                f"Got {len(ground_references)}: {ground_references!r}."
+            )
+        center_ground = _select_central_seam_ground(app, ground_references, assignments)
+        seam_mode_names = ["o1", "o2", "g_center"]
+        seam_object_map = {
+            "o1": _object_map()["o1"],
+            "o2": _object_map()["o2"],
+            "g_center": center_ground,
+        }
+        seam_ref = [ground for ground in ground_references if ground != center_ground]
+    else:
+        center_ground = None
+        seam_mode_names = CANONICAL_TERMINAL_ORDER[:2]
+        seam_object_map = {"o1": _object_map()["o1"], "o2": _object_map()["o2"]}
+        seam_ref = list(ground_references)
 
     outer_records = [r for r in assignments if r.physical_port in {"o3", "o4"}]
 
@@ -531,13 +764,13 @@ def _assign_ports(
     terminal_records.append(
         _create_wave_port(
             app,
-            ground_references=ground_references,
-            terminal_names=CANONICAL_TERMINAL_ORDER[:2],
-            terminal_object_map={"o1": _object_map()["o1"], "o2": _object_map()["o2"]},
+            ground_references=seam_ref,
+            terminal_names=seam_mode_names,
+            terminal_object_map=seam_object_map,
             physical_port="seam",
             face_id=seam_region_face,
             boundary_name="seam",
-            deembed_distance=deembed_distance,
+            deembed_distance=mtl_deembed_distance,
             prior_terminals=prior,
         )
     )
@@ -554,16 +787,21 @@ def _assign_ports(
                 terminal_names=[rec.physical_port],
                 terminal_object_map={rec.physical_port: _object_map()[rec.physical_port]},
                 boundary_name=f"{rec.physical_port}_wave_port",
-                deembed_distance=deembed_distance,
+                deembed_distance=single_trace_deembed_distance,
                 prior_terminals=prior,
             )
         )
 
     all_terminals = list(app.oboundary.GetExcitationsOfType("Terminal"))
-    if len(all_terminals) != 4:
+    if len(all_terminals) != len(CANONICAL_TERMINAL_ORDER):
         raise BuildError(
-            f"Expected 4 terminal excitations after assignment, got {len(all_terminals)}."
+            "Expected"
+            f" {len(CANONICAL_TERMINAL_ORDER)} terminal excitations after assignment, "
+            f"got {len(all_terminals)}."
         )
+
+    if USE_SEAM_CENTER_GROUND_TERMINAL and center_ground is None:
+        raise BuildError("Center-ground terminal mode enabled but no center ground was identified.")
 
     return terminal_records
 
@@ -573,32 +811,46 @@ def _assign_ports(
 
 # %%
 TRANSITION_KIND = _normalize_transition_kind(TRANSITION_KIND)
-DEEMBED_MM_EXPLICIT = _deembed_mm(DEEMBED_LENGTH_UM)
-DEEMBED_UM_EXPLICIT = _deembed_um(DEEMBED_LENGTH_UM)
-DEEMBED_MM_FROM_GUARD = _deembed_example_mm()
+MTL_DEEMBED_MM_EXPLICIT = _deembed_mm(MTL_DEEMBED_LENGTH_UM)
+SINGLE_TRACE_DEEMBED_MM_EXPLICIT = _deembed_mm(SINGLE_TRACE_DEEMBED_LENGTH_UM)
+MTL_DEEMBED_UM_EXPLICIT = _deembed_um(MTL_DEEMBED_LENGTH_UM)
+SINGLE_TRACE_DEEMBED_UM_EXPLICIT = _deembed_um(SINGLE_TRACE_DEEMBED_LENGTH_UM)
 
 print(f"Transition kind: {TRANSITION_KIND}")
-print(f"DEEMBED (explicit UI value): {DEEMBED_MM_EXPLICIT:.6f} mm")
-print(f"DEEMBED for PyAEDT wave_port: {DEEMBED_UM_EXPLICIT}")
 print(
-    f"Guard-convention example: max(0, {LEAD_LENGTH_UM} - {GUARD_LENGTH_UM})/1000 = "
-    f"{DEEMBED_MM_FROM_GUARD:.6f} mm"
+    "DEEMBED (explicit UI values): "
+    f"MTL={MTL_DEEMBED_MM_EXPLICIT:.6f} mm, "
+    f"SINGLE_TRACE={SINGLE_TRACE_DEEMBED_MM_EXPLICIT:.6f} mm"
 )
 print(
-    "Do not copy the guard formula into defaults: set DEEMBED_LENGTH_UM explicitly when "
-    "sweeping. Current commit keeps review default DEEMBED_LENGTH_UM=0.0."
+    "DEEMBED for PyAEDT wave_port: "
+    f"MTL={MTL_DEEMBED_UM_EXPLICIT}, SINGLE_TRACE={SINGLE_TRACE_DEEMBED_UM_EXPLICIT}"
 )
-print(f"Reference lead sweep options: {SWEEP_LENGTH_UM_OPTIONS}")
-
-
+print(
+    "Do not copy any guard-length derived convention into defaults: set "
+    "MTL_DEEMBED_LENGTH_UM and SINGLE_TRACE_DEEMBED_LENGTH_UM explicitly when sweeping."
+)
+print(
+    f"PyAEDT provenance: expected={PYAEDT_EXPECTED_VERSION}, "
+    f"installed={PYAEDT_INSTALLED_VERSION or 'not-installed'}; "
+    f"{PYAEDT_DOCS_URL} ; {PYAEDT_SOURCE_URL}"
+)
 # %% [markdown]
 # ## Create Simulation Component / Coupon
 
 # %%
-transition, ordered_ports = _build_transition_component(TRANSITION_KIND)
+transition, ordered_ports = _build_transition_component(
+    TRANSITION_KIND,
+    mtl_lead_length_um=MTL_LEAD_LENGTH_UM,
+    single_trace_lead_length_um=SINGLE_TRACE_LEAD_LENGTH_UM,
+)
 coupon, port_records = _build_hfss_coupon_from_transition(
     transition,
     transition_kind=TRANSITION_KIND,
+    mtl_lead_length_um=MTL_LEAD_LENGTH_UM,
+    single_trace_lead_length_um=SINGLE_TRACE_LEAD_LENGTH_UM,
+    mtl_deembed_length_um=MTL_DEEMBED_LENGTH_UM,
+    single_trace_deembed_length_um=SINGLE_TRACE_DEEMBED_LENGTH_UM,
 )
 
 if coupon.info["hfss_coupon"]["transition_kind"] != TRANSITION_KIND:
@@ -633,14 +885,20 @@ if RUN_AEDT:
     RUN_DIR.mkdir(parents=True, exist_ok=True)
     hfss = Hfss(
         project=str(PROJECT_PATH),
-        design=f"mtl_transition_{TRANSITION_KIND}",
+        design=CASE_NAME,
         solution_type=SOLUTION_TYPE,
+        version=AEDT_VERSION,
         non_graphical=NON_GRAPHICAL,
         new_desktop=True,
         close_on_exit=False,
     )
     hfss.modeler.model_units = "um"
     hfss.modeler.refresh_all_ids()
+    if hfss.desktop_class.aedt_version_id != AEDT_VERSION:
+        raise BuildError(
+            f"AEDT version mismatch: requested {AEDT_VERSION!r}, "
+            f"connected {hfss.desktop_class.aedt_version_id!r}."
+        )
     build_model = bool(not hfss.modeler.object_names)
     print("Resuming existing project." if not build_model else "Created new HFSS project.")
 else:
@@ -663,9 +921,37 @@ if RUN_AEDT and build_model:
         HFSS_GROUND_LAYER[0]: (0.0, 0.0),
         HFSS_SUBSTRATE_LAYER[0]: (-SUBSTRATE_THICKNESS_UM, SUBSTRATE_THICKNESS_UM),
     }
+    if ADD_GROUND_AIRBRIDGE:
+        layer_mapping.update(
+            {
+                HFSS_AIRBRIDGE_VIA_LAYER[0]: (0.0, AIRBRIDGE_VIA_THICKNESS_UM),
+                HFSS_AIRBRIDGE_LAYER[0]: (
+                    AIRBRIDGE_VIA_THICKNESS_UM,
+                    AIRBRIDGE_THICKNESS_UM,
+                ),
+            }
+        )
     if not hfss.import_gds_3d(str(GDS_PATH), layer_mapping, units="um", import_method=1):
         raise BuildError(f"Could not import GDS: {GDS_PATH}")
     hfss.modeler.refresh_all_ids()
+
+    airbridge_objects = []
+    if ADD_GROUND_AIRBRIDGE:
+        for layer_number, prefix in (
+            (HFSS_AIRBRIDGE_LAYER[0], "airbridge_deck"),
+            (HFSS_AIRBRIDGE_VIA_LAYER[0], "airbridge_via"),
+        ):
+            matches = [
+                name
+                for name in hfss.modeler.object_names
+                if name.startswith(f"signal{layer_number}_")
+            ]
+            for index, selected in enumerate(matches, start=1):
+                imported_obj = hfss.modeler.get_object_from_name(selected)
+                imported_obj.name = f"{prefix}_{index}"
+                airbridge_objects.append(imported_obj.name)
+
+        hfss.modeler.refresh_all_ids()
 
     expected = (
         (HFSS_SIGNAL_P_LAYER[0], "signal_1"),
@@ -677,9 +963,7 @@ if RUN_AEDT and build_model:
     ground_references = []
     for layer_number, expected_name in expected:
         matches = [
-            name
-            for name in hfss.modeler.object_names
-            if name.startswith(f"signal{layer_number}_")
+            name for name in hfss.modeler.object_names if name.startswith(f"signal{layer_number}_")
         ]
         if not matches:
             raise BuildError(f"Missing imported object for {expected_name!r}.")
@@ -709,9 +993,7 @@ if RUN_AEDT and build_model:
 # %%
 if RUN_AEDT and build_model:
     display(
-        pd.DataFrame(
-            {"role": list(imported), "object": [str(imported[role]) for role in imported]}
-        )
+        pd.DataFrame({"role": list(imported), "object": [str(imported[role]) for role in imported]})
     )
 
 
@@ -729,7 +1011,10 @@ if RUN_AEDT and build_model:
         name="Region",
     )
     region.material_name = "vacuum"
-    hfss.assign_perfect_e(["signal_1", "signal_2", *ground_references], name="PerfectE")
+    hfss.assign_perfect_e(
+        ["signal_1", "signal_2", *ground_references, *airbridge_objects],
+        name="PerfectE",
+    )
 
 
 # %% [markdown]
@@ -742,31 +1027,52 @@ if RUN_AEDT and build_model:
         transition_kind=TRANSITION_KIND,
         assignments=port_records,
         ground_references=ground_references,
-        deembed_distance=DEEMBED_UM_EXPLICIT,
+        mtl_deembed_distance=MTL_DEEMBED_UM_EXPLICIT,
+        single_trace_deembed_distance=SINGLE_TRACE_DEEMBED_UM_EXPLICIT,
     )
 
     all_terminals = list(hfss.oboundary.GetExcitationsOfType("Terminal"))
-    if len(all_terminals) != 4:
+    if len(all_terminals) != len(CANONICAL_TERMINAL_ORDER):
         raise BuildError(
-            f"Terminal inventory failed: expected 4, got {len(all_terminals)} -> {all_terminals!r}."
+            f"Terminal inventory failed: expected {len(CANONICAL_TERMINAL_ORDER)}, "
+            f"got {len(all_terminals)} -> {all_terminals!r}."
         )
+
+    seam_record = next(
+        (record for record in terminal_records if record.physical_port == "seam"),
+        None,
+    )
+    seam_reference_grounds = list(seam_record.reference_conductors) if seam_record else []
+    seam_subports = ["o1", "o2", "g_center"] if USE_SEAM_CENTER_GROUND_TERMINAL else ["o1", "o2"]
 
     metadata = {
         "transition_kind": TRANSITION_KIND,
-        "lead_length_um": float(LEAD_LENGTH_UM),
-        "guard_length_um": float(GUARD_LENGTH_UM),
-        "deembed_length_um": float(DEEMBED_LENGTH_UM),
-        "deembed_um_explicit": DEEMBED_UM_EXPLICIT,
-        "deembed_mm_explicit": DEEMBED_MM_EXPLICIT,
-        "deembed_mm_from_guard": DEEMBED_MM_FROM_GUARD,
-        "explicit_deembed_note": (
-            "Guard formula is an example only. In this notebook DEEMBED_LENGTH_UM is used directly "
-            "and remains the source-of-truth parameter."
-        ),
+        "mtl_lead_length_um": float(MTL_LEAD_LENGTH_UM),
+        "single_trace_lead_length_um": float(SINGLE_TRACE_LEAD_LENGTH_UM),
+        "mtl_deembed_length_um": float(MTL_DEEMBED_LENGTH_UM),
+        "single_trace_deembed_length_um": float(SINGLE_TRACE_DEEMBED_LENGTH_UM),
+        "deembed_mm_explicit": {
+            "mtl": MTL_DEEMBED_MM_EXPLICIT,
+            "single_trace": SINGLE_TRACE_DEEMBED_MM_EXPLICIT,
+        },
+        "finite_ground_width_um": float(FINITE_GROUND_WIDTH_UM),
+        "mtl_deembed_um_explicit": MTL_DEEMBED_UM_EXPLICIT,
+        "single_trace_deembed_um_explicit": SINGLE_TRACE_DEEMBED_UM_EXPLICIT,
         "frequency_ghz": [FREQUENCY_START_GHZ, FREQUENCY_STOP_GHZ, FREQUENCY_POINT_COUNT],
         "frequency_sweep_type": SWEEP_TYPE,
         "sweep_name": SWEEP_NAME,
+        "airbridge": coupon.info["hfss_coupon"]["airbridge"],
+        "airbridge_objects": airbridge_objects,
         "expected_terminal_order": CANONICAL_TERMINAL_ORDER,
+        "use_seam_center_terminal": USE_SEAM_CENTER_GROUND_TERMINAL,
+        "terminal_count": len(CANONICAL_TERMINAL_ORDER),
+        "seam_reference_grounds": seam_reference_grounds,
+        "pyaedt": {
+            "expected_version": PYAEDT_EXPECTED_VERSION,
+            "installed_version": PYAEDT_INSTALLED_VERSION or "not-installed",
+            "docs_url": PYAEDT_DOCS_URL,
+            "source_tags_url": PYAEDT_SOURCE_URL,
+        },
         "physical_port_faces": {
             rec.physical_port: {
                 "side": (
@@ -776,6 +1082,7 @@ if RUN_AEDT and build_model:
                 ),
                 "face_id": rec.face_id,
                 "expected_terminal_count": rec.expected_terminal_count,
+                "mode_count": rec.mode_count,
             }
             for rec in terminal_records
         },
@@ -784,13 +1091,15 @@ if RUN_AEDT and build_model:
                 "physical_port": rec.physical_port,
                 "boundary_name": rec.boundary_name,
                 "face_id": rec.face_id,
+                "reference_conductors": rec.reference_conductors,
                 "expected_terminal_count": rec.expected_terminal_count,
+                "mode_count": rec.mode_count,
                 "terminal_names": rec.terminal_names,
                 "terminal_objects": rec.terminal_objects,
             }
             for rec in terminal_records
         ],
-        "seam_subports": ["o1", "o2"],
+        "seam_subports": seam_subports,
         "region_padding_um": _region_padding_for_kind(TRANSITION_KIND),
         "solver_setup": {
             "name": SOLVER_SETUP_NAME,
@@ -798,6 +1107,12 @@ if RUN_AEDT and build_model:
             "max_adaptive_passes": MAX_ADAPTIVE_PASSES,
             "minimum_converged_passes": MINIMUM_CONVERGED_PASSES,
             "max_delta_s": MAX_DELTA_S,
+            "maximum_delta_zo_percent": MAXIMUM_DELTA_ZO_PERCENT,
+            "cpw_conductor_length_mesh_um": CPW_CONDUCTOR_LENGTH_MESH_UM,
+            "cpw_conductor_length_mesh_max_additional_elements": (
+                CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS
+            ),
+            "ground_surface_mesh_level": GROUND_SURFACE_MESH_LEVEL,
         },
     }
 
@@ -816,8 +1131,11 @@ if RUN_AEDT and build_model:
 
     metadata = json.loads(METADATA_PATH.read_text(encoding="utf-8"))
     excitations = hfss.oboundary.GetExcitationsOfType("Terminal")
-    if len(excitations) != 4:
-        raise BuildError(f"Terminal validation failed, got {excitations!r}.")
+    if len(excitations) != len(CANONICAL_TERMINAL_ORDER):
+        raise BuildError(
+            f"Terminal validation failed: expected {len(CANONICAL_TERMINAL_ORDER)}, "
+            f"got {len(excitations)} ({excitations!r})."
+        )
 
     if metadata.get("expected_terminal_order") != list(CANONICAL_TERMINAL_ORDER):
         raise BuildError("expected_terminal_order metadata mismatch.")
@@ -836,6 +1154,25 @@ if RUN_AEDT and build_model:
 
 # %%
 if RUN_AEDT and build_model:
+    # This is a uniform CPW/MTL coupon, so signal and finite-ground conductors
+    # share the W7 length mesh.  General HFSS ground planes use only the level-9
+    # surface approximation unless a CPW/MTL study explicitly needs this rule.
+    conductor_objects = ["signal_1", "signal_2", *ground_references]
+    length_mesh = hfss.mesh.assign_length_mesh(
+        assignment=conductor_objects,
+        inside_selection=False,
+        maximum_length=f"{CPW_CONDUCTOR_LENGTH_MESH_UM:g}um",
+        maximum_elements=CPW_CONDUCTOR_LENGTH_MESH_MAX_ADDITIONAL_ELEMENTS,
+        name="cpw_mtl_conductor_length_mesh",
+    )
+    ground_surface_mesh = hfss.mesh.assign_surface_mesh(
+        assignment=ground_references,
+        level=GROUND_SURFACE_MESH_LEVEL,
+        name="ground_surface_fine_large",
+    )
+    if not length_mesh or not ground_surface_mesh:
+        raise BuildError("HFSS mesh-operation assignment failed.")
+
     setup = (
         hfss.get_setup(SOLVER_SETUP_NAME)
         if SOLVER_SETUP_NAME in hfss.setup_names
@@ -854,8 +1191,11 @@ if RUN_AEDT and build_model:
     setup.props["SaveAnyFields"] = False
     setup.props["SaveRadFieldsOnly"] = False
     setup.props["MinimumConvergedPasses"] = MINIMUM_CONVERGED_PASSES
+    # HFSS calls this GUI field "Maximum Delta Zo". It controls the Wave Port
+    # 2D adaptive eigensolver, not the 3D Delta-S convergence or Lead stability.
+    setup.props["PortAccuracy"] = MAXIMUM_DELTA_ZO_PERCENT
     if not setup.update():
-        raise BuildError("Failed to write min converged pass count.")
+        raise BuildError("Failed to update the HFSS adaptive and port-solver controls.")
 
 
 # %% [markdown]
@@ -864,6 +1204,10 @@ if RUN_AEDT and build_model:
 # %%
 if RUN_AEDT:
     setup = hfss.get_setup(SOLVER_SETUP_NAME)
+    print(
+        "Wave Port Maximum Delta Zo readback: "
+        f"{setup.props['PortAccuracy']}% (PyAEDT property: PortAccuracy)"
+    )
     sweep = setup.get_sweep(SWEEP_NAME)
     if sweep:
         sweep.props.update(
@@ -970,9 +1314,15 @@ if RUN_SOLVER and RUN_AEDT:
         "analyze_setup_seconds": solve_seconds,
         "completed_adaptive_passes": completed_passes,
         "transition_kind": TRANSITION_KIND,
-        "lead_length_um": LEAD_LENGTH_UM,
-        "deembed_length_um": DEEMBED_LENGTH_UM,
-        "guard_length_um": GUARD_LENGTH_UM,
+        "mtl_lead_length_um": MTL_LEAD_LENGTH_UM,
+        "single_trace_lead_length_um": SINGLE_TRACE_LEAD_LENGTH_UM,
+        "mtl_deembed_length_um": MTL_DEEMBED_LENGTH_UM,
+        "single_trace_deembed_length_um": SINGLE_TRACE_DEEMBED_LENGTH_UM,
+        "maximum_delta_zo_percent": MAXIMUM_DELTA_ZO_PERCENT,
+        "pyaedt_expected_version": PYAEDT_EXPECTED_VERSION,
+        "pyaedt_installed_version": PYAEDT_INSTALLED_VERSION,
+        "pyaedt_doc_url": PYAEDT_DOCS_URL,
+        "pyaedt_source_url": PYAEDT_SOURCE_URL,
     }
 
     touchstone = hfss.export_touchstone(
@@ -989,15 +1339,45 @@ if RUN_SOLVER and RUN_AEDT:
         form="ma",
         r_ref=50.0,
     )
+
+    # Port Zo comes from Modal Solution Data, not Terminal Touchstone metadata.
+    # With no impedance line this is HFSS's Zpi definition and is used only to
+    # diagnose whether the wave-port reference planes are far enough away.
+    port_zo_expressions = [f"Zo({name})" for name in CANONICAL_TERMINAL_ORDER]
+    port_zo = hfss.post.get_solution_data(
+        expressions=port_zo_expressions,
+        setup_sweep_name=f"{SOLVER_SETUP_NAME} : {SWEEP_NAME}",
+        report_category="Modal Solution Data",
+    )
+    if not port_zo:
+        raise BuildError("Modal Solution Data Port Zo extraction failed.")
+    frequency_ghz, _ = port_zo.get_expression_data(port_zo_expressions[0], "real")
+    port_zo_columns = {"frequency_ghz": frequency_ghz}
+    for expression in port_zo_expressions:
+        _, real = port_zo.get_expression_data(expression, "real")
+        _, imag = port_zo.get_expression_data(expression, "imag")
+        port_zo_columns[f"Re({expression})_ohm"] = real
+        port_zo_columns[f"Im({expression})_ohm"] = imag
+    pd.DataFrame(port_zo_columns).to_csv(PORT_ZO_PATH, index=False)
+
     if METADATA_PATH.exists():
         metadata = json.loads(METADATA_PATH.read_text(encoding="utf-8"))
         metadata["touchstone_path"] = str(TOUCHSTONE_PATH)
         metadata["touchstone_normalization"] = touchstone_normalization
         metadata["touchstone_form"] = "ma"
         metadata["touchstone_reference_ohm"] = 50.0
+        metadata["modal_port_zo_zpi_path"] = str(PORT_ZO_PATH)
+        metadata["quantity_authority"] = {
+            "terminal_scattering": "Terminal Solution Data / St(...) / Terminal Touchstone",
+            "port_zo_zpi": (
+                "Modal Solution Data / Port Zo / "
+                f"Zo({', '.join(CANONICAL_TERMINAL_ORDER)}); no impedance line"
+            ),
+        }
         METADATA_PATH.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
     timing["touchstone_path"] = str(TOUCHSTONE_PATH)
+    timing["modal_port_zo_zpi_path"] = str(PORT_ZO_PATH)
     timing.update(
         {f"touchstone_{name}": value for name, value in touchstone_normalization.items()},
     )
@@ -1050,10 +1430,13 @@ if METADATA_PATH.exists():
                 {
                     "run_id": "review",
                     "transition": metadata.get("transition_kind"),
-                    "lead_length_um": metadata.get("lead_length_um"),
-                    "guard_length_um": metadata.get("guard_length_um"),
-                    "deembed_length_um": metadata.get("deembed_length_um"),
-                    "deembed_mm": metadata.get("deembed_mm_explicit"),
+                    "mtl_lead_length_um": metadata.get("mtl_lead_length_um"),
+                    "single_trace_lead_length_um": metadata.get("single_trace_lead_length_um"),
+                    "mtl_deembed_length_um": metadata.get("mtl_deembed_length_um"),
+                    "single_trace_deembed_length_um": metadata.get(
+                        "single_trace_deembed_length_um"
+                    ),
+                    "deembed_mm_explicit": metadata.get("deembed_mm_explicit"),
                     "frequency_GHz": "-".join(str(x) for x in metadata.get("frequency_ghz", [])),
                     "metadata_path": str(METADATA_PATH),
                 }
