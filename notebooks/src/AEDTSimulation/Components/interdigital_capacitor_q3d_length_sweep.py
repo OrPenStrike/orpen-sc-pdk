@@ -143,6 +143,9 @@ ACF_PATH = REPO_ROOT / "notebooks" / "AEDTSimulation" / "Q3D_Local.acf"
 # A saved matrix is reused only with its deterministic point directory. A
 # project without a matrix resumes its existing adaptive solution; an empty
 # saved project is rebuilt from the same coupon GDS.
+
+# %%
+
 EXPECTED_NODE_LABELS = ("ground", "signal_1", "signal_2")
 
 DATA_CLASSIFICATION = "public"
@@ -447,9 +450,7 @@ if sweep_table is not None:
     sweep_table = sweep_table.drop(
         columns=["layout_width_um", "layout_height_um"], errors="ignore"
     ).merge(
-        footprint_table[
-            ["finger_length_um", "layout_width_um", "layout_height_um"]
-        ],
+        footprint_table[["finger_length_um", "layout_width_um", "layout_height_um"]],
         on="finger_length_um",
         how="left",
     )
