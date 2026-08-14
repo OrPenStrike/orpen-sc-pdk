@@ -244,6 +244,11 @@ def kosen2024_flip_chip_xmon_qubit(
     c.add_port(name="o_junction_lumped", port=junction_ref.ports["o_junction_lumped"])
 
     up_arm_start = junction_ref.ports["o_arm2"].center
+    up_arm_head = c << gf.components.circle(
+        radius=junction_arm_width / 2,
+        layer=q_chip_draw_layer,
+    )
+    up_arm_head.dmove(up_arm_start)
     up_arm_end = pad_lower_edge + junction_arm_width
     c.add_polygon(
         [
@@ -255,6 +260,11 @@ def kosen2024_flip_chip_xmon_qubit(
         layer=q_chip_draw_layer,
     )
     lower_arm_start = junction_ref.ports["o_arm1"].center
+    lower_arm_head = c << gf.components.circle(
+        radius=junction_arm_width / 2,
+        layer=q_chip_draw_layer,
+    )
+    lower_arm_head.dmove(lower_arm_start)
     lower_arm_end = outer_gap_lower_edge - junction_arm_width
     c.add_polygon(
         [
