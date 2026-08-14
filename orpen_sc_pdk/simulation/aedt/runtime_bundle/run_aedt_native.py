@@ -2328,9 +2328,7 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                             {
                                 "die_spans": semantic_geometry_plan["die_spans"],
                                 "stack_height_um": semantic_geometry_plan["stack_height_um"],
-                                "region_padding_um": semantic_geometry_plan[
-                                    "region_padding_um"
-                                ],
+                                "region_padding_um": semantic_geometry_plan["region_padding_um"],
                             }
                         )
                     ),
@@ -2361,9 +2359,9 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                     "layer_stack_hash": material_context.get("layer_stack_hash"),
                     "binding_count": len(material_context_bindings(material_context)),
                     "material_count": len(material_context_compiled_materials(material_context)),
-                    "material_profile_id": (
-                        material_context.get("material_profile") or {}
-                    ).get("material_profile_id"),
+                    "material_profile_id": (material_context.get("material_profile") or {}).get(
+                        "material_profile_id"
+                    ),
                     "material_profile_hash": material_context.get("material_profile_hash"),
                     "readback_required": material_context.get("readback_required", False),
                     "readback_status": (

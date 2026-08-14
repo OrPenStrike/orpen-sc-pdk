@@ -281,8 +281,7 @@ def _validate_database(connection: sqlite3.Connection, database_path: Path) -> N
     application_id = int(connection.execute("PRAGMA application_id").fetchone()[0])
     user_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
     columns = tuple(
-        str(row["name"])
-        for row in connection.execute("PRAGMA table_info(q2d_material_result)")
+        str(row["name"]) for row in connection.execute("PRAGMA table_info(q2d_material_result)")
     )
     if (
         application_id != DATABASE_APPLICATION_ID
@@ -588,9 +587,7 @@ def prepare_sweep(
                 "pair_cache_key": pair_key,
                 "single_cache_key": single_key,
                 "cache_status_at_prepare": (
-                    "hit_complete"
-                    if point["request_cache_key"] in cached_keys
-                    else "scheduled"
+                    "hit_complete" if point["request_cache_key"] in cached_keys else "scheduled"
                 ),
                 "data_class": "project-internal",
                 "allowed_consumers": _allowed_consumers_json(),
@@ -748,9 +745,7 @@ def _canonical_scientific_result_payload(
         ).evaluate(point)
         impedance["zc1_ohm"] = self_values["zc_T1_ohm"]
         impedance["zc2_ohm"] = self_values["zc_T2_ohm"]
-        impedance["zm_ohm"] = Q2dImpedanceFormula.mutual(name="zm").evaluate(point)[
-            "zm_T1_T2_ohm"
-        ]
+        impedance["zm_ohm"] = Q2dImpedanceFormula.mutual(name="zm").evaluate(point)["zm_T1_T2_ohm"]
     else:
         raise ValueError(f"Unsupported Q2D result role: {role!r}")
     if any(value is not None and not math.isfinite(value) for value in impedance.values()):
@@ -773,9 +768,7 @@ def _canonical_scientific_result_payload(
             ]
             for quantity in ("C", "L")
         },
-        "convergence": {
-            name: _parse_convergence(path) for name, path in convergence_paths.items()
-        },
+        "convergence": {name: _parse_convergence(path) for name, path in convergence_paths.items()},
         "impedance_ohm": impedance,
     }
 
@@ -926,13 +919,10 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     receipt_solver = (readback.get("material_authority") or {}).get("solver_identity") or {}
     if (
         str(receipt_solver.get("aedt_version")) != AEDT_VERSION
-        or _canonical_aedt_native_version(receipt_solver.get("aedt_version_raw"))
-        != AEDT_VERSION
+        or _canonical_aedt_native_version(receipt_solver.get("aedt_version_raw")) != AEDT_VERSION
         or str(receipt_solver.get("pyaedt_version")) != PYAEDT_VERSION
         or cache_input["solver"]["runtime_bundle_sha256"]
-        != cache_input["requested_material_policy"]["policy_source"][
-            "runtime_bundle_sha256"
-        ]
+        != cache_input["requested_material_policy"]["policy_source"]["runtime_bundle_sha256"]
     ):
         raise ValueError(f"Q2D receipt solver/runtime identity mismatch for {case_id}")
     solver_completed_at = workflow_state.get("completed_at")
@@ -960,9 +950,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
     }
     result_id = _immutable_result_id(
         request_cache_key=request_cache_key,
-        material_evidence_snapshot_hash=receipt_identity[
-            "material_evidence_snapshot_hash"
-        ],
+        material_evidence_snapshot_hash=receipt_identity["material_evidence_snapshot_hash"],
         solver_completed_at=solver_completed_at,
         source_hashes=source_sha,
         scientific_result=scientific_result,
@@ -977,9 +965,7 @@ def _validated_point(run_root: Path, row: dict[str, str]) -> dict[str, Any] | No
         "material_profile_id": d3_q2d_material_profile()["material_profile_id"],
         "material_profile_hash": material_profile_hash(),
         "material_authority_hash": receipt_identity["material_authority_hash"],
-        "material_evidence_snapshot_hash": receipt_identity[
-            "material_evidence_snapshot_hash"
-        ],
+        "material_evidence_snapshot_hash": receipt_identity["material_evidence_snapshot_hash"],
         "material_evidence_json": _canonical_json(readback),
         "technical_evidence_complete": 1,
         "evidence_partition": "d3_er11p9_diagnostic_complete",
@@ -1085,12 +1071,8 @@ def _requested_rows(
                 "material_profile_id": pair["material_profile_id"],
                 "material_profile_hash": pair["material_profile_hash"],
                 "material_authority_hash": pair["material_authority_hash"],
-                "pair_material_evidence_snapshot_hash": pair[
-                    "material_evidence_snapshot_hash"
-                ],
-                "single_material_evidence_snapshot_hash": single[
-                    "material_evidence_snapshot_hash"
-                ],
+                "pair_material_evidence_snapshot_hash": pair["material_evidence_snapshot_hash"],
+                "single_material_evidence_snapshot_hash": single["material_evidence_snapshot_hash"],
                 "technical_evidence_complete": True,
                 "evidence_partition": "d3_er11p9_diagnostic_complete",
                 "data_class": "project-internal",
@@ -1156,8 +1138,7 @@ def _technical_evidence_row(
     if not valid_rows:
         return None
     authorities = {
-        (row["material_profile_hash"], row["material_authority_hash"])
-        for row in valid_rows
+        (row["material_profile_hash"], row["material_authority_hash"]) for row in valid_rows
     }
     if len(authorities) != 1:
         raise ValueError(
@@ -1170,14 +1151,12 @@ def _validate_technical_evidence_row(row: dict[str, Any]) -> None:
     cache_input = json.loads(row["input_json"])
     expected_policy = d3_q2d_requested_policy_identity()
     if (
-        row["material_profile_id"]
-        != d3_q2d_material_profile()["material_profile_id"]
+        row["material_profile_id"] != d3_q2d_material_profile()["material_profile_id"]
         or row["material_profile_hash"] != material_profile_hash()
         or cache_input.get("requested_material_policy") != expected_policy
         or _cache_key(cache_input) != row["request_cache_key"]
         or json.loads(row["solver_json"]) != cache_input.get("solver")
-        or json.loads(row["common_authority_json"])
-        != cache_input.get("common_authority")
+        or json.loads(row["common_authority_json"]) != cache_input.get("common_authority")
         or int(row["technical_evidence_complete"]) != 1
         or row["evidence_partition"] != "d3_er11p9_diagnostic_complete"
         or row["data_class"] != "project-internal"
@@ -1408,9 +1387,7 @@ def ingest_sweep(run_root: Path, database_path: Path) -> dict[str, Any]:
                     existing_payload.pop("ingested_at")
                     comparable_point.pop("ingested_at")
                     if existing_payload != comparable_point:
-                        raise ValueError(
-                            f"Immutable Q2D result disagreement: {point['result_id']}"
-                        )
+                        raise ValueError(f"Immutable Q2D result disagreement: {point['result_id']}")
                     continue
                 connection.execute(
                     f"""
@@ -1721,12 +1698,8 @@ def export_consonant_length_seeds(
             "material_profile_id": single["material_profile_id"],
             "material_profile_hash": single["material_profile_hash"],
             "material_authority_hash": single["material_authority_hash"],
-            "single_material_evidence_snapshot_hash": single[
-                "material_evidence_snapshot_hash"
-            ],
-            "pair_material_evidence_snapshot_hash": pair[
-                "material_evidence_snapshot_hash"
-            ],
+            "single_material_evidence_snapshot_hash": single["material_evidence_snapshot_hash"],
+            "pair_material_evidence_snapshot_hash": pair["material_evidence_snapshot_hash"],
             "technical_evidence_complete": True,
             "publication_state": "diagnostic",
             "promotion_eligible": False,

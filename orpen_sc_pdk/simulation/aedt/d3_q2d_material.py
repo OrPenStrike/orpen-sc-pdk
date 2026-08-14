@@ -168,9 +168,7 @@ def d3_q2d_material_context() -> AedtMaterialContext:
         policy_source={
             "repository": "OrPen",
             "revision": _git_revision("rev-parse", "HEAD"),
-            "integration_baseline_revision": _git_revision(
-                "merge-base", "HEAD", "origin/develop"
-            ),
+            "integration_baseline_revision": _git_revision("merge-base", "HEAD", "origin/develop"),
             "path": "orpen_sc_pdk/simulation/aedt/d3_q2d_material.py",
             "sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "runtime_bundle_sha256": _runtime_bundle_hash(),
@@ -280,8 +278,7 @@ def validate_d3_q2d_material_receipt(
         raise ValueError("D3 material write-attempt record is invalid")
     attempted_materials = write_attempt.get("materials") or []
     attempted = {
-        item.get("aedt_material_name"): item.get("applied")
-        for item in attempted_materials
+        item.get("aedt_material_name"): item.get("applied") for item in attempted_materials
     }
     if len(attempted_materials) != 1 or attempted != {
         SUBSTRATE_AEDT_MATERIAL: {
@@ -318,10 +315,13 @@ def validate_d3_q2d_material_receipt(
         or authority.get("source_type") != "custom_project_material"
         or authority.get("policy_source") != expected_policy_identity.get("policy_source")
         or not authority.get("readback_method")
-        or not all((authority.get("solver_identity") or {}).get(field) for field in (
-            "aedt_version",
-            "pyaedt_version",
-        ))
+        or not all(
+            (authority.get("solver_identity") or {}).get(field)
+            for field in (
+                "aedt_version",
+                "pyaedt_version",
+            )
+        )
     ):
         raise ValueError("D3 material authority does not match the request")
     properties = authority.get("properties") or {}
@@ -371,8 +371,7 @@ def validate_d3_q2d_material_receipt(
         or readback_layer.get("status") != "PASS"
         or readback_layer.get("stored_material_name") != authority.get("stored_material_name")
         or readback_layer.get("method") != authority.get("readback_method")
-        or readback_layer.get("substrate_assignments")
-        != receipt.get("substrate_assignments")
+        or readback_layer.get("substrate_assignments") != receipt.get("substrate_assignments")
         or set(readback_properties) != set(properties)
         or any(
             "raw_value" not in readback_properties[name]

@@ -264,9 +264,11 @@ def readback_aedt_project_materials(
         raise RuntimeError("AEDT object material readback is unavailable")
     assignments = []
     for object_name in expected_substrate_objects:
-        assigned = str(
-            get_property("Geometry3DAttributeTab", object_name, "Material") or ""
-        ).strip().strip('"')
+        assigned = (
+            str(get_property("Geometry3DAttributeTab", object_name, "Material") or "")
+            .strip()
+            .strip('"')
+        )
         if assigned.casefold() != stored_name.casefold():
             raise RuntimeError(
                 f"AEDT object {object_name!r} material mismatch: {assigned!r} != {stored_name!r}"
