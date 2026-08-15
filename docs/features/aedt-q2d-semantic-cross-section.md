@@ -114,30 +114,6 @@ clearance between D1 reference-ground segments. This is a distinct
 `single_reference` result role; it must not be combined with `coupled_pair`
 cases in one exported artifact.
 
-## Public D3 Ground-Clearance Package
-
-The Workbench handoff is generated with an explicit run root:
-
-```bash
-UV_CACHE_DIR=/tmp/uv-cache uv run python \
-  scripts/build_d3_same_face_ground_clearance_q2d_package.py \
-  --run-root build/simulation/aedt/d3_same_face_ground_clearance_q2d/2026-07-20-Run01
-```
-
-The package contains exactly twelve point-local Q2D cases: nine
-`coupled_pair` cases over inter-trace ground widths `3.8`, `4.65`, and `5.5`
-µm crossed with D1 clearances `60`, `120`, and `240` µm, plus three
-`single_reference` cases over the same clearances. Every case records the
-public `w=5` µm, `s=7.5` µm CPW values; 7 µm flip gap; two 500 µm Silicon
-substrates; 200 µm exterior air on each side; 150 µm side ground; 0.2 µm
-metal; and 6 GHz adaptive frequency in both point ledgers.
-
-Generation writes only semantic inputs, the AEDT package, point ledgers, and a
-hash-backed package audit. It does not create matrices or claim solver
-completion. A pre-existing run root fails unless `--overwrite` is explicit;
-compatible overwrite refreshes package metadata while preserving existing
-`results/`, `logs/`, and point-local `points/` files.
-
 ## Sweep Presentation
 
 Notebook sweeps should present the parameter space first:

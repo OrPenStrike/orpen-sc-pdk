@@ -15,17 +15,12 @@ import hashlib
 import json
 import math
 import re
-import sqlite3
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from orpen_sc_pdk.simulation.aedt.d3_q2d_material import (
-    d3_q2d_policy_identity_from_context,
-    validate_d3_q2d_material_receipt,
-)
 from orpen_sc_pdk.simulation.aedt.q2d import (
     Q2dMatrixElement,
     load_q2d_raw_point_result,
@@ -385,20 +380,6 @@ def _source_record(run_root: Path, path: Path) -> dict[str, Any]:
     }
 
 
-def _external_source_record(path: Path) -> dict[str, Any]:
-    if not path.is_file() or path.stat().st_size <= 0:
-        raise _pending(f"integrity source is missing or empty: {path}")
-    return {
-        "path": str(path.resolve()),
-        "size_bytes": path.stat().st_size,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-    }
-
-
-def _canonical_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-
-
 def _parse_convergence(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8", errors="strict")
 
@@ -432,68 +413,32 @@ def _parse_convergence(path: Path) -> dict[str, Any]:
     }
 
 
-def _selected_result_row(
-    run_root: Path,
-    case_id: str,
-    database_path: Path,
-) -> dict[str, Any]:
-    if not database_path.is_file() or database_path.stat().st_size <= 0:
-        raise _pending(f"missing material-result database: {database_path}")
-    connection = sqlite3.connect(
-        f"file:{database_path.resolve().as_posix()}?mode=ro&immutable=1",
-        uri=True,
-    )
-    connection.row_factory = sqlite3.Row
-    try:
-        matches = [
-            dict(row)
-            for row in connection.execute(
-                "SELECT * FROM q2d_material_result WHERE source_case_id = ?",
-                (case_id,),
-            )
-        ]
-    finally:
-        connection.close()
-    if len(matches) != 1:
-        raise ValueError(f"material-result export requires exactly one row for {case_id!r}")
-    row = matches[0]
-    if Path(row["source_run_root"]).resolve() != run_root.resolve():
-        raise ValueError(f"material-result row has a different source run for {case_id!r}")
-    return row
-
-
 def _case_payload(
     run_root: Path,
     manifest: Mapping[str, Any],
     case_id: str,
-    database_path: Path | None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     case = _manifest_case(manifest, case_id)
     recipe = _manifest_recipe(case)
     material_context_relative = case.get("aedt_material_context")
-    material_context_path = (
-        _run_source_path(run_root, material_context_relative, "AEDT material context")
-        if material_context_relative
-        else None
-    )
-    material_context = (
-        _read_json_object(material_context_path, "AEDT material context")
-        if material_context_path is not None
-        else {}
-    )
-    material_fields_present = any(
+    material_context: dict[str, Any] = {}
+    if material_context_relative:
+        material_context = _read_json_object(
+            _run_source_path(run_root, material_context_relative, "AEDT material context"),
+            "AEDT material context",
+        )
+    if any(
         material_context.get(field) is not None
         for field in (
             "material_profile",
             "material_profile_hash",
-            "readback_required",
             "policy_source",
-            "compiled_materials",
+            "readback_required",
         )
-    )
-    material_aware = material_context.get("material_profile") is not None
-    if material_fields_present and not material_aware:
-        raise ValueError("AEDT material context is incomplete")
+    ):
+        raise ValueError(
+            "Project-specific material-profile evidence is not supported in this exporter"
+        )
     cross_section_path = _run_source_path(
         run_root,
         case.get("q2d_cross_section"),
@@ -590,8 +535,6 @@ def _case_payload(
     if all(path.is_file() and path.stat().st_size > 0 for path in convergence_paths.values()):
         convergence = {name: _parse_convergence(path) for name, path in convergence_paths.items()}
         convergence_source_paths = list(convergence_paths.values())
-    elif material_aware:
-        raise _pending(f"missing convergence evidence for {case_id}")
     else:
         convergence = None
         convergence_source_paths = []
@@ -606,86 +549,6 @@ def _case_payload(
         *convergence_source_paths,
         *matrix_paths,
     ]
-    material_authority = None
-    selected_result = None
-    if material_aware:
-        if database_path is None:
-            raise _pending("material-aware export requires --database")
-        write_attempt_path = result_dir / "aedt_material_context_applied.json"
-        readback_path = result_dir / "aedt_material_readback.json"
-        workflow_state_path = run_root / "logs" / case_id / RECIPE_ID / "q2d_workflow_state.json"
-        geometry_plan_path = result_dir / "q2d_semantic_geometry_plan.json"
-        object_inventory_path = result_dir / "q2d_semantic_object_inventory.json"
-        write_attempt = _read_json_object(write_attempt_path, "AEDT material write attempt")
-        readback = _read_json_object(readback_path, "AEDT material readback")
-        identity = validate_d3_q2d_material_receipt(
-            material_context=material_context,
-            write_attempt=write_attempt,
-            receipt=readback,
-            expected_policy_identity=d3_q2d_policy_identity_from_context(material_context),
-            expected_case_id=case_id,
-            expected_material_context_hash=hashlib.sha256(
-                material_context_path.read_bytes()
-            ).hexdigest(),
-            expected_cross_section_hash=hashlib.sha256(cross_section_path.read_bytes()).hexdigest(),
-            run_root=run_root,
-        )
-        material_profile = material_context["material_profile"]
-        material_authority = {
-            "material_profile_id": material_profile["material_profile_id"],
-            **identity,
-            "data_class": material_profile["data_class"],
-            "allowed_consumers": material_profile["allowed_consumers"],
-            "publication_state": material_profile["publication_state"],
-            "promotion_eligible": material_profile["promotion_eligible"],
-            "provenance_layers": readback["provenance_layers"],
-            "substrate_assignments": readback["substrate_assignments"],
-        }
-        integrity_paths.extend(
-            (
-                material_context_path,
-                write_attempt_path,
-                readback_path,
-                workflow_state_path,
-                geometry_plan_path,
-                object_inventory_path,
-            )
-        )
-        selected_row = _selected_result_row(run_root, case_id, database_path)
-        selected_result = {
-            "result_id": selected_row["result_id"],
-            "request_cache_key": selected_row["request_cache_key"],
-            "source_case_id": selected_row["source_case_id"],
-            "source_run_root": selected_row["source_run_root"],
-            "solver_completed_at": selected_row["solver_completed_at"],
-            "material_evidence_snapshot_hash": selected_row["material_evidence_snapshot_hash"],
-            "common_request_authority": json.loads(selected_row["common_authority_json"]),
-        }
-        expected_nm = {
-            "w_nm": round(float(parameters["trace_width_um"]) * 1000),
-            "s_nm": round(float(parameters["trace_gap_um"]) * 1000),
-            "d_nm": (
-                None
-                if case_role == "single_reference"
-                else round(float(parameters["inter_trace_ground_width_um"]) * 1000)
-            ),
-            "h_nm": round(float(parameters["flip_chip_gap_height_um"]) * 1000),
-        }
-        if (
-            selected_row["material_profile_hash"] != identity["material_profile_hash"]
-            or selected_row["material_authority_hash"] != identity["material_authority_hash"]
-            or selected_result["material_evidence_snapshot_hash"]
-            != identity["material_evidence_snapshot_hash"]
-            or selected_row["data_class"] != material_profile["data_class"]
-            or json.loads(selected_row["allowed_consumers_json"])
-            != material_profile["allowed_consumers"]
-            or selected_row["publication_state"] != material_profile["publication_state"]
-            or int(selected_row["promotion_eligible"]) != 0
-            or int(selected_row["technical_evidence_complete"]) != 1
-            or selected_row["role"] != case_role
-            or any(selected_row[field] != value for field, value in expected_nm.items())
-        ):
-            raise ValueError(f"material-result row authority mismatch for {case_id!r}")
 
     legacy_derived: dict[str, Any] = {
         "self_impedance_ohm": {
@@ -695,81 +558,15 @@ def _case_payload(
     }
     if case_role == "coupled_pair":
         legacy_derived["mutual_impedance_ohm"] = math.sqrt(l_matrix[0][1] / -c_matrix[0][1])
-    historical_impedance = {
-        "z0_ohm": (
-            legacy_derived["self_impedance_ohm"]["T1"] if case_role == "single_reference" else None
-        ),
-        "zc1_ohm": (
-            legacy_derived["self_impedance_ohm"]["T1"] if case_role == "coupled_pair" else None
-        ),
-        "zc2_ohm": (
-            legacy_derived["self_impedance_ohm"]["T2"] if case_role == "coupled_pair" else None
-        ),
-        "zm_ohm": (legacy_derived["mutual_impedance_ohm"] if case_role == "coupled_pair" else None),
-    }
-    emitted_derived = (
-        ({"z0_ohm": historical_impedance["z0_ohm"]} if case_role == "single_reference" else None)
-        if material_aware
-        else legacy_derived
-    )
-
     source_hashes = [_source_record(run_root, path) for path in integrity_paths]
-    if material_aware:
-        stored_hashes = json.loads(selected_row["source_sha256_json"])
-        observed_hashes = {
-            record["path"].rsplit("/", 1)[-1]: record["sha256"] for record in source_hashes
-        }
-        if any(observed_hashes.get(name) != digest for name, digest in stored_hashes.items()):
-            raise ValueError(f"material-result raw source hash mismatch for {case_id!r}")
-        matrix_rows = raw.matrix_table()
-        scientific_result = {
-            "schema_version": "orpen-q2d-scientific-result.v1",
-            "matrices": {
-                quantity: [
-                    {
-                        "row_terminal": item["row_terminal"],
-                        "column_terminal": item["column_terminal"],
-                        "value": item["value"],
-                        "unit": item.get("unit"),
-                        "value_si": item.get("value_si"),
-                    }
-                    for item in matrix_rows
-                    if item["quantity"] == quantity
-                ]
-                for quantity in ("C", "L")
-            },
-            "convergence": convergence,
-            "impedance_ohm": historical_impedance,
-        }
-        expected_columns = {
-            "c_matrix_json": _canonical_json(scientific_result["matrices"]["C"]),
-            "l_matrix_json": _canonical_json(scientific_result["matrices"]["L"]),
-            "convergence_json": _canonical_json(convergence),
-            **scientific_result["impedance_ohm"],
-        }
-        if any(selected_row[field] != value for field, value in expected_columns.items()):
-            raise ValueError(f"material-result scientific payload mismatch for {case_id!r}")
-        expected_result_id = hashlib.sha256(
-            _canonical_json(
-                {
-                    "schema_version": "orpen-q2d-immutable-result-identity.v2",
-                    "request_cache_key": selected_row["request_cache_key"],
-                    "material_evidence_snapshot_hash": selected_row[
-                        "material_evidence_snapshot_hash"
-                    ],
-                    "solver_completed_at": selected_row["solver_completed_at"],
-                    "source_sha256": stored_hashes,
-                    "scientific_result": scientific_result,
-                }
-            ).encode("utf-8")
-        ).hexdigest()
-        if selected_row["result_id"] != expected_result_id:
-            raise ValueError(f"material-result immutable identity mismatch for {case_id!r}")
 
     case_payload = {
         "schema_version": CASE_ROLE_SCHEMAS[case_role],
         "id": case_id,
         "case_role": case_role,
+        "selected_result": None,
+        "material_authority": None,
+        "common_request_authority": None,
         "parameters": parameters,
         "topology": topology,
         "metadata": {
@@ -789,14 +586,8 @@ def _case_payload(
         "l_matrix_h_per_m": l_matrix,
         "c_matrix_f_per_m": c_matrix,
         "convergence": convergence,
-        "selected_result": selected_result,
-        "material_authority": material_authority,
-        "common_request_authority": (
-            selected_result["common_request_authority"] if selected_result else None
-        ),
     }
-    if emitted_derived is not None:
-        case_payload["derived"] = emitted_derived
+    case_payload["derived"] = legacy_derived
     if case_role == "coupled_pair":
         matrix_semantics = {
             "C": "F/m; Maxwell off-diagonal retained as negative",
@@ -842,10 +633,6 @@ def _case_payload(
         },
         "solver_provenance": solver_provenance,
         "source_hashes": source_hashes,
-        "material_authority": material_authority,
-        "common_request_authority": (
-            selected_result["common_request_authority"] if selected_result else None
-        ),
     }
     return case_payload, contract
 
@@ -874,7 +661,6 @@ def export_cases(
     output_path: Path,
     *,
     case_ids: Sequence[str] = (),
-    database_path: Path | None = None,
 ) -> Path:
     """Export selected compatible solver results after full semantic validation.
 
@@ -900,7 +686,7 @@ def export_cases(
     case_rows = []
     contracts = []
     for case_id in selected:
-        case_payload, contract = _case_payload(run_root, manifest, case_id, database_path)
+        case_payload, contract = _case_payload(run_root, manifest, case_id)
         case_rows.append(case_payload)
         contracts.append(contract)
     shared = _require_shared_metadata(contracts)
@@ -918,51 +704,13 @@ def export_cases(
             }
         )
 
-    material_authorities = [contract["material_authority"] for contract in contracts]
-    material_aware = any(authority is not None for authority in material_authorities)
-    if material_aware and any(authority is None for authority in material_authorities):
-        raise ValueError("selected Q2D cases mix material-bound and material-unbound evidence")
-    if material_aware:
-        common_material_fields = (
-            "material_profile_id",
-            "material_profile_hash",
-            "material_authority_hash",
-            "data_class",
-            "allowed_consumers",
-            "publication_state",
-            "promotion_eligible",
-        )
-        first_authority = material_authorities[0]
-        if any(
-            authority[field] != first_authority[field]
-            for authority in material_authorities[1:]
-            for field in common_material_fields
-        ):
-            raise ValueError("selected Q2D cases disagree on common material authority")
-        common_material_authority = {
-            field: first_authority[field] for field in common_material_fields
-        }
-        common_request_authority = contracts[0]["common_request_authority"]
-        if any(
-            contract["common_request_authority"] != common_request_authority
-            for contract in contracts[1:]
-        ):
-            raise ValueError("selected Q2D cases disagree on common request authority")
-    else:
-        common_material_authority = None
-        common_request_authority = None
-
     payload = {
-        "schema_version": (
-            "orpen-q2d-intrinsic-purcell-maxwell-lc-cases.v4"
-            if material_aware
-            else "orpen-q2d-intrinsic-purcell-maxwell-lc-cases.v3"
-        ),
+        "schema_version": "orpen-q2d-intrinsic-purcell-maxwell-lc-cases.v3",
         "artifact_status": "complete",
         "metadata": {
             **shared,
-            "material_authority": common_material_authority,
-            "common_request_authority": common_request_authority,
+            "material_authority": None,
+            "common_request_authority": None,
             "run_provenance": {
                 "run_id": run_root.name,
                 "project_name": str(manifest["project"].get("name") or ""),
@@ -975,9 +723,7 @@ def export_cases(
                 "algorithm": "sha256",
                 "all_sources_hashed": True,
                 "solver_export_sizes_verified": True,
-                "material_result_database": (
-                    _external_source_record(database_path) if database_path else None
-                ),
+                "material_result_database": None,
                 "cases": {
                     case_id: contracts[index]["source_hashes"]
                     for index, case_id in enumerate(selected)
@@ -1003,7 +749,6 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--database", type=Path)
     parser.add_argument(
         "--case-id",
         action="append",
@@ -1016,7 +761,6 @@ def main() -> None:
         args.run_root,
         args.output,
         case_ids=args.case_id,
-        database_path=args.database,
     )
     print(output_path)
 
