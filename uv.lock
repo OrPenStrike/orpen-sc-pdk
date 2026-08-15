@@ -1135,6 +1135,27 @@ wheels = [
 ]
 
 [[package]]
+name = "gdstk"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6f/ae/7d4b8cd6367921c1ee12b580565fd7b2a789c0e2b4357966b8ab37ce63a1/gdstk-1.0.1.tar.gz", hash = "sha256:8c760089605ce5adac6b9aec761bae40f626d44805ccdc4da1d9a9f53f330fb9", size = 322003, upload-time = "2026-07-16T13:37:17.733Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2f/2e/98548bc9c5227ef31f9b0f15d619f4429b5b9a9f7109c3b7fe0004b3b09a/gdstk-1.0.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:3d60d535a378099a2a37100c069ebccc916065dccb12901e8a6d9250dcabe49f", size = 950040, upload-time = "2026-07-16T13:36:48.103Z" },
+    { url = "https://files.pythonhosted.org/packages/41/a4/c8ed59f0ed640204096d8b5f99bf2a5dd994ccfdf05b703468a370ee007f/gdstk-1.0.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:ebf00d004e81b1f9d3eb7bea0b78547ff5ce344830834d4cee60a634d9ea2eda", size = 490360, upload-time = "2026-07-16T13:36:49.35Z" },
+    { url = "https://files.pythonhosted.org/packages/36/7e/875ac38d92690da075985dca2295ac39ccce9008ca115d943ba0bbb9df20/gdstk-1.0.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e21f2c414c06e6c510985185031279ad117507e3c5781a6fe9593f6ebce33b1b", size = 541829, upload-time = "2026-07-16T13:36:50.706Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/6e/1984a6641c8a766dfedc61907af04f7ef063af1d79fe23776937ee0be144/gdstk-1.0.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:6ea9d08d02ba268d4b9d3e0a08370a54c7b553d0dfeef7aeb44c0f59b911be0b", size = 1579574, upload-time = "2026-07-16T13:36:51.876Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/f3/096a551fff891c7a7b610578a51b7f9273cc09010699768eda0e93128a90/gdstk-1.0.1-cp312-cp312-win_amd64.whl", hash = "sha256:fd507a88723d7b0abf0a51b6f57fff2063f882dbcd406d62cd704b258bdc5c9d", size = 484478, upload-time = "2026-07-16T13:36:53.132Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/c6/ed385741be2b95da2d715a132a43ab03618718f5ac75a99360c0896c29fb/gdstk-1.0.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:401ec2b958a00bf79dfaf3c5e98b2b40b1f8018905720446bf2dbba7dbddbc72", size = 950005, upload-time = "2026-07-16T13:36:54.25Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/f6/6e33396c48151bd44b2e59c37b3d80358c52da5630df492b57be2a84cda5/gdstk-1.0.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:4239af055e71ee2583157d75a36b94b7ec74dde9121c5a33775a02ea9e7254fb", size = 490343, upload-time = "2026-07-16T13:36:55.431Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/60/9e89cde8345e860ec3701f500551d5b85537f932234939a9dc57b31bb6b3/gdstk-1.0.1-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:90653e965cc8c5250333e381fe1ccc3f00e14660ca0a2383eb06900683d2b14b", size = 541816, upload-time = "2026-07-16T13:36:56.627Z" },
+    { url = "https://files.pythonhosted.org/packages/da/63/6581559712a41462de2c6dc338d38bab6fed7ba7f0ded88b9ba43ebb998d/gdstk-1.0.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:0b5f47287d071e652e61e3fdde920030e6f1288635409c9254bbf50159c3e81f", size = 1579586, upload-time = "2026-07-16T13:36:57.91Z" },
+    { url = "https://files.pythonhosted.org/packages/46/d2/47e1e166a60d7c56c6a358c5a7ac4fff1a7fc82a7f8de87e5645976df40b/gdstk-1.0.1-cp313-cp313-win_amd64.whl", hash = "sha256:65fed70a03922f674e34d0592bbffaa089b4007748c30be4e313c892ac446616", size = 484561, upload-time = "2026-07-16T13:36:59.719Z" },
+]
+
+[[package]]
 name = "geopandas"
 version = "1.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -2804,6 +2825,9 @@ ecosystem-dev = [
     { name = "pandas" },
     { name = "plotly" },
 ]
+palace-notebooks = [
+    { name = "scgsim", extra = ["palace"] },
+]
 
 [package.metadata]
 requires-dist = [
@@ -2837,6 +2861,7 @@ ecosystem-dev = [
     { name = "pandas", specifier = ">=2.0" },
     { name = "plotly", specifier = ">=6.0.0" },
 ]
+palace-notebooks = [{ name = "scgsim", extras = ["palace"], git = "https://github.com/OrPenStrike/scgsim.git?rev=9febe3f3b77528a17b3be45a4211a33fb47eec2a" }]
 
 [[package]]
 name = "osmnx"
@@ -4109,6 +4134,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/db/16/8d163f5feb3c22535c784991d42f8febd931aead0beadfc76855ab144fdc/sax-0.17.0.tar.gz", hash = "sha256:5159e350a47e1b97597987060d97e21688052f0bd7ace5b8bdd105c079e3fe56", size = 105933, upload-time = "2026-04-16T19:39:36.876Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/72/b3/4850ce15aa646440133db68df3f6a4396b82a03d86d216b60862c44e6430/sax-0.17.0-py3-none-any.whl", hash = "sha256:6cce0abd24f0dc3102b737c9390bf6322340d53f9e41cb32e0b4f4c09b58d420", size = 126380, upload-time = "2026-04-16T19:39:35.422Z" },
+]
+
+[[package]]
+name = "scgsim"
+version = "0.1.0.dev0"
+source = { git = "https://github.com/OrPenStrike/scgsim.git?rev=9febe3f3b77528a17b3be45a4211a33fb47eec2a#9febe3f3b77528a17b3be45a4211a33fb47eec2a" }
+
+[package.optional-dependencies]
+palace = [
+    { name = "gdsfactory" },
+    { name = "gdstk" },
+    { name = "gmsh" },
 ]
 
 [[package]]
