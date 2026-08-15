@@ -62,7 +62,6 @@ from runtime_bundle.materials import (
     material_context_bindings,
     material_context_compiled_materials,
     material_context_material_for_row,
-    readback_aedt_project_materials,
 )
 from runtime_bundle.session import (
     AEDT_MODELER_UNIT_TO_UM,
@@ -2004,6 +2003,11 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
     material_context = (
         load_aedt_material_context(case, package_root) if case.get("aedt_material_context") else {}
     )
+    if material_context.get("readback_required"):
+        raise RuntimeError(
+            "Material readback is not supported in this public package; "
+            "remove readback_required from the material context"
+        )
     source_hashes = q2d_source_hashes(case, package_root)
     geometry_settings_hash = sha256_text(stable_json(q2d_geometry_settings(recipe)))
     recipe_settings_hash = sha256_text(stable_json(q2d_recipe_settings(recipe)))
@@ -2299,45 +2303,8 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
             )
         save_ok = q2d.save_project()
         if save_ok is False:
-            raise RuntimeError("AEDT project save returned False before material readback")
-        material_readback = None
-        if material_context.get("readback_required"):
-            if semantic_geometry_plan is None:
-                raise RuntimeError("Required D3 material readback needs semantic geometry")
-            expected_substrates = [
-                str(rectangle["name"])
-                for rectangle in semantic_geometry_plan["rectangles"]
-                if rectangle.get("kind") == "dielectric"
-            ]
-            material_readback = readback_aedt_project_materials(
-                q2d,
-                material_context,
-                expected_substrates,
-                result_dir,
-                {
-                    "case_id": case["id"],
-                    "recipe_id": recipe["id"],
-                    "project_name": manifest["project"]["name"],
-                    "design_name": recipe["design_name"],
-                    "q2d_geometry_mode": geometry_mode,
-                    "source_hashes": source_hashes,
-                    "material_context_hash": source_hashes.get("aedt_material_context"),
-                    "cross_section_hash": source_hashes.get("q2d_cross_section"),
-                    "layer_stack_hash": sha256_text(
-                        stable_json(
-                            {
-                                "die_spans": semantic_geometry_plan["die_spans"],
-                                "stack_height_um": semantic_geometry_plan["stack_height_um"],
-                                "region_padding_um": semantic_geometry_plan["region_padding_um"],
-                            }
-                        )
-                    ),
-                    "geometry_settings_hash": geometry_settings_hash,
-                    "recipe_settings_hash": recipe_settings_hash,
-                },
-            )
-            detection["stages"].append(
-                stage_record("material_readback", "created", readback_status="PASS")
+            raise RuntimeError(
+                "AEDT project save returned False before writing simulation metadata"
             )
         write_json(
             result_dir / "simulation_metadata.json",
@@ -2364,9 +2331,7 @@ def run_q2d_incremental_workflow(case, recipe, manifest, package_root, result_di
                     ),
                     "material_profile_hash": material_context.get("material_profile_hash"),
                     "readback_required": material_context.get("readback_required", False),
-                    "readback_status": (
-                        material_readback.get("status") if material_readback else "NOT_REQUIRED"
-                    ),
+                    "readback_status": "NOT_REQUIRED",
                     "data_class": (material_context.get("material_profile") or {}).get(
                         "data_class"
                     ),
