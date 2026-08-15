@@ -38,6 +38,10 @@ class LayerMapOrpenSCPDK(LayerMap):
     D1_D2_INDIUM_BUMP: Layer = (41, 0)
     D1_D2_UNDER_BUMP: Layer = (41, 1)
 
+    DEVICE_KEEPOUT: Layer = (120, 0)
+    ROUTING_KEEPOUT: Layer = (120, 1)
+    D0_D1_INDIUM_GROUND_KEEPOUT: Layer = (120, 2)
+
     D0_BOTTOM_AB_DRAW: Layer = (12, 0)
     D0_BOTTOM_AB_VIA: Layer = (12, 1)
     D0_TOP_AB_DRAW: Layer = (10, 0)

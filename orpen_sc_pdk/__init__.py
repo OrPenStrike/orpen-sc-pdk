@@ -10,6 +10,10 @@ from functools import lru_cache, partial
 from gdsfactory.typings import ComponentFactory
 
 from . import cells, config, materials, tech
+from .cells.indium import (
+    IndiumGroundBumpSpec,
+    get_indium_ground_bump_spec,
+)
 from .config import PATH
 from .materials import (
     get_gsim_dielectric_interface_preset_kwargs,
@@ -76,6 +80,8 @@ __all__ = [
     "get_interface_preset_records",
     "get_material_alias_records",
     "get_material_records",
+    "IndiumGroundBumpSpec",
+    "get_indium_ground_bump_spec",
     "materials",
     "tech",
     "validate_material_alias_records",

@@ -1,10 +1,101 @@
 """Indium bump primitives and keepout-aware bump-field placement."""
 
 import math
+from typing import TypedDict
 
 import gdsfactory as gf
 
-from orpen_sc_pdk.tech import LAYER, Layer
+from orpen_sc_pdk.tech import LAYER, LAYER_STACK, Layer
+
+
+class _IndiumGroundBumpSettingsRecord(TypedDict):
+    """Static public settings used by canonical indium bump construction."""
+
+    indium_bump_size: float
+    under_bump_size: float
+    include_under_bump: bool
+    indium_bump_layer: Layer
+    under_bump_layer: Layer
+
+
+class _IndiumGroundBumpKeepoutRecord(TypedDict):
+    """Named keepout records intended for consumers."""
+
+    name: str
+    layer: Layer
+    consumers: tuple[str, ...]
+
+
+class IndiumGroundBumpSpec(TypedDict):
+    """Canonical non-simulation indium bump contract returned to consumers."""
+
+    schema_identity: str
+    canonical_component_name: str
+    canonical_component_settings: _IndiumGroundBumpSettingsRecord
+    material: str
+    bump_height_um: float
+    collision_footprint_layers: tuple[Layer, ...]
+    authored_site_occupancy_layers: tuple[Layer, ...]
+    lattice_origin_um: tuple[float, float]
+    keepout_records: tuple[_IndiumGroundBumpKeepoutRecord, ...]
+
+
+def get_indium_ground_bump_spec() -> IndiumGroundBumpSpec:
+    """Return canonical indium bump spec metadata.
+
+    `lattice_origin_um=(0.0, 0.0)` is the component-local PDK physical origin.
+    `pitch_um` and clearance/margin fields are intentionally absent and are passed
+    explicitly by consumers.
+    Keepout records preserve each source layer separately; consumers may derive union
+    layers for collision or occupancy, but should not replace provenance with unions.
+    """
+    indium_bump_level = LAYER_STACK["D0_D1_INDIUM_BUMP"]
+
+    bump_layer = tuple(LAYER.D0_D1_INDIUM_BUMP)
+    under_bump_layer = tuple(LAYER.D0_D1_UNDER_BUMP)
+    device_keepout_layer = tuple(LAYER.DEVICE_KEEPOUT)
+    routing_keepout_layer = tuple(LAYER.ROUTING_KEEPOUT)
+    indium_ground_keepout_layer = tuple(LAYER.D0_D1_INDIUM_GROUND_KEEPOUT)
+
+    return {
+        "schema_identity": "orpen.indium_ground_bump_spec.v1",
+        "canonical_component_name": "indium_bump",
+        "canonical_component_settings": _IndiumGroundBumpSettingsRecord(
+            indium_bump_size=20.0,
+            under_bump_size=40.0,
+            include_under_bump=True,
+            indium_bump_layer=bump_layer,
+            under_bump_layer=under_bump_layer,
+        ),
+        "material": str(indium_bump_level.material),
+        "bump_height_um": float(indium_bump_level.thickness),
+        "collision_footprint_layers": (
+            bump_layer,
+            under_bump_layer,
+        ),
+        "authored_site_occupancy_layers": (
+            bump_layer,
+            under_bump_layer,
+        ),
+        "lattice_origin_um": (0.0, 0.0),
+        "keepout_records": (
+            {
+                "name": "DEVICE_KEEPOUT",
+                "layer": device_keepout_layer,
+                "consumers": ("routing", "indium_ground_bump"),
+            },
+            {
+                "name": "ROUTING_KEEPOUT",
+                "layer": routing_keepout_layer,
+                "consumers": ("routing",),
+            },
+            {
+                "name": "D0_D1_INDIUM_GROUND_KEEPOUT",
+                "layer": indium_ground_keepout_layer,
+                "consumers": ("indium_ground_bump",),
+            },
+        ),
+    }
 
 
 @gf.cell(tags=["elements"])
