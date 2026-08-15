@@ -3039,16 +3039,7 @@ def normalize_aedt_material(material):
     text = str(material or "").strip()
     if not text:
         return ""
-    aliases = {
-        "si": "Silicon",
-        "silicon": "Silicon",
-        "vacuum": "Vacuum",
-        "al": "aluminum",
-        "nb": "niobium",
-        "in": "indium",
-        "pec": "pec",
-    }
-    return aliases.get(text.casefold(), text)
+    return text
 
 
 def object_inventory(app, material_context=None):

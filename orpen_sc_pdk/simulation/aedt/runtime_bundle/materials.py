@@ -14,7 +14,7 @@ import json
 import re
 from typing import Any
 
-from .io import package_path, write_json
+from .io import package_path
 
 
 def load_aedt_material_context(case: dict[str, Any], package_root) -> dict[str, Any]:
@@ -120,68 +120,18 @@ def ensure_aedt_project_materials(
     *,
     allow_missing: bool = False,
 ) -> dict[str, Any]:
-    """Create/update AEDT project materials declared by a material context.
+    """Reject custom AEDT material creation from a material context.
 
-    The target AEDT project owns the material objects. This function applies
-    only properties supported by the compiled context and writes an audit
-    summary when a result directory is supplied.
+    PDK-authored bindings must reference AEDT built-ins or PEC directly.
     """
 
     material_specs = material_context_compiled_materials(material_context)
-    if not material_specs:
-        return {"material_count": 0, "materials": []}
-    materials_manager = getattr(app, "materials", None)
-    if materials_manager is None:
-        if allow_missing:
-            summary = {
-                "material_count": 0,
-                "expected_material_count": len(material_specs),
-                "materials": [],
-                "skipped": True,
-                "skip_reason": f"{type(app).__name__} has no materials manager",
-            }
-            if result_dir is not None:
-                write_json(result_dir / "aedt_material_context_applied.json", summary)
-            return summary
-        raise RuntimeError(f"{type(app).__name__} does not expose a materials manager")
-
-    records = []
-    for spec in material_specs:
-        name = str(spec.get("aedt_material_name") or "").strip()
-        if not name:
-            raise RuntimeError(f"Compiled AEDT material has no name: {spec}")
-        material_obj = existing_or_new_aedt_material(materials_manager, name)
-        supported = spec.get("supported_properties") or {}
-        applied = apply_aedt_material_properties(material_obj, supported)
-        records.append(
-            {
-                "aedt_material_name": name,
-                "source_physical_material_key": spec.get("source_physical_material_key"),
-                "material_kind": spec.get("material_kind"),
-                "applied": applied,
-                "unsupported_properties": spec.get("unsupported_properties") or {},
-            }
+    if material_specs:
+        raise RuntimeError(
+            "Custom numerical AEDT materials are unsupported; assignments must use "
+            "PDK-authored built-in/PEC bindings."
         )
-    summary = {
-        "schema_version": "aedt-material-write-attempt.v1",
-        "status": "write_attempt_accepted_by_api",
-        "independent_readback": False,
-        "material_count": len(records),
-        "materials": records,
-    }
-    profile = (material_context or {}).get("material_profile") or {}
-    if profile:
-        summary.update(
-            {
-                "data_class": profile.get("data_class"),
-                "allowed_consumers": profile.get("allowed_consumers"),
-                "publication_state": profile.get("publication_state"),
-                "promotion_eligible": profile.get("promotion_eligible"),
-            }
-        )
-    if result_dir is not None:
-        write_json(result_dir / "aedt_material_context_applied.json", summary)
-    return summary
+    return {"material_count": 0, "materials": []}
 
 
 register_aedt_materials = ensure_aedt_project_materials

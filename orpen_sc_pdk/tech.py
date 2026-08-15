@@ -13,6 +13,10 @@ from gdsfactory.technology.layer_stack import LogicalLayer
 from gdsfactory.typings import ConnectivitySpec, Layer, LayerSpec
 
 from orpen_sc_pdk.config import PATH
+from orpen_sc_pdk.materials import (
+    get_material_alias_records,
+    get_material_records,
+)
 
 nm = 1e-3
 
@@ -94,33 +98,8 @@ class LayerMapOrpenSCPDK(LayerMap):
 
 L = LAYER = LayerMapOrpenSCPDK
 
-material_properties = {
-    "vacuum": {
-        "relative_permittivity": 1.0,
-        "permeability": 1.0,
-        "material_kind": "vacuum",
-    },
-    "Si": {
-        "relative_permittivity": 11.45,
-        "permeability": 1.0,
-        "material_kind": "dielectric",
-    },
-    "Al": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "Nb": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "TiN": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "In": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "AlOx_native_generic": {
-        "relative_permittivity": 10.0,
-        "permeability": 1.0,
-        "material_kind": "dielectric",
-    },
-}
-
-material_alias_records = {
-    "air": "vacuum",
-    "silicon": "Si",
-}
-
+material_properties = get_material_records()
+material_alias_records = get_material_alias_records()
 interface_preset_records = {}
 
 SUBSTRATE_THICKNESS_UM = 500.0

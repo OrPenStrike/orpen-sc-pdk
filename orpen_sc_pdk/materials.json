@@ -3,13 +3,17 @@
     "vacuum": {
       "relative_permittivity": 1.0,
       "permeability": 1.0,
-      "material_kind": "vacuum"
+      "material_kind": "vacuum",
+      "is_superconducting": false,
+      "aedt_library_name": "Vacuum"
     },
     "Si": {
       "relative_permittivity": 11.45,
       "loss_tangent": 2.6e-7,
       "permeability": 1.0,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": "Silicon"
     },
     "sapphire_EFG": {
       "relative_permittivity": [
@@ -36,44 +40,62 @@
           1.0
         ]
       ],
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Al": {
       "relative_permittivity": "inf",
       "conductivity": 35000000.0,
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "Nb": {
       "relative_permittivity": "inf",
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "TiN": {
       "relative_permittivity": "inf",
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "In": {
       "relative_permittivity": "inf",
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "AlOx_native_generic": {
       "relative_permittivity": 10.0,
       "permeability": 1.0,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Woods2019_Si_MS_effective": {
       "relative_permittivity": 11.4,
       "loss_tangent": 0.00048,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Woods2019_Si_SA_effective": {
       "relative_permittivity": 4.0,
       "loss_tangent": 0.0017,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Woods2019_Si_MA_effective": {
       "relative_permittivity": 10.0,
       "loss_tangent": 0.0033,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     }
   },
   "material_aliases": {

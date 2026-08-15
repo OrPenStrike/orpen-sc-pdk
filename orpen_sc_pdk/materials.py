@@ -25,7 +25,10 @@ _MATERIAL_KINDS = {
 
 def get_material_records() -> dict[str, dict[str, Any]]:
     """Return a copy of public PDK material records."""
-    return copy.deepcopy(_material_database()["materials"])
+
+    records = copy.deepcopy(_material_database()["materials"])
+    validate_aedt_material_records(records)
+    return records
 
 
 def get_material_alias_records() -> dict[str, str]:
@@ -44,6 +47,50 @@ def validate_material_kind_records(
     for name, record in source_records.items():
         material_name = _material_name(name)
         normalized[material_name] = _normalize_material_kind(material_name, record)
+    return normalized
+
+
+def validate_aedt_material_records(
+    records: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Validate explicit AEDT backend identity for public PDK materials."""
+
+    source_records = get_material_records() if records is None else records
+    normalized: dict[str, dict[str, Any]] = {}
+    for name, record in source_records.items():
+        material_name = _material_name(name)
+        material_kind = _normalize_material_kind(material_name, record)
+        is_superconducting = record.get("is_superconducting")
+        if not isinstance(is_superconducting, bool):
+            raise ValueError(
+                f"Material record {material_name!r} must set boolean is_superconducting."
+            )
+        if is_superconducting != (material_kind == "superconductor"):
+            raise ValueError(
+                f"Material record {material_name!r} has inconsistent material_kind and "
+                "is_superconducting."
+            )
+        if "aedt_library_name" not in record:
+            raise ValueError(
+                f"Material record {material_name!r} must explicitly set aedt_library_name."
+            )
+        aedt_library_name = record["aedt_library_name"]
+        if aedt_library_name is not None and (
+            not isinstance(aedt_library_name, str) or not aedt_library_name.strip()
+        ):
+            raise ValueError(
+                f"Material record {material_name!r} must set a non-empty AEDT library name or null."
+            )
+        if is_superconducting and aedt_library_name is not None:
+            raise ValueError(
+                f"Superconducting material record {material_name!r} must not set an "
+                "AEDT library material."
+            )
+        normalized[material_name] = {
+            "material_kind": material_kind,
+            "is_superconducting": is_superconducting,
+            "aedt_library_name": aedt_library_name,
+        }
     return normalized
 
 
