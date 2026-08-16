@@ -48,6 +48,7 @@ docs = [
   "quartodoc",
 ]
 palace-notebooks = ["scgsim[palace]"]
+aedt-notebooks = ["scgsim[aedt]"]
 ecosystem-dev = [
   "gplugins",
   "gsim",
@@ -58,7 +59,7 @@ ecosystem-dev = [
 
 [tool.uv.sources]
 gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
-scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "e5a27262f67b03cfa25d512eaa0bd67bca2aab6f", group = "palace-notebooks" }
+scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "339198068535a5a4cf3dcd74df5f9bcfc3c89371" }
 
 [tool.ruff]
 line-length = 100

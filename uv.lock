@@ -2811,6 +2811,9 @@ gdsfactoryplus = [
 ]
 
 [package.dev-dependencies]
+aedt-notebooks = [
+    { name = "scgsim", extra = ["aedt"] },
+]
 docs = [
     { name = "griffe" },
     { name = "ipykernel" },
@@ -2847,6 +2850,7 @@ requires-dist = [
 provides-extras = ["dev", "fem-aedt", "gdsfactoryplus"]
 
 [package.metadata.requires-dev]
+aedt-notebooks = [{ name = "scgsim", extras = ["aedt"], git = "https://github.com/OrPenStrike/scgsim.git?rev=339198068535a5a4cf3dcd74df5f9bcfc3c89371" }]
 docs = [
     { name = "griffe", specifier = "<2" },
     { name = "ipykernel" },
@@ -2861,7 +2865,7 @@ ecosystem-dev = [
     { name = "pandas", specifier = ">=2.0" },
     { name = "plotly", specifier = ">=6.0.0" },
 ]
-palace-notebooks = [{ name = "scgsim", extras = ["palace"], git = "https://github.com/OrPenStrike/scgsim.git?rev=e5a27262f67b03cfa25d512eaa0bd67bca2aab6f" }]
+palace-notebooks = [{ name = "scgsim", extras = ["palace"], git = "https://github.com/OrPenStrike/scgsim.git?rev=339198068535a5a4cf3dcd74df5f9bcfc3c89371" }]
 
 [[package]]
 name = "osmnx"
@@ -4139,9 +4143,13 @@ wheels = [
 [[package]]
 name = "scgsim"
 version = "0.1.0.dev0"
-source = { git = "https://github.com/OrPenStrike/scgsim.git?rev=e5a27262f67b03cfa25d512eaa0bd67bca2aab6f#e5a27262f67b03cfa25d512eaa0bd67bca2aab6f" }
+source = { git = "https://github.com/OrPenStrike/scgsim.git?rev=339198068535a5a4cf3dcd74df5f9bcfc3c89371#339198068535a5a4cf3dcd74df5f9bcfc3c89371" }
 
 [package.optional-dependencies]
+aedt = [
+    { name = "gdstk" },
+    { name = "pyaedt" },
+]
 palace = [
     { name = "gdsfactory" },
     { name = "gdstk" },
