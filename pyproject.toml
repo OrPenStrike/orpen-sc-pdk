@@ -36,7 +36,6 @@ dev = [
   "pytest>=9.0.0",
   "ruff>=0.15.11",
 ]
-fem-aedt = ["pyaedt[all]==1.3.0"]
 gdsfactoryplus = ["gdsfactoryplus==1.8.20", "httpx"]
 
 [dependency-groups]
@@ -51,14 +50,12 @@ palace-notebooks = ["scgsim[palace]"]
 aedt-notebooks = ["scgsim[aedt]"]
 ecosystem-dev = [
   "gplugins",
-  "gsim",
   "kaleido>=1.0.0",
   "pandas>=2.0",
   "plotly>=6.0.0",
 ]
 
 [tool.uv.sources]
-gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
 scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "339198068535a5a4cf3dcd74df5f9bcfc3c89371" }
 
 [tool.ruff]
