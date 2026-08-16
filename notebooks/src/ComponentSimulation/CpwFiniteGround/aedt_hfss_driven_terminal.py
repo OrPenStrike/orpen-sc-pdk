@@ -50,20 +50,28 @@ orpen_sc_pdk.activate()
 # ## Setup and Run Controls
 
 # %%
+# Choose prepare_handoff to create files, run to execute, or analyze_handoff to inspect results.
 WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
+# Use a new unique ID for each prepared run; SCGSim refuses non-empty output directories.
 RUN_ID = "cpw_finite_ground_hfss_terminal"
+# Root directory for prepared geometry and handoff artifacts.
 OUTPUT_ROOT = Path("notebooks/.artifacts/ComponentSimulation/CpwFiniteGround")
 RUN_DIR = OUTPUT_ROOT / RUN_ID
-RETURNED_RUN_DIR = RUN_DIR
+RETURNED_RUN_DIR = RUN_DIR  # Analysis input directory containing returned results.
 
 # %% [markdown]
 # ## Create Simulation Component / Coupon
 
 # %%
+# CPW trace length along X (um).
 trace_length_um = 500.0
+# Signal conductor width (um).
 signal_width_um = 10.0
+# Gap from signal to each ground conductor (um).
 gap_um = 6.0
+# Width of each ground conductor (um).
 ground_width_um = 80.0
+# Substrate thickness below the metal (um).
 substrate_thickness_um = 500.0
 
 coupon = gf.Component()
@@ -88,18 +96,23 @@ coupon.plot()
 # ## Initialize AEDT Project / App
 
 # %%
+# AEDT version used for project generation.
 aedt_version = "2024.2"
+# AEDT project name.
 project_name = RUN_ID
+# AEDT design name.
 design_name = "CpwFiniteGroundTerminal"
 
 # %% [markdown]
 # ## Import GDS and Build the HFSS/Q3D/Q2D Model
 
 # %%
+# GDS layer number/datatype, AEDT name, bottom z and thickness (um).
 layer_imports = (
     LayerImport(1, 0, "D0_TOP_M1", 0.0, 0.0),
     LayerImport(201, 0, "D0_SUBSTRATE", -substrate_thickness_um, 0.0),
 )
+# Imported object name, source layer, semantic role, and material ID.
 object_bindings = (
     ObjectBinding("D0_TOP_M1_1", 1, "signal", "Nb"),
     ObjectBinding("D0_TOP_M1_2", 1, "ground", "Nb"),
@@ -127,14 +140,17 @@ materials = {
     )
     for material_id in ("vacuum", "Si", "Nb")
 }
+# Padding around the model in -X, +X, -Y, +Y, -Z, +Z directions (um).
 region_padding_um = (0.0, 0.0, 100.0, 100.0, 1000.0, 1000.0)
 
 # %% [markdown]
 # ## Ports / Nets / Excitations
 
 # %%
+# Ground object names used by terminal reference and mesh.
 ground_objects = ("D0_TOP_M1_2", "D0_TOP_M1_3")
 ports = (
+    # Port ID, name, direction, and associated ground objects.
     TerminalPort(1, "o1", "-X", ground_objects),
     TerminalPort(2, "o2", "+X", ground_objects),
 )
@@ -143,8 +159,11 @@ ports = (
 # ## Simulation Setup
 
 # %%
+# Sweep lower frequency (GHz).
 frequency_start_ghz = 3.0
+# Sweep upper frequency (GHz).
 frequency_stop_ghz = 8.0
+# Number of frequency samples.
 frequency_points = 20_000
 spec = HfssDrivenSpec(
     mode="terminal",

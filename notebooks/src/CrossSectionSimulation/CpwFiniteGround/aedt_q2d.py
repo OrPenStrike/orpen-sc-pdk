@@ -46,20 +46,28 @@ orpen_sc_pdk.activate()
 # ## Setup and Run Controls
 
 # %%
+# Choose prepare_handoff to create files, run to execute, or analyze_handoff to inspect results.
 WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
+# Use a new unique ID for each prepared run; SCGSim refuses non-empty output directories.
 RUN_ID = "cpw_finite_ground_q2d"
+# Root directory for prepared geometry and handoff artifacts.
 OUTPUT_ROOT = Path("notebooks/.artifacts/CrossSectionSimulation/CpwFiniteGround")
 RUN_DIR = OUTPUT_ROOT / RUN_ID
-RETURNED_RUN_DIR = RUN_DIR
+RETURNED_RUN_DIR = RUN_DIR  # Analysis input directory containing returned results.
 
 # %% [markdown]
 # ## Create Simulation Component / Coupon
 
 # %%
+# Cross-section signal width (um).
 signal_width_um = 10.0
+# Signal-to-ground gap (um).
 gap_um = 10.0
+# Ground conductor width (um).
 ground_width_um = 40.0
+# Metal thickness (um).
 metal_thickness_um = 0.2
+# Substrate thickness (um).
 substrate_thickness_um = 500.0
 cross_section = gf.Component()
 cross_section.add_polygon(
@@ -75,8 +83,11 @@ cross_section.plot()
 # ## Initialize AEDT Project / App
 
 # %%
+# AEDT version used for project generation.
 aedt_version = "2024.2"
+# AEDT project name.
 project_name = RUN_ID
+# AEDT design name.
 design_name = "CpwFiniteGroundQ2d"
 
 # %% [markdown]
@@ -84,6 +95,7 @@ design_name = "CpwFiniteGroundQ2d"
 
 # %%
 rectangles = (
+    # Each row gives name, lower-left coordinate (um), size (um), and material.
     Q2dRectangleSpec("Substrate", (-100.0, -substrate_thickness_um), (200.0, 500.0), "Si"),
     Q2dRectangleSpec("Signal", (-signal_width_um / 2, 0.0), (signal_width_um, 0.2), "Nb"),
     Q2dRectangleSpec("GroundLeft", (-55.0, 0.0), (ground_width_um, 0.2), "Nb"),
@@ -110,6 +122,7 @@ materials = {
     )
     for material_id in ("vacuum", "Si", "Nb")
 }
+# Region padding tuple in -X,+X,-Y,+Y order (um).
 region_padding_um = (100.0, 100.0, 1000.0, 100.0)
 
 # %% [markdown]
@@ -117,6 +130,7 @@ region_padding_um = (100.0, 100.0, 1000.0, 100.0)
 
 # %%
 conductors = (
+    # Each row gives conductor name, net name, rectangle members, and thickness (um).
     Q2dConductorSpec("Signal", "SignalLine", ("Signal",), metal_thickness_um),
     Q2dConductorSpec(
         "Ground", "ReferenceGround", ("GroundLeft", "GroundRight"), metal_thickness_um
@@ -127,7 +141,9 @@ conductors = (
 # ## Simulation Setup
 
 # %%
+# Matrix solve frequency (GHz).
 frequency_ghz = 6.0
+# Maximum adaptive passes.
 maximum_passes = 3
 spec = Q2dSpec(
     project_name=project_name,

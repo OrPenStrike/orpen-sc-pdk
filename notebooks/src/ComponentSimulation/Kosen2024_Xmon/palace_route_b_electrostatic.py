@@ -19,15 +19,17 @@ from pathlib import Path
 import gdsfactory as gf
 from IPython.display import display
 from scgsim.palace import ElectrostaticSim, resolve_palace_result
-from scgsim.sgb import build_kosen2024_flip_chip_xmon_stack
+from scgsim.sgb import build_component_stack
 
 import orpen_sc_pdk
-from orpen_sc_pdk import LAYER, LAYER_STACK, get_material_records
+from orpen_sc_pdk import LAYER_STACK, get_material_records
 from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 
+# Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
+# Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
 RUN_ID = "kosen2024_flip_chip_xmon_route_b_electrostatic"
-RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID
+RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 if WORKFLOW_ACTION not in {"prepare_handoff", "analyze_handoff"}:
     raise ValueError("WORKFLOW_ACTION must be 'prepare_handoff' or 'analyze_handoff'.")
 
@@ -35,6 +37,7 @@ if WORKFLOW_ACTION not in {"prepare_handoff", "analyze_handoff"}:
 # ## Build Component Coupon
 
 # %%
+# PDK-registered layout cell whose geometry and semantic annotation are simulated.
 COMPONENT_NAME = "kosen2024_flip_chip_xmon_qubit"
 
 orpen_sc_pdk.activate()
@@ -46,33 +49,51 @@ display(component)
 # ## Configure EPR / Problem
 
 # %%
+# Route A models zero-thickness PEC sheets; Route B models finite PEC exclusion shells.
 ROUTE = "B"
+# Expand every side of the component's XY bounds before constructing the coupon domains.
 COUPON_PADDING_UM = 75.0
+# Add symmetric X/Y/Z padding to the automatic vacuum envelope; only Z is expanded here.
 VACUUM_PADDING_UM = (0.0, 0.0, float(OUTER_VACUUM_THICKNESS_UM))
-INDIUM_GROUND_FILL = {"fill": True, "fill_pitch_um": 80.0, "fill_clearance_um": 30.0}
+INDIUM_GROUND_FILL = {
+    # Add deterministic ground bumps after preserving all authored bump sites.
+    "fill": True,
+    # Center-to-center lattice spacing; a smaller pitch creates more mesh geometry.
+    "fill_pitch_um": 80.0,
+    # Minimum distance from semantic keepouts; a larger value rejects more sites.
+    "fill_clearance_um": 30.0,
+}
 EPR_SPECS = {
-    kind: {"thickness": 0.003, "permittivity": 10.0, "loss_tangent": 0.0}
+    kind: {
+        # Effective interface thickness used in Palace surface-energy postprocessing (um).
+        "thickness": 0.003,
+        # Relative permittivity used to convert interface fields into stored energy.
+        "permittivity": 10.0,
+        # Multiplies participation to estimate dielectric loss; zero disables that loss.
+        "loss_tangent": 0.0,
+    }
     for kind in ("MA", "MS", "SA")
 }
+# Palace applies unit voltage to each terminal in turn and returns the capacitance matrices.
 TERMINALS = {
-    "xmon_pad": "xmon_pad",
+    "xmon_pad": "xmon_pad",  # Report name -> exact structured conductor net.
     "coupler_1": "coupler_1",
     "coupler_2": "coupler_2",
     "coupler_3": "coupler_3",
     "coupler_4": "coupler_4",
 }
+# Number of terminal field solutions saved for ParaView/GridFunction visualization; 0 saves none.
 SAVE_FIELDS = 0
+# Put structured conductor components not listed above on the zero-voltage Ground boundary.
 UNASSIGNED_CONDUCTOR_POLICY = "ground"
+# Leave exterior solution boundaries at Palace's natural zero-charge condition.
 EXTERIOR_BOUNDARY_POLICY = "none"
 
-stack = build_kosen2024_flip_chip_xmon_stack(
+stack = build_component_stack(
     component=component,
     layer_stack=LAYER_STACK,
     material_records=get_material_records(),
-    d0_top_ground_mask_layer=tuple(LAYER.D0_TOP_GROUND_MASK),
-    indium_bump_layer=tuple(LAYER.D0_D1_INDIUM_BUMP),
     coupon_padding_um=COUPON_PADDING_UM,
-    include_airbox=False,
 )
 sim = ElectrostaticSim()
 sim.set_geometry(component)
@@ -93,7 +114,9 @@ sim.set_electrostatic(
 # ## Build Mesh
 
 # %%
+# Target element size near SGB semantic refinement regions; smaller resolves interfaces more finely.
 REFINED_MESH_SIZE_UM = 15.0
+# Upper element size in bulk solution volumes; smaller increases the global tetrahedron count.
 MAX_MESH_SIZE_UM = 80.0
 
 sim.set_mesh(refined_mesh_size=REFINED_MESH_SIZE_UM, max_mesh_size=MAX_MESH_SIZE_UM)
@@ -103,18 +126,31 @@ MESH_PATH = sim.mesh()
 # ## Generate Config
 
 # %%
-FEM_ORDER = 1
+# Polynomial degree of Palace's finite-element basis; higher order costs more memory and work.
+FEM_ORDER = 2
+# Relative residual tolerance for each terminal's linear solve.
 LINEAR_TOLERANCE = 1e-6
-MAX_ITERATIONS = 400
+# Maximum iterations allowed for each terminal's linear solve.
+MAX_ITERATIONS = 2000
+# Palace linear-solver selection; "Default" delegates the backend choice to Palace.
 SOLVER_TYPE = "Default"
+# Optional non-default preconditioner; "Default" keeps Palace's solver-dependent choice.
 PRECONDITIONER = "Default"
+# MFEM execution backend requested by Palace.
 DEVICE = "CPU"
-AMR_MAX_PASSES = 0
-AMR_TOLERANCE = 1e-2
-AMR_UPDATE_FRACTION = None
-SAVE_ADAPT_ITERATIONS = None
-ESTIMATOR_MG = None
+# Maximum adaptive-refinement iterations after the initial solve; 0 disables AMR.
+AMR_MAX_PASSES = 10
+# Stop AMR when the estimated-error norm falls below this value.
+AMR_TOLERANCE = 1e-1
+# Dörfler error fraction marked per AMR pass; None keeps the Palace default.
+AMR_UPDATE_FRACTION = 0.3
+# Save each intermediate AMR solve under iterationX; None keeps the Palace default.
+SAVE_ADAPT_ITERATIONS = True
+# Use multigrid instead of Jacobi for the error-estimator solve; None keeps the default.
+ESTIMATOR_MG = True
+# Write field data in ParaView format; disabled here to reduce returned-run size.
 OUTPUT_PARAVIEW = False
+# Write MFEM grid-function files for GLVis; disabled here to reduce returned-run size.
 OUTPUT_GRID_FUNCTION = False
 
 sim.set_numerical(
@@ -138,17 +174,20 @@ CONFIG_PATH = sim.write_config()
 # ## Prepare Handoff
 
 # %%
+# Select the LTlab Slurm launcher and handoff layout.
 MACHINE_PROFILE = "ltlab-slurm"
+# Palace binary invoked by srun after the setup commands complete.
 PALACE_EXECUTABLE = "palace-x86_64.bin"
+# Commands executed inside the batch job before Palace starts.
 SETUP_COMMANDS = ("module load palace",)
 RESOURCES = {
-    "nodes": 1,
-    "ntasks": 10,
-    "cpus_per_task": 3,
-    "time": "00:30:00",
-    "mem": "256G",
-    "launcher": ("srun", "--mpi=pmix"),
-    "command_style": "binary",
+    "nodes": 1,  # Allocate one Slurm node.
+    "ntasks": 10,  # Launch ten MPI ranks for Palace.
+    "cpus_per_task": 3,  # Give each MPI rank three CPU threads.
+    "time": "00:30:00",  # Cancel the job if it exceeds thirty minutes.
+    "mem": "256G",  # Reserve 256 GiB for the Slurm job.
+    "launcher": ("srun", "--mpi=pmix"),  # Use Slurm's PMIx MPI launcher.
+    "command_style": "binary",  # Invoke the binary directly; required for Slurm profiles.
 }
 
 HANDOFF = sim.prepare_handoff(
@@ -162,6 +201,7 @@ HANDOFF = sim.prepare_handoff(
 # ## Analyze Returned Run
 
 # %%
+# Returned handoff root whose receipt and handoff identity SCGSim must verify.
 RETURNED_RUN_DIR = RUN_ROOT / "returned"
 
 if WORKFLOW_ACTION == "analyze_handoff":

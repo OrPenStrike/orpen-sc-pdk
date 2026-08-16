@@ -8,7 +8,7 @@ not paper mask authority; the paper's 8 um die gap and 25 um pre-compression
 indium diameter are retained as provenance metadata only.
 """
 
-from math import isfinite
+from math import cos, isfinite, radians, sin
 
 import gdsfactory as gf
 
@@ -361,6 +361,105 @@ def kosen2024_flip_chip_xmon_qubit(
         "q_chip_ground_mask": tuple(int(value) for value in q_chip_ground_mask_layer),
         "junction_draw": tuple(int(value) for value in junction_draw_layer),
         "junction_sim_port": tuple(int(value) for value in junction_sim_port_layer),
+    }
+    # Component semantics describe nets and topology only. Material, layer,
+    # fabrication, host-volume, and 3D-integration facts remain in the PDK stack.
+    d1_draw_layer = tuple(int(value) for value in q_chip_draw_layer)
+    d1_ground_mask_layer = tuple(int(value) for value in q_chip_ground_mask_layer)
+    coupler_selectors = []
+    for index, port_name in enumerate(("o1", "o2", "o3", "o4"), 1):
+        port = c.ports[port_name]
+        angle = radians(float(port.orientation))
+        distance = float(port.width) / 2
+        coupler_selectors.append(
+            (
+                f"D1_COUPLER_{index}",
+                f"coupler_{index}",
+                (
+                    float(port.center[0]) - distance * cos(angle),
+                    float(port.center[1]) - distance * sin(angle),
+                ),
+                f"authored component port {port_name}",
+            )
+        )
+    c.info["component_semantics"] = {
+        "schema_version": 1,
+        "conductor_regions": [
+            {
+                "semantic_id": "D0_TOP_GROUND_PLANE",
+                "level": "D0_TOP_M1",
+                "gds_layer": tuple(int(value) for value in LAYER.D0_TOP_GROUND_MASK),
+                "net_id": "Ground",
+                "metadata": {
+                    "equipotential_id": "Ground",
+                },
+            },
+            {
+                "semantic_id": "D1_BOTTOM_GROUND_PLANE",
+                "level": "D1_BOTTOM_M1",
+                "gds_layer": d1_ground_mask_layer,
+                "net_id": "Ground",
+                "geometry": {
+                    "mask_layer": d1_ground_mask_layer,
+                    "include_layer": d1_draw_layer,
+                    "include_selector_points_um": [
+                        (
+                            float(lower_arm_start[0]),
+                            float((lower_arm_start[1] + lower_arm_end) / 2),
+                        )
+                    ],
+                },
+                "metadata": {
+                    "source_selector": "authored lower junction ground-arm interior",
+                    "equipotential_id": "Ground",
+                },
+            },
+            *[
+                {
+                    "semantic_id": semantic_id,
+                    "level": "D1_BOTTOM_M1",
+                    "gds_layer": d1_draw_layer,
+                    "net_id": net_id,
+                    "geometry": {
+                        "geometry_source": "gds_polygon",
+                        "selector_point_um": point,
+                    },
+                    "metadata": {
+                        "semantic_group_id": "D1_BOTTOM_SIGNAL_GROUP",
+                        "source_selector": source,
+                    },
+                }
+                for semantic_id, net_id, point, source in [
+                    (
+                        "D1_XMON_PAD",
+                        "xmon_pad",
+                        (0.0, 0.0),
+                        "public topology anchor (0, 0)",
+                    ),
+                    *coupler_selectors,
+                ]
+            ],
+            {
+                "semantic_id": "D0_D1_INDIUM_BUMP",
+                "level": "D0_D1_INDIUM_BUMP",
+                "gds_layer": tuple(int(value) for value in indium_bump_layer),
+                "net_id": "Ground",
+                "metadata": {
+                    "semantic_group_id": "D0_D1_INDIUM_BUMP",
+                    "source_kind": "authored",
+                    "source_semantic_id": "D0_D1_INDIUM_BUMP",
+                    "equipotential_id": "Ground",
+                    "owner_semantic_ids": (
+                        "D0_TOP_GROUND_PLANE",
+                        "D1_BOTTOM_GROUND_PLANE",
+                    ),
+                },
+            },
+        ],
+        "metadata": {
+            "component_contract": ("kosen2024_flip_chip_xmon_qubit public zero-argument cell"),
+            "signal_group": "D1_BOTTOM_SIGNAL_GROUP",
+        },
     }
 
     return c

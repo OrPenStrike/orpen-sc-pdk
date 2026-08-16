@@ -109,6 +109,43 @@ AIRBRIDGE_THICKNESS_UM = 200 * nm
 D0_D1_METAL_FACE_GAP_UM = 9.8
 D0_D1_SUBSTRATE_FACE_GAP_UM = D0_D1_METAL_FACE_GAP_UM + 2 * METAL_THICKNESS_UM
 OUTER_VACUUM_THICKNESS_UM = 1000.0
+INDIUM_BUMP_SIZE_UM = 20.0
+UNDER_BUMP_SIZE_UM = 40.0
+
+
+def _centered_square(size_um: float) -> tuple[tuple[float, float], ...]:
+    half = size_um / 2
+    return ((-half, -half), (half, -half), (half, half), (-half, half))
+
+
+def _ground_bump_fill_spec() -> dict[str, Any]:
+    """Return PDK-owned bump geometry, lattice origin, and keepout classes."""
+
+    return {
+        "schema_version": 1,
+        "body_layer": tuple(L.D0_D1_INDIUM_BUMP),
+        "body_polygon_um": _centered_square(INDIUM_BUMP_SIZE_UM),
+        "contact_layer": tuple(L.D0_D1_UNDER_BUMP),
+        "contact_polygon_um": _centered_square(UNDER_BUMP_SIZE_UM),
+        "lattice_origin_um": (0.0, 0.0),
+        "keepout_records": (
+            {
+                "name": "DEVICE_KEEPOUT",
+                "layer": tuple(L.DEVICE_KEEPOUT),
+                "consumers": ("routing", "indium_ground_bump"),
+            },
+            {
+                "name": "ROUTING_KEEPOUT",
+                "layer": tuple(L.ROUTING_KEEPOUT),
+                "consumers": ("routing",),
+            },
+            {
+                "name": "D0_D1_INDIUM_GROUND_KEEPOUT",
+                "layer": tuple(L.D0_D1_INDIUM_GROUND_KEEPOUT),
+                "consumers": ("indium_ground_bump",),
+            },
+        ),
+    }
 
 
 def _zmin_from_face(*, face_z: float, outward: int, offset: float, thickness: float) -> float:
@@ -293,6 +330,10 @@ def get_layer_stack() -> LayerStack:
                 zmin=-SUBSTRATE_THICKNESS_UM,
                 material="Si",
                 mesh_order=20,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": True,
+                },
             ),
             "D1_SUBSTRATE": LayerLevel(
                 name="D1_SUBSTRATE",
@@ -301,6 +342,10 @@ def get_layer_stack() -> LayerStack:
                 zmin=d1_substrate_zmin,
                 material="Si",
                 mesh_order=21,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": True,
+                },
             ),
             "D0_TO_D1_GAP": LayerLevel(
                 name="D0_TO_D1_GAP",
@@ -309,6 +354,10 @@ def get_layer_stack() -> LayerStack:
                 zmin=0.0,
                 material="vacuum",
                 mesh_order=98,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": True,
+                },
             ),
             "OUTER_VACUUM": LayerLevel(
                 name="OUTER_VACUUM",
@@ -317,6 +366,11 @@ def get_layer_stack() -> LayerStack:
                 zmin=d1_top_face_z,
                 material="vacuum",
                 mesh_order=99,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": False,
+                    "is_airbox": True,
+                },
             ),
             **_face_layer_levels(
                 die="D0",
@@ -348,10 +402,14 @@ def get_layer_stack() -> LayerStack:
                 sim_boundary_layer=L.D0_TOP_SIM_BOUNDARY,
                 mesh_order=10,
                 m1_info={
+                    "simulation_role": "conductor",
                     "layer_type": "conductor",
                     "part_role": "face_metal",
-                    "net_id": "Ground",
-                    "equipotential_id": "Ground",
+                    "host_void_semantic_id": "D0_TO_D1_GAP",
+                    "geometry": {
+                        "geometry_source": "die_face_minus_ground_mask",
+                        "plane_bounds_ref": "D0_SUBSTRATE",
+                    },
                 },
             ),
             **_face_layer_levels(
@@ -371,10 +429,14 @@ def get_layer_stack() -> LayerStack:
                 sim_boundary_layer=L.D1_BOTTOM_SIM_BOUNDARY,
                 mesh_order=12,
                 m1_info={
+                    "simulation_role": "conductor",
                     "layer_type": "conductor",
                     "part_role": "face_metal",
-                    "net_id": "Ground",
-                    "equipotential_id": "Ground",
+                    "host_void_semantic_id": "D0_TO_D1_GAP",
+                    "geometry": {
+                        "geometry_source": "die_face_minus_ground_mask",
+                        "plane_bounds_ref": "D1_SUBSTRATE",
+                    },
                 },
             ),
             **_face_layer_levels(
@@ -434,10 +496,15 @@ def get_layer_stack() -> LayerStack:
                 material="In",
                 mesh_order=3,
                 info={
+                    "simulation_role": "conductor",
                     "layer_type": "via",
                     "part_role": "bump_body",
-                    "net_id": "Ground",
-                    "equipotential_id": "Ground",
+                    "host_void_semantic_id": "D0_TO_D1_GAP",
+                    "geometry": {
+                        "geometry_source": "gds_polygon",
+                        "split_polygons_as_entities": True,
+                    },
+                    "ground_bump_fill_spec": _ground_bump_fill_spec(),
                 },
             ),
             # Typed bump stays finite shell in Route A/B.
