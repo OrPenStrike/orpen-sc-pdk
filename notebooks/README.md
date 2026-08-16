@@ -13,11 +13,19 @@ thing being simulated:
 
 ```text
 ComponentSimulation/
+  CpwFiniteGround/
+    aedt_hfss_driven_modal.ipynb
+    aedt_hfss_driven_terminal.ipynb
+    aedt_hfss_eigenmode.ipynb
+    aedt_q3d.ipynb
   Kosen2024_Xmon/
     palace_route_a_eigenmode.ipynb
     palace_route_a_electrostatic.ipynb
     palace_route_b_eigenmode.ipynb
     palace_route_b_electrostatic.ipynb
+CrossSectionSimulation/
+  CpwFiniteGround/
+    aedt_q2d.ipynb
 ```
 
 Future `ChipSimulation`, `CrossSectionSimulation`, and `CircuitSimulation`
