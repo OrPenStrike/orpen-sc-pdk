@@ -19,7 +19,7 @@ keywords = [
 ]
 dependencies = [
   "doroutes>=0.2.0",
-  "gdsfactory~=9.43.0",
+  "gdsfactory~=9.48.0",
   "networkx>=3.0",
   "numpy>=2.0",
   "pydantic>=2",
