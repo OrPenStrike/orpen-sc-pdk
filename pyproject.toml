@@ -58,7 +58,7 @@ ecosystem-dev = [
 
 [tool.uv.sources]
 gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
-scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "9febe3f3b77528a17b3be45a4211a33fb47eec2a", group = "palace-notebooks" }
+scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "e5a27262f67b03cfa25d512eaa0bd67bca2aab6f", group = "palace-notebooks" }
 
 [tool.ruff]
 line-length = 100

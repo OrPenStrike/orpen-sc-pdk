@@ -2861,7 +2861,7 @@ ecosystem-dev = [
     { name = "pandas", specifier = ">=2.0" },
     { name = "plotly", specifier = ">=6.0.0" },
 ]
-palace-notebooks = [{ name = "scgsim", extras = ["palace"], git = "https://github.com/OrPenStrike/scgsim.git?rev=9febe3f3b77528a17b3be45a4211a33fb47eec2a" }]
+palace-notebooks = [{ name = "scgsim", extras = ["palace"], git = "https://github.com/OrPenStrike/scgsim.git?rev=e5a27262f67b03cfa25d512eaa0bd67bca2aab6f" }]
 
 [[package]]
 name = "osmnx"
@@ -4139,7 +4139,7 @@ wheels = [
 [[package]]
 name = "scgsim"
 version = "0.1.0.dev0"
-source = { git = "https://github.com/OrPenStrike/scgsim.git?rev=9febe3f3b77528a17b3be45a4211a33fb47eec2a#9febe3f3b77528a17b3be45a4211a33fb47eec2a" }
+source = { git = "https://github.com/OrPenStrike/scgsim.git?rev=e5a27262f67b03cfa25d512eaa0bd67bca2aab6f#e5a27262f67b03cfa25d512eaa0bd67bca2aab6f" }
 
 [package.optional-dependencies]
 palace = [
