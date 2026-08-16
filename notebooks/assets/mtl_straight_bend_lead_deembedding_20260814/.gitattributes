@@ -1,7 +1,0 @@
-*.aedt binary
-*.gds binary
-*.png binary
-*.s4p binary
-*.s5p binary
-aggregate/*_traces.csv binary
-lead_*/modal_zpi_full_sweep.csv binary
