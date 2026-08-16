@@ -104,28 +104,23 @@ demo.show()
 
 | Repository | Owns |
 | --- | --- |
-| `orpen-sc-pdk` | Public process semantics, public cells, public layout helpers, docs, and base-PDK contracts. |
-| Private layout projects | Private cells, private chip assemblies, private layout inputs, notebooks, and run evidence. |
-| `gsim` | Reusable Palace/EPR/reporting workflow, benchmarks, and solver orchestration. |
+| `orpen-sc-pdk` | Public process semantics, material records, public cells, layout helpers, and public component-simulation notebooks. |
+| `scgsim` | Semantic Geometry Builder Core, Palace/AEDT runtimes, handoff, resolve, and reporting. |
+| Private layout projects | Private cells, chip assemblies, private inputs, notebooks, and run evidence. |
 | `gplugins` | Reusable gdsfactory plugin capability. |
 
 Do not put private chip designs directly in this repository.
 
 ## Contributor Setup
 
-Use the ecosystem development group when changing `orpen-sc-pdk` and `gsim`
-together:
+Install only the solver backend needed by a notebook:
 
-```toml
-[dependency-groups]
-ecosystem-dev = [
-  "gsim",
-  "gplugins",
-]
-
-[tool.uv.sources]
-gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
+```bash
+uv sync -p 3.12 --group palace-notebooks
+uv sync -p 3.12 --group aedt-notebooks
 ```
+
+Both groups install `scgsim`; OrPen does not carry a second solver runtime.
 
 For the full local contributor environment:
 

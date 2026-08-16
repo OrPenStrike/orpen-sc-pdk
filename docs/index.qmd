@@ -15,15 +15,11 @@ publication-safe documentation. Private layout repositories keep real chip geome
 parameters, private notebooks, GDS inputs from private designs, and private
 run evidence.
 
-The intended workflow is local and reviewable: open the private layout repo as
-the GF+ project, install `orpen-sc-pdk` as its base PDK, use private layouts to
-validate public infrastructure, then slice accepted public work into clean
-upstream PR branches.
-
-Palace source development is a separate solver-source lane. Most reusable
-Palace workflow work should go through `gsim`; direct Palace fork work is for
-solver-side outputs, postprocessing internals, or behavior that cannot be
-implemented reliably from the Python workflow layer.
+The intended workflow is local and reviewable: a project installs
+`orpen-sc-pdk` for layout and process facts, then uses `scgsim` for semantic
+geometry, mesh/config generation, solver handoff, result resolution, and
+reporting. OrPen's notebooks demonstrate that boundary without owning a second
+simulation runtime.
 
 ## Start By Task
 
@@ -31,10 +27,10 @@ implemented reliably from the Python workflow layer.
   materials, static GF+ import mechanics, and documentation.
 - [Connect a private layout repository](home/ecosystem-workspace.md) without
   publishing private layout or IP.
-- [Develop ecosystem features](developing-features.md) through the current SGB
-  and `gsim` capability boundaries.
-- [Read public examples](public-pdk-examples/index.md), including notebooks,
-  simulation layers, and publication-safe evidence fixtures.
+- [Develop ecosystem features](developing-features.md) through the current
+  OrPen/SCGSim responsibility boundary.
+- [Read public examples](public-pdk-examples/index.md), including runnable
+  Palace and AEDT notebooks backed by `scgsim`.
 - [Explore layout exports](layout-viewer.qmd) in the static interactive viewer.
 - [Open SCQ Design Kit](https://github.com/arfiligol/SCQ_Design), the canonical
   workspace source for cross-repository Design Targets and Knowledge.

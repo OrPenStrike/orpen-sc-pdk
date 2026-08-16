@@ -14,20 +14,17 @@ The PDK-owned surface includes:
 - public cells including launcher and interdigital capacitor;
 - docs and notebooks that expose workflow shape without private layout/IP.
 
-Reusable solver workflow can live here first when it is needed to keep the
-private project usable, then move upstream when the boundary is stable:
+Reusable simulation behavior does not live here:
 
-- `gsim`: Palace electrostatic, EPR, reporting, benchmarks, material resolver
-  adapters, and workflow orchestration reusable across PDKs.
-- Palace source fork: solver-side outputs, postprocessing internals, CSV/report
-  extensions, and runtime behavior that cannot be implemented cleanly in
-  `gsim`.
-- `gplugins`: generic GDSFactory plugin integration.
-- Separate public PDK repos: reference material when a feature belongs outside
-  the OrPen/NCUAS workflow.
+- `scgsim` owns the Semantic Geometry Builder Core, Palace and AEDT backends,
+  mesh/config generation, handoff, run resolution, and reports;
+- `orpen-sc-pdk` supplies components, layer-stack facts, material records,
+  semantic annotations, and public notebooks that consume that API;
+- `gplugins` owns generic GDSFactory plugin integration.
 
 Private layout/IP belongs in a separate private layout repo. The private repo
 may export GF cells and chip assemblies, but the public PDK remains the owner of
 layer and process semantics.
 
-See [ecosystem-workspace](ecosystem-workspace.md) for the local workspace and contribution loop.
+See [ecosystem-workspace](ecosystem-workspace.md) for the local workspace and
+contribution loop.

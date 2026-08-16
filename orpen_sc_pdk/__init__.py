@@ -16,17 +16,12 @@ from .cells.indium import (
 )
 from .config import PATH
 from .materials import (
-    get_gsim_dielectric_interface_preset_kwargs,
-    get_gsim_material_kind_alias_map,
-    get_gsim_material_kind_map,
-    get_gsim_material_overlay,
     get_interface_preset_records,
     get_material_alias_records,
     get_material_records,
     validate_interface_preset_records,
     validate_material_alias_records,
     validate_material_kind_records,
-    write_gsim_material_overlay,
 )
 from .pdk import PDK, activate, get_pdk
 from .tech import LAYER, LAYER_CONNECTIVITY, LAYER_STACK, LAYER_VIEWS
@@ -71,12 +66,8 @@ __all__ = [
     "activate",
     "cells",
     "config",
-    "get_gsim_dielectric_interface_preset_kwargs",
-    "get_gsim_material_kind_alias_map",
-    "get_gsim_material_kind_map",
     "get_sample_functions",
     "get_pdk",
-    "get_gsim_material_overlay",
     "get_interface_preset_records",
     "get_material_alias_records",
     "get_material_records",
@@ -87,7 +78,6 @@ __all__ = [
     "validate_material_alias_records",
     "validate_material_kind_records",
     "validate_interface_preset_records",
-    "write_gsim_material_overlay",
 ]
 
 __version__ = "0.1.0"

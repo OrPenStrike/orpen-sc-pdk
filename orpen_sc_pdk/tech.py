@@ -336,7 +336,7 @@ def get_layer_stack() -> LayerStack:
                 face="TOP",
                 face_z=d0_top_face_z,
                 outward=1,
-                # SGB/gsim consumes typed LayerLevel.info; names are display-only.
+                # SCGSim consumes typed LayerLevel.info; names are display-only.
                 # Face M1 is zero-thickness PEC sheet in Route A and finite
                 # PEC shell in Route B.
                 # Ground is residual identity; terminal selectors override it.
@@ -359,7 +359,7 @@ def get_layer_stack() -> LayerStack:
                 face="BOTTOM",
                 face_z=d1_bottom_face_z,
                 outward=-1,
-                # SGB/gsim consumes typed LayerLevel.info; names are display-only.
+                # SCGSim consumes typed LayerLevel.info; names are display-only.
                 # Face M1 is zero-thickness PEC sheet in Route A and finite
                 # PEC shell in Route B.
                 # Ground is residual identity; terminal selectors override it.

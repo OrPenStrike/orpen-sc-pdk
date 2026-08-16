@@ -13,22 +13,11 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  GSIM_REVISION: bb97148fbb133af43d43b59304b03cd2d6dee985
-  SGB_REVISION: 616cfbd4b44e6fcc54295a9addb5f355163397a5
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Checkout editable documentation dependencies
-        run: |
-          mkdir -p ../GDSFactory_Community_Workbench
-          git clone --filter=blob:none https://github.com/arfiligol/gsim.git ../GDSFactory_Community_Workbench/gsim
-          git -C ../GDSFactory_Community_Workbench/gsim checkout --detach "$GSIM_REVISION"
-          git clone --filter=blob:none https://github.com/OrPenStrike/semantic-geometry-builder.git ../semantic_geometry_builder
-          git -C ../semantic_geometry_builder checkout --detach "$SGB_REVISION"
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true

@@ -35,6 +35,4 @@ The [component gallery](../notebooks/Public_Docs/component_gallery.ipynb)
 shows checked-in public notebook code and output. The [Layout
 Viewer](../layout-viewer.qmd) provides browser-only pan, zoom, and component
 selection for publication-safe exports. Use the existing [layout and simulation
-notebooks](../notebooks.qmd) for runnable examples and the
-[Semantic Geometry Builder](../features/semantic-geometry-builder.qmd) when a
-layout needs a downstream geometry handoff.
+notebooks](../notebooks.qmd) for runnable SCGSim examples.

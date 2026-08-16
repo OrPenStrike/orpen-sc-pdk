@@ -1,147 +1,25 @@
----
-orphan: true
----
-
 # Materials And Technology
 
-`orpen-sc-pdk` is responsible for public superconducting process semantics. The
-PDK should make material and technology data easy for simulation workflows to
-consume, but it should not duplicate a full solver framework.
+`orpen-sc-pdk` is the authority for public process facts. Its material database
+records material identity, aliases, generic material kind, superconducting
+status, Palace numerical properties, and the AEDT library identity where one is
+authoritative.
 
-## PDK-Owned Data
+The public copy-returning API is:
 
-The PDK owns:
+- `get_material_records()`;
+- `get_material_alias_records()`;
+- `get_interface_preset_records()`;
+- the corresponding `validate_*` helpers.
 
-- public layer names and layer numbers;
-- layer views;
-- layerstack z positions, thicknesses, and material names;
-- public material records and aliases for the SCQ process;
-- cross-sections and port conventions for public examples;
-- schema/export helpers that let solver packages consume PDK materials.
+SCGSim consumes these structured records directly. OrPen does not export a
+legacy solver-specific overlay and does not own Palace or AEDT lowering.
 
-Current public material data lives in `orpen_sc_pdk/materials.json`. The JSON
-file is a first-class PDK data source rather than a generated afterthought.
+For AEDT, a declared superconducting record lowers to PEC. A non-superconducting
+record uses its explicit AEDT library name. Missing or conflicting backend
+identity fails closed. Palace continues to consume the numerical PDK facts
+without changing the source material record.
 
-The current public bridge is intentionally small:
-
-- `orpen_sc_pdk.materials.get_material_records()` returns a copy of the public
-  material records from `materials.json`;
-- `orpen_sc_pdk.materials.get_gsim_material_overlay()` adapts those records to
-  the `gsim` material overlay mapping;
-- `orpen_sc_pdk.materials.write_gsim_material_overlay()` writes the same
-  mapping as strict JSON for tools that consume overlay files;
-- `orpen_sc_pdk.materials.validate_material_kind_records()` validates explicit
-  generic `material_kind` values on public material records;
-- `orpen_sc_pdk.materials.get_gsim_material_kind_map()` returns the public
-  material-name-to-kind map expected by `gsim` dielectric-interface
-  classification helpers;
-- `orpen_sc_pdk.materials.get_material_alias_records()` returns public aliases
-  from generated or external material names to public material records;
-- `orpen_sc_pdk.materials.validate_material_alias_records()` validates that
-  each alias target is a public material with an explicit `material_kind`;
-- `orpen_sc_pdk.materials.get_gsim_material_kind_alias_map()` returns those
-  aliases for `gsim` dielectric-interface classification helpers;
-- `orpen_sc_pdk.materials.get_interface_preset_records()` returns a copy of
-  public dielectric-interface preset records from `materials.json`;
-- `orpen_sc_pdk.materials.validate_interface_preset_records()` validates
-  caller-supplied MA/MS/SA-style records with an explicit source string,
-  thickness, and either a public material name or explicit permittivity;
-- `orpen_sc_pdk.materials.get_gsim_dielectric_interface_preset_kwargs()` adapts
-  a validated record into keyword arguments accepted by
-  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` without importing
-  `gsim` into the base PDK package;
-- local `gsim` Palace config generation accepts the overlay through
-  `material_overlay=` and applies public material values to effective
-  `Domains.Materials` without mutating the source layer stack;
-- local `gsim` report loading can read those effective `Domains.Materials`
-  rows back from generated artifacts and join them to domain physical names
-  through `palace_index_map.json`.
-- local `gsim` report loading can also read configured
-  `Boundaries.Postprocessing.Dielectric` rows, including `Thickness`,
-  `Permittivity`, and `LossTan`, and join them to interface physical names
-  through `palace_index_map.json`.
-- local `gsim` can build ordered
-  `gsim.palace.mesh.postprocessing.DielectricInterfaceSpec` tuples from
-  caller-supplied preset maps and exact manifest entry names, physical group
-  names, or parsed interface pairs without hard-coding private process values.
-- local `gsim` can also classify parsed manifest interfaces from caller-supplied
-  material-kind maps and material-name aliases into generic `MA`, `MS`, and
-  `SA` specs while skipping exterior boundaries and non-loss material-kind
-  pairs.
-- local `gsim` can derive reusable domain/surface loss budgets from those
-  loaded artifacts, including inverse-Q, equivalent Q, gamma, and T1 columns
-  when mode frequency is available.
-
-Finite public dielectric records are exported as constant material models.
-The generic `material_kind` labels are separate classifier inputs and are not
-written into the `gsim` material overlay. Public material-name aliases are
-exported as `material_aliases` overlay metadata for `gsim` to expand during
-material overlay loading; they are not duplicate material records in
-`materials.json`.
-Conductor-like records currently represented by `relative_permittivity = inf`
-are preserved as material-role metadata until explicit conductivity, surface
-impedance, or London-depth values are part of the public material record.
-
-## Existing Ecosystem Material DB
-
-The local `gsim` fork already has a common material database and resolver:
-
-- `gsim.common.stack.materials.MaterialProperties`
-- `gsim.common.stack.materials.MATERIALS_DB`
-- `gsim.common.stack.materials.get_material_properties`
-- `gsim.common.stack.materials.resolve_material_at_wavelength`
-- `gsim.palace.materials.resolve_palace_materials_at_frequency`
-
-It also supports a PDK overlay lookup path. That means the integration direction
-should be:
-
-1. Keep SCQ material records in `orpen-sc-pdk`.
-2. Export or adapt those records into the `gsim` material overlay/schema.
-3. Pass the overlay into `gsim` Palace config generation, keeping
-   Palace-specific material evaluation in `gsim`, not in the PDK core.
-4. Upstream reusable adapter support into `gsim` when it is not PDK-specific.
-5. Use `gsim` interface material references when a Palace dielectric interface
-   should draw permittivity/loss fields from a public material record.
-6. Keep public interface preset records schema-validated in the PDK and require
-   explicit source/provenance strings for every preset. Presets may exist in the
-   PDK data file, but `gsim` must not automatically select loss channels.
-7. Use `gsim` assignment helpers for caller-supplied physical-name or
-   interface-pair selection; automatic public selection policy belongs in a
-   later source-backed PDK contract.
-8. Use the PDK's explicit public material-kind map with `gsim`
-   material-kind classification, passing the public material-name alias map
-   when generated names such as `air` and `silicon` need to resolve to public
-   `vacuum` and `Si` records.
-9. Pass the same aliases in `get_gsim_material_overlay()` so generated domain
-   material names can resolve through public PDK overlay records during Palace
-   material resolution.
-10. Keep automatic public MA/MS/SA selection policy out of the PDK until those
-   rules are source-backed.
-
-`gplugins` also has material utilities for existing plugin workflows. Use it
-when the capability belongs to the broader plugin ecosystem rather than the
-simulation workflow layer.
-
-## Palace Support Surface
-
-For Palace electrostatic, EPR, reporting, and surface-Q index mapping, the PDK
-should provide:
-
-- stable layer semantics for conductor, dielectric, vacuum, and simulation
-  boundary layers;
-- material names and material properties that can be resolved by solver tools;
-- public-safe component metadata that lets solver workflows consume private
-  cells without depending on private repository internals;
-- documentation and notebooks that show how the workflow is wired without
-  publishing private layout/IP.
-
-Reusable Palace execution, report generation, and benchmark analysis belong in
-`gsim` unless the capability is only a PDK data export. This prevents the PDK
-from becoming a solver orchestration repository.
-
-## Meshing Direction
-
-Meshing strategy should follow the reusable `gsim` direction. PDK docs should
-describe required process/layer/material inputs, but mesh generation logic
-should not be duplicated in `orpen-sc-pdk` when `gsim` provides the correct
-route.
+Layer names, z positions, thicknesses, and material references live in the
+public `LAYER_STACK`. Solver-specific physical groups, configs, material
+assignment, provenance, and reports belong in SCGSim.
