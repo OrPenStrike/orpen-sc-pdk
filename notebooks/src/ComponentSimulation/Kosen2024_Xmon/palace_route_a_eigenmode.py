@@ -6,347 +6,162 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.19.5
+#       jupytext_version: 1.19.3
 # ---
 
 # %% [markdown]
 # # Public OrPen Xmon — Route A Eigenmode
-# The authored public junction marker supplies the source sheet and direction.
-# The target is the explicit public D1 logical metal group; no second port API
-# or name/bbox ownership inference is used.
-
-# %% [markdown]
-# ## Design And Geometry Controls
+# This public workflow prepares a Palace manual handoff. It does not submit or run Palace.
 
 # %%
 from pathlib import Path
 
-from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
-
-GEOMETRY_CONTROLS = {
-    "route": "A",
-    "component": "kosen2024_flip_chip_xmon_qubit",
-    "port_name": "o_junction_lumped",
-    "logical_metal": "D1_BOTTOM_M1",
-    "inductance_h": 1e-12,
-    "coupon_padding_um": 75.0,
-    "auto_vacuum_padding_um": (0.0, 0.0, float(OUTER_VACUUM_THICKNESS_UM)),
-}
-
-INDIUM_GROUND_CONTROLS = {
-    "fill": True,
-    "fill_pitch_um": 80.0,
-    "fill_clearance_um": 30.0,
-}
-
-# %% [markdown]
-# ## Meshing Controls
-
-# %%
-MESH_CONTROLS = {"refined_mesh_size": 15.0, "max_mesh_size": 80.0}
-
-# %% [markdown]
-# ## Solver Controls
-
-# %%
-SOLVER_CONTROLS = {
-    "num_modes": 2,
-    "target": 5e9,
-    "tolerance": 1e-6,
-    "save": 0,
-    "order": 1,
-    "max_iterations": 400,
-    "solver_type": "Default",
-    "preconditioner": "Default",
-    "device": "CPU",
-}
-
-# %% [markdown]
-# ## Execution Controls
-
-# %%
-EXECUTION_CONTROLS = {
-    "machine_profiles": ("ltlab-local", "ltlab-slurm", "f1-slurm"),
-    "selected_profile": "ltlab-slurm",
-    "executable": "palace",
-    "setup_commands": ("module load palace",),
-    "resources": {
-        "nodes": 1,
-        "ntasks": 1,
-        "cpus_per_task": 1,
-        "command_style": "binary",
-    },
-}
-
-# %% [markdown]
-# ## Output And Run Identity Controls
-
-# %%
-try:
-    NOTEBOOK_DIR = Path(__file__).resolve().parent
-except NameError:
-    NOTEBOOK_DIR = (
-        Path.cwd() / "notebooks" if (Path.cwd() / "notebooks").is_dir() else Path.cwd()
-    )
-
-OUTPUT_CONTROLS = {
-    "run_dir": NOTEBOOK_DIR
-    / ".artifacts"
-    / "kosen2024_flip_chip_xmon_route_a_eigenmode",
-    "output_formats": ("gds", "xao", "msh2", "json", "sbatch", "tar.gz"),
-}
-
-# %% [markdown]
-# ## Validation And Failure Controls
-
-# %%
-VALIDATION_CONTROLS = {
-    "msh_version": "2.2",
-    "port_owner_count": 2,
-    "adjacent_solution_volume_count": 2,
-    "no_solver_run": True,
-}
-
-# %% [markdown]
-# ## Data Classification And Provenance
-
-# %%
-PROVENANCE = {
-    "classification": "public",
-    "orpen_sc_pdk_revision": "8be8fc48c26f6bed06298cab673d49b9a6afbe7f",
-    "scgsim_revision": "9febe3f3b77528a17b3be45a4211a33fb47eec2a",
-    "gsim_meshing_methodology": "8f5dc6c05255d003a9c6d8959537bcf8068379d3",
-    "palace_runtime": "0.16.1",
-    "palace_schema": "0.16.0",
-}
-
-# %%
-import json
-
 import gdsfactory as gf
-import orpen_sc_pdk
-from orpen_sc_pdk import LAYER, LAYER_STACK, get_material_records
-
-from scgsim.palace import EigenmodeSim
+from IPython.display import display
+from scgsim.palace import EigenmodeSim, resolve_palace_result
 from scgsim.sgb import build_kosen2024_flip_chip_xmon_stack
 
+import orpen_sc_pdk
+from orpen_sc_pdk import LAYER, LAYER_STACK, get_material_records
+from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
+
+WORKFLOW_ACTION = "prepare_handoff"
+RUN_ID = "kosen2024_flip_chip_xmon_route_a_eigenmode"
+RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID
+if WORKFLOW_ACTION not in {"prepare_handoff", "analyze_handoff"}:
+    raise ValueError("WORKFLOW_ACTION must be 'prepare_handoff' or 'analyze_handoff'.")
+
+# %% [markdown]
+# ## Build Component Coupon
+
+# %%
+COMPONENT_NAME = "kosen2024_flip_chip_xmon_qubit"
+
+orpen_sc_pdk.activate()
+gf.clear_cache()
+component = gf.get_component(COMPONENT_NAME)
+display(component)
+
+# %% [markdown]
+# ## Configure EPR / Problem
+
+# %%
+ROUTE = "A"
+COUPON_PADDING_UM = 75.0
+VACUUM_PADDING_UM = (0.0, 0.0, float(OUTER_VACUUM_THICKNESS_UM))
+INDIUM_GROUND_FILL = {"fill": True, "fill_pitch_um": 80.0, "fill_clearance_um": 30.0}
 EPR_SPECS = {
     kind: {"thickness": 0.003, "permittivity": 10.0, "loss_tangent": 0.0}
     for kind in ("MA", "MS", "SA")
 }
+PORT_NAME = "o_junction_lumped"
+PORT_LAYER = "D1_BOTTOM_M1"
+PORT_INDUCTANCE_H = 1e-12
+NUM_MODES = 2
+TARGET_HZ = 5e9
+EIGENMODE_TOLERANCE = 1e-6
+SAVE_FIELDS = 0
 
-# %% [markdown]
-# ## Build Component
-
-# %%
-orpen_sc_pdk.activate()
-gf.clear_cache()
-component = gf.get_component(GEOMETRY_CONTROLS["component"])
 stack = build_kosen2024_flip_chip_xmon_stack(
     component=component,
     layer_stack=LAYER_STACK,
     material_records=get_material_records(),
     d0_top_ground_mask_layer=tuple(LAYER.D0_TOP_GROUND_MASK),
     indium_bump_layer=tuple(LAYER.D0_D1_INDIUM_BUMP),
-    coupon_padding_um=GEOMETRY_CONTROLS["coupon_padding_um"],
+    coupon_padding_um=COUPON_PADDING_UM,
     include_airbox=False,
 )
-solution_regions = stack["solution_regions"]
-assert tuple(solution_regions) == (
-    "D0_SUBSTRATE",
-    "D0_TO_D1_GAP",
-    "D1_SUBSTRATE",
-)
-assert (
-    len(
-        {
-            json.dumps(region["geometry"]["domain_bounds_um"], sort_keys=True)
-            for region in solution_regions.values()
-        }
-    )
-    == 1
-)
-assert (
-    solution_regions["D0_SUBSTRATE"]["geometry"]["z_max_um"]
-    == solution_regions["D0_TO_D1_GAP"]["geometry"]["z_min_um"]
-)
-assert (
-    solution_regions["D0_TO_D1_GAP"]["geometry"]["z_max_um"]
-    == solution_regions["D1_SUBSTRATE"]["geometry"]["z_min_um"]
-)
-run_dir = OUTPUT_CONTROLS["run_dir"]
-if run_dir.exists() and any(run_dir.iterdir()):
-    raise FileExistsError(f"Preserving existing inspectable run folder: {run_dir}")
-
-# %% [markdown]
-# ## Configure Problem And EPR
-
-# %%
 sim = EigenmodeSim()
 sim.set_geometry(component)
 sim.set_stack(stack)
-sim.set_output_dir(run_dir)
-sim.set_vacuum_region(padding=GEOMETRY_CONTROLS["auto_vacuum_padding_um"])
-sim.set_indium_ground_bumps(**INDIUM_GROUND_CONTROLS)
-sim.set_surface_epr(representation=GEOMETRY_CONTROLS["route"], specs=EPR_SPECS)
-sim.add_port(
-    GEOMETRY_CONTROLS["port_name"],
-    layer=GEOMETRY_CONTROLS["logical_metal"],
-    layout_sheet=True,
-    inductance=GEOMETRY_CONTROLS["inductance_h"],
-)
+sim.set_output_dir(RUN_ROOT)
+sim.set_vacuum_region(padding=VACUUM_PADDING_UM)
+sim.set_indium_ground_bumps(**INDIUM_GROUND_FILL)
+sim.set_surface_epr(representation=ROUTE, specs=EPR_SPECS)
+sim.add_port(PORT_NAME, layer=PORT_LAYER, layout_sheet=True, inductance=PORT_INDUCTANCE_H)
 sim.set_eigenmode(
-    num_modes=SOLVER_CONTROLS["num_modes"],
-    target=SOLVER_CONTROLS["target"],
-    tolerance=SOLVER_CONTROLS["tolerance"],
-    save=SOLVER_CONTROLS["save"],
-)
-sim.set_numerical(
-    **MESH_CONTROLS,
-    **{
-        key: SOLVER_CONTROLS[key]
-        for key in (
-            "order",
-            "tolerance",
-            "max_iterations",
-            "solver_type",
-            "preconditioner",
-            "device",
-        )
-    },
+    num_modes=NUM_MODES,
+    target=TARGET_HZ,
+    tolerance=EIGENMODE_TOLERANCE,
+    save=SAVE_FIELDS,
 )
 
 # %% [markdown]
 # ## Build Mesh
 
 # %%
-mesh_path = sim.mesh()
-assert f"$MeshFormat\n{VALIDATION_CONTROLS['msh_version']} 0 8" in mesh_path.read_text()
-manifest = json.loads((run_dir / "metadata" / "mesh_manifest.json").read_text())
-indium_receipt = json.loads(
-    (run_dir / "metadata" / "indium_ground_bumps.json").read_text()
+REFINED_MESH_SIZE_UM = 15.0
+MAX_MESH_SIZE_UM = 80.0
+
+sim.set_mesh(refined_mesh_size=REFINED_MESH_SIZE_UM, max_mesh_size=MAX_MESH_SIZE_UM)
+MESH_PATH = sim.mesh()
+
+# %% [markdown]
+# ## Generate Config
+
+# %%
+FEM_ORDER = 1
+LINEAR_TOLERANCE = 1e-6
+MAX_ITERATIONS = 400
+SOLVER_TYPE = "Default"
+PRECONDITIONER = "Default"
+DEVICE = "CPU"
+AMR_MAX_PASSES = 0
+AMR_TOLERANCE = 1e-2
+AMR_UPDATE_FRACTION = None
+SAVE_ADAPT_ITERATIONS = None
+ESTIMATOR_MG = None
+OUTPUT_PARAVIEW = False
+OUTPUT_GRID_FUNCTION = False
+
+sim.set_numerical(
+    order=FEM_ORDER,
+    tolerance=LINEAR_TOLERANCE,
+    max_iterations=MAX_ITERATIONS,
+    solver_type=SOLVER_TYPE,
+    preconditioner=PRECONDITIONER,
+    device=DEVICE,
+    amr_max_passes=AMR_MAX_PASSES,
+    amr_tolerance=AMR_TOLERANCE,
+    amr_update_fraction=AMR_UPDATE_FRACTION,
+    save_adapt_iterations=SAVE_ADAPT_ITERATIONS,
+    estimator_mg=ESTIMATOR_MG,
+    output_paraview=OUTPUT_PARAVIEW,
+    output_grid_function=OUTPUT_GRID_FUNCTION,
 )
-assert indium_receipt["controls"] == INDIUM_GROUND_CONTROLS
-assert indium_receipt["counts"]["generated"] > 0
-auto_stack = json.loads((run_dir / "geometry" / "design.stack.json").read_text())
-auto_regions = auto_stack["solution_regions"]
-assert tuple(auto_regions) == (
-    "D0_SUBSTRATE",
-    "D0_TO_D1_GAP",
-    "D1_SUBSTRATE",
-    "VACUUM_REGION",
-)
-auto_vacuum = auto_regions["VACUUM_REGION"]
-assert auto_vacuum["material_id"] == "vacuum"
-assert auto_vacuum["material_kind"] == "vacuum"
-assert auto_vacuum["metadata"]["source"] == "set_vacuum_region"
-assert (
-    auto_vacuum["geometry"]["domain_bounds_um"]
-    == auto_regions["D0_SUBSTRATE"]["geometry"]["domain_bounds_um"]
-)
-assert auto_regions["D0_TO_D1_GAP"]["material_id"] == "vacuum"
-assert auto_stack["metadata"]["component_contract"] == (
-    "kosen2024_flip_chip_xmon_qubit public zero-argument cell"
-)
-volume_groups = {
-    group["name"]: group
-    for group in manifest["groups"]
-    if group["section"] == "volumes"
+CONFIG_PATH = sim.write_config()
+
+# %% [markdown]
+# ## Prepare Handoff
+
+# %%
+MACHINE_PROFILE = "ltlab-slurm"
+PALACE_EXECUTABLE = "palace-x86_64.bin"
+SETUP_COMMANDS = ("module load palace",)
+RESOURCES = {
+    "nodes": 1,
+    "ntasks": 10,
+    "cpus_per_task": 3,
+    "time": "00:30:00",
+    "mem": "256G",
+    "launcher": ("srun", "--mpi=pmix"),
+    "command_style": "binary",
 }
-assert {"D0_SUBSTRATE", "D0_TO_D1_GAP", "D1_SUBSTRATE", "VACUUM_REGION"} <= set(
-    volume_groups
-)
-assert set(volume_groups["D0_TO_D1_GAP"]["tags"]).isdisjoint(
-    volume_groups["VACUUM_REGION"]["tags"]
-)
-assert not [
-    group
-    for group in manifest["groups"]
-    if group["section"] == "volumes"
-    and group.get("physical_attribute", {}).get("material_kinds") == ["conductor"]
-]
-port_group = next(
-    group for group in manifest["groups"] if group["section"] == "port_surfaces"
-)
-assert len(port_group["owner_semantic_ids"]) == VALIDATION_CONTROLS["port_owner_count"]
-assert (
-    len(port_group["adjacent_solution_volume_ids"])
-    == VALIDATION_CONTROLS["adjacent_solution_volume_count"]
-)
-assert port_group["embedded_volume_id"] == "D0_TO_D1_GAP"
-assert port_group["interface_of"] == ["D0_TO_D1_GAP", "D1_SUBSTRATE"]
-gate = json.loads(
-    (
-        run_dir
-        / "metadata"
-        / "semantic_geometry"
-        / "engine_gate_gmsh_brep_conformality.json"
-    ).read_text()
-)
-port_records = [
-    record
-    for record in gate["records"]
-    if record["source_record_kind"] == "route_a_lumped_port_mesh"
-]
-assert len(port_records) == 2
-assert all(
-    record["status"] == "pass"
-    and record["shared_mesh_node_count"] > 0
-    and record["expected_terminal_curve_ids"] == record["credited_terminal_curve_ids"]
-    and all(record["per_terminal_curve_shared_node_counts"].values())
-    for record in port_records
+
+HANDOFF = sim.prepare_handoff(
+    profile=MACHINE_PROFILE,
+    executable=PALACE_EXECUTABLE,
+    resources=RESOURCES,
+    setup_commands=SETUP_COMMANDS,
 )
 
 # %% [markdown]
-# ## Write And Validate Config
+# ## Analyze Returned Run
 
 # %%
-config_path = sim.write_config()
-config = json.loads(config_path.read_text())
-assert len(config["Boundaries"]["LumpedPort"]) == 1
-port_config = config["Boundaries"]["LumpedPort"][0]
-port_information = json.loads(
-    (run_dir / "metadata" / "port_information.json").read_text()
-)
-port_information = port_information["ports"][0]
-assert port_information["name"] == GEOMETRY_CONTROLS["port_name"]
-assert port_config["L"] == GEOMETRY_CONTROLS["inductance_h"]
-assert port_config["Direction"] == port_information["direction"]
+RETURNED_RUN_DIR = RUN_ROOT / "returned"
 
-# %% [markdown]
-# ## Prepare And Inspect Handoff
-
-# %%
-handoff = sim.prepare_handoff(
-    profile=EXECUTION_CONTROLS["selected_profile"],
-    executable=EXECUTION_CONTROLS["executable"],
-    resources=EXECUTION_CONTROLS["resources"],
-    setup_commands=EXECUTION_CONTROLS["setup_commands"],
-)
-assert (
-    handoff.script_path.name == "run_palace.sbatch" and handoff.archive_path.is_file()
-)
-
-# %% [markdown]
-# ## Physics Analysis Results
-# The prepared archive contains no physics result: Palace is not run here.
-
-# %%
-run_status = json.loads((run_dir / "metadata" / "palace_run_metadata.json").read_text())
-assert run_status["status"] == "not_run"
-
-# %% [markdown]
-# ## Simulation Performance / Benchmarks
-
-# %%
-resource_record = json.loads(
-    (run_dir / "metadata" / "palace_resource_record.json").read_text()
-)
-assert resource_record["status"] == "not_submitted"
-print(
-    {
-        "mesh": str(mesh_path),
-        "config": str(config_path),
-        "handoff": str(handoff.archive_path),
-    }
-)
+if WORKFLOW_ACTION == "analyze_handoff":
+    report = resolve_palace_result(RETURNED_RUN_DIR, expected_handoff_id=HANDOFF.handoff_id)
+    display(report.show_all_results())
+    display(report.show_simulation_benchmark())
