@@ -148,6 +148,8 @@ if WORKFLOW_ACTION == "prepare_handoff":
     DEVICE = "CPU"
     # Maximum adaptive-refinement iterations after the initial solve; 0 disables AMR.
     AMR_MAX_PASSES = 10
+    # Palace Nonconformal AMR; SCGSim defaults false. Set True only to opt into NC AMR.
+    AMR_NONCONFORMAL = False
     # Stop AMR when the estimated-error norm falls below this value.
     AMR_TOLERANCE = 2e-2
     # Dörfler error fraction marked per AMR pass; None keeps the Palace default.
@@ -169,6 +171,7 @@ if WORKFLOW_ACTION == "prepare_handoff":
         preconditioner=PRECONDITIONER,
         device=DEVICE,
         amr_max_passes=AMR_MAX_PASSES,
+        amr_nonconformal=AMR_NONCONFORMAL,
         amr_tolerance=AMR_TOLERANCE,
         amr_update_fraction=AMR_UPDATE_FRACTION,
         save_adapt_iterations=SAVE_ADAPT_ITERATIONS,
