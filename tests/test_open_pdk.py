@@ -5,7 +5,6 @@ from pathlib import Path
 import gdsfactory as gf
 
 from orpen_sc_pdk.cells import (
-    cpw_straight,
     dicing_edge,
     interdigital_capacitor,
     launcher,
@@ -23,7 +22,6 @@ def test_pdk_activates_and_builds_public_cells() -> None:
     assert gf.get_active_pdk().name == "orpen_sc_pdk"
     assert "D0_TOP_M1" in LAYER_STACK.layers
     assert (LAYER.D1_D2_INDIUM_BUMP.layer, LAYER.D1_D2_INDIUM_BUMP.datatype) == (41, 0)
-    assert cpw_straight().ports
     assert launcher().ports
     assert interdigital_capacitor().ports
     assert martinis2022_differential_ribbon_capacitor().ports

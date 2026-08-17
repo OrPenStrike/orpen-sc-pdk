@@ -75,13 +75,19 @@ ground_width_um = 80.0
 substrate_thickness_um = 500.0
 
 coupon = gf.Component()
-coupon << gf.get_component(
-    "cpw_straight",
-    length=trace_length_um,
-    signal_width=signal_width_um,
-    gap=gap_um,
-    ground_width=ground_width_um,
+coupon << gf.components.rectangle(
+    size=(trace_length_um, signal_width_um),
+    centered=True,
+    layer=LAYER.D0_TOP_M1_DRAW,
 )
+top_ground = coupon << gf.components.rectangle(
+    size=(trace_length_um, ground_width_um), centered=True, layer=LAYER.D0_TOP_M1_DRAW
+)
+top_ground.movey((signal_width_um + ground_width_um) / 2 + gap_um)
+bottom_ground = coupon << gf.components.rectangle(
+    size=(trace_length_um, ground_width_um), centered=True, layer=LAYER.D0_TOP_M1_DRAW
+)
+bottom_ground.movey(-((signal_width_um + ground_width_um) / 2 + gap_um))
 coupon << gf.components.rectangle(
     size=(trace_length_um, signal_width_um + 2 * (gap_um + ground_width_um)),
     centered=True,

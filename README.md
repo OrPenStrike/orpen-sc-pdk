@@ -25,8 +25,6 @@ PDK as their base PDK.
   material records, connectivity, and face-aware superconducting process layers.
 - **Parametric public cells** — CPW traces, resonators, launchers, tapers,
   indium bumps, dicing edges, capacitors, and benchmark geometries.
-- **Flip-chip layout demos** — public resonator-based examples for distance,
-  keepout, and 8-direction routing workflows.
 - **Simulation metadata** — mesh-port metadata for downstream Palace, Q2D, and
   layout-to-simulation assembly.
 - **GDSFactory+ integration** — registered public cells are available through
@@ -49,22 +47,16 @@ this repo.
 | `launcher` | `indium_ground` |
 | <img src="docs/_static/images/components/launcher.svg" alt="Launcher" width="260"> | <img src="docs/_static/images/components/indium_ground.svg" alt="Indium ground field" width="260"> |
 
-### Public Flip-Chip And Routing Layouts
+### Public Layout Demo
 
 [QPDK](https://github.com/gdsfactory/quantum-rf-pdk) shows complete
 qubit-oriented examples; OrPen SC PDK keeps private qubit IP out of the public
-repo and uses public resonator geometry for open routing and flip-chip
-demonstrations.
+repo. The remaining demo uses public resonator geometry.
 
-| Flip-Chip Distance | Global Purcell Filter Demo Chip |
-| :---: | :---: |
-| `sim_flip_chip_distance` | `global_purcell_filter_demo_chip` |
-| <img src="docs/_static/images/components/sim_flip_chip_distance.svg" alt="Flip-chip distance layout" width="320"> | <img src="docs/_static/images/components/global_purcell_filter_demo_chip.svg" alt="Global Purcell Filter Demo Chip" width="320"> |
-
-| Resonator Keepout Routing | Global Keepout Routing |
-| :---: | :---: |
-| `sim_flip_chip_distance_keepout_routing_demo` | `sim_flip_chip_distance_keepout_global_routing_demo` |
-| <img src="docs/_static/images/components/sim_flip_chip_distance_keepout_routing_demo.svg" alt="Resonator keepout routing demo" width="320"> | <img src="docs/_static/images/components/sim_flip_chip_distance_keepout_global_routing_demo.svg" alt="Global keepout routing demo" width="320"> |
+| Global Purcell Filter Demo Chip |
+| :---: |
+| `global_purcell_filter_demo_chip` |
+| <img src="docs/_static/images/components/global_purcell_filter_demo_chip.svg" alt="Global Purcell Filter Demo Chip" width="320"> |
 
 ## Quick Start
 
@@ -86,18 +78,6 @@ orpen_sc_pdk.activate()
 
 component = gf.get_component("resonator", length=3500)
 component.show()
-```
-
-Build one of the public flip-chip routing demos:
-
-```python
-import gdsfactory as gf
-import orpen_sc_pdk
-
-orpen_sc_pdk.activate()
-
-demo = gf.get_component("sim_flip_chip_distance_keepout_global_routing_demo")
-demo.show()
 ```
 
 ## Repository Boundaries

@@ -1,12 +1,8 @@
 """Canonical public cell registry for the OrPen SC PDK."""
 
 from orpen_sc_pdk.cells.airbridge import airbridge
-from orpen_sc_pdk.cells.capacitor import (
-    interdigital_capacitor,
-    interdigital_capacitor_q3d_coupon,
-)
+from orpen_sc_pdk.cells.capacitor import interdigital_capacitor
 from orpen_sc_pdk.cells.cpw import (
-    cpw_straight,
     cpw_t_junction,
     launcher,
     mtl_bend_bend_transition,
@@ -38,7 +34,6 @@ __all__ = [
     "resonator_meander",
     "taper",
     "bend_circular",
-    "cpw_straight",
     "cpw_t_junction",
     "n_trace_mtl_section",
     "mtl_bend_coupling_section",
@@ -48,7 +43,6 @@ __all__ = [
     "bend_euler",
     "dicing_edge",
     "interdigital_capacitor",
-    "interdigital_capacitor_q3d_coupon",
     "capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators",
     "kosen2024_flip_chip_xmon_qubit",
     "launcher",

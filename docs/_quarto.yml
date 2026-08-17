@@ -123,8 +123,6 @@ quartodoc:
       contents:
         - cells.airbridge
         - cells.interdigital_capacitor
-        - cells.interdigital_capacitor_q3d_coupon
-        - cells.cpw_straight
         - cells.cpw_t_junction
         - cells.launcher
         - cells.mtl_bend_coupling_section
