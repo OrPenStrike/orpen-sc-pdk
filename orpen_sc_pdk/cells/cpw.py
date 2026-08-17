@@ -8,7 +8,7 @@ import gdsfactory as gf
 from gdsfactory.typings import CrossSectionSpec, Layer
 
 from orpen_sc_pdk.helpers.layout import add_etch_for_component
-from orpen_sc_pdk.ports import AxisDirection, add_driven_lumped_port
+from orpen_sc_pdk.ports import add_driven_lumped_port
 from orpen_sc_pdk.tech import (
     CPW_DRAW,
     CPW_ETCH_NEG,
@@ -590,7 +590,6 @@ def launcher(
         width=1,
         orientation=0,
         layer=sim_boundary_layer,
-        direction=AxisDirection.POS_X,
     )
 
     return component

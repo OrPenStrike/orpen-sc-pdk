@@ -62,7 +62,6 @@ def single_trace_xs_chip(
         name="q2d_left_ground",
         center=(marker_x, -ground_marker_y),
         layer=draw_layer,
-        conductor_type="Reference Ground",
         width=cpw_gap,
     )
     add_q2d_conductor_port(
@@ -70,7 +69,6 @@ def single_trace_xs_chip(
         name="q2d_right_ground",
         center=(marker_x, ground_marker_y),
         layer=draw_layer,
-        conductor_type="Reference Ground",
         width=cpw_gap,
     )
     add_q2d_conductor_port(
@@ -78,8 +76,6 @@ def single_trace_xs_chip(
         name="q2d_center_signal",
         center=(marker_x, 0.0),
         layer=draw_layer,
-        conductor_type="Signal Line",
-        assignment_name=signal_assignment_name,
         width=cpw_width,
     )
 
@@ -225,7 +221,6 @@ def single_trace_flip_chip_xs_chip(
         name="q2d_d0_left_ground",
         center=(marker_x, -ground_marker_y),
         layer=d0_draw_layer,
-        conductor_type="Reference Ground",
         width=cpw_gap,
     )
     add_q2d_conductor_port(
@@ -233,7 +228,6 @@ def single_trace_flip_chip_xs_chip(
         name="q2d_d0_right_ground",
         center=(marker_x, ground_marker_y),
         layer=d0_draw_layer,
-        conductor_type="Reference Ground",
         width=cpw_gap,
     )
     add_q2d_conductor_port(
@@ -241,8 +235,6 @@ def single_trace_flip_chip_xs_chip(
         name="q2d_d0_trace1_signal",
         center=(marker_x, 0.0),
         layer=d0_draw_layer,
-        conductor_type="Signal Line",
-        assignment_name=signal_assignment_name,
         width=cpw_width,
     )
     add_q2d_conductor_port(
@@ -250,7 +242,6 @@ def single_trace_flip_chip_xs_chip(
         name="q2d_d1_facing_ground",
         center=(marker_x, 0.0),
         layer=d1_ground_marker_layer,
-        conductor_type="Reference Ground",
         width=cpw_width,
     )
 
@@ -332,7 +323,6 @@ def two_trace_flip_chip_xs_chip(
             name=f"{prefix}_left_ground",
             center=(marker_x, y_offset - ground_marker_offset_y),
             layer=draw_layer,
-            conductor_type="Reference Ground",
             width=cpw_gap,
         )
         add_q2d_conductor_port(
@@ -340,7 +330,6 @@ def two_trace_flip_chip_xs_chip(
             name=f"{prefix}_right_ground",
             center=(marker_x, y_offset + ground_marker_offset_y),
             layer=draw_layer,
-            conductor_type="Reference Ground",
             width=cpw_gap,
         )
         add_q2d_conductor_port(
@@ -348,8 +337,6 @@ def two_trace_flip_chip_xs_chip(
             name=f"{prefix}_{assignment.casefold()}_signal",
             center=(marker_x, y_offset),
             layer=draw_layer,
-            conductor_type="Signal Line",
-            assignment_name=assignment,
             width=cpw_width,
         )
 
@@ -466,7 +453,6 @@ def _add_two_trace_markers(
         name=f"{prefix}_left_ground",
         center=(marker_x, left_ground_y),
         layer=draw_layer,
-        conductor_type="Reference Ground",
         width=ground_gap_um,
     )
     add_q2d_conductor_port(
@@ -474,7 +460,6 @@ def _add_two_trace_markers(
         name=f"{prefix}_middle_ground",
         center=(marker_x, y_offset_um),
         layer=draw_layer,
-        conductor_type="Reference Ground",
         width=middle_ground_width_um,
     )
     add_q2d_conductor_port(
@@ -482,7 +467,6 @@ def _add_two_trace_markers(
         name=f"{prefix}_right_ground",
         center=(marker_x, right_ground_y),
         layer=draw_layer,
-        conductor_type="Reference Ground",
         width=ground_gap_um,
     )
     add_q2d_conductor_port(
@@ -490,8 +474,6 @@ def _add_two_trace_markers(
         name=f"{prefix}_trace1_signal",
         center=(marker_x, trace1_center_y),
         layer=draw_layer,
-        conductor_type="Signal Line",
-        assignment_name=signal_assignment_names[0],
         width=trace_width_um,
     )
     add_q2d_conductor_port(
@@ -499,8 +481,6 @@ def _add_two_trace_markers(
         name=f"{prefix}_trace2_signal",
         center=(marker_x, trace2_center_y),
         layer=draw_layer,
-        conductor_type="Signal Line",
-        assignment_name=signal_assignment_names[1],
         width=trace_width_um,
     )
 

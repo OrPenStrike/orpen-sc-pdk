@@ -12,11 +12,12 @@ OrPen component + layer stack + material/annotation records
               handoff -> run -> resolve -> report
 ```
 
-OrPen owns source design intent and public Notebook UX. SCGSim owns semantic
-geometry/topology after layout ingestion, backend lowering, solver execution
-contracts, returned-run identity, and reports. Structured IDs and provenance
-must survive the complete path; physical names are labels rather than semantic
-authority.
+OrPen owns source design intent and public Notebook UX. Layout ports are named
+locators plus sheet geometry; they do not carry Palace L/C/R, mesh profiles, or
+AEDT assignment labels. SCGSim owns semantic geometry/topology after layout
+ingestion, backend lowering, solver execution contracts, returned-run identity,
+and reports. Structured IDs and provenance must survive the complete path;
+physical names are labels rather than semantic authority.
 
 The dependency groups are backend-specific so users without AEDT do not need
 its optional runtime:

@@ -25,8 +25,8 @@ PDK as their base PDK.
   material records, connectivity, and face-aware superconducting process layers.
 - **Parametric public cells** — CPW traces, resonators, launchers, tapers,
   indium bumps, dicing edges, capacitors, and benchmark geometries.
-- **Simulation metadata** — mesh-port metadata for downstream Palace, Q2D, and
-  layout-to-simulation assembly.
+- **Simulation locators** — named GDSFactory ports and sheet geometry for SCGSim
+  to compile. Mesh sizes and Palace L/C/R stay in the notebook or runtime.
 - **GDSFactory+ integration** — registered public cells are available through
   the active PDK and can be built from GF+.
 
