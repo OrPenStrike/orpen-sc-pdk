@@ -24,8 +24,10 @@ Palace configs from `write_config()` always include
 opt into nonconformal AMR with `set_numerical(amr_nonconformal=True)`. Do not
 omit the key or rely on Palace's default `true`.
 
-`prepare_handoff()` generates `run_palace.sbatch`. Slurm stdout/stderr go to
-`logs/palace-%j.log` only; the scheduler does not also write `slurm-%j.out`.
+`prepare_handoff()` generates `run_palace.sh` or `run_palace.sbatch` from
+`direct-local`, `slurm-single-node`, or `slurm-multi-node`. Slurm stdout/stderr
+go to `logs/palace-%j.log` only; the scheduler does not also write
+`slurm-%j.out`.
 
 The dependency groups are backend-specific so users without AEDT do not need
 its optional runtime:

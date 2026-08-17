@@ -185,8 +185,8 @@ if WORKFLOW_ACTION == "prepare_handoff":
 
 # %%
 if WORKFLOW_ACTION == "prepare_handoff":
-    # Select the LTlab Slurm launcher and handoff layout.
-    MACHINE_PROFILE = "ltlab-slurm"
+    # Select the single-node Slurm handoff shape.
+    MACHINE_PROFILE = "slurm-single-node"
     # Palace binary invoked by srun after the setup commands complete.
     PALACE_EXECUTABLE = "palace-x86_64.bin"
     # Commands executed inside the batch job before Palace starts.
