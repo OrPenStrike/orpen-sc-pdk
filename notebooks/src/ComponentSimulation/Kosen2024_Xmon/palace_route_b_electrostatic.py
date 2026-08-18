@@ -18,7 +18,7 @@ from pathlib import Path
 
 import gdsfactory as gf
 from IPython.display import display
-from scgsim.palace import ElectrostaticSim, resolve_palace_result
+from scgsim.palace import ElectrostaticSim, inspect_run_trustworthiness, resolve_palace_result
 from scgsim.sgb import build_component_stack
 
 import orpen_sc_pdk
@@ -215,10 +215,11 @@ if WORKFLOW_ACTION == "prepare_handoff":
 # %%
 # Returned handoff root whose receipt and handoff identity SCGSim must verify.
 RETURNED_RUN_DIR = RUN_ROOT
-
 if WORKFLOW_ACTION == "analyze_handoff":
-    report = resolve_palace_result(
-        RETURNED_RUN_DIR, expected_handoff_id=EXPECTED_HANDOFF_ID
-    )
-    display(report.show_all_results())
-    display(report.show_simulation_benchmark())
+    try:
+        report = resolve_palace_result(
+            RETURNED_RUN_DIR, expected_handoff_id=EXPECTED_HANDOFF_ID
+        )
+        display(report.show_run_trustworthiness())
+    except FileNotFoundError:
+        display(inspect_run_trustworthiness(RETURNED_RUN_DIR))

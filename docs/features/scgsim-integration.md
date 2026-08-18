@@ -29,6 +29,11 @@ omit the key or rely on Palace's default `true`.
 go to `logs/palace-%j.log` only; the scheduler does not also write
 `slurm-%j.out`.
 
+`resolve_palace_result(...).show_run_trustworthiness()` is the first Analyze
+view: run identity, AMR numerical evidence, and simulation cost. Physics-result
+figures are a later layer. If the parent `results/palace` folder is incomplete,
+`inspect_run_trustworthiness(run_dir)` still reads `iterationNN` snapshots.
+
 The dependency groups are backend-specific so users without AEDT do not need
 its optional runtime:
 
