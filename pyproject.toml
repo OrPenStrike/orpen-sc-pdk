@@ -56,7 +56,7 @@ ecosystem-dev = [
 ]
 
 [tool.uv.sources]
-scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "7a10d83a8f5cb84d7bc5164f3252770c1c12b51f" }
+scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "0583b9dc0f874df79b83244405ba36d8e87d2dbf" }
 
 [tool.ruff]
 line-length = 100
