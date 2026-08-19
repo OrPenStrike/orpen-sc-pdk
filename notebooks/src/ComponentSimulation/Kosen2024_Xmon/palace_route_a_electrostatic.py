@@ -23,6 +23,7 @@ from scgsim.sgb import build_component_stack
 
 import orpen_sc_pdk
 from orpen_sc_pdk import LAYER_STACK, get_material_records
+from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
@@ -42,11 +43,30 @@ if WORKFLOW_ACTION not in {"prepare_handoff", "analyze_handoff"}:
 if WORKFLOW_ACTION == "prepare_handoff":
     # PDK-registered layout cell whose geometry and semantic annotation are simulated.
     COMPONENT_NAME = "kosen2024_flip_chip_xmon_qubit"
+    COMPONENT_PARAMETERS = {
+        # Isolated coupon uses corner-anchored shorts, not the cell bump ring.
+        "bump_ring_count_per_side": 0,
+    }
+    # Requested XY pad; the helper grows it when indium bumps would not fit.
+    COUPON_PADDING_UM = 75.0
+    # Keep indium shorts this far from the pocket keepout and coupon edge.
+    GROUND_SHORT_CLEARANCE_UM = 30.0
+    # Coupon GDS placement: "corner_anchors" or dense "full_field". Not SCGSim fill.
+    INDIUM_PLACEMENT_MODE = "corner_anchors"
 
     orpen_sc_pdk.activate()
     gf.clear_cache()
-    component = gf.get_component(COMPONENT_NAME)
-    display(component)
+    component = gf.get_component(COMPONENT_NAME, **COMPONENT_PARAMETERS)
+    coupon = place_flip_chip_ground_short_bumps(
+        component,
+        coupon_padding_um=COUPON_PADDING_UM,
+        clearance_um=GROUND_SHORT_CLEARANCE_UM,
+        placement_mode=INDIUM_PLACEMENT_MODE,
+    )
+    component = coupon.component
+    # Residual SGB pad so the coupon still covers device bbox + actual padding.
+    STACK_COUPON_PADDING_UM = coupon.stack_coupon_padding_um
+    coupon.plot()
 
 # %% [markdown]
 # ## Configure EPR / Problem
@@ -55,16 +75,13 @@ if WORKFLOW_ACTION == "prepare_handoff":
 if WORKFLOW_ACTION == "prepare_handoff":
     # Route A models zero-thickness PEC sheets; Route B models finite PEC exclusion shells.
     ROUTE = "A"
-    # Expand every side of the component's XY bounds before constructing the coupon domains.
-    COUPON_PADDING_UM = 75.0
     # Add symmetric X/Y/Z padding to the automatic vacuum envelope; only Z is expanded here.
     VACUUM_PADDING_UM = (0.0, 0.0, float(OUTER_VACUUM_THICKNESS_UM))
     INDIUM_GROUND_FILL = {
-        # Add deterministic ground bumps after preserving all authored bump sites.
-        "fill": True,
-        # Center-to-center lattice spacing; a smaller pitch creates more mesh geometry.
+        # Coupon GDS already has indium shorts; SCGSim must not lattice-fill.
+        "fill": False,
+        # Required by the SCGSim fill API even when fill is disabled.
         "fill_pitch_um": 80.0,
-        # Minimum distance from semantic keepouts; a larger value rejects more sites.
         "fill_clearance_um": 30.0,
     }
     EPR_SPECS = {
@@ -98,7 +115,7 @@ if WORKFLOW_ACTION == "prepare_handoff":
         component=component,
         layer_stack=LAYER_STACK,
         material_records=get_material_records(),
-        coupon_padding_um=COUPON_PADDING_UM,
+        coupon_padding_um=STACK_COUPON_PADDING_UM,
     )
     sim = ElectrostaticSim()
     sim.set_geometry(component)

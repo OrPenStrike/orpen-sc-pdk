@@ -170,16 +170,14 @@ def kosen2024_flip_chip_xmon_qubit(
         ("under_bump_size", under_bump_size),
     ):
         _check_positive(name, value)
-    if (
-        isinstance(bump_ring_count_per_side, bool)
-        or not isinstance(bump_ring_count_per_side, int)
-        or bump_ring_count_per_side < 2
+    if isinstance(bump_ring_count_per_side, bool) or not isinstance(bump_ring_count_per_side, int):
+        raise ValueError("bump_ring_count_per_side must be an integer.")
+    if bump_ring_count_per_side < 0:
+        raise ValueError("bump_ring_count_per_side must be non-negative.")
+    if bump_ring_count_per_side not in {0} and (
+        bump_ring_count_per_side < 2 or bump_ring_count_per_side % 2
     ):
-        raise ValueError("bump_ring_count_per_side must be an integer of at least two.")
-    if bump_ring_count_per_side % 2:
-        raise ValueError(
-            "bump_ring_count_per_side must be even to keep cardinal port corridors clear."
-        )
+        raise ValueError("bump_ring_count_per_side must be 0 or an even integer of at least two.")
 
     if qubit_pad_length <= qubit_pad_width:
         raise ValueError("qubit_pad_length must exceed qubit_pad_width.")
@@ -289,38 +287,40 @@ def kosen2024_flip_chip_xmon_qubit(
         + coupling_electrode_width
         + coupling_electrode_port_length
     )
-    bump_footprint_size = (
-        max(indium_bump_size, under_bump_size) if include_under_bump else indium_bump_size
-    )
-    bump_center_offset = outer_edge + bump_ring_offset + bump_footprint_size / 2
-    if bump_center_offset / bump_ring_count_per_side <= bump_footprint_size:
-        raise ValueError("bump ring is too dense for its offset and bump footprint.")
-    bump = indium_bump(
-        indium_bump_size=indium_bump_size,
-        under_bump_size=under_bump_size,
-        indium_bump_layer=indium_bump_layer,
-        under_bump_layer=under_bump_layer,
-        include_under_bump=include_under_bump,
-    )
-    side_positions = tuple(
-        bump_center_offset * (-1 + (2 * index + 1) / bump_ring_count_per_side)
-        for index in range(bump_ring_count_per_side)
-    )
-    for coordinate in side_positions:
-        for center in (
-            (coordinate, bump_center_offset),
-            (bump_center_offset, coordinate),
-            (coordinate, -bump_center_offset),
-            (-bump_center_offset, coordinate),
-        ):
-            bump_ref = c << bump
-            bump_ref.dmove(center)
+    if bump_ring_count_per_side:
+        bump_footprint_size = (
+            max(indium_bump_size, under_bump_size) if include_under_bump else indium_bump_size
+        )
+        bump_center_offset = outer_edge + bump_ring_offset + bump_footprint_size / 2
+        if bump_center_offset / bump_ring_count_per_side <= bump_footprint_size:
+            raise ValueError("bump ring is too dense for its offset and bump footprint.")
+        bump = indium_bump(
+            indium_bump_size=indium_bump_size,
+            under_bump_size=under_bump_size,
+            indium_bump_layer=indium_bump_layer,
+            under_bump_layer=under_bump_layer,
+            include_under_bump=include_under_bump,
+        )
+        side_positions = tuple(
+            bump_center_offset * (-1 + (2 * index + 1) / bump_ring_count_per_side)
+            for index in range(bump_ring_count_per_side)
+        )
+        for coordinate in side_positions:
+            for center in (
+                (coordinate, bump_center_offset),
+                (bump_center_offset, coordinate),
+                (coordinate, -bump_center_offset),
+                (-bump_center_offset, coordinate),
+            ):
+                bump_ref = c << bump
+                bump_ref.dmove(center)
 
     # Keep the paper provenance on the exported component as well as in the
     # docstring so downstream GDSFactory consumers do not lose the attribution.
+    topology_suffix = "and bump ring" if bump_ring_count_per_side else "without a bump ring"
     c.info["topology"] = (
         "D1 Xmon cross with four independent D1 qubit-coupling electrodes, "
-        "one Manhattan junction, and bump ring"
+        f"one Manhattan junction, {topology_suffix}"
     )
     c.info["source_doi"] = "10.1103/PRXQuantum.5.030350"
     c.info["source_license"] = "CC BY 4.0"
