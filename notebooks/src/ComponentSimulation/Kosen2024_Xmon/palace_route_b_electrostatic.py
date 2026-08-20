@@ -237,6 +237,6 @@ if WORKFLOW_ACTION == "analyze_handoff":
         report = resolve_palace_result(
             RETURNED_RUN_DIR, expected_handoff_id=EXPECTED_HANDOFF_ID
         )
-        display(report.show_run_trustworthiness())
+        report.show_all_results()
     except FileNotFoundError:
         display(inspect_run_trustworthiness(RETURNED_RUN_DIR))
