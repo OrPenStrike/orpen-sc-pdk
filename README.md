@@ -3,8 +3,8 @@
 <p align="center">
   <img alt="Status: public PDK" src="https://img.shields.io/badge/status-public%20PDK-0f766e">
   <img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white">
-  <img alt="GDSFactory 9.43" src="https://img.shields.io/badge/GDSFactory-9.43-4B8BBE">
-  <img alt="GDSFactory+ ready" src="https://img.shields.io/badge/GDSFactory%2B-ready-7c3aed">
+  <img alt="GDSFactory 9.48.x" src="https://img.shields.io/badge/GDSFactory-9.48.x-4B8BBE">
+  <img alt="GDSFactory+ 1.8.20" src="https://img.shields.io/badge/GDSFactory%2B-1.8.20-7c3aed">
   <img alt="Docs: GitHub Pages" src="https://img.shields.io/badge/docs-GitHub%20Pages-0f766e">
   <img alt="License" src="https://img.shields.io/github/license/OrPenStrike/orpen-sc-pdk">
 </p>
@@ -49,9 +49,11 @@ this repo.
 
 ### Public Layout Demo
 
-[QPDK](https://github.com/gdsfactory/quantum-rf-pdk) shows complete
-qubit-oriented examples; OrPen SC PDK keeps private qubit IP out of the public
-repo. The remaining demo uses public resonator geometry.
+[QPDK](https://github.com/gdsfactory/quantum-rf-pdk) is an external
+reference and public example source only. It is neither the OrPen PDK/component
+authority nor the SCGSim production/runtime authority, and it is not a
+production fallback. OrPen SC PDK keeps private qubit IP out of this public
+repository; the remaining demo uses public resonator geometry.
 
 | Global Purcell Filter Demo Chip |
 | :---: |
