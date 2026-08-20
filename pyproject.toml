@@ -37,6 +37,7 @@ dev = [
   "ruff>=0.15.11",
 ]
 gdsfactoryplus = ["gdsfactoryplus==1.8.20", "httpx"]
+circuit-runtime = ["superconducting-circuits-runtime"]
 
 [dependency-groups]
 docs = [
@@ -57,6 +58,7 @@ ecosystem-dev = [
 
 [tool.uv.sources]
 scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "189c143bf2abe320d969a965d98527006245a1f7" }
+superconducting-circuits-runtime = { git = "https://github.com/arfiligol/superconducting-circuits-research-workbench.git", rev = "f3430cb3c4b3a72d6b60bc99929475f3d0c41f57", subdirectory = "core/python/runtime" }
 
 [tool.ruff]
 line-length = 100
