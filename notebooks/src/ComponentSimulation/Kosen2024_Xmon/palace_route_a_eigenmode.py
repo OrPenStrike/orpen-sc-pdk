@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_flip_chip_xmon_route_a_eigenmode"
+RUN_ID = "kosen2024_xmon_route_a_eigenmode_20260827_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
@@ -45,6 +45,9 @@ if WORKFLOW_ACTION == "prepare_handoff":
     COMPONENT_PARAMETERS = {
         # Isolated coupon uses corner-anchored shorts, not the cell bump ring.
         "bump_ring_count_per_side": 0,
+        "qubit_pad_length": 320.0,
+        "qubit_pad_width": 40.0,
+        "qubit_gap": 20.0,
     }
     # Requested XY pad; the helper grows it when indium bumps would not fit.
     COUPON_PADDING_UM = 75.0
@@ -98,9 +101,9 @@ if WORKFLOW_ACTION == "prepare_handoff":
     PORT_NAME = "o_junction_lumped"
     # Logical conductor layer containing the two terminal owners of the junction sheet.
     PORT_LAYER = "D1_BOTTOM_M1"
-    # Linearized Josephson inductance placed on the Palace LumpedPort boundary (H).
-    PORT_INDUCTANCE_H = 1e-12
-    # Number of eigenvalues Palace computes above the frequency target.
+    # Initial linearized Josephson inductance placed on the Palace LumpedPort boundary (H).
+    PORT_INDUCTANCE_H = 11.5e-9
+    # Number of eigenvalues Palace computes above the search lower bound.
     NUM_MODES = 2
     # Lower search bound supplied to SCGSim in hertz (Hz); SCGSim writes it to Palace in GHz.
     TARGET_HZ = 2e9
@@ -137,9 +140,9 @@ if WORKFLOW_ACTION == "prepare_handoff":
 if WORKFLOW_ACTION == "prepare_handoff":
     # Target element size near SGB semantic refinement regions.
     # Smaller elements resolve interfaces more finely.
-    REFINED_MESH_SIZE_UM = 15.0
+    REFINED_MESH_SIZE_UM = 5.0
     # Upper element size in bulk solution volumes; smaller increases the global tetrahedron count.
-    MAX_MESH_SIZE_UM = 80.0
+    MAX_MESH_SIZE_UM = 300.0
 
     sim.set_mesh(refined_mesh_size=REFINED_MESH_SIZE_UM, max_mesh_size=MAX_MESH_SIZE_UM)
     MESH_PATH = sim.mesh()
@@ -233,7 +236,5 @@ RETURNED_RUN_DIR = RUN_ROOT
 if WORKFLOW_ACTION == "analyze_handoff":
     report = inspect_run_trustworthiness(RETURNED_RUN_DIR)
     if report.completeness == "complete":
-        report = resolve_palace_result(
-            RETURNED_RUN_DIR, expected_handoff_id=HANDOFF.handoff_id
-        )
+        report = resolve_palace_result(RETURNED_RUN_DIR, expected_handoff_id=EXPECTED_HANDOFF_ID)
     report.show_all_results()

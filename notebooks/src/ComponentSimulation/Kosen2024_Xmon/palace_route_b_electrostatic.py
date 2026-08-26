@@ -234,7 +234,5 @@ RETURNED_RUN_DIR = RUN_ROOT
 if WORKFLOW_ACTION == "analyze_handoff":
     report = inspect_run_trustworthiness(RETURNED_RUN_DIR)
     if report.completeness == "complete":
-        report = resolve_palace_result(
-            RETURNED_RUN_DIR, expected_handoff_id=HANDOFF.handoff_id
-        )
+        report = resolve_palace_result(RETURNED_RUN_DIR, expected_handoff_id=EXPECTED_HANDOFF_ID)
     report.show_all_results()
