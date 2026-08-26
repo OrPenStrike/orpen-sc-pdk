@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_a_eigenmode_20260827_01"
+RUN_ID = "kosen2024_xmon_route_a_eigenmode_l300_w24p65_g20_lj11p5_20260827_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
@@ -45,8 +45,8 @@ if WORKFLOW_ACTION == "prepare_handoff":
     COMPONENT_PARAMETERS = {
         # Isolated coupon uses corner-anchored shorts, not the cell bump ring.
         "bump_ring_count_per_side": 0,
-        "qubit_pad_length": 320.0,
-        "qubit_pad_width": 40.0,
+        "qubit_pad_length": 300.0,
+        "qubit_pad_width": 24.65,
         "qubit_gap": 20.0,
     }
     # Requested XY pad; the helper grows it when indium bumps would not fit.
@@ -204,20 +204,16 @@ if WORKFLOW_ACTION == "prepare_handoff":
 
 # %%
 if WORKFLOW_ACTION == "prepare_handoff":
-    # Select the single-node Slurm handoff shape.
-    MACHINE_PROFILE = "slurm-single-node"
-    # Palace binary invoked by srun after the setup commands complete.
-    PALACE_EXECUTABLE = "palace-x86_64.bin"
+    # Execute directly on the LTLab host while retaining SCGSim's handoff/receipt contract.
+    MACHINE_PROFILE = "direct-local"
+    # Palace MPI wrapper invoked after the setup commands complete.
+    PALACE_EXECUTABLE = "palace"
     # Commands executed inside the batch job before Palace starts.
     SETUP_COMMANDS = ("module load palace",)
     RESOURCES = {
-        "nodes": 1,  # Allocate one Slurm node.
-        "ntasks": 10,  # Launch ten MPI ranks for Palace.
-        "cpus_per_task": 3,  # Give each MPI rank three CPU threads.
-        "time": "00:30:00",  # Cancel the job if it exceeds thirty minutes.
-        "mem": "256G",  # Reserve 256 GiB for the Slurm job.
-        "launcher": ("srun", "--mpi=pmix"),  # Use Slurm's PMIx MPI launcher.
-        "command_style": "binary",  # Invoke the binary directly; required for Slurm profiles.
+        "processes": 32,  # Use each physical CPU core as one MPI slot.
+        "threads": 2,  # Use both hardware threads per core.
+        "command_style": "wrapper",  # Let Palace's wrapper launch the MPI ranks.
     }
 
     HANDOFF = sim.prepare_handoff(
