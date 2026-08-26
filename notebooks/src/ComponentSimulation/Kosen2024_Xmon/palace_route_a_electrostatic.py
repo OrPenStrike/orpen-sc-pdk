@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_a_es_l300_w40_g20_20260827_05"
+RUN_ID = "kosen2024_xmon_route_a_es_l300_w40_g20_20260827_06"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
@@ -214,8 +214,8 @@ if WORKFLOW_ACTION == "prepare_handoff":
     # Commands executed inside the batch job before Palace starts.
     SETUP_COMMANDS = ("module load palace",)
     RESOURCES = {
-        "processes": 60,  # Use the LTLab host's available logical CPUs.
-        "threads": 1,  # Keep one OpenMP thread per MPI rank.
+        "processes": 32,  # Use each physical CPU core as one MPI slot.
+        "threads": 2,  # Use both hardware threads per core.
         "command_style": "wrapper",  # Let Palace's wrapper launch the MPI ranks.
     }
 
