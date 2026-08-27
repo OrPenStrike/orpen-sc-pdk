@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_a_eigenmode_l300_w24p65_g20_lj11p89_20260827_02"
+RUN_ID = "kosen2024_xmon_route_a_prime_eigenmode_l309p5_w24p65_g20_lj11p89_20260827_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
@@ -45,7 +45,7 @@ if WORKFLOW_ACTION == "prepare_handoff":
     COMPONENT_PARAMETERS = {
         # Isolated coupon uses corner-anchored shorts, not the cell bump ring.
         "bump_ring_count_per_side": 0,
-        "qubit_pad_length": 300.0,
+        "qubit_pad_length": 309.5,
         "qubit_pad_width": 24.65,
         "qubit_gap": 20.0,
     }
