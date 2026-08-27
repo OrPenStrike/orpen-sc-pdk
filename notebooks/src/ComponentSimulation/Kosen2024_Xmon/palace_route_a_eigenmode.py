@@ -77,6 +77,8 @@ if WORKFLOW_ACTION == "prepare_handoff":
 if WORKFLOW_ACTION == "prepare_handoff":
     # Route A models zero-thickness PEC sheets; Route B models finite PEC exclusion shells.
     ROUTE = "A"
+    # A_PRIME keeps thin sheets on the physical substrate faces (0 / 8.4 um).
+    ROUTE_A_THIN_FILM = "substrate_face"
     # Add symmetric X/Y/Z padding to the automatic vacuum envelope; only Z is expanded here.
     VACUUM_PADDING_UM = (0.0, 0.0, float(OUTER_VACUUM_THICKNESS_UM))
     INDIUM_GROUND_FILL = {
@@ -124,7 +126,11 @@ if WORKFLOW_ACTION == "prepare_handoff":
     sim.set_output_dir(RUN_ROOT)
     sim.set_vacuum_region(padding=VACUUM_PADDING_UM)
     sim.set_indium_ground_bumps(**INDIUM_GROUND_FILL)
-    sim.set_surface_epr(representation=ROUTE, specs=EPR_SPECS)
+    sim.set_surface_epr(
+        representation=ROUTE,
+        specs=EPR_SPECS,
+        route_a_thin_film=ROUTE_A_THIN_FILM,
+    )
     sim.add_port(PORT_NAME, layer=PORT_LAYER, layout_sheet=True, inductance=PORT_INDUCTANCE_H)
     sim.set_eigenmode(
         num_modes=NUM_MODES,
