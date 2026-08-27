@@ -1,0 +1,239 @@
+{
+  "schema_version": 1,
+  "classification": "public",
+  "semantic_state": "CONVERGING",
+  "scientific_acceptance": false,
+  "difference_gate": null,
+  "release": {
+    "proposed_tag": "kosen2024-xmon-evidence-v1",
+    "status": "pending_integration_privacy_audit"
+  },
+  "geometry": {
+    "qubit_pad_length_um": 309.5,
+    "qubit_pad_width_um": 24.65,
+    "qubit_gap_um": 20.0,
+    "d0_top_ground_opening_side_um": 541.5,
+    "couplers_grounded_for_c11": true
+  },
+  "physical_stack": {
+    "substrate_face_gap_um": 8.4,
+    "face_metal_thickness_um": 0.2,
+    "metal_face_gap_um": 8.0
+  },
+  "dependency": {
+    "scgsim_revision": "3e70aa8b6effc400d29fcef889814073b567d68e",
+    "scgsim_tree": "db8d0ff2f9a7f01714d992849708dcb55a29070b",
+    "scgsim_version": "1.0.0.dev7"
+  },
+  "results_table": "results.csv",
+  "results_table_sha256": "ce172db905c66e84b4047a7969e0c532ca12222d20a32d2b40fd92aa2775a84f",
+  "static_plot": "comparison.png",
+  "static_plot_sha256": "98aa9066a6956f60b4b05d0499f97d8222026083056d155c9c994c6974026bd3",
+  "runs": [
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_es_l300_w24p65_g20_20260827_01",
+      "repository_checkpoint": "42f71d2f642c9ca55b37d7d7c9a43ae9e5bcc0ab",
+      "repository_tree": "87fcf340fce233719878781ab9997b2b34164c5f",
+      "solver": "Palace",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "0fe5ec75b300078ad3453fb6f0620683728ef8395aef5e4a6b0c61a9640b0da8",
+      "receipt": {
+        "status": "completed",
+        "sha256": "05d2e4f64e2205e1662f68b08d716d45e361e80f2e9e1057b73bebc1aac7cb70"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "3bfe500d5e3725561c96a876fe05f010f5671b3b6d43b5aae6b06b088fd3e6f2"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_20260827_02",
+      "repository_checkpoint": "6377138adeccd2c2dd68cff96db491f839259ff5",
+      "repository_tree": "fce6aa924710012d6c0ca3e2886d066e58ef4e33",
+      "solver": "Palace",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "e8c1d7e590e66046a9c8cd208a986b64b864fd8b09c16a8e711c117829bf4d8f",
+      "receipt": {
+        "status": "completed",
+        "sha256": "1c99bd3a00421705f625afec5e79a078c6e30f80c4b7cdf7029e41776f0770e0"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "14040d2c5514de44c685d6c4afb607c02bc8e912cb04f590ce8cb26496e8c837"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_20260827_01",
+      "repository_checkpoint": "9b8e2b4b9d5415733c1fa925d6212833a336aba5",
+      "repository_tree": "7ae1772ea1d59a862764ef1146b639e8f2593109",
+      "solver": "Palace",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "metal_gap_equivalent",
+      "handoff_id": "a787854e709f9eb375274ed2eda01c4bedf0d8085c7decdb0e2f5ddfff6cd1f3",
+      "receipt": {
+        "status": "completed",
+        "sha256": "5cb46a837fd729fb09a4f123d3b301d699eedcd5d087a57c690ab05d34420ffc"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "6131349ba5f53c2c01771cedb7d2344d5051242df864e890bd7c0955bcd14dcd"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_eigenmode_l309p5_w24p65_g20_lj11p89_20260827_01",
+      "repository_checkpoint": "f7544e39e99c83ac67a32aa0b44d5caae2951e4c",
+      "repository_tree": "19cfdac000193f11bfe24d463f2ac6f5ff414843",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "b0cf1e19c89265a03abef2b8c27062bda2856912a79c8a9cb85222591bbb99aa",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "7a5fae6d29d65c77613580ffa307153c9fd293b1b9f378c19fc3a8a86c087a5d"
+      },
+      "selection": {
+        "source": "iteration06",
+        "path": "results/palace/iteration06",
+        "pass_index": 5,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "ab8a964b99dc349ef8700f4016477be581f241fb0f22d0e38b098e1d6bb3e77b",
+        "port-EPR.csv": "3479cb31e46074ab226ff31ec5aeb4f720b5fcac57dd4ee33efc1ca43d6ca75a"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_02",
+      "repository_checkpoint": "e376d97d913083bf0adf1389bc458bbf01f6fbc3",
+      "repository_tree": "8aa5116029eafd67b0d1579fe881ec4fab747cb9",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "a83fa3599d05dbb44df8e1470e96659adea4f647bafeaea9b98e1393ee93b356",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "bde7c0a3144d1343a74b79ae63711c4e7ee1dcab2d2790eaf287ce892ee78b2b"
+      },
+      "selection": {
+        "source": "iteration06",
+        "path": "results/palace/iteration06",
+        "pass_index": 5,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "f5b4ef30507f0d16b88d9acf9eb15ab63c2d04c851e0dd7ef6021293f0cb57a8",
+        "port-EPR.csv": "f370c8bb008bf10a07ab1c786bdcf1b73f67d1cccdc676b843e930f46eef1cbc"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01",
+      "repository_checkpoint": "e93998dc30b80a3914f23fac6e6e2d9c7ad1c692",
+      "repository_tree": "edc9f41d849e0fd4b1be960399d22ac06e396047",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "A",
+      "route_a_thin_film": "metal_gap_equivalent",
+      "handoff_id": "f79cb52df981314211e7741861500ceac89745e2e910800f5e90d92bedc31ab1",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "10a332b537a1413e067c74b7fee410b8ce91738d56c130a6d776f51b2d7abdc8"
+      },
+      "selection": {
+        "source": "iteration07",
+        "path": "results/palace/iteration07",
+        "pass_index": 6,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "a6338feda3ac137a444d8b8456ae2f408e6e8f631ded75c17b226a6e3914f0be",
+        "port-EPR.csv": "fd322ed8bdeb0c71e55731972cac815c06abf18d74bdfb9d5332ef859fa7a05b"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_b_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01",
+      "repository_checkpoint": "6e6539962a09a76c962467c37a11f4e5463c835a",
+      "repository_tree": "e698d764d3a0f2661d5699e91677d5aad577c59a",
+      "paired_source_checkpoint": "322896cc72b4d6b646fe93a11ef1db7be4d377c7",
+      "paired_source_tree": "4f6c4670b6b8b2c1a2c7111a74445c1930fee12c",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "B",
+      "route_a_thin_film": null,
+      "handoff_id": "cb53bca0851838447fa208359741c3996ad957342e63136db2c1ba210de8bd93",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "3d1c21192c756809d8459c5d1cab338e1a640c7f0f07789cd22466282a8ba6c8"
+      },
+      "selection": {
+        "source": "iteration06",
+        "path": "results/palace/iteration06",
+        "pass_index": 5,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "b45d23353cce0d4feaae07db76852553a0ab86dd4748eacb6c3408c5459a8218",
+        "port-EPR.csv": "d3a2b2b0039e9173a7cf12f1d482532f47511284d3c72febe73473917620f9e4"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04",
+      "repository_checkpoint": "aa20cb2af91a035fbb538cbf2b21e922c713698d",
+      "repository_tree": "c459bc101a8bacbb8e16050ecf3ec4a15bd61ad2",
+      "solver": "AEDT_Q3D_2024_2",
+      "problem": "Electrostatic_AC_RL",
+      "model": "physical_grounded",
+      "receipt": {
+        "status": "completed",
+        "sha256": "e74181cc4310ac4fe02b865751e6bdb48dfc57821fbb6bd6437d2fb35ef6fa4e"
+      },
+      "input_sha256": {
+        "gds": "d85c6e7f78212897320258bc61da3481dff769e4226803085fd98839b2e8c8aa",
+        "spec": "3756eb6c5eb0e8ebc5aca5655c4b406684821c6e3ad5bb8f552c20770721ae8e"
+      },
+      "selected_file_sha256": {
+        "c_matrix.csv": "48336e83ef86a5c04246d544373a290b3e8525308a76c6cfa8f599c99e114bff",
+        "matrices.csv": "c0d6311f526f7083b9d25e0694403c813433a34434a7bf64c5ba185ca260bfbf",
+        "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04.aedtresults/Kosen2024XmonQ3d.asol": "4e3b9fd7fa8e41058ff57585d6c60664fae03420d795bc94fff2b5869661ed03",
+        "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04.aedtresults/Kosen2024XmonQ3d.results/DV64_S21_V0.profile": "53db0ff82e1f758a5c354ecac867247c36f33aae335cb3548c156e0e6fbf3bea"
+      },
+      "convergence": {
+        "target_percent": 0.1,
+        "capacitance": {
+          "final_pass": 5,
+          "final_matrix_delta_percent": 0.0509227,
+          "final_triangle_count": 6880,
+          "stop_reason": "Adaptive Passes converged"
+        },
+        "ac_rl": {
+          "final_pass": 2,
+          "final_matrix_delta_percent": 0.0115627,
+          "final_triangle_count": 2066,
+          "stop_reason": "Adaptive Passes converged"
+        }
+      }
+    }
+  ]
+}
