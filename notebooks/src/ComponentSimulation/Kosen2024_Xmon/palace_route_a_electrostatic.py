@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_20260827_02"
+RUN_ID = "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_20260827_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
@@ -77,8 +77,8 @@ if WORKFLOW_ACTION == "prepare_handoff":
 if WORKFLOW_ACTION == "prepare_handoff":
     # Route A models zero-thickness PEC sheets; Route B models finite PEC exclusion shells.
     ROUTE = "A"
-    # A_PRIME keeps thin sheets on the physical substrate faces (0 / 8.4 um).
-    ROUTE_A_THIN_FILM = "substrate_face"
+    # A globally maps the two thin sheets to the physical 8.0 um metal gap.
+    ROUTE_A_THIN_FILM = "metal_gap_equivalent"
     # Add symmetric X/Y/Z padding to the automatic vacuum envelope; only Z is expanded here.
     VACUUM_PADDING_UM = (0.0, 0.0, float(OUTER_VACUUM_THICKNESS_UM))
     INDIUM_GROUND_FILL = {

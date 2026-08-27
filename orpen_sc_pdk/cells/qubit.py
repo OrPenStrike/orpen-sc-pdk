@@ -110,7 +110,7 @@ def _xmon_coupling_electrode(
 
 @gf.cell(tags=["qubits", "flip_chip"])
 def kosen2024_flip_chip_xmon_qubit(
-    qubit_pad_length: float = 300.0,
+    qubit_pad_length: float = 309.5,
     qubit_pad_width: float = 24.65,
     qubit_gap: float = 20.0,
     coupling_electrode_to_qubit_distance: float = 20.0,
