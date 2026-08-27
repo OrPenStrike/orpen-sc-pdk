@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_b_eigenmode_l300_w24p65_g20_lj11p5_20260827_01"
+RUN_ID = "kosen2024_xmon_route_b_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
@@ -45,7 +45,7 @@ if WORKFLOW_ACTION == "prepare_handoff":
     COMPONENT_PARAMETERS = {
         # Isolated coupon uses corner-anchored shorts, not the cell bump ring.
         "bump_ring_count_per_side": 0,
-        "qubit_pad_length": 300.0,
+        "qubit_pad_length": 309.5,
         "qubit_pad_width": 24.65,
         "qubit_gap": 20.0,
     }
@@ -102,7 +102,7 @@ if WORKFLOW_ACTION == "prepare_handoff":
     # Logical conductor layer containing the two terminal owners of the junction sheet.
     PORT_LAYER = "D1_BOTTOM_M1"
     # Initial linearized Josephson inductance placed on the Palace LumpedPort boundary (H).
-    PORT_INDUCTANCE_H = 11.5e-9
+    PORT_INDUCTANCE_H = 11.78e-9
     # Number of eigenvalues Palace computes above the search lower bound.
     NUM_MODES = 2
     # Lower search bound supplied to SCGSim in hertz (Hz); SCGSim writes it to Palace in GHz.
