@@ -53,7 +53,7 @@ orpen_sc_pdk.activate()
 
 # %%
 WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
-RUN_ID = "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_03"
+RUN_ID = "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04"
 OUTPUT_ROOT = Path.cwd() / ".artifacts"
 RUN_DIR = OUTPUT_ROOT / RUN_ID
 RETURNED_RUN_DIR = RUN_DIR
@@ -153,7 +153,7 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         for index, polygon in enumerate(polygons):
             layer = next(layer_numbers)
             layer_name = f"{prefix}{index:02d}" if len(polygons) > 1 else prefix
-            object_name = f"{layer_name}_1"
+            object_name = f"{layer_name}_{len(layer_imports) + 1}"
             q3d_geometry.add_polygon(points=polygon.resolved_holes(), layer=(layer, 0))
             layer_imports.append(LayerImport(layer, 0, layer_name, z_min_um, z_max_um))
             object_bindings.append(ObjectBinding(object_name, layer, role, material_id))
