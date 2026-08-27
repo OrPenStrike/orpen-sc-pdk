@@ -3,9 +3,10 @@
 Independent parametric adaptation inspired by Kosen et al., *PRX Quantum* 5,
 030350 (2024), https://doi.org/10.1103/PRXQuantum.5.030350, used under
 CC BY 4.0, https://creativecommons.org/licenses/by/4.0/.
-This is not an author-supplied mask. The neutral preview dimensions below are
-not paper mask authority; the paper's 8 um die gap and 25 um pre-compression
-indium diameter are retained as provenance metadata only.
+This is not an author-supplied mask. The simulation-informed public preview
+dimensions below are not paper-mask authority. The 8 um metal-face gap is a
+nominal public design value rather than a process validation limit; the paper's
+8 um die gap and 25 um pre-compression indium diameter remain provenance.
 """
 
 from math import cos, isfinite, radians, sin
@@ -109,8 +110,8 @@ def _xmon_coupling_electrode(
 
 @gf.cell(tags=["qubits", "flip_chip"])
 def kosen2024_flip_chip_xmon_qubit(
-    qubit_pad_length: float = 320.0,
-    qubit_pad_width: float = 40.0,
+    qubit_pad_length: float = 300.0,
+    qubit_pad_width: float = 24.65,
     qubit_gap: float = 20.0,
     coupling_electrode_to_qubit_distance: float = 20.0,
     coupling_electrode_gap: float = 10.0,
@@ -134,7 +135,7 @@ def kosen2024_flip_chip_xmon_qubit(
     indium_bump_layer: Layer = LAYER.D0_D1_INDIUM_BUMP,
     under_bump_layer: Layer = LAYER.D0_D1_UNDER_BUMP,
 ) -> gf.Component:
-    """Return a neutral-preview, four-port flip-chip Xmon coupling topology.
+    """Return a public-preview, four-port flip-chip Xmon coupling topology.
 
     ``qubit_pad_length`` and ``qubit_pad_width`` size both crossed bars together.
     The pad and four independent qubit-coupling electrodes share the Q-chip
@@ -142,6 +143,8 @@ def kosen2024_flip_chip_xmon_qubit(
     are intentionally excluded.
     The default fixed-frequency topology has one lower-left D1 Manhattan
     junction joining pad to ground through two short M1 arms.
+    A centered D0 ground-mask opening is derived from the four coupler-port
+    extents. Routing attached to those ports owns continuation of that opening.
 
     Source: S. Kosen et al., "Signal Crosstalk in a Flip-Chip Quantum
     Processor," PRX Quantum 5, 030350 (2024),
@@ -149,8 +152,8 @@ def kosen2024_flip_chip_xmon_qubit(
     under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), which
     requires attribution and identification of changes. This cell is an
     independent parametric adaptation, not an author-supplied mask or an
-    endorsed implementation. Its defaults are neutral public preview values,
-    not paper-mask dimensions.
+    endorsed implementation. Its defaults are public simulation-informed
+    preview values, not paper-mask dimensions.
     """
 
     for name, value in (
@@ -287,6 +290,12 @@ def kosen2024_flip_chip_xmon_qubit(
         + coupling_electrode_width
         + coupling_electrode_port_length
     )
+    d0_ground_opening_side = 2 * outer_edge
+    c << gf.components.rectangle(
+        size=(d0_ground_opening_side, d0_ground_opening_side),
+        layer=LAYER.D0_TOP_GROUND_MASK,
+        centered=True,
+    )
     if bump_ring_count_per_side:
         bump_footprint_size = (
             max(indium_bump_size, under_bump_size) if include_under_bump else indium_bump_size
@@ -330,8 +339,9 @@ def kosen2024_flip_chip_xmon_qubit(
         "not an author-supplied mask or endorsed implementation."
     )
     c.info["preview_default_provenance"] = (
-        "Neutral public preview defaults; not paper mask authority."
+        "Public simulation-informed preview defaults; not paper mask authority."
     )
+    c.info["d0_top_ground_opening_side_um"] = float(d0_ground_opening_side)
     c.info["paper_reported_die_gap_um"] = 8.0
     c.info["pdk_nominal_d0_d1_metal_face_gap_um"] = float(D0_D1_METAL_FACE_GAP_UM)
     c.info["paper_reported_indium_precompression_diameter_um"] = 25.0
@@ -359,6 +369,7 @@ def kosen2024_flip_chip_xmon_qubit(
         "q_chip_draw": tuple(int(value) for value in q_chip_draw_layer),
         "q_chip_etch": tuple(int(value) for value in q_chip_etch_layer),
         "q_chip_ground_mask": tuple(int(value) for value in q_chip_ground_mask_layer),
+        "c_chip_ground_mask": tuple(int(value) for value in LAYER.D0_TOP_GROUND_MASK),
         "junction_draw": tuple(int(value) for value in junction_draw_layer),
         "junction_sim_port": tuple(int(value) for value in junction_sim_port_layer),
     }
