@@ -25,10 +25,15 @@
     "scgsim_tree": "db8d0ff2f9a7f01714d992849708dcb55a29070b",
     "scgsim_version": "1.0.0.dev7"
   },
+  "c11_comparison": {
+    "reference_run_id": "kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_20260827_02",
+    "difference_definition": "candidate minus reference",
+    "percent_denominator": "reference C11"
+  },
   "results_table": "results.csv",
-  "results_table_sha256": "ce172db905c66e84b4047a7969e0c532ca12222d20a32d2b40fd92aa2775a84f",
+  "results_table_sha256": "cc8e90d262d85a282f178c3306936cf002eaca263e3ba0145427f64eeea263b2",
   "static_plot": "comparison.png",
-  "static_plot_sha256": "98aa9066a6956f60b4b05d0499f97d8222026083056d155c9c994c6974026bd3",
+  "static_plot_sha256": "6b96ebbb01248ba80b60c8f609a3bed753d80c97f2c21a047931ebb6b53c2352",
   "runs": [
     {
       "run_id": "kosen2024_xmon_route_a_prime_es_l300_w24p65_g20_20260827_01",
@@ -94,6 +99,57 @@
       },
       "selected_file_sha256": {
         "terminal-C.csv": "6131349ba5f53c2c01771cedb7d2344d5051242df864e890bd7c0955bcd14dcd"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_20260827_01",
+      "repository_checkpoint": "e39322a11345870f92fff5ddedd295b0869ed902",
+      "repository_tree": "5b4b3050e4ce40dd731c0adf2d281675e1d916a7",
+      "solver": "Palace",
+      "solver_revision": "869ee5c",
+      "problem": "Electrostatic",
+      "route": "B",
+      "route_a_thin_film": null,
+      "handoff_id": "41bf1a1416501790cc23cdf5ff1c31ef31247b51b233358298d30786dd33af71",
+      "receipt": {
+        "status": "completed",
+        "sha256": "589e945b95cea1d6bf6963211b3e7a3ba224c1f42aa62d80b3d270610a80fb76"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "terminals": [
+        "xmon_pad",
+        "coupler_1",
+        "coupler_2",
+        "coupler_3",
+        "coupler_4",
+        "ground"
+      ],
+      "matrix_units": "F",
+      "matrix_symmetry_max_abs_f": 0.0,
+      "matrix_row_sums_f": [
+        -1.4972928998402823e-20,
+        2.7030543504350888e-15,
+        3.3618308900211816e-15,
+        3.0040734139171792e-15,
+        2.7013184615016817e-15,
+        1.4607468790009987e-14
+      ],
+      "numerical_evidence": {
+        "amr_passes": 10,
+        "final_error_indicator_norm": 0.2308754605897,
+        "degrees_of_freedom": 1697367,
+        "mesh_elements": 8688247,
+        "elapsed_total_s": 898.616067901,
+        "peak_node_memory_mb": 48367.640625,
+        "mpi_processes": 32,
+        "openmp_threads": 2
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "9235783c33231816937daadb2bb932153d303e187e5abe73ddae72f6f858dde8"
       }
     },
     {
@@ -204,7 +260,15 @@
       "repository_tree": "c459bc101a8bacbb8e16050ecf3ec4a15bd61ad2",
       "solver": "AEDT_Q3D_2024_2",
       "problem": "Electrostatic_AC_RL",
-      "model": "physical_grounded",
+      "model": "physical_geometry_diagnostic",
+      "material_provenance": {
+        "pdk_si_relative_permittivity": 11.45,
+        "aedt_silicon_relative_permittivity": 11.9,
+        "pdk_bump_material": "In",
+        "aedt_bump_material": "Al",
+        "aedt_bump_conductor_model": "PEC",
+        "raw_receipt_unchanged": true
+      },
       "receipt": {
         "status": "completed",
         "sha256": "e74181cc4310ac4fe02b865751e6bdb48dfc57821fbb6bd6437d2fb35ef6fa4e"
