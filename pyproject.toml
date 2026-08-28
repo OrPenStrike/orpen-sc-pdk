@@ -57,7 +57,7 @@ ecosystem-dev = [
 ]
 
 [tool.uv.sources]
-scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "933c4f069c755132cf08f3d95ac244c57d529879" }
+scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "9e69c588275cbf3fa5fa42abff445d3898ae3ebd" }
 superconducting-circuits-runtime = { git = "https://github.com/arfiligol/superconducting-circuits-research-workbench.git", rev = "f3430cb3c4b3a72d6b60bc99929475f3d0c41f57", subdirectory = "core/python/runtime" }
 
 [tool.ruff]
