@@ -8,7 +8,7 @@
       "aedt_library_name": "Vacuum"
     },
     "Si": {
-      "relative_permittivity": 11.45,
+      "relative_permittivity": 11.9,
       "loss_tangent": 2.6e-7,
       "permeability": 1.0,
       "material_kind": "dielectric",

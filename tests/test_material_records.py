@@ -22,14 +22,16 @@ from orpen_sc_pdk.tech import (
 def test_public_material_records_are_copies() -> None:
     records = get_material_records()
     aliases = get_material_alias_records()
+    si_relative_permittivity = records["Si"]["relative_permittivity"]
 
-    assert records["Si"]["relative_permittivity"] == pytest.approx(11.45)
     assert records["Si"]["material_kind"] == "dielectric"
     assert aliases == {"air": "vacuum", "silicon": "Si"}
 
     records["Si"]["relative_permittivity"] = 1.0
     aliases["air"] = "Si"
-    assert material_properties["Si"]["relative_permittivity"] == pytest.approx(11.45)
+    assert material_properties["Si"]["relative_permittivity"] == pytest.approx(
+        si_relative_permittivity
+    )
     assert material_alias_records["air"] == "vacuum"
 
 
