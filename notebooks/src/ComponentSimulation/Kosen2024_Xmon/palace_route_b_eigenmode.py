@@ -19,6 +19,7 @@ from pathlib import Path
 import gdsfactory as gf
 from scgsim.palace import EigenmodeSim, inspect_run_trustworthiness, resolve_palace_result
 from scgsim.sgb import build_component_stack
+from scgsim.visualization import inspect_palace_geometry
 
 import orpen_sc_pdk
 from orpen_sc_pdk import LAYER_STACK, get_material_records
@@ -230,7 +231,10 @@ if WORKFLOW_ACTION == "prepare_handoff":
 # Returned handoff root whose receipt and handoff identity SCGSim must verify.
 RETURNED_RUN_DIR = RUN_ROOT
 if WORKFLOW_ACTION == "analyze_handoff":
+    PREVIEW_MODE = "boundaries"  # materials | boundaries | surface_epr | mesh
     report = inspect_run_trustworthiness(RETURNED_RUN_DIR)
     if report.completeness == "complete":
         report = resolve_palace_result(RETURNED_RUN_DIR, expected_handoff_id=EXPECTED_HANDOFF_ID)
     report.show_all_results()
+    preview = inspect_palace_geometry(RETURNED_RUN_DIR)
+    preview.explore(PREVIEW_MODE)
