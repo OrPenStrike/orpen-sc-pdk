@@ -53,7 +53,7 @@ orpen_sc_pdk.activate()
 
 # %%
 WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
-RUN_ID = "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04"
+RUN_ID = "kosen2024_xmon_q3d_l309p5_w24p65_g20_rfground_vac0_20260829_01"
 OUTPUT_ROOT = Path.cwd() / ".artifacts"
 RUN_DIR = OUTPUT_ROOT / RUN_ID
 RETURNED_RUN_DIR = RUN_DIR
@@ -250,7 +250,7 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             maximum_passes=20,
             convergence_percent=0.1,
         ),
-        region_padding_um=(100.0, 100.0, 100.0, 100.0, 1000.0, 1000.0),
+        region_padding_um=(0.0, 0.0, 0.0, 0.0, 1000.0, 1000.0),
         aedt_version="2024.2",
     )
     HANDOFF = prepare_handoff(spec=spec, output_dir=RUN_DIR)

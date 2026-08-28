@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_si11p9_20260828_01"
+RUN_ID = "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_rfground_vac0_20260829_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
@@ -97,21 +97,15 @@ if WORKFLOW_ACTION == "prepare_handoff":
         }
         for kind in ("MA", "MS", "SA")
     }
-    # Palace applies unit voltage to each terminal in turn and returns the capacitance matrices.
-    # This iteration uses RF-grounded xmon_pad C11 as C_sigma.
-    # Floating-coupler reduction is deferred.
+    # The Xmon pad is the sole driven terminal. Couplers, both ground planes,
+    # and the corner-authored bumps form one RF-grounded conductor group.
     TERMINALS = {
         "xmon_pad": "xmon_pad",  # Report name -> exact structured conductor net.
-        "coupler_1": "coupler_1",
-        "coupler_2": "coupler_2",
-        "coupler_3": "coupler_3",
-        "coupler_4": "coupler_4",
-        "ground": "Ground",
     }
     # Number of terminal field solutions saved for ParaView/GridFunction; 0 saves none.
     SAVE_FIELDS = 0
-    # Unlisted structured conductors fail fast.
-    UNASSIGNED_CONDUCTOR_POLICY = "error"
+    # Every structured conductor not listed as a terminal shares Palace Ground.
+    UNASSIGNED_CONDUCTOR_POLICY = "ground"
     # Leave exterior solution boundaries at Palace's natural zero-charge condition.
     EXTERIOR_BOUNDARY_POLICY = "none"
 
