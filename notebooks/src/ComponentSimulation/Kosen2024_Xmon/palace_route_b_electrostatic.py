@@ -28,7 +28,7 @@ from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
 WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_20260827_01"
+RUN_ID = "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_si11p9_20260828_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
 EXPECTED_HANDOFF_ID = ""
