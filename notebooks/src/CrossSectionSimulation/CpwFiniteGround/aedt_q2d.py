@@ -25,8 +25,6 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-import gdsfactory as gf
-from IPython.display import display
 from scgsim.aedt import (
     MatrixRunControl,
     PdkMaterial,
@@ -65,19 +63,12 @@ signal_width_um = 10.0
 gap_um = 10.0
 # Ground conductor width (um).
 ground_width_um = 40.0
+# Substrate width (um).
+substrate_width_um = 200.0
 # Metal thickness (um).
 metal_thickness_um = 0.2
 # Substrate thickness (um).
 substrate_thickness_um = 500.0
-cross_section = gf.Component()
-cross_section.add_polygon(
-    [(-100.0, -500.0), (100.0, -500.0), (100.0, 0.0), (-100.0, 0.0)],
-    layer=(201, 0),
-)
-cross_section.add_polygon([(-5.0, 0.0), (5.0, 0.0), (5.0, 0.2), (-5.0, 0.2)], layer=(1, 0))
-cross_section.add_polygon([(-55.0, 0.0), (-15.0, 0.0), (-15.0, 0.2), (-55.0, 0.2)], layer=(2, 0))
-cross_section.add_polygon([(15.0, 0.0), (55.0, 0.0), (55.0, 0.2), (15.0, 0.2)], layer=(2, 0))
-cross_section.plot()
 
 # %% [markdown]
 # ## Initialize AEDT Project / App
@@ -92,21 +83,46 @@ design_name = "CpwFiniteGroundQ2d"
 
 # %% [markdown]
 # ## Import GDS and Build the HFSS/Q3D/Q2D Model
+#
+# Q2D uses SCGSim's native rectangle contract; no GDS file is imported.
 
 # %%
+signal_half_width_um = signal_width_um / 2
+left_ground_xmin_um = -(signal_half_width_um + gap_um + ground_width_um)
+right_ground_xmin_um = signal_half_width_um + gap_um
 rectangles = (
     # Each row gives name, lower-left coordinate (um), size (um), and material.
-    Q2dRectangleSpec("Substrate", (-100.0, -substrate_thickness_um), (200.0, 500.0), "Si"),
-    Q2dRectangleSpec("Signal", (-signal_width_um / 2, 0.0), (signal_width_um, 0.2), "Nb"),
-    Q2dRectangleSpec("GroundLeft", (-55.0, 0.0), (ground_width_um, 0.2), "Nb"),
-    Q2dRectangleSpec("GroundRight", (15.0, 0.0), (ground_width_um, 0.2), "Nb"),
+    Q2dRectangleSpec(
+        "Substrate",
+        (-substrate_width_um / 2, -substrate_thickness_um),
+        (substrate_width_um, substrate_thickness_um),
+        "Si",
+    ),
+    Q2dRectangleSpec(
+        "Signal",
+        (-signal_half_width_um, 0.0),
+        (signal_width_um, metal_thickness_um),
+        "Nb",
+    ),
+    Q2dRectangleSpec(
+        "GroundLeft",
+        (left_ground_xmin_um, 0.0),
+        (ground_width_um, metal_thickness_um),
+        "Nb",
+    ),
+    Q2dRectangleSpec(
+        "GroundRight",
+        (right_ground_xmin_um, 0.0),
+        (ground_width_um, metal_thickness_um),
+        "Nb",
+    ),
 )
 
 # %% [markdown]
 # ## Geometry Verification
 
 # %%
-display(cross_section)
+print(rectangles)
 
 # %% [markdown]
 # ## Materials and Boundaries
@@ -164,7 +180,7 @@ spec = Q2dSpec(
 HANDOFF = None
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     HANDOFF = prepare_handoff(spec=spec, output_dir=RUN_DIR)
-display(HANDOFF)
+print(HANDOFF)
 
 # %% [markdown]
 # ## Solve and Export
@@ -178,7 +194,7 @@ if WORKFLOW_ACTION == "run":
 
 # %%
 RESULT = resolve_results(RETURNED_RUN_DIR) if WORKFLOW_ACTION == "analyze_handoff" else None
-display(RESULT)
+print(RESULT)
 
 # %% [markdown]
 # ## Results: Plots and Readable Tables
@@ -186,18 +202,16 @@ display(RESULT)
 # ### Physics Analysis Results
 
 # %%
-if RESULT is not None:
-    display(RESULT.physics_results())
+RESULT.physics_results() if RESULT is not None else None
 
 # %% [markdown]
 # ### Simulation Performance / Benchmarks
 
 # %%
-if RESULT is not None:
-    display(RESULT.simulation_benchmark())
+RESULT.simulation_benchmark() if RESULT is not None else None
 
 # %% [markdown]
 # ## Save and Release AEDT
 
 # %%
-display(RESULT.project_path if RESULT is not None else HANDOFF.archive_path)
+print(RESULT.project_path if RESULT is not None else HANDOFF.archive_path)

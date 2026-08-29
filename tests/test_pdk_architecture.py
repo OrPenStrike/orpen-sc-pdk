@@ -111,19 +111,8 @@ def test_pdk_registry_does_not_publish_generic_gf_cells() -> None:
     assert generic_cells.isdisjoint(PDK.cells)
 
 
-def test_fixture_cells_stay_in_deep_owner_modules_until_notebook_facing() -> None:
-    from orpen_sc_pdk.cells import xs_chip
-
-    fixture_cells = {
-        "single_trace_flip_chip_xs_chip",
-        "single_trace_xs_chip",
-        "two_trace_flip_chip_xs_chip",
-        "two_trace_xs_chip",
-    }
-
-    assert all(callable(getattr(xs_chip, name)) for name in fixture_cells)
-    assert fixture_cells.isdisjoint(cells.__all__)
-    assert fixture_cells.isdisjoint(PDK.cells)
+def test_q2d_fixture_module_is_retired() -> None:
+    assert find_spec("orpen_sc_pdk.cells.xs_chip") is None
 
 
 def test_pdk_registry_contains_public_cpw_cross_sections() -> None:

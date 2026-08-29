@@ -61,40 +61,6 @@ def add_mesh_port(
     )
 
 
-def add_q2d_conductor_port(
-    component: gf.Component,
-    *,
-    name: str,
-    center: Point,
-    layer: LayerSpec,
-    width: float = 1.0,
-    orientation: float = 0.0,
-) -> gf.Port:
-    """Add a named Q2D conductor locator on component-owned geometry.
-
-    The locator identifies a conductor marker. AEDT assignment labels belong to
-    the notebook or ``scgsim.aedt``, not to ``port.info``.
-
-    Example:
-        add_q2d_conductor_port(
-            c,
-            name="q2d_center_signal",
-            center=(0.0, 0.0),
-            layer=draw_layer,
-        )
-    """
-
-    return _add_locator_port(
-        component,
-        name=name,
-        center=center,
-        layer=layer,
-        port_type=SimulationPortType.Q2D_CONDUCTOR,
-        width=width,
-        orientation=orientation,
-    )
-
-
 def add_junction_lumped_port(
     component: gf.Component,
     *,
@@ -167,5 +133,4 @@ __all__ = [
     "add_driven_lumped_port",
     "add_junction_lumped_port",
     "add_mesh_port",
-    "add_q2d_conductor_port",
 ]

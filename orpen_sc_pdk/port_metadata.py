@@ -27,7 +27,6 @@ class SimulationPortType(StrEnum):
     JUNCTION_LUMPED = "sim_junction_lumped"
     PALACE_WAVE = "sim_wave"
     PALACE_CURRENT = "sim_current"
-    Q2D_CONDUCTOR = "sim_q2d_conductor"
 
 
 SIMULATION_PORT_TYPES: Final[tuple[str, ...]] = tuple(
