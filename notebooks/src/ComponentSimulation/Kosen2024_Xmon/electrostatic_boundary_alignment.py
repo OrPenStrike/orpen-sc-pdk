@@ -238,7 +238,7 @@ plt.close(fig)
 # %%
 fieldnames = tuple(rows[0])
 with (EVIDENCE_DIR / "results.csv").open("w", newline="") as stream:
-    writer = csv.DictWriter(stream, fieldnames=fieldnames)
+    writer = csv.DictWriter(stream, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
     writer.writerows(rows)
 
