@@ -14,16 +14,20 @@
 # ---
 
 # %% [markdown]
-# # Public OrPen Xmon — AEDT Q3D grounded C11 cross-check
+# # Public OrPen Xmon — Q3D Electrostatic Boundary Alignment
 #
-# This public workflow extracts the tuned Xmon capacitance with the pad as the
-# sole signal. The four couplers, both face ground planes, and corner-authored
-# indium shorts share the grounded net, matching the Palace grounded-C11
-# boundary. Q3D is cross-solver evidence; no solver-agreement gate is implied.
+# Two fresh capacitance-only Q3D runs compare the same physical coupon inside
+# an open/infinite Region and a finite grounded Region enclosure. The Xmon pad
+# is the sole Signal; all physical grounds, couplers, and bumps share one Ground
+# net. The comparison records evidence only and defines no solver-agreement gate.
+
+# %% [markdown]
+# ## Setup and Imports
 
 # %%
 from __future__ import annotations
 
+import importlib.metadata
 import subprocess
 from itertools import count
 from pathlib import Path
@@ -46,41 +50,62 @@ import orpen_sc_pdk
 from orpen_sc_pdk import LAYER_STACK, get_material_records
 from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 
-orpen_sc_pdk.activate()
-
 # %% [markdown]
-# ## Run controls
+# ## Setup and Run Controls
 
 # %%
-WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
-RUN_ID = "kosen2024_xmon_q3d_l309p5_w24p65_g20_rfground_vac0_20260829_01"
+WORKFLOW_ACTION = "run"  # prepare_handoff | run | analyze_handoff
 OUTPUT_ROOT = Path.cwd() / ".artifacts"
-RUN_DIR = OUTPUT_ROOT / RUN_ID
-RETURNED_RUN_DIR = RUN_DIR
-SOURCE_GDS = OUTPUT_ROOT / "q3d_geometry" / f"{RUN_ID}.gds"
+SOURCE_GDS = OUTPUT_ROOT / "q3d_geometry" / "kosen2024_xmon_boundary_alignment.gds"
+BOUNDARY_RUNS = (
+    {
+        "label": "open_region",
+        "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_open_cg_20260829_01",
+        "grounded_region_net": None,
+    },
+    {
+        "label": "grounded_region",
+        "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_grounded_cg_20260829_01",
+        "grounded_region_net": "ground",
+    },
+)
+RUN_DIRS = {case["label"]: OUTPUT_ROOT / case["run_id"] for case in BOUNDARY_RUNS}
+RETURNED_RUN_DIRS = dict(RUN_DIRS)
+
+COMPONENT_NAME = "kosen2024_flip_chip_xmon_qubit"
+COMPONENT_PARAMETERS = {
+    "bump_ring_count_per_side": 0,
+    "qubit_pad_length": 309.5,
+    "qubit_pad_width": 24.65,
+    "qubit_gap": 20.0,
+}
+COUPON_PADDING_UM = 75.0
+GROUND_SHORT_CLEARANCE_UM = 30.0
+INDIUM_PLACEMENT_MODE = "corner_anchors"
+REGION_PADDING_UM = (250.0, 250.0, 250.0, 250.0, 1000.0, 1000.0)
+AEDT_VERSION = "2024.2"
+SETUP_NAME = "Setup1"
+EXTRACTION_FREQUENCY_GHZ = 4.7
+MAXIMUM_PASSES = 20
+CONVERGENCE_PERCENT = 0.1
+SOLVE_AC_RL = False
 
 if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
     raise ValueError("WORKFLOW_ACTION must be prepare_handoff, run, or analyze_handoff.")
 
 # %% [markdown]
-# ## Build the tuned physical coupon
+# ## Create Simulation Component / Coupon
 
 # %%
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     orpen_sc_pdk.activate()
     gf.clear_cache()
-    device = gf.get_component(
-        "kosen2024_flip_chip_xmon_qubit",
-        bump_ring_count_per_side=0,
-        qubit_pad_length=309.5,
-        qubit_pad_width=24.65,
-        qubit_gap=20.0,
-    )
+    device = gf.get_component(COMPONENT_NAME, **COMPONENT_PARAMETERS)
     coupon = place_flip_chip_ground_short_bumps(
         device,
-        coupon_padding_um=75.0,
-        clearance_um=30.0,
-        placement_mode="corner_anchors",
+        coupon_padding_um=COUPON_PADDING_UM,
+        clearance_um=GROUND_SHORT_CLEARANCE_UM,
+        placement_mode=INDIUM_PLACEMENT_MODE,
     )
     component = coupon.component
     stack = build_component_stack(
@@ -92,11 +117,24 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     display(component)
 
 # %% [markdown]
-# ## Materialize semantic Q3D conductor layers
+# ## Initialize AEDT Project / App
+
+# %%
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    display(
+        {
+            "aedt_version": AEDT_VERSION,
+            "pyaedt_version": importlib.metadata.version("pyaedt"),
+            "scgsim_version": importlib.metadata.version("scgsim"),
+        }
+    )
+
+# %% [markdown]
+# ## Import GDS and Build the HFSS/Q3D/Q2D Model
 #
-# Q3D imports positive GDS layers. The PDK remains authoritative: this cell
-# evaluates its typed die-face metal construction, then assigns only the Xmon
-# pad to the Signal net. Every remaining conductor is grounded for C11.
+# Q3D imports positive GDS layers. The PDK remains authoritative: this phase
+# evaluates its typed face-metal construction and emits one exact shared coupon
+# for both Region-boundary cases.
 
 # %%
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
@@ -117,8 +155,8 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     d1_draw = flat.get_region(tuple(d1_ground_record["geometry"]["include_layer"]), merge=True)
     d1_mask = flat.get_region(tuple(d1_ground_record["geometry"]["mask_layer"]), merge=True)
     d1_metal = (domain - (d1_mask - d1_draw)).merged()
-    semantic_regions = component.info["component_semantics"]["conductor_regions"]
-    xmon_record = next(item for item in semantic_regions if item["semantic_id"] == "D1_XMON_PAD")
+    conductor_regions = component.info["component_semantics"]["conductor_regions"]
+    xmon_record = next(item for item in conductor_regions if item["semantic_id"] == "D1_XMON_PAD")
     xmon_selector = gf.kdb.Point(
         *(round(value / dbu) for value in xmon_record["geometry"]["selector_point_um"])
     )
@@ -192,9 +230,14 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             "substrate",
             "Si",
         )
-
     SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
     q3d_geometry.write_gds(SOURCE_GDS, with_metadata=False)
+
+# %% [markdown]
+# ## Geometry Verification
+
+# %%
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     roundtrip = gf.kdb.Layout()
     roundtrip.read(str(SOURCE_GDS))
     top_cell = roundtrip.top_cell()
@@ -209,10 +252,9 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     display(q3d_geometry)
 
 # %% [markdown]
-# ## Q3D handoff
+# ## Materials and Boundaries
 
 # %%
-HANDOFF = None
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     material_records = get_material_records()
     materials = {
@@ -224,53 +266,112 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         )
         for material_id in ("vacuum", "Si", "Al")
     }
-    spec = Q3dSpec(
-        gds_path=SOURCE_GDS,
-        project_name=RUN_ID,
-        design_name="Kosen2024XmonQ3d",
-        materials=materials,
-        vacuum_material_id="vacuum",
-        layer_imports=tuple(layer_imports),
-        object_bindings=tuple(object_bindings),
-        nets=(
-            Q3dNetSpec(
-                "xmon_pad",
-                "Signal",
-                (xmon_object,),
-                xmon_object,
-                "-Z",
-                xmon_object,
-                "+Z",
-            ),
-            Q3dNetSpec("ground", "Ground", ground_objects),
-        ),
-        run_control=MatrixRunControl(
-            setup_name="Setup1",
-            frequency_ghz=4.7,
-            maximum_passes=20,
-            convergence_percent=0.1,
-        ),
-        region_padding_um=(0.0, 0.0, 0.0, 0.0, 1000.0, 1000.0),
-        aedt_version="2024.2",
-    )
-    HANDOFF = prepare_handoff(spec=spec, output_dir=RUN_DIR)
-display(HANDOFF)
 
 # %% [markdown]
-# ## Execute or analyze
+# ## Ports / Nets / Excitations
 
 # %%
-if WORKFLOW_ACTION == "run":
-    subprocess.run([str(HANDOFF.script_path)], cwd=HANDOFF.run_dir, check=True)
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    nets = (
+        Q3dNetSpec(
+            "xmon_pad",
+            "Signal",
+            (xmon_object,),
+            xmon_object,
+            "-Z",
+            xmon_object,
+            "+Z",
+        ),
+        Q3dNetSpec("ground", "Ground", ground_objects),
+    )
 
-RESULT = (
-    resolve_results(RETURNED_RUN_DIR) if WORKFLOW_ACTION in {"run", "analyze_handoff"} else None
+# %% [markdown]
+# ## Simulation Setup
+
+# %%
+run_control = MatrixRunControl(
+    setup_name=SETUP_NAME,
+    frequency_ghz=EXTRACTION_FREQUENCY_GHZ,
+    maximum_passes=MAXIMUM_PASSES,
+    convergence_percent=CONVERGENCE_PERCENT,
 )
-display(RESULT)
-if RESULT is not None:
-    display(RESULT.convergence)
-    display(RESULT.physics_results())
-    display(RESULT.simulation_benchmark())
+
+# %% [markdown]
+# ## Simulation Configuration
 
 # %%
-display(RESULT.project_path if RESULT is not None else HANDOFF.archive_path)
+SPECS = {}
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    for case in BOUNDARY_RUNS:
+        SPECS[case["label"]] = Q3dSpec(
+            gds_path=SOURCE_GDS,
+            project_name=case["run_id"],
+            design_name="Kosen2024XmonQ3d",
+            materials=materials,
+            vacuum_material_id="vacuum",
+            layer_imports=tuple(layer_imports),
+            object_bindings=tuple(object_bindings),
+            nets=nets,
+            run_control=run_control,
+            region_padding_um=REGION_PADDING_UM,
+            solve_ac_rl=SOLVE_AC_RL,
+            grounded_region_net=case["grounded_region_net"],
+            aedt_version=AEDT_VERSION,
+        )
+
+# %% [markdown]
+# ## Solve and Export
+
+# %%
+HANDOFFS = {}
+RUN_RETURN_CODES = {}
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    for case in BOUNDARY_RUNS:
+        label = case["label"]
+        handoff = prepare_handoff(spec=SPECS[label], output_dir=RUN_DIRS[label])
+        HANDOFFS[label] = handoff
+        display(handoff)
+        if WORKFLOW_ACTION == "run":
+            completed = subprocess.run([str(handoff.script_path)], cwd=handoff.run_dir, check=False)
+            RUN_RETURN_CODES[label] = completed.returncode
+
+# %% [markdown]
+# ## Adaptive-Pass Convergence / Solver Diagnostics
+
+# %%
+RESULTS = {}
+if WORKFLOW_ACTION in {"run", "analyze_handoff"}:
+    for case in BOUNDARY_RUNS:
+        label = case["label"]
+        result = resolve_results(RETURNED_RUN_DIRS[label])
+        RESULTS[label] = result
+        display(result.convergence)
+
+# %% [markdown]
+# ## Results: Plots and Readable Tables
+
+# %% [markdown]
+# ### Physics Analysis Results
+
+# %%
+for label, result in RESULTS.items():
+    display({"boundary_case": label, "rows": result.physics_results()})
+
+# %% [markdown]
+# ### Simulation Performance / Benchmarks
+
+# %%
+for label, result in RESULTS.items():
+    display({"boundary_case": label, **result.simulation_benchmark()})
+
+# %% [markdown]
+# ## Save and Release AEDT
+
+# %%
+# The SCGSim runner saves the exact project and releases only its owned AEDT session.
+for case in BOUNDARY_RUNS:
+    label = case["label"]
+    if label in RESULTS:
+        display(RESULTS[label].project_path)
+    elif label in HANDOFFS:
+        display(HANDOFFS[label].archive_path)
