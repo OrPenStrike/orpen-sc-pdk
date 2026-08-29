@@ -27,12 +27,12 @@ from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
-WORKFLOW_ACTION = "prepare_handoff"
+WORKFLOW_ACTION = "analyze_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
 RUN_ID = "kosen2024_xmon_route_a_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
-EXPECTED_HANDOFF_ID = ""
+EXPECTED_HANDOFF_ID = "f79cb52df981314211e7741861500ceac89745e2e910800f5e90d92bedc31ab1"
 if WORKFLOW_ACTION not in {"prepare_handoff", "analyze_handoff"}:
     raise ValueError("WORKFLOW_ACTION must be 'prepare_handoff' or 'analyze_handoff'.")
 
