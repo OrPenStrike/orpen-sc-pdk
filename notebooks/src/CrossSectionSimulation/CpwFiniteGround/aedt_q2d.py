@@ -82,7 +82,7 @@ project_name = RUN_ID
 design_name = "CpwFiniteGroundQ2d"
 
 # %% [markdown]
-# ## Import GDS and Build the HFSS/Q3D/Q2D Model
+# ## Build Native Q2D Geometry and Conductors
 #
 # Q2D uses SCGSim's native rectangle contract; no GDS file is imported.
 
