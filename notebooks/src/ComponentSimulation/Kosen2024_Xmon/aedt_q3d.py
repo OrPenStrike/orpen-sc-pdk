@@ -65,8 +65,8 @@ BOUNDARY_RUNS = (
     },
     {
         "label": "grounded_region",
-        "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_grounded_cg_20260829_01",
-        "grounded_region_net": "ground",
+        "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_grounded_cg_20260829_02",
+        "grounded_region_net": "region_enclosure",
     },
 )
 RUN_DIRS = {case["label"]: OUTPUT_ROOT / case["run_id"] for case in BOUNDARY_RUNS}
