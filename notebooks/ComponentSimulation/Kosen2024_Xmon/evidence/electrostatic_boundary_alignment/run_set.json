@@ -1,0 +1,170 @@
+{
+  "schema": "orpen.kosen2024.electrostatic-boundary-alignment.v1",
+  "semantic_state": "CONVERGING",
+  "data_classification": "public",
+  "claim": "Measured boundary evidence only; no solver-agreement threshold or equivalence claim.",
+  "source": {
+    "orpen_run_source_commit": "200efdf1887640a5e21e4bf284a44aef5b28223f",
+    "scgsim_revision": "8f6468408b6553e66d0896833c9076d76cf2d964",
+    "scgsim_version": "1.0.0.dev15"
+  },
+  "shared_controls": {
+    "component": "kosen2024_flip_chip_xmon_qubit",
+    "geometry_um": {
+      "qubit_pad_length": 309.5,
+      "qubit_pad_width": 24.65,
+      "qubit_gap": 20.0
+    },
+    "region_padding_um": [
+      250.0,
+      250.0,
+      250.0,
+      250.0,
+      1000.0,
+      1000.0
+    ],
+    "signal": "xmon_pad",
+    "physical_ground": "ground"
+  },
+  "runs": [
+    {
+      "backend": "Palace Route B",
+      "exterior_boundary": "zero_charge",
+      "run_id": "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_vac250_zerocharge_20260829_01",
+      "receipt_status": "failed",
+      "result_completeness": "partial",
+      "selected_evidence": "results/palace/iteration09",
+      "c11_ff": 99.45772583768,
+      "ec_over_h_mhz": 194.75841782540158,
+      "native_pass": 9,
+      "native_measure": "AMR error norm",
+      "native_value": 0.05250451525193,
+      "native_target": 0.02,
+      "native_converged": false,
+      "stop_reason": "signal_killed",
+      "runtime_seconds": 2443.756011534,
+      "matrix_sha256": "cb19c0b4b8837ba1dc0febc9b8fa45a2f41f53a9eb3956f1f4b2ea6db28ae937"
+    },
+    {
+      "backend": "Palace Route B",
+      "exterior_boundary": "grounded_enclosure",
+      "run_id": "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_vac250_grounded_20260829_01",
+      "receipt_status": "failed",
+      "result_completeness": "partial",
+      "selected_evidence": "results/palace/iteration09",
+      "c11_ff": 99.58893961243,
+      "ec_over_h_mhz": 194.50181315357096,
+      "native_pass": 9,
+      "native_measure": "AMR error norm",
+      "native_value": 0.05248647334599,
+      "native_target": 0.02,
+      "native_converged": false,
+      "stop_reason": "signal_killed",
+      "runtime_seconds": 2474.472843959,
+      "matrix_sha256": "3de3fd6859bae97b0e121776d3ded28dd8d6b0e63509a9527513da32440da5d3"
+    },
+    {
+      "backend": "Q3D CG-only",
+      "exterior_boundary": "open_infinity",
+      "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_open_cg_20260829_01",
+      "receipt_status": "completed",
+      "result_completeness": "complete",
+      "selected_evidence": "results/q3d/c_matrix.csv",
+      "c11_ff": 97.53503233777604,
+      "ec_over_h_mhz": 198.5976613774791,
+      "native_pass": 20,
+      "native_measure": "matrix delta percent",
+      "native_value": 0.27966,
+      "native_target": 0.1,
+      "native_converged": false,
+      "stop_reason": "Adaptive Passes did not converge",
+      "runtime_seconds": 209.135047,
+      "matrix_sha256": "316cfc38c85411d3a0830a28861841e8b4bd9d061088850ffe6af51887af265a"
+    },
+    {
+      "backend": "Q3D CG-only",
+      "exterior_boundary": "grounded_enclosure",
+      "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_grounded_cg_20260829_02",
+      "receipt_status": "completed",
+      "result_completeness": "complete",
+      "selected_evidence": "results/q3d/c_matrix.csv",
+      "c11_ff": 97.34770815942056,
+      "ec_over_h_mhz": 198.97981874352547,
+      "native_pass": 20,
+      "native_measure": "matrix delta percent",
+      "native_value": 0.207419,
+      "native_target": 0.1,
+      "native_converged": false,
+      "stop_reason": "Adaptive Passes did not converge",
+      "runtime_seconds": 238.763702,
+      "matrix_sha256": "b910be019b556779211bff6c603aa503221b9f4d6a75bdd2cb244d86ab88fb38"
+    }
+  ],
+  "superseded_failed_attempt": {
+    "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_grounded_cg_20260829_01",
+    "status": "failed",
+    "error": "RuntimeError: Q3D failed to analyze setup 'Setup1'",
+    "spec_sha256": "201f572774f025efb25a8b02b43bffd37e6339cc42e204db7cf0a86e77e050ba",
+    "gds_sha256": "d85c6e7f78212897320258bc61da3481dff769e4226803085fd98839b2e8c8aa",
+    "reason": "Physical GroundNet name was incorrectly reused for the enclosure; the artifact remains immutable."
+  },
+  "q3d_grounded_region_readback": {
+    "spec_sha256": "524d216640b18ff794c4cac3e472e8ee00dc39ffc1f35616cbe213f916799391",
+    "gds_sha256": "d85c6e7f78212897320258bc61da3481dff769e4226803085fd98839b2e8c8aa",
+    "target_net": "region_enclosure",
+    "target_net_origin": "generated_region_enclosure",
+    "physical_ground_object_ids": [
+      532,
+      1564,
+      1618,
+      1646,
+      1674,
+      1702,
+      1730,
+      1758,
+      1786,
+      1814
+    ],
+    "enclosure_object_ids": [
+      1926,
+      1938,
+      1950,
+      1962,
+      1974,
+      1986
+    ],
+    "physical_and_enclosure_ids_disjoint": true,
+    "thin_conductor_boundaries": [
+      "SCGSimRegionGroundPXThinConductor",
+      "SCGSimRegionGroundNXThinConductor",
+      "SCGSimRegionGroundPYThinConductor",
+      "SCGSimRegionGroundNYThinConductor",
+      "SCGSimRegionGroundPZThinConductor",
+      "SCGSimRegionGroundNZThinConductor"
+    ],
+    "validate_design_ok": true
+  },
+  "differences": {
+    "palace_grounded_minus_zero_charge": {
+      "absolute_ff": 0.13121377474999463,
+      "percent_of_rhs": 0.1319291926744254
+    },
+    "q3d_grounded_minus_open": {
+      "absolute_ff": -0.18732417835548176,
+      "percent_of_rhs": -0.1920583546912197
+    },
+    "open_q3d_minus_zero_charge_palace": {
+      "absolute_ff": -1.922693499903957,
+      "percent_of_rhs": -1.933176617211105
+    },
+    "grounded_q3d_minus_grounded_palace": {
+      "absolute_ff": -2.2412314530094335,
+      "percent_of_rhs": -2.2504822942503737
+    }
+  },
+  "artifacts": {
+    "results.csv": "a58ea1f7dbe153f1ec18ee1459217976f722435e4b3c5a18e01fcdc4d34fd4b0",
+    "comparison.png": "f938a6af48e60ec962f36c9407b9166b327fb99496037e1fba8e6121b1689e8b",
+    "convergence.png": "ea6528b5a130e17cfdfc6bd45a44e5bc773db7d07b1eaac82b71b166245552f7"
+  }
+}

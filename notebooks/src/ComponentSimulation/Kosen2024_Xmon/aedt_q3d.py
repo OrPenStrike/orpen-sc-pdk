@@ -54,7 +54,7 @@ from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 # ## Setup and Run Controls
 
 # %%
-WORKFLOW_ACTION = "run"  # prepare_handoff | run | analyze_handoff
+WORKFLOW_ACTION = "analyze_handoff"  # prepare_handoff | run | analyze_handoff
 OUTPUT_ROOT = Path.cwd() / ".artifacts"
 SOURCE_GDS = OUTPUT_ROOT / "q3d_geometry" / "kosen2024_xmon_boundary_alignment.gds"
 BOUNDARY_RUNS = (
