@@ -34,12 +34,12 @@ from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
-WORKFLOW_ACTION = "analyze_handoff"
+WORKFLOW_ACTION = "prepare_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_a_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01"
+RUN_ID = "kosen2024_xmon_route_a_eigenmode_l309p5_w24p65_g20_lj11p78_litcentral_fem2_20260903_01"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
-EXPECTED_HANDOFF_ID = "f79cb52df981314211e7741861500ceac89745e2e910800f5e90d92bedc31ab1"
+EXPECTED_HANDOFF_ID = ""
 if WORKFLOW_ACTION not in {"prepare_handoff", "analyze_handoff"}:
     raise ValueError("WORKFLOW_ACTION must be 'prepare_handoff' or 'analyze_handoff'.")
 ```
@@ -83,7 +83,8 @@ if WORKFLOW_ACTION == "prepare_handoff":
 ## Configure EPR / Problem
 
 The MA/MS/SA inputs use OrPen's synthetic literature-central presets; they are
-modeling inputs, not measured material properties. Each preset records the
+modeling inputs, not measured process data or material properties. Each preset
+records the
 ordinary-median epsilon_r and thickness, the log-space-median loss tangent,
 the excluded assumed-typical and censored-upper-bound rows, and the 2 nm
 thickness modeling convention in its PDK provenance.
@@ -103,20 +104,6 @@ if WORKFLOW_ACTION == "prepare_handoff":
         # Required by the SCGSim fill API even when fill is disabled.
         "fill_pitch_um": 80.0,
         "fill_clearance_um": 30.0,
-    }
-    interface_preset_records = validate_interface_preset_records(get_interface_preset_records())
-    EPR_PRESET_NAMES = {
-        "MA": "LiteratureCentral_MA",
-        "MS": "LiteratureCentral_MS",
-        "SA": "LiteratureCentral_SA",
-    }
-    EPR_SPECS = {
-        kind: {
-            "thickness": interface_preset_records[name]["thickness"],
-            "permittivity": interface_preset_records[name]["permittivity"],
-            "loss_tangent": interface_preset_records[name]["loss_tangent"],
-        }
-        for kind, name in EPR_PRESET_NAMES.items()
     }
     # Exact authored GDSFactory port whose sheet geometry and signed direction SGB preserves.
     PORT_NAME = "o_junction_lumped"
@@ -145,6 +132,35 @@ if WORKFLOW_ACTION == "prepare_handoff":
     sim.set_output_dir(RUN_ROOT)
     sim.set_vacuum_region(padding=VACUUM_PADDING_UM)
     sim.set_indium_ground_bumps(**INDIUM_GROUND_FILL)
+    # Select complete validated OrPen records immediately before Surface-EPR setup so
+    # their public source/description provenance remains visible beside the numeric specs.
+    records = validate_interface_preset_records(get_interface_preset_records())
+    EPR_PRESET_NAMES = {
+        "MA": "LiteratureCentral_MA",
+        "MS": "LiteratureCentral_MS",
+        "SA": "LiteratureCentral_SA",
+    }
+    missing_preset_names = sorted(set(EPR_PRESET_NAMES.values()) - records.keys())
+    if missing_preset_names:
+        raise KeyError(f"Missing required OrPen interface presets: {missing_preset_names}")
+    selected_interface_presets = {
+        interface_type: records[preset_name]
+        for interface_type, preset_name in EPR_PRESET_NAMES.items()
+    }
+    for interface_type, preset in selected_interface_presets.items():
+        if preset["interface_type"] != interface_type:
+            raise ValueError(
+                f"OrPen preset {EPR_PRESET_NAMES[interface_type]!r} has interface_type "
+                f"{preset['interface_type']!r}; expected {interface_type!r}."
+            )
+    EPR_SPECS = {
+        interface_type: {
+            "thickness": preset["thickness"],
+            "permittivity": preset["permittivity"],
+            "loss_tangent": preset["loss_tangent"],
+        }
+        for interface_type, preset in selected_interface_presets.items()
+    }
     sim.set_surface_epr(
         representation=ROUTE,
         specs=EPR_SPECS,
