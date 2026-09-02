@@ -105,9 +105,21 @@ def test_interface_preset_records_validate_solver_neutral_schema() -> None:
 def test_literature_central_interface_presets_follow_accepted_selection_rule() -> None:
     records = validate_interface_preset_records()
     expected_inputs = {
-        "MA": {"permittivity": (10.0,), "loss_tangent": (0.0033,)},
-        "MS": {"permittivity": (11.4,), "loss_tangent": (0.00048, 0.00046)},
-        "SA": {"permittivity": (4.0, 9.27), "loss_tangent": (0.0017,)},
+        "MA": {
+            "permittivity": (10.0,),
+            "loss_tangent": (0.0033,),
+            "thickness": (0.002, 0.002, 0.002),
+        },
+        "MS": {
+            "permittivity": (11.4,),
+            "loss_tangent": (0.00048, 0.00046),
+            "thickness": (0.002, 0.002),
+        },
+        "SA": {
+            "permittivity": (4.0, 9.27),
+            "loss_tangent": (0.0017,),
+            "thickness": (0.002, 0.002, 0.003),
+        },
     }
 
     for interface_type, inputs in expected_inputs.items():
@@ -115,8 +127,14 @@ def test_literature_central_interface_presets_follow_accepted_selection_rule() -
         expected_loss_tangent = 10 ** median([log10(value) for value in inputs["loss_tangent"]])
 
         assert record["interface_type"] == interface_type
-        assert record["thickness"] == pytest.approx(0.002)
+        assert record["thickness"] == pytest.approx(median(inputs["thickness"]))
         assert record["permittivity"] == pytest.approx(median(inputs["permittivity"]))
         assert record["loss_tangent"] == pytest.approx(expected_loss_tangent)
         assert "Synthetic modeling preset" in record["description"]
         assert "not a measured material property" in record["description"]
+        assert "robust model convention" in record["description"]
+        assert "not a measured interface thickness" in record["description"]
+        assert (
+            "5b3adae92fb6eea48c962c29f077d97bda9ef00faf16a4ab65d212937951cc9d"
+            in record["description"]
+        )

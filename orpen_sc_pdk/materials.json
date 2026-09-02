@@ -127,7 +127,7 @@
       "permittivity": 10.0,
       "loss_tangent": 0.0033,
       "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950",
-      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [10.0]; conditional central loss_tangent input: [0.0033]. epsilon_r uses the ordinary median and loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. Existing 0.002 um source-preset thickness is preserved."
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [10.0]; conditional central loss_tangent input: [0.0033]; conditional central thickness inputs in um: [0.002, 0.002, 0.002]. epsilon_r and thickness use the ordinary median; loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. The 0.002 um thickness is a robust model convention, not a measured interface thickness. Selection audit SHA-256: 5b3adae92fb6eea48c962c29f077d97bda9ef00faf16a4ab65d212937951cc9d."
     },
     "LiteratureCentral_MS": {
       "interface_type": "MS",
@@ -135,7 +135,7 @@
       "permittivity": 11.4,
       "loss_tangent": 0.0004698936049788292,
       "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950",
-      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [11.4]; conditional central loss_tangent inputs: [0.00048, 0.00046]. epsilon_r uses the ordinary median and loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. Existing 0.002 um source-preset thickness is preserved."
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [11.4]; conditional central loss_tangent inputs: [0.00048, 0.00046]; conditional central thickness inputs in um: [0.002, 0.002]. epsilon_r and thickness use the ordinary median; loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. The 0.002 um thickness is a robust model convention, not a measured interface thickness. Selection audit SHA-256: 5b3adae92fb6eea48c962c29f077d97bda9ef00faf16a4ab65d212937951cc9d."
     },
     "LiteratureCentral_SA": {
       "interface_type": "SA",
@@ -143,7 +143,7 @@
       "permittivity": 6.635,
       "loss_tangent": 0.0017,
       "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950; OrPen sapphire_EFG public model input",
-      "description": "Synthetic modeling preset, not a measured material property. epsilon_r inputs: [4.0, 9.27]; conditional central loss_tangent input: [0.0017]. epsilon_r uses the ordinary median and loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. Existing 0.002 um source-preset thickness is preserved."
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r inputs: [4.0, 9.27]; conditional central loss_tangent input: [0.0017]; conditional central thickness inputs in um: [0.002, 0.002, 0.003]. epsilon_r and thickness use the ordinary median; loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. The 0.002 um thickness is a robust model convention, not a measured interface thickness. Selection audit SHA-256: 5b3adae92fb6eea48c962c29f077d97bda9ef00faf16a4ab65d212937951cc9d."
     }
   }
 }
