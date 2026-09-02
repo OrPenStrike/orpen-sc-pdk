@@ -19,7 +19,7 @@ keywords = [
 ]
 dependencies = [
   "doroutes>=0.2.0",
-  "gdsfactory~=9.43.0",
+  "gdsfactory~=9.48.0",
   "networkx>=3.0",
   "numpy>=2.0",
   "pydantic>=2",
@@ -36,8 +36,8 @@ dev = [
   "pytest>=9.0.0",
   "ruff>=0.15.11",
 ]
-fem-aedt = ["pyaedt[all]==1.3.0"]
-gdsfactoryplus = ["gdsfactoryplus", "httpx"]
+gdsfactoryplus = ["gdsfactoryplus==1.8.20", "httpx"]
+circuit-runtime = ["superconducting-circuits-runtime"]
 
 [dependency-groups]
 docs = [
@@ -47,16 +47,18 @@ docs = [
   "matplotlib",
   "quartodoc",
 ]
+palace-notebooks = ["scgsim[palace,visualization]"]
+aedt-notebooks = ["scgsim[aedt]"]
 ecosystem-dev = [
   "gplugins",
-  "gsim",
   "kaleido>=1.0.0",
   "pandas>=2.0",
   "plotly>=6.0.0",
 ]
 
 [tool.uv.sources]
-gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
+scgsim = { git = "https://github.com/OrPenStrike/scgsim.git", rev = "8f6468408b6553e66d0896833c9076d76cf2d964" }
+superconducting-circuits-runtime = { git = "https://github.com/arfiligol/superconducting-circuits-research-workbench.git", rev = "f3430cb3c4b3a72d6b60bc99929475f3d0c41f57", subdirectory = "core/python/runtime" }
 
 [tool.ruff]
 line-length = 100
@@ -88,10 +90,8 @@ cells_no_model_expected = [
   "taper",
   "bend_circular",
   "bend_euler",
-  "cpw_straight",
   "dicing_edge",
   "interdigital_capacitor",
-  "interdigital_capacitor_q3d_coupon",
   "launcher",
   "manhattan_style_junction",
   "martinis2022_differential_ribbon_capacitor",

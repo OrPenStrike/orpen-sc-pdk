@@ -2,6 +2,7 @@
 .local/
 .ruff_cache/
 .pytest_cache/
+.artifacts/
 __pycache__/
 *.egg-info/
 build/

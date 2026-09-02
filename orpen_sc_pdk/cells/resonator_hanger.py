@@ -5,7 +5,7 @@ from typing import Literal
 import gdsfactory as gf
 from gdsfactory.typings import CrossSectionSpec
 
-from orpen_sc_pdk.ports import MeshProfile, add_mesh_port
+from orpen_sc_pdk.ports import add_mesh_port
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
@@ -117,20 +117,16 @@ def resonator_hanger(
         name="o_mesh_hanger_coupling",
         center=coupling_segment.center,
         width=cpw_draw_width,
-        feature_width_um=cpw_draw_width,
         orientation=0,
         layer=draw_layer,
-        mesh_profile=MeshProfile.CRITICAL_METAL_TRACE,
     )
     add_mesh_port(
         c,
         name="o_mesh_hanger_straight",
         center=straight_segment.center,
         width=cpw_draw_width,
-        feature_width_um=cpw_draw_width,
         orientation=straight_segment.ports["o1"].orientation,
         layer=draw_layer,
-        mesh_profile=MeshProfile.CRITICAL_METAL_TRACE,
     )
 
     c.info["length"] = (

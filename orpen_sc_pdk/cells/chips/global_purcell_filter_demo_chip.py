@@ -7,12 +7,7 @@ from gdsfactory.typings import ComponentSpec, CrossSectionSpec
 
 from orpen_sc_pdk.helpers.assembly import place_launchers
 from orpen_sc_pdk.helpers.layout import merge_component_layers
-from orpen_sc_pdk.ports import (
-    AxisDirection,
-    MeshProfile,
-    add_driven_lumped_port,
-    add_mesh_port,
-)
+from orpen_sc_pdk.ports import add_driven_lumped_port, add_mesh_port
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
@@ -181,7 +176,6 @@ def global_purcell_filter_demo_chip(
         width=1,
         orientation=0,
         layer=sim_boundary_layer,
-        direction=AxisDirection.POS_X,
     )
     add_driven_lumped_port(
         c,
@@ -190,7 +184,6 @@ def global_purcell_filter_demo_chip(
         width=1,
         orientation=0,
         layer=sim_boundary_layer,
-        direction=AxisDirection.POS_X,
     )
 
     add_mesh_port(
@@ -198,7 +191,6 @@ def global_purcell_filter_demo_chip(
         name="o_mesh_readout_in",
         center=launchers.left[0].ports["o_neck"].center,
         layer=draw_layer,
-        mesh_profile=MeshProfile.CRITICAL_METAL_TRACE,
         width=10.0,
         orientation=0,
     )
@@ -207,7 +199,6 @@ def global_purcell_filter_demo_chip(
         name="o_mesh_readout_out",
         center=launchers.right[3].ports["o_neck"].center,
         layer=draw_layer,
-        mesh_profile=MeshProfile.CRITICAL_METAL_TRACE,
         width=10.0,
         orientation=0,
     )
@@ -216,7 +207,6 @@ def global_purcell_filter_demo_chip(
         name="o_mesh_purcell_filter",
         center=(0, 0),
         layer=draw_layer,
-        mesh_profile=MeshProfile.CRITICAL_METAL_TRACE,
         width=10.0,
         orientation=0,
     )

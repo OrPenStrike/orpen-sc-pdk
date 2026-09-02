@@ -1,17 +1,95 @@
 """Indium bump primitives and keepout-aware bump-field placement."""
 
+import copy
 import math
+from typing import TypedDict
 
 import gdsfactory as gf
-from klayout import db as kdb
 
-from orpen_sc_pdk.tech import LAYER, Layer
+from orpen_sc_pdk.tech import (
+    INDIUM_BUMP_SIZE_UM,
+    LAYER,
+    LAYER_STACK,
+    UNDER_BUMP_SIZE_UM,
+    Layer,
+)
+
+
+class _IndiumGroundBumpSettingsRecord(TypedDict):
+    """Static public settings used by canonical indium bump construction."""
+
+    indium_bump_size: float
+    under_bump_size: float
+    include_under_bump: bool
+    indium_bump_layer: Layer
+    under_bump_layer: Layer
+
+
+class _IndiumGroundBumpKeepoutRecord(TypedDict):
+    """Named keepout records intended for consumers."""
+
+    name: str
+    layer: Layer
+    consumers: tuple[str, ...]
+
+
+class IndiumGroundBumpSpec(TypedDict):
+    """Canonical non-simulation indium bump contract returned to consumers."""
+
+    schema_identity: str
+    canonical_component_name: str
+    canonical_component_settings: _IndiumGroundBumpSettingsRecord
+    material: str
+    bump_height_um: float
+    collision_footprint_layers: tuple[Layer, ...]
+    authored_site_occupancy_layers: tuple[Layer, ...]
+    lattice_origin_um: tuple[float, float]
+    keepout_records: tuple[_IndiumGroundBumpKeepoutRecord, ...]
+
+
+def get_indium_ground_bump_spec() -> IndiumGroundBumpSpec:
+    """Return canonical indium bump spec metadata.
+
+    `lattice_origin_um=(0.0, 0.0)` is the component-local PDK physical origin.
+    `pitch_um` and clearance/margin fields are intentionally absent and are passed
+    explicitly by consumers.
+    Keepout records preserve each source layer separately; consumers may derive union
+    layers for collision or occupancy, but should not replace provenance with unions.
+    """
+    indium_bump_level = LAYER_STACK["D0_D1_INDIUM_BUMP"]
+    fill_spec = copy.deepcopy(indium_bump_level.info["ground_bump_fill_spec"])
+    bump_layer = tuple(fill_spec["body_layer"])
+    under_bump_layer = tuple(fill_spec["contact_layer"])
+
+    return {
+        "schema_identity": "orpen.indium_ground_bump_spec.v1",
+        "canonical_component_name": "indium_bump",
+        "canonical_component_settings": _IndiumGroundBumpSettingsRecord(
+            indium_bump_size=INDIUM_BUMP_SIZE_UM,
+            under_bump_size=UNDER_BUMP_SIZE_UM,
+            include_under_bump=True,
+            indium_bump_layer=bump_layer,
+            under_bump_layer=under_bump_layer,
+        ),
+        "material": str(indium_bump_level.material),
+        "bump_height_um": float(indium_bump_level.thickness),
+        "collision_footprint_layers": (
+            bump_layer,
+            under_bump_layer,
+        ),
+        "authored_site_occupancy_layers": (
+            bump_layer,
+            under_bump_layer,
+        ),
+        "lattice_origin_um": tuple(fill_spec["lattice_origin_um"]),
+        "keepout_records": tuple(fill_spec["keepout_records"]),
+    }
 
 
 @gf.cell(tags=["elements"])
 def indium_bump(
-    indium_bump_size: float = 20.0,
-    under_bump_size: float = 40.0,
+    indium_bump_size: float = INDIUM_BUMP_SIZE_UM,
+    under_bump_size: float = UNDER_BUMP_SIZE_UM,
     # Layers
     indium_bump_layer: Layer = LAYER.D0_D1_INDIUM_BUMP,
     under_bump_layer: Layer = LAYER.D0_D1_UNDER_BUMP,
@@ -44,9 +122,9 @@ def indium_ground(
     height: float = 9900.0,
     bump_gap: float = 40.0,
     margin: float = 90.0,
-    indium_bump_size: float = 20.0,
-    under_bump_size: float = 40.0,
-    keepout_region: kdb.Region | None = None,
+    indium_bump_size: float = INDIUM_BUMP_SIZE_UM,
+    under_bump_size: float = UNDER_BUMP_SIZE_UM,
+    keepout_region: gf.Region | None = None,
     # Layers
     indium_bump_layer: Layer = LAYER.D0_D1_INDIUM_BUMP,
     under_bump_layer: Layer = LAYER.D0_D1_UNDER_BUMP,
@@ -108,7 +186,10 @@ def indium_ground(
         x = x0 + column * pitch
         for row in range(rows):
             y = y0 + row * pitch
-            candidate_footprint = bump_footprint.moved(round(x * 1e3), round(y * 1e3))
+            candidate_footprint = bump_footprint.moved(
+                round(x / bump_temp.kcl.dbu),
+                round(y / bump_temp.kcl.dbu),
+            )
             if not (candidate_footprint & keepout_region).is_empty():
                 continue
 

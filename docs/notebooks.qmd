@@ -1,30 +1,77 @@
 ---
 title: "Notebooks"
-description: "Publication-safe OrPen layout and simulation notebooks rendered with their code and saved outputs."
+description: "Publication-safe OrPen notebooks using SCGSim runtimes."
 ---
 
-Quarto renders the checked-in Jupyter notebooks as ordinary documentation pages.
-Readers can inspect Markdown, cell code, and saved cell output in the static site;
-no Python kernel is required after the site is built.
+OrPen owns public notebook source because each notebook demonstrates a public
+component or cross-section from this PDK. SCGSim owns every reusable simulation
+stage: semantic geometry, mesh/config generation, handoff, result resolution,
+and reports.
 
-The notebooks remain executable development artifacts. A notebook that needs a
-solver, private run folder, or optional application must fail clearly when that
-dependency is unavailable; the docs build does not invent output.
+Notebook folders classify the simulated thing first. A thing may contain
+Palace, AEDT, single-run, or sweep notebooks without duplicating runtime logic.
 
-## Layout tutorials
+## Component simulation
+
+### Kosen2024 Xmon
+
+- [Palace Route A Electrostatic](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb)
+- [Palace Route B Electrostatic](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb)
+- [AEDT Q3D grounded C11](notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb)
+- [Palace Route A Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb)
+- [Palace Route B Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb)
+- [Electrostatic boundary alignment](notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb)
+- [GSim public engineering showcase](notebooks/ComponentSimulation/Kosen2024_Xmon/kosen2024_gsim_public_showcase.ipynb)
+
+The analysis-only showcase follows the public OrPen material, LayerStack, and
+component semantics through SCGSim SGB identities, sealed receipts, strict
+Resolve, failed-run inspection, and trust-first Reports. Its checked-in outputs
+render without raw run artifacts or solver execution; manual re-analysis fails
+closed unless the exact sealed artifacts are obtained from their custodian and
+placed under the expected local run IDs.
+
+#### RF-grounded electrostatic evidence
+
+The current comparison uses one common public boundary: `xmon_pad` is the sole
+terminal; four couplers, both die grounds, and eight bumps form one Ground;
+the exterior has its natural zero-charge boundary. Lateral vacuum padding is
+0 µm and the z padding is ±1000 µm. The public geometry is
+309.5 µm × 24.65 µm with a 20 µm gap and silicon εr = 11.9.
+
+| Model | Selected C11 (fF) | EC/h (MHz) |
+|---|---:|---:|
+| Palace A′ — substrate-face sheet | 99.3030125873 | 195.0618497866 |
+| Palace A — metal-gap-equivalent sheet | 99.78426582503 | 194.1210787543 |
+| Palace B — finite metal | 99.44860318002 | 194.7762834798 |
+| AEDT Q3D — physical-geometry diagnostic | 97.52280968178212 | 198.6225518713 |
+
+![Palace AMR traces and the four selected RF-grounded C11 values.](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/comparison.png){fig-alt="Palace A-prime, A, and Route B AMR traces beside a bar chart comparing their selected grounded C11 values with the AEDT Q3D diagnostic."}
+
+The Palace rows are the last complete hash-bound snapshots from receipts that
+remain failed after exit 137; they are not completed-run claims. Q3D completed
+20 adaptive passes, but its capacitance matrix stopped at 0.429585% rather
+than the requested 0.1%; its AC-RL extraction converged. These differences are
+evidence only: no solver-agreement Gate or scientific acceptance is claimed.
+
+Exact identities, receipt hashes, and unrounded values remain in the
+[run-set manifest](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/run_set.json)
+and [results table](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/results.csv).
+
+### Finite-ground CPW
+
+- [AEDT HFSS Driven Terminal](notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_terminal.ipynb)
+- [AEDT HFSS Driven Modal](notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.ipynb)
+- [AEDT HFSS Eigenmode](notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb)
+- [AEDT Q3D](notebooks/ComponentSimulation/CpwFiniteGround/aedt_q3d.ipynb)
+
+## Cross-section simulation
+
+- [Finite-ground CPW AEDT Q2D](notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb)
+
+## Layout catalog
 
 - [Public PDK component inventory](notebooks/Public_Docs/component_gallery.ipynb)
-- [Martinis ribbon, Route A](notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_a.ipynb)
-- [Martinis ribbon, Route B](notebooks/SGB_Geometry_Tutorials/martinis2022_ribbon_route_b.ipynb)
-- [Resonator, Route A](notebooks/SGB_Geometry_Tutorials/resonator_route_a.ipynb)
-- [Flip-chip spacing, Route A](notebooks/SGB_Geometry_Tutorials/sim_flip_chip_distance_route_a.ipynb)
 
-## Simulation notebooks
-
-- [Interdigital-capacitor Q3D capacitance](notebooks/AEDTSimulation/Components/interdigital_capacitor_q3d_capacitance.ipynb)
-- [Two-resonator response](notebooks/AEDTSimulation/Components/two_resonator_bare_and_coupled_response.ipynb)
-- [Native masked-surface EPR analysis](notebooks/Native_Masked_Surface_EPR/native_mask_surface_epr_analysis.ipynb)
-
-Checked-in outputs are embedded at build time. To execute a notebook before
-rendering, use `quarto render path/to/notebook.ipynb --execute` in an environment
-that provides its declared dependencies.
+Palace and AEDT remain separate notebooks because AEDT is optional. Install
+only the matching dependency group. The checked-in notebook is the complete
+handoff-to-report workflow; it is not a second runtime implementation.

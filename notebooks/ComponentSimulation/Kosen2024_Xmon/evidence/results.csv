@@ -1,0 +1,14 @@
+run_id,solver,model,problem,pad_length_um,pad_width_um,gap_um,lj_nh,receipt_status,selection,c11_ff,ec_over_h_mhz,mode1_ghz,mode1_port_epr,target_offset_mhz,c11_delta_from_a_prime_ff,c11_delta_from_a_prime_percent
+kosen2024_xmon_route_a_prime_es_l300_w24p65_g20_20260827_01,Palace,A_PRIME,Electrostatic,300,24.65,20,,completed,final,93.88670764333,206.3149279688,,,,-3.41569913809001,-3.510395324304
+kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_20260827_02,Palace,A_PRIME,Electrostatic,309.5,24.65,20,,completed,final,97.30240678142,199.072458384019,,,,0,0
+kosen2024_xmon_route_a_es_l309p5_w24p65_g20_20260827_01,Palace,A,Electrostatic,309.5,24.65,20,,completed,final,97.64214649476,198.37979827388,,,,0.33973971333999,0.349158591835
+kosen2024_xmon_route_b_es_l309p5_w24p65_g20_20260827_01,Palace,B,Electrostatic,309.5,24.65,20,,completed,final,98.49650707734,196.659048116798,,,,1.19410029591999,1.227205302950
+kosen2024_xmon_route_a_prime_eigenmode_l309p5_w24p65_g20_lj11p89_20260827_01,Palace,A_PRIME,Eigenmode,309.5,24.65,20,11.89,failed,iteration06,,,4.677558490779,-0.9893774367747,-22.441509221,,
+kosen2024_xmon_route_a_prime_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_02,Palace,A_PRIME,Eigenmode,309.5,24.65,20,11.78,failed,iteration06,,,4.699045818226,-0.9892937841383,-0.954181774,,
+kosen2024_xmon_route_a_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01,Palace,A,Eigenmode,309.5,24.65,20,11.78,failed,iteration07,,,4.687756176576,-0.9893450638002,-12.243823424,,
+kosen2024_xmon_route_b_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01,Palace,B,Eigenmode,309.5,24.65,20,11.78,failed,iteration06,,,4.695667430263,-0.9895461550389,-4.332569737,,
+kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04,AEDT_Q3D,PHYSICAL_GEOMETRY_DIAGNOSTIC,Electrostatic,309.5,24.65,20,,completed,native_final,83.69391765997386,231.441302620762,,,,-13.60848912144614,-13.985768257528
+kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_rfground_vac0_20260829_01,Palace,A_PRIME_RF_GROUNDED_VAC0,Electrostatic,309.5,24.65,20,,failed,final,99.3030125873,195.061849786583,,,,0,0
+kosen2024_xmon_route_a_es_l309p5_w24p65_g20_rfground_vac0_20260829_02,Palace,A_RF_GROUNDED_VAC0,Electrostatic,309.5,24.65,20,,failed,final,99.78426582503,194.121078754285,,,,0.4812532377300016,0.4846310551826599
+kosen2024_xmon_route_b_es_l309p5_w24p65_g20_rfground_vac0_20260829_01,Palace,B_RF_GROUNDED_VAC0,Electrostatic,309.5,24.65,20,,failed,final,99.44860318002,194.776283479774,,,,0.14559059271999786,0.1466124631334877
+kosen2024_xmon_q3d_l309p5_w24p65_g20_rfground_vac0_20260829_01,AEDT_Q3D,PHYSICAL_RF_GROUNDED_VAC0,Electrostatic,309.5,24.65,20,,completed,native_final,97.52280968178212,198.622551871345,,,,-1.780202905517882,-1.7926977834160438

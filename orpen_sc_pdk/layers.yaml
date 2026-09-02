@@ -136,6 +136,21 @@ LayerViews:
         layer_in_name: true
         hatch_pattern: strongly cross-hatched sparse
         color: "#97815B"
+      DEVICE_KEEPOUT:
+        layer: [120, 0]
+        layer_in_name: true
+        color: "#7B68EE"
+        hatch_pattern: strongly cross-hatched sparse
+      ROUTING_KEEPOUT:
+        layer: [120, 1]
+        layer_in_name: true
+        color: "#00A5FF"
+        hatch_pattern: dotted
+      D0_D1_INDIUM_GROUND_KEEPOUT:
+        layer: [120, 2]
+        layer_in_name: true
+        color: "#00C8A2"
+        hatch_pattern: coarsely dotted
 
   Integration:
     group_members:

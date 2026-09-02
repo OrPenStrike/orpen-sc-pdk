@@ -3,13 +3,17 @@
     "vacuum": {
       "relative_permittivity": 1.0,
       "permeability": 1.0,
-      "material_kind": "vacuum"
+      "material_kind": "vacuum",
+      "is_superconducting": false,
+      "aedt_library_name": "Vacuum"
     },
     "Si": {
-      "relative_permittivity": 11.45,
+      "relative_permittivity": 11.9,
       "loss_tangent": 2.6e-7,
       "permeability": 1.0,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": "Silicon"
     },
     "sapphire_EFG": {
       "relative_permittivity": [
@@ -36,44 +40,62 @@
           1.0
         ]
       ],
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Al": {
       "relative_permittivity": "inf",
       "conductivity": 35000000.0,
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "Nb": {
       "relative_permittivity": "inf",
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "TiN": {
       "relative_permittivity": "inf",
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "In": {
       "relative_permittivity": "inf",
-      "material_kind": "superconductor"
+      "material_kind": "superconductor",
+      "is_superconducting": true,
+      "aedt_library_name": null
     },
     "AlOx_native_generic": {
       "relative_permittivity": 10.0,
       "permeability": 1.0,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Woods2019_Si_MS_effective": {
       "relative_permittivity": 11.4,
       "loss_tangent": 0.00048,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Woods2019_Si_SA_effective": {
       "relative_permittivity": 4.0,
       "loss_tangent": 0.0017,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     },
     "Woods2019_Si_MA_effective": {
       "relative_permittivity": 10.0,
       "loss_tangent": 0.0033,
-      "material_kind": "dielectric"
+      "material_kind": "dielectric",
+      "is_superconducting": false,
+      "aedt_library_name": null
     }
   },
   "material_aliases": {
@@ -98,6 +120,30 @@
       "thickness": 0.002,
       "material_name": "Woods2019_Si_MA_effective",
       "source": "Woods et al. 2019 CPW silicon MA fitted-loss candidate"
+    },
+    "LiteratureCentral_MA": {
+      "interface_type": "MA",
+      "thickness": 0.002,
+      "permittivity": 10.0,
+      "loss_tangent": 0.0033,
+      "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950",
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [10.0]; conditional central loss_tangent input: [0.0033]; conditional central thickness inputs in um: [0.002, 0.002, 0.002]. epsilon_r and thickness use the ordinary median; loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. The 0.002 um thickness is a robust model convention, not a measured interface thickness. Selection audit SHA-256: 5b3adae92fb6eea48c962c29f077d97bda9ef00faf16a4ab65d212937951cc9d."
+    },
+    "LiteratureCentral_MS": {
+      "interface_type": "MS",
+      "thickness": 0.002,
+      "permittivity": 11.4,
+      "loss_tangent": 0.0004698936049788292,
+      "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950",
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [11.4]; conditional central loss_tangent inputs: [0.00048, 0.00046]; conditional central thickness inputs in um: [0.002, 0.002]. epsilon_r and thickness use the ordinary median; loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. The 0.002 um thickness is a robust model convention, not a measured interface thickness. Selection audit SHA-256: 5b3adae92fb6eea48c962c29f077d97bda9ef00faf16a4ab65d212937951cc9d."
+    },
+    "LiteratureCentral_SA": {
+      "interface_type": "SA",
+      "thickness": 0.002,
+      "permittivity": 6.635,
+      "loss_tangent": 0.0017,
+      "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950; OrPen sapphire_EFG public model input",
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r inputs: [4.0, 9.27]; conditional central loss_tangent input: [0.0017]; conditional central thickness inputs in um: [0.002, 0.002, 0.003]. epsilon_r and thickness use the ordinary median; loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. The 0.002 um thickness is a robust model convention, not a measured interface thickness. Selection audit SHA-256: 5b3adae92fb6eea48c962c29f077d97bda9ef00faf16a4ab65d212937951cc9d."
     }
   }
 }

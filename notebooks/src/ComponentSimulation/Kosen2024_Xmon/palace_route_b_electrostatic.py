@@ -1,0 +1,253 @@
+# ---
+# jupyter:
+#   jupytext:
+#     formats: ipynb,py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.3
+# ---
+
+# %% [markdown]
+# # Public OrPen Xmon — Route B Electrostatic Boundary Alignment
+#
+# Two fresh finite-thickness Palace runs compare the same expanded vacuum
+# envelope with natural zero-charge exterior faces and with all six exterior
+# faces grounded. The Xmon pad is the sole Terminal. The physical ground net
+# is explicit in both cases; no solver-agreement or equivalence gate is implied.
+
+# %%
+import subprocess
+from pathlib import Path
+
+import gdsfactory as gf
+from scgsim.palace import ElectrostaticSim, inspect_run_trustworthiness, resolve_palace_result
+from scgsim.sgb import build_component_stack
+from scgsim.visualization import inspect_palace_geometry
+
+import orpen_sc_pdk
+from orpen_sc_pdk import LAYER_STACK, get_material_records
+from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
+
+# Execute both cases sequentially, prepare their handoffs, or inspect returned runs.
+WORKFLOW_ACTION = "run"  # prepare_handoff | run | analyze_handoff
+OUTPUT_ROOT = Path.cwd() / ".artifacts"
+BOUNDARY_RUNS = (
+    {
+        "label": "zero_charge",
+        "run_id": "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_vac250_zerocharge_20260829_01",
+        "exterior_boundary_policy": "none",
+    },
+    {
+        "label": "grounded_enclosure",
+        "run_id": "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_vac250_grounded_20260829_01",
+        "exterior_boundary_policy": "ground",
+    },
+)
+RUN_DIRS = {case["label"]: OUTPUT_ROOT / case["run_id"] for case in BOUNDARY_RUNS}
+RETURNED_RUN_DIRS = dict(RUN_DIRS)
+# Fill these only when analyzing an already returned run outside this execution.
+EXPECTED_HANDOFF_IDS = {case["label"]: "" for case in BOUNDARY_RUNS}
+if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
+    raise ValueError("WORKFLOW_ACTION must be prepare_handoff, run, or analyze_handoff.")
+
+# %% [markdown]
+# ## Build Component Coupon
+
+# %%
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    COMPONENT_NAME = "kosen2024_flip_chip_xmon_qubit"
+    COMPONENT_PARAMETERS = {
+        "bump_ring_count_per_side": 0,
+        "qubit_pad_length": 309.5,
+        "qubit_pad_width": 24.65,
+        "qubit_gap": 20.0,
+    }
+    COUPON_PADDING_UM = 75.0
+    GROUND_SHORT_CLEARANCE_UM = 30.0
+    INDIUM_PLACEMENT_MODE = "corner_anchors"
+
+    orpen_sc_pdk.activate()
+    gf.clear_cache()
+    component = gf.get_component(COMPONENT_NAME, **COMPONENT_PARAMETERS)
+    coupon = place_flip_chip_ground_short_bumps(
+        component,
+        coupon_padding_um=COUPON_PADDING_UM,
+        clearance_um=GROUND_SHORT_CLEARANCE_UM,
+        placement_mode=INDIUM_PLACEMENT_MODE,
+    )
+    component = coupon.component
+    STACK_COUPON_PADDING_UM = coupon.stack_coupon_padding_um
+    coupon.plot()
+
+# %% [markdown]
+# ## Configure EPR / Problem
+
+# %%
+SIMULATIONS = {}
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    ROUTE = "B"
+    VACUUM_PADDING_UM = (250.0, 250.0, 1000.0)
+    INDIUM_GROUND_FILL = {
+        "fill": False,
+        "fill_pitch_um": 80.0,
+        "fill_clearance_um": 30.0,
+    }
+    EPR_SPECS = {
+        kind: {
+            "thickness": 0.003,
+            "permittivity": 10.0,
+            "loss_tangent": 0.0,
+        }
+        for kind in ("MA", "MS", "SA")
+    }
+    TERMINAL_NAME = "xmon_pad"
+    TERMINAL_NET_ID = "xmon_pad"
+    PHYSICAL_GROUND_NET_IDS = (
+        "Ground",
+        "coupler_1",
+        "coupler_2",
+        "coupler_3",
+        "coupler_4",
+    )
+    SAVE_FIELDS = 0
+    UNASSIGNED_CONDUCTOR_POLICY = "error"
+
+    stack = build_component_stack(
+        component=component,
+        layer_stack=LAYER_STACK,
+        material_records=get_material_records(),
+        coupon_padding_um=STACK_COUPON_PADDING_UM,
+    )
+    for case in BOUNDARY_RUNS:
+        sim = ElectrostaticSim()
+        sim.set_geometry(component)
+        sim.set_stack(stack)
+        sim.set_output_dir(RUN_DIRS[case["label"]])
+        sim.set_vacuum_region(padding=VACUUM_PADDING_UM)
+        sim.set_indium_ground_bumps(**INDIUM_GROUND_FILL)
+        sim.set_surface_epr(representation=ROUTE, specs=EPR_SPECS)
+        sim.add_terminal(TERMINAL_NAME, net_id=TERMINAL_NET_ID)
+        for net_id in PHYSICAL_GROUND_NET_IDS:
+            sim.add_ground(net_id=net_id)
+        sim.set_electrostatic(
+            save_fields=SAVE_FIELDS,
+            unassigned_conductor_policy=UNASSIGNED_CONDUCTOR_POLICY,
+            exterior_boundary_policy=case["exterior_boundary_policy"],
+        )
+        SIMULATIONS[case["label"]] = sim
+
+# %% [markdown]
+# ## Build Mesh
+
+# %%
+MESH_PATHS = {}
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    REFINED_MESH_SIZE_UM = 5.0
+    MAX_MESH_SIZE_UM = 300.0
+
+    for case in BOUNDARY_RUNS:
+        label = case["label"]
+        sim = SIMULATIONS[label]
+        sim.set_mesh(
+            refined_mesh_size=REFINED_MESH_SIZE_UM,
+            max_mesh_size=MAX_MESH_SIZE_UM,
+        )
+        MESH_PATHS[label] = sim.mesh()
+
+# %% [markdown]
+# ## Generate Config
+
+# %%
+CONFIG_PATHS = {}
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    FEM_ORDER = 1
+    LINEAR_TOLERANCE = 1e-6
+    MAX_ITERATIONS = 2000
+    SOLVER_TYPE = "Default"
+    PRECONDITIONER = "Default"
+    DEVICE = "CPU"
+    AMR_MAX_PASSES = 10
+    AMR_NONCONFORMAL = False
+    AMR_TOLERANCE = 2e-2
+    AMR_UPDATE_FRACTION = 0.3
+    SAVE_ADAPT_ITERATIONS = True
+    ESTIMATOR_MG = False
+    OUTPUT_PARAVIEW = False
+    OUTPUT_GRID_FUNCTION = False
+
+    for case in BOUNDARY_RUNS:
+        label = case["label"]
+        sim = SIMULATIONS[label]
+        sim.set_numerical(
+            order=FEM_ORDER,
+            tolerance=LINEAR_TOLERANCE,
+            max_iterations=MAX_ITERATIONS,
+            solver_type=SOLVER_TYPE,
+            preconditioner=PRECONDITIONER,
+            device=DEVICE,
+            amr_max_passes=AMR_MAX_PASSES,
+            amr_nonconformal=AMR_NONCONFORMAL,
+            amr_tolerance=AMR_TOLERANCE,
+            amr_update_fraction=AMR_UPDATE_FRACTION,
+            save_adapt_iterations=SAVE_ADAPT_ITERATIONS,
+            estimator_mg=ESTIMATOR_MG,
+            output_paraview=OUTPUT_PARAVIEW,
+            output_grid_function=OUTPUT_GRID_FUNCTION,
+        )
+        CONFIG_PATHS[label] = sim.write_config()
+
+# %% [markdown]
+# ## Prepare Handoff
+
+# %%
+HANDOFFS = {}
+RUN_RETURN_CODES = {}
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    MACHINE_PROFILE = "direct-local"
+    PALACE_EXECUTABLE = "palace"
+    SETUP_COMMANDS = ("module load palace",)
+    RESOURCES = {
+        "processes": 32,
+        "threads": 2,
+        "command_style": "wrapper",
+    }
+
+    for case in BOUNDARY_RUNS:
+        label = case["label"]
+        handoff = SIMULATIONS[label].prepare_handoff(
+            profile=MACHINE_PROFILE,
+            executable=PALACE_EXECUTABLE,
+            resources=RESOURCES,
+            setup_commands=SETUP_COMMANDS,
+        )
+        HANDOFFS[label] = handoff
+        if WORKFLOW_ACTION == "run":
+            completed = subprocess.run([str(handoff.script_path)], cwd=handoff.run_dir, check=False)
+            RUN_RETURN_CODES[label] = completed.returncode
+
+# %% [markdown]
+# ## Analyze Returned Run
+
+# %%
+REPORTS = {}
+if WORKFLOW_ACTION in {"run", "analyze_handoff"}:
+    for case in BOUNDARY_RUNS:
+        label = case["label"]
+        report = inspect_run_trustworthiness(RETURNED_RUN_DIRS[label])
+        if report.completeness == "complete":
+            expected_handoff_id = (
+                HANDOFFS[label].handoff_id if label in HANDOFFS else EXPECTED_HANDOFF_IDS[label]
+            )
+            report = resolve_palace_result(
+                RETURNED_RUN_DIRS[label],
+                expected_handoff_id=expected_handoff_id,
+            )
+        REPORTS[label] = report
+        report.show_all_results()
+
+if WORKFLOW_ACTION == "analyze_handoff":
+    for case in BOUNDARY_RUNS:
+        preview = inspect_palace_geometry(RETURNED_RUN_DIRS[case["label"]])
+        preview.explore("boundaries")
