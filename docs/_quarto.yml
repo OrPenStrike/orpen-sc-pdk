@@ -14,6 +14,9 @@ project:
     - "notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb"
     - "notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb"
     - "notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb"
+    - "notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb"
+    - "notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb"
+    - "notebooks/ComponentSimulation/Kosen2024_Xmon/kosen2024_gsim_public_showcase.ipynb"
     - "notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_terminal.ipynb"
     - "notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.ipynb"
     - "notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb"
@@ -70,7 +73,12 @@ website:
           - layout-viewer.qmd
           - notebooks/Public_Docs/component_gallery.ipynb
           - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb
+          - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb
+          - notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb
           - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb
+          - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb
+          - notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb
+          - notebooks/ComponentSimulation/Kosen2024_Xmon/kosen2024_gsim_public_showcase.ipynb
           - notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_terminal.ipynb
           - notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb
           - notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb
@@ -104,7 +112,7 @@ format:
     code-overflow: wrap
 
 execute:
-  freeze: auto
+  enabled: false
 
 quartodoc:
   style: pkgdown

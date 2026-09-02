@@ -17,8 +17,44 @@ Palace, AEDT, single-run, or sweep notebooks without duplicating runtime logic.
 
 - [Palace Route A Electrostatic](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb)
 - [Palace Route B Electrostatic](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb)
+- [AEDT Q3D grounded C11](notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb)
 - [Palace Route A Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb)
 - [Palace Route B Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb)
+- [Electrostatic boundary alignment](notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb)
+- [GSim public engineering showcase](notebooks/ComponentSimulation/Kosen2024_Xmon/kosen2024_gsim_public_showcase.ipynb)
+
+The analysis-only showcase follows the public OrPen material, LayerStack, and
+component semantics through SCGSim SGB identities, sealed receipts, strict
+Resolve, failed-run inspection, and trust-first Reports. Its checked-in outputs
+render without raw run artifacts or solver execution; manual re-analysis fails
+closed unless the exact sealed public runs are supplied.
+
+#### RF-grounded electrostatic evidence
+
+The current comparison uses one common public boundary: `xmon_pad` is the sole
+terminal; four couplers, both die grounds, and eight bumps form one Ground;
+the exterior has its natural zero-charge boundary. Lateral vacuum padding is
+0 µm and the z padding is ±1000 µm. The public geometry is
+309.5 µm × 24.65 µm with a 20 µm gap and silicon εr = 11.9.
+
+| Model | Selected C11 (fF) | EC/h (MHz) |
+|---|---:|---:|
+| Palace A′ — substrate-face sheet | 99.3030125873 | 195.0618497866 |
+| Palace A — metal-gap-equivalent sheet | 99.78426582503 | 194.1210787543 |
+| Palace B — finite metal | 99.44860318002 | 194.7762834798 |
+| AEDT Q3D — physical-geometry diagnostic | 97.52280968178212 | 198.6225518713 |
+
+![Palace AMR traces and the four selected RF-grounded C11 values.](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/comparison.png){fig-alt="Palace A-prime, A, and Route B AMR traces beside a bar chart comparing their selected grounded C11 values with the AEDT Q3D diagnostic."}
+
+The Palace rows are the last complete hash-bound snapshots from receipts that
+remain failed after exit 137; they are not completed-run claims. Q3D completed
+20 adaptive passes, but its capacitance matrix stopped at 0.429585% rather
+than the requested 0.1%; its AC-RL extraction converged. These differences are
+evidence only: no solver-agreement Gate or scientific acceptance is claimed.
+
+Exact identities, receipt hashes, and unrounded values remain in the
+[run-set manifest](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/run_set.json)
+and [results table](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/results.csv).
 
 ### Finite-ground CPW
 

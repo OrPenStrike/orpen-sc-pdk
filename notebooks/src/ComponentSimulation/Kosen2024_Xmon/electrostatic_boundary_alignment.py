@@ -1,4 +1,6 @@
 # ---
+# execute:
+#   enabled: false
 # jupyter:
 #   jupytext:
 #     formats: ipynb,py:percent
@@ -11,6 +13,9 @@
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
+# simulation_notebook:
+#   artifact_access: read-only
+#   kind: analysis-only
 # ---
 
 # %% [markdown]
