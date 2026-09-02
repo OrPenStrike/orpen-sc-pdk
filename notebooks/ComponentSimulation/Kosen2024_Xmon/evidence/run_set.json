@@ -1,0 +1,513 @@
+{
+  "schema_version": 1,
+  "classification": "public",
+  "semantic_state": "CONVERGING",
+  "scientific_acceptance": false,
+  "difference_gate": null,
+  "release": {
+    "proposed_tag": "kosen2024-xmon-evidence-v1",
+    "status": "pending_integration_privacy_audit"
+  },
+  "geometry": {
+    "qubit_pad_length_um": 309.5,
+    "qubit_pad_width_um": 24.65,
+    "qubit_gap_um": 20.0,
+    "d0_top_ground_opening_side_um": 541.5,
+    "couplers_grounded_for_c11": true
+  },
+  "physical_stack": {
+    "substrate_face_gap_um": 8.4,
+    "face_metal_thickness_um": 0.2,
+    "metal_face_gap_um": 8.0
+  },
+  "dependency": {
+    "scgsim_revision": "3e70aa8b6effc400d29fcef889814073b567d68e",
+    "scgsim_tree": "db8d0ff2f9a7f01714d992849708dcb55a29070b",
+    "scgsim_version": "1.0.0.dev7"
+  },
+  "c11_comparison": {
+    "reference_run_id": "kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_rfground_vac0_20260829_01",
+    "difference_definition": "candidate minus reference",
+    "percent_denominator": "reference C11"
+  },
+  "current_boundary": {
+    "terminal": "xmon_pad",
+    "grounded_conductors": [
+      "coupler_1",
+      "coupler_2",
+      "coupler_3",
+      "coupler_4",
+      "D0_ground",
+      "D1_ground",
+      "eight_ground_bumps"
+    ],
+    "exterior_boundary": "natural_zero_charge",
+    "vacuum_padding_um": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1000.0,
+      1000.0
+    ],
+    "physical_domain_um": {
+      "x": [-530.0, 530.0],
+      "y": [-530.0, 530.0],
+      "z": [-1500.0, 1508.4]
+    },
+    "matrix_meaning": "ground-referenced 1x1 capacitance",
+    "solver_agreement_gate": null
+  },
+  "historical_boundary_runs": {
+    "status": "historical_superseded_boundary",
+    "run_ids": [
+      "kosen2024_xmon_route_a_prime_es_l300_w24p65_g20_20260827_01",
+      "kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_20260827_02",
+      "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_20260827_01",
+      "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_20260827_01",
+      "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04"
+    ]
+  },
+  "results_table": "results.csv",
+  "results_table_sha256": "1810a040f7d012d63918a45c6822614000927548099c3fa1b2e21cc5185d9e0f",
+  "static_plot": "comparison.png",
+  "static_plot_sha256": "c5be6090afb1459048702b49f179be66cdadb18d1bd71d1d9c59eb2fd1c2e455",
+  "runs": [
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_es_l300_w24p65_g20_20260827_01",
+      "repository_checkpoint": "42f71d2f642c9ca55b37d7d7c9a43ae9e5bcc0ab",
+      "repository_tree": "87fcf340fce233719878781ab9997b2b34164c5f",
+      "solver": "Palace",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "0fe5ec75b300078ad3453fb6f0620683728ef8395aef5e4a6b0c61a9640b0da8",
+      "receipt": {
+        "status": "completed",
+        "sha256": "05d2e4f64e2205e1662f68b08d716d45e361e80f2e9e1057b73bebc1aac7cb70"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "3bfe500d5e3725561c96a876fe05f010f5671b3b6d43b5aae6b06b088fd3e6f2"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_20260827_02",
+      "repository_checkpoint": "6377138adeccd2c2dd68cff96db491f839259ff5",
+      "repository_tree": "fce6aa924710012d6c0ca3e2886d066e58ef4e33",
+      "solver": "Palace",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "e8c1d7e590e66046a9c8cd208a986b64b864fd8b09c16a8e711c117829bf4d8f",
+      "receipt": {
+        "status": "completed",
+        "sha256": "1c99bd3a00421705f625afec5e79a078c6e30f80c4b7cdf7029e41776f0770e0"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "14040d2c5514de44c685d6c4afb607c02bc8e912cb04f590ce8cb26496e8c837"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_20260827_01",
+      "repository_checkpoint": "9b8e2b4b9d5415733c1fa925d6212833a336aba5",
+      "repository_tree": "7ae1772ea1d59a862764ef1146b639e8f2593109",
+      "solver": "Palace",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "metal_gap_equivalent",
+      "handoff_id": "a787854e709f9eb375274ed2eda01c4bedf0d8085c7decdb0e2f5ddfff6cd1f3",
+      "receipt": {
+        "status": "completed",
+        "sha256": "5cb46a837fd729fb09a4f123d3b301d699eedcd5d087a57c690ab05d34420ffc"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "6131349ba5f53c2c01771cedb7d2344d5051242df864e890bd7c0955bcd14dcd"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_20260827_01",
+      "repository_checkpoint": "e39322a11345870f92fff5ddedd295b0869ed902",
+      "repository_tree": "5b4b3050e4ce40dd731c0adf2d281675e1d916a7",
+      "solver": "Palace",
+      "solver_revision": "869ee5c",
+      "problem": "Electrostatic",
+      "route": "B",
+      "route_a_thin_film": null,
+      "handoff_id": "41bf1a1416501790cc23cdf5ff1c31ef31247b51b233358298d30786dd33af71",
+      "receipt": {
+        "status": "completed",
+        "sha256": "589e945b95cea1d6bf6963211b3e7a3ba224c1f42aa62d80b3d270610a80fb76"
+      },
+      "selection": {
+        "source": "final",
+        "pass_index": 10,
+        "integrity": "receipt_bound"
+      },
+      "terminals": [
+        "xmon_pad",
+        "coupler_1",
+        "coupler_2",
+        "coupler_3",
+        "coupler_4",
+        "ground"
+      ],
+      "matrix_units": "F",
+      "matrix_symmetry_max_abs_f": 0.0,
+      "matrix_row_sums_f": [
+        -1.4972928998402823e-20,
+        2.7030543504350888e-15,
+        3.3618308900211816e-15,
+        3.0040734139171792e-15,
+        2.7013184615016817e-15,
+        1.4607468790009987e-14
+      ],
+      "numerical_evidence": {
+        "amr_passes": 10,
+        "final_error_indicator_norm": 0.2308754605897,
+        "degrees_of_freedom": 1697367,
+        "mesh_elements": 8688247,
+        "elapsed_total_s": 898.616067901,
+        "peak_node_memory_mb": 48367.640625,
+        "mpi_processes": 32,
+        "openmp_threads": 2
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "9235783c33231816937daadb2bb932153d303e187e5abe73ddae72f6f858dde8"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_eigenmode_l309p5_w24p65_g20_lj11p89_20260827_01",
+      "repository_checkpoint": "f7544e39e99c83ac67a32aa0b44d5caae2951e4c",
+      "repository_tree": "19cfdac000193f11bfe24d463f2ac6f5ff414843",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "b0cf1e19c89265a03abef2b8c27062bda2856912a79c8a9cb85222591bbb99aa",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "7a5fae6d29d65c77613580ffa307153c9fd293b1b9f378c19fc3a8a86c087a5d"
+      },
+      "selection": {
+        "source": "iteration06",
+        "path": "results/palace/iteration06",
+        "pass_index": 5,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "ab8a964b99dc349ef8700f4016477be581f241fb0f22d0e38b098e1d6bb3e77b",
+        "port-EPR.csv": "3479cb31e46074ab226ff31ec5aeb4f720b5fcac57dd4ee33efc1ca43d6ca75a"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_02",
+      "repository_checkpoint": "e376d97d913083bf0adf1389bc458bbf01f6fbc3",
+      "repository_tree": "8aa5116029eafd67b0d1579fe881ec4fab747cb9",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "handoff_id": "a83fa3599d05dbb44df8e1470e96659adea4f647bafeaea9b98e1393ee93b356",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "bde7c0a3144d1343a74b79ae63711c4e7ee1dcab2d2790eaf287ce892ee78b2b"
+      },
+      "selection": {
+        "source": "iteration06",
+        "path": "results/palace/iteration06",
+        "pass_index": 5,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "f5b4ef30507f0d16b88d9acf9eb15ab63c2d04c851e0dd7ef6021293f0cb57a8",
+        "port-EPR.csv": "f370c8bb008bf10a07ab1c786bdcf1b73f67d1cccdc676b843e930f46eef1cbc"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01",
+      "repository_checkpoint": "e93998dc30b80a3914f23fac6e6e2d9c7ad1c692",
+      "repository_tree": "edc9f41d849e0fd4b1be960399d22ac06e396047",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "A",
+      "route_a_thin_film": "metal_gap_equivalent",
+      "handoff_id": "f79cb52df981314211e7741861500ceac89745e2e910800f5e90d92bedc31ab1",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "10a332b537a1413e067c74b7fee410b8ce91738d56c130a6d776f51b2d7abdc8"
+      },
+      "selection": {
+        "source": "iteration07",
+        "path": "results/palace/iteration07",
+        "pass_index": 6,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "a6338feda3ac137a444d8b8456ae2f408e6e8f631ded75c17b226a6e3914f0be",
+        "port-EPR.csv": "fd322ed8bdeb0c71e55731972cac815c06abf18d74bdfb9d5332ef859fa7a05b"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_b_eigenmode_l309p5_w24p65_g20_lj11p78_20260827_01",
+      "repository_checkpoint": "6e6539962a09a76c962467c37a11f4e5463c835a",
+      "repository_tree": "e698d764d3a0f2661d5699e91677d5aad577c59a",
+      "paired_source_checkpoint": "322896cc72b4d6b646fe93a11ef1db7be4d377c7",
+      "paired_source_tree": "4f6c4670b6b8b2c1a2c7111a74445c1930fee12c",
+      "solver": "Palace",
+      "problem": "Eigenmode",
+      "route": "B",
+      "route_a_thin_film": null,
+      "handoff_id": "cb53bca0851838447fa208359741c3996ad957342e63136db2c1ba210de8bd93",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "3d1c21192c756809d8459c5d1cab338e1a640c7f0f07789cd22466282a8ba6c8"
+      },
+      "selection": {
+        "source": "iteration06",
+        "path": "results/palace/iteration06",
+        "pass_index": 5,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "eig.csv": "b45d23353cce0d4feaae07db76852553a0ab86dd4748eacb6c3408c5459a8218",
+        "port-EPR.csv": "d3a2b2b0039e9173a7cf12f1d482532f47511284d3c72febe73473917620f9e4"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04",
+      "repository_checkpoint": "aa20cb2af91a035fbb538cbf2b21e922c713698d",
+      "repository_tree": "c459bc101a8bacbb8e16050ecf3ec4a15bd61ad2",
+      "solver": "AEDT_Q3D_2024_2",
+      "problem": "Electrostatic_AC_RL",
+      "model": "physical_geometry_diagnostic",
+      "material_provenance": {
+        "pdk_si_relative_permittivity": 11.45,
+        "aedt_silicon_relative_permittivity": 11.9,
+        "pdk_bump_material": "In",
+        "aedt_bump_material": "Al",
+        "aedt_bump_conductor_model": "PEC",
+        "raw_receipt_unchanged": true
+      },
+      "receipt": {
+        "status": "completed",
+        "sha256": "e74181cc4310ac4fe02b865751e6bdb48dfc57821fbb6bd6437d2fb35ef6fa4e"
+      },
+      "input_sha256": {
+        "gds": "d85c6e7f78212897320258bc61da3481dff769e4226803085fd98839b2e8c8aa",
+        "spec": "3756eb6c5eb0e8ebc5aca5655c4b406684821c6e3ad5bb8f552c20770721ae8e"
+      },
+      "selected_file_sha256": {
+        "c_matrix.csv": "48336e83ef86a5c04246d544373a290b3e8525308a76c6cfa8f599c99e114bff",
+        "matrices.csv": "c0d6311f526f7083b9d25e0694403c813433a34434a7bf64c5ba185ca260bfbf",
+        "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04.aedtresults/Kosen2024XmonQ3d.asol": "4e3b9fd7fa8e41058ff57585d6c60664fae03420d795bc94fff2b5869661ed03",
+        "kosen2024_xmon_q3d_l309p5_w24p65_g20_20260827_04.aedtresults/Kosen2024XmonQ3d.results/DV64_S21_V0.profile": "53db0ff82e1f758a5c354ecac867247c36f33aae335cb3548c156e0e6fbf3bea"
+      },
+      "convergence": {
+        "target_percent": 0.1,
+        "capacitance": {
+          "final_pass": 5,
+          "final_matrix_delta_percent": 0.0509227,
+          "final_triangle_count": 6880,
+          "stop_reason": "Adaptive Passes converged"
+        },
+        "ac_rl": {
+          "final_pass": 2,
+          "final_matrix_delta_percent": 0.0115627,
+          "final_triangle_count": 2066,
+          "stop_reason": "Adaptive Passes converged"
+        }
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_prime_es_l309p5_w24p65_g20_rfground_vac0_20260829_01",
+      "repository_checkpoint": "ee65161885d14e6d3e6a05f75c8ffcda26ff44d5",
+      "repository_tree": "02b5786a6e5bf635ac1674ab7c2f91cabad0e59c",
+      "solver": "Palace",
+      "solver_revision": "869ee5c",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "substrate_face",
+      "boundary_status": "current_rf_grounded_vac0",
+      "handoff_id": "32dcb340a7beaa83a5493aebfa8eb857516db023e90195150e823ce23c89dd68",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "308b9a0ecdda0225ab917cab6bae3685b3799e70d7b2b2b70e30e4ee74430076"
+      },
+      "selection": {
+        "source": "final",
+        "path": "results/palace",
+        "pass_index": 9,
+        "integrity": "receipt_bound"
+      },
+      "numerical_evidence": {
+        "error_indicator_norm": 0.115425610492,
+        "degrees_of_freedom": 19632698,
+        "mesh_elements": 110863370,
+        "elapsed_total_s": 1677.221225629,
+        "peak_node_memory_mb": 268421.05078125,
+        "mpi_processes": 32,
+        "openmp_threads": 2
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "a503050c9e684773589fd9be92d230a84f44807fd6a2c7a82bae7f9892e5f553"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_rfground_vac0_20260829_01",
+      "repository_checkpoint": "cd43705ab03af59f9b8df6d86bf2ae7bdccf8ba3",
+      "repository_tree": "d1ab580fdbe31e831319ee42b9b967dde336eb26",
+      "solver": "Palace",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "metal_gap_equivalent",
+      "boundary_status": "historical_environment_interruption",
+      "handoff_id": "4b374e10bc828a9d080aa7b85ff76543f7fc9a676063757b47eabdb2f7c1cc61",
+      "receipt": {
+        "status": "failed",
+        "failure": "solver_error_exit_143",
+        "sha256": "1b420ff13ed273ed25aff8896a9b1d73a9ecde1c3c5d5c16b0744fef3fb3d1ad"
+      },
+      "selection": {
+        "source": "final",
+        "path": "results/palace",
+        "pass_index": 5,
+        "integrity": "receipt_bound"
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "dd74a495f492f55207697bffbadd80401db85c9c939c01c70218e74d38b3c6cb"
+      },
+      "superseded_by": "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_rfground_vac0_20260829_02"
+    },
+    {
+      "run_id": "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_rfground_vac0_20260829_02",
+      "repository_checkpoint": "527448d1883e147ff273017c45234687632306cb",
+      "repository_tree": "539e1fc3e9d1292e33550186b96fca683c21dee7",
+      "solver": "Palace",
+      "solver_revision": "869ee5c",
+      "problem": "Electrostatic",
+      "route": "A",
+      "route_a_thin_film": "metal_gap_equivalent",
+      "boundary_status": "current_rf_grounded_vac0",
+      "handoff_id": "4b374e10bc828a9d080aa7b85ff76543f7fc9a676063757b47eabdb2f7c1cc61",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "9c0bff7b03020b8e4248fd6f512358231a1081b59555ed53283f9136deecf6b7"
+      },
+      "selection": {
+        "source": "final",
+        "path": "results/palace",
+        "pass_index": 9,
+        "integrity": "receipt_bound"
+      },
+      "numerical_evidence": {
+        "error_indicator_norm": 0.1161542258205,
+        "degrees_of_freedom": 19484805,
+        "mesh_elements": 110059509,
+        "elapsed_total_s": 1721.066881733,
+        "peak_node_memory_mb": 266307.4453125,
+        "mpi_processes": 32,
+        "openmp_threads": 2
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "e910c4b3a42cbaafe1ea8c35bd072fcf61a70e5091be4667c1fe2594a6156064"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_rfground_vac0_20260829_01",
+      "repository_checkpoint": "ee65161885d14e6d3e6a05f75c8ffcda26ff44d5",
+      "repository_tree": "02b5786a6e5bf635ac1674ab7c2f91cabad0e59c",
+      "solver": "Palace",
+      "solver_revision": "869ee5c",
+      "problem": "Electrostatic",
+      "route": "B",
+      "route_a_thin_film": null,
+      "boundary_status": "current_rf_grounded_vac0",
+      "handoff_id": "6865edd667155eb5284a418c2fc80ae60f8682cfd51cec0e2884ce6cb80eb045",
+      "receipt": {
+        "status": "failed",
+        "failure": "signal_killed",
+        "sha256": "8e87b41831c5fd005b65eba8b8f2e4ebb16c2352ff1993a073cf3b36722c0112"
+      },
+      "selection": {
+        "source": "final",
+        "path": "results/palace",
+        "pass_index": 8,
+        "integrity": "receipt_bound"
+      },
+      "numerical_evidence": {
+        "error_indicator_norm": 0.05225549030243,
+        "degrees_of_freedom": 35709699,
+        "mesh_elements": 199018068,
+        "elapsed_total_s": 2559.925962198,
+        "peak_node_memory_mb": 404889.12109375,
+        "mpi_processes": 32,
+        "openmp_threads": 2
+      },
+      "selected_file_sha256": {
+        "terminal-C.csv": "be72e52517d856a2e8943b6d56e97c5d653ec54eb847a77473428134b7a43e70"
+      }
+    },
+    {
+      "run_id": "kosen2024_xmon_q3d_l309p5_w24p65_g20_rfground_vac0_20260829_01",
+      "repository_checkpoint": "ee65161885d14e6d3e6a05f75c8ffcda26ff44d5",
+      "repository_tree": "02b5786a6e5bf635ac1674ab7c2f91cabad0e59c",
+      "solver": "AEDT_Q3D_2024_2",
+      "problem": "Electrostatic_AC_RL",
+      "model": "physical_geometry_diagnostic",
+      "boundary_status": "current_rf_grounded_vac0",
+      "receipt": {
+        "status": "completed",
+        "sha256": "4abb1e0944dad9078ab4e84084773e1aa8f5a5e7a7aa752da4193b35f24d427f"
+      },
+      "input_sha256": {
+        "gds": "d85c6e7f78212897320258bc61da3481dff769e4226803085fd98839b2e8c8aa",
+        "spec": "c3552d6cbd81123ac72bcf6fa235bdd5cfa674946d2bc6893ed02abe9ad130c8"
+      },
+      "selected_file_sha256": {
+        "c_matrix.csv": "ddb9809012c68c8b87e6ddd6f1ae5bb0df30aa11cdb694f1675a9cc7c46bb051",
+        "matrices.csv": "09d0480e6bb245ec3ee0e3ead743dcf208bcbe89ab0248c3d50521126f2807f6",
+        "asol": "b229a5d5545270ee73ee15a62f7951d175ca57669493b107d67e0ef0e1b0b345",
+        "profile": "fce7cb972f650682806e53263e805c948d170ce80be01caf2e1bf6d07c43688b"
+      },
+      "convergence": {
+        "target_percent": 0.1,
+        "capacitance": {
+          "converged": false,
+          "final_pass": 20,
+          "final_matrix_delta_percent": 0.429585,
+          "final_triangle_count": 311643,
+          "stop_reason": "Adaptive Passes did not converge"
+        },
+        "ac_rl": {
+          "converged": true,
+          "final_pass": 2,
+          "final_matrix_delta_percent": 0.0158877,
+          "final_triangle_count": 2028,
+          "stop_reason": "Adaptive Passes converged"
+        }
+      },
+      "execution_seconds": 193.537797
+    }
+  ]
+}

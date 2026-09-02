@@ -25,8 +25,8 @@ review must identify:
   oxide, temperature, and frequency range when available;
 - default-selection scope: whether the source supports public defaults or only
   a caller-selected preset;
-- reusable handoff: whether the record should be represented in
-  `orpen-sc-pdk`, `gsim`, or only in downstream private workflows.
+- reusable handoff: whether the record belongs in `orpen-sc-pdk`, SCGSim, or
+  only in downstream private workflows.
 
 ## Candidate Sources
 
@@ -42,10 +42,6 @@ review must identify:
 These rows are review candidates only. They are not public defaults, and they
 do not populate `orpen_sc_pdk.tech.interface_preset_records` until the public
 preset gate below is satisfied.
-The same review queue is mirrored in
-`scripts/fixtures/public_interface_preset_review_queue.json` so notebook and
-evidence outputs can show the promotion state without turning these candidates
-into PDK data.
 
 | Candidate record | Role | Thickness (um) | Relative permittivity | Loss tangent | Source basis | Status |
 |---|---:|---:|---:|---:|---|---|
@@ -56,15 +52,6 @@ into PDK data.
 | `Woods2019_CPW_Si_SA_candidate` | `SA` | 0.002 | 4.0 | 1.7e-3 | Main text uses 2 nm and relative permittivity 4.0 for the SA defect layer when converting fitted loss factors into loss tangents. | Primary CPW extraction candidate; caller-selected until accepted. |
 | `Woods2019_CPW_Si_MA_candidate` | `MA` | 0.002 | 10.0 | 3.3e-3 | Main text uses 2 nm and relative permittivity 10.0 for the MA defect layer when converting fitted loss factors into loss tangents. | Primary CPW extraction candidate; caller-selected until accepted. |
 | `Woods2019_CPW_Si_bulk_candidate` | bulk substrate | n/a | silicon | 2.6e-7 | Main text reports a silicon substrate loss tangent with the same fitted CPW loss model. | Bulk-material review candidate, not an interface preset. |
-
-Thin-film proxy evidence:
-
-- `scripts/public_palace_smoke_evidence.py` builds a public fixture where `Al`
-  sheet interfaces adjacent to public `air` and `silicon` material names
-  request separate caller-supplied `MA` and `MS` specs through `gsim`
-  material-kind classification. This proves the public handoff shape without
-  copying private preset values, private physical names, or notebook-local
-  default policy.
 
 Open review decisions:
 
@@ -81,15 +68,10 @@ The public PDK can accept an interface preset only after:
 
 1. the candidate source is listed above or in another public review page;
 2. the record has a non-empty source/provenance string;
-3. the role mapping is explicit and matches `gsim` `DielectricInterfaceSpec`
-   semantics;
+3. the role mapping is explicit and matches the SCGSim surface-EPR contract;
 4. the record uses either a public material name or explicit permittivity;
 5. tests prove the record validates through
-   `validate_interface_preset_records()` and can be handed to `gsim` without
-   adding PDK-owned Palace runtime logic;
+   `validate_interface_preset_records()` and can be handed to SCGSim without
+   adding PDK-owned solver runtime logic;
 6. any automatic default-selection rule is documented separately from the
    caller-supplied preset table.
-
-Related issue:
-
-- [../issues/source-backed-interface-presets](../issues/source-backed-interface-presets.md)

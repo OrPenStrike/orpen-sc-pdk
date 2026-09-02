@@ -13,6 +13,10 @@ from gdsfactory.technology.layer_stack import LogicalLayer
 from gdsfactory.typings import ConnectivitySpec, Layer, LayerSpec
 
 from orpen_sc_pdk.config import PATH
+from orpen_sc_pdk.materials import (
+    get_material_alias_records,
+    get_material_records,
+)
 
 nm = 1e-3
 
@@ -37,6 +41,10 @@ class LayerMapOrpenSCPDK(LayerMap):
     D0_D1_UNDER_BUMP: Layer = (40, 1)
     D1_D2_INDIUM_BUMP: Layer = (41, 0)
     D1_D2_UNDER_BUMP: Layer = (41, 1)
+
+    DEVICE_KEEPOUT: Layer = (120, 0)
+    ROUTING_KEEPOUT: Layer = (120, 1)
+    D0_D1_INDIUM_GROUND_KEEPOUT: Layer = (120, 2)
 
     D0_BOTTOM_AB_DRAW: Layer = (12, 0)
     D0_BOTTOM_AB_VIA: Layer = (12, 1)
@@ -90,42 +98,55 @@ class LayerMapOrpenSCPDK(LayerMap):
 
 L = LAYER = LayerMapOrpenSCPDK
 
-material_properties = {
-    "vacuum": {
-        "relative_permittivity": 1.0,
-        "permeability": 1.0,
-        "material_kind": "vacuum",
-    },
-    "Si": {
-        "relative_permittivity": 11.45,
-        "permeability": 1.0,
-        "material_kind": "dielectric",
-    },
-    "Al": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "Nb": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "TiN": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "In": {"relative_permittivity": float("inf"), "material_kind": "superconductor"},
-    "AlOx_native_generic": {
-        "relative_permittivity": 10.0,
-        "permeability": 1.0,
-        "material_kind": "dielectric",
-    },
-}
-
-material_alias_records = {
-    "air": "vacuum",
-    "silicon": "Si",
-}
-
+material_properties = get_material_records()
+material_alias_records = get_material_alias_records()
 interface_preset_records = {}
 
 SUBSTRATE_THICKNESS_UM = 500.0
 METAL_THICKNESS_UM = 200 * nm
 AIRBRIDGE_VIA_THICKNESS_UM = 100 * nm
 AIRBRIDGE_THICKNESS_UM = 200 * nm
-D0_D1_METAL_FACE_GAP_UM = 9.8
+# Nominal public metal-to-metal spacing; compressed process heights may be lower.
+D0_D1_METAL_FACE_GAP_UM = 8.0
 D0_D1_SUBSTRATE_FACE_GAP_UM = D0_D1_METAL_FACE_GAP_UM + 2 * METAL_THICKNESS_UM
 OUTER_VACUUM_THICKNESS_UM = 1000.0
+INDIUM_BUMP_SIZE_UM = 20.0
+UNDER_BUMP_SIZE_UM = 40.0
+
+
+def _centered_square(size_um: float) -> tuple[tuple[float, float], ...]:
+    half = size_um / 2
+    return ((-half, -half), (half, -half), (half, half), (-half, half))
+
+
+def _ground_bump_fill_spec() -> dict[str, Any]:
+    """Return PDK-owned bump geometry, lattice origin, and keepout classes."""
+
+    return {
+        "schema_version": 1,
+        "body_layer": tuple(L.D0_D1_INDIUM_BUMP),
+        "body_polygon_um": _centered_square(INDIUM_BUMP_SIZE_UM),
+        "contact_layer": tuple(L.D0_D1_UNDER_BUMP),
+        "contact_polygon_um": _centered_square(UNDER_BUMP_SIZE_UM),
+        "lattice_origin_um": (0.0, 0.0),
+        "keepout_records": (
+            {
+                "name": "DEVICE_KEEPOUT",
+                "layer": tuple(L.DEVICE_KEEPOUT),
+                "consumers": ("routing", "indium_ground_bump"),
+            },
+            {
+                "name": "ROUTING_KEEPOUT",
+                "layer": tuple(L.ROUTING_KEEPOUT),
+                "consumers": ("routing",),
+            },
+            {
+                "name": "D0_D1_INDIUM_GROUND_KEEPOUT",
+                "layer": tuple(L.D0_D1_INDIUM_GROUND_KEEPOUT),
+                "consumers": ("indium_ground_bump",),
+            },
+        ),
+    }
 
 
 def _zmin_from_face(*, face_z: float, outward: int, offset: float, thickness: float) -> float:
@@ -162,7 +183,12 @@ def _m1_layer_level(
     face_z: float,
     outward: int,
     mesh_order: int,
+    info: dict[str, Any] | None = None,
 ) -> LayerLevel:
+    kwargs: dict[str, Any] = {}
+    if info is not None:
+        kwargs["info"] = info
+
     return LayerLevel(
         name=name,
         layer=_derived_m1_layer(
@@ -180,6 +206,7 @@ def _m1_layer_level(
         ),
         material="Al",
         mesh_order=mesh_order,
+        **kwargs,
     )
 
 
@@ -244,6 +271,7 @@ def _face_layer_levels(
     airbridge_via_layer: Layer,
     sim_boundary_layer: Layer,
     mesh_order: int,
+    m1_info: dict[str, Any] | None = None,
 ) -> dict[str, LayerLevel]:
     prefix = f"{die}_{face}"
     return {
@@ -255,6 +283,7 @@ def _face_layer_levels(
             face_z=face_z,
             outward=outward,
             mesh_order=mesh_order,
+            info=m1_info,
         ),
         f"{prefix}_AIRBRIDGE_VIA": _face_layer_level(
             name=f"{prefix}_AIRBRIDGE_VIA",
@@ -302,6 +331,10 @@ def get_layer_stack() -> LayerStack:
                 zmin=-SUBSTRATE_THICKNESS_UM,
                 material="Si",
                 mesh_order=20,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": True,
+                },
             ),
             "D1_SUBSTRATE": LayerLevel(
                 name="D1_SUBSTRATE",
@@ -310,6 +343,10 @@ def get_layer_stack() -> LayerStack:
                 zmin=d1_substrate_zmin,
                 material="Si",
                 mesh_order=21,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": True,
+                },
             ),
             "D0_TO_D1_GAP": LayerLevel(
                 name="D0_TO_D1_GAP",
@@ -318,6 +355,10 @@ def get_layer_stack() -> LayerStack:
                 zmin=0.0,
                 material="vacuum",
                 mesh_order=98,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": True,
+                },
             ),
             "OUTER_VACUUM": LayerLevel(
                 name="OUTER_VACUUM",
@@ -326,6 +367,11 @@ def get_layer_stack() -> LayerStack:
                 zmin=d1_top_face_z,
                 material="vacuum",
                 mesh_order=99,
+                info={
+                    "simulation_role": "solution_region",
+                    "include_in_component_simulation": False,
+                    "is_airbox": True,
+                },
             ),
             **_face_layer_levels(
                 die="D0",
@@ -345,6 +391,10 @@ def get_layer_stack() -> LayerStack:
                 face="TOP",
                 face_z=d0_top_face_z,
                 outward=1,
+                # SCGSim consumes typed LayerLevel.info; names are display-only.
+                # Face M1 is zero-thickness PEC sheet in Route A and finite
+                # PEC shell in Route B.
+                # Ground is residual identity; terminal selectors override it.
                 m1_domain_layer=L.D0_TOP_M1_DOMAIN,
                 m1_draw_layer=L.D0_TOP_M1_DRAW,
                 m1_etch_layer=L.D0_TOP_M1_ETCH,
@@ -352,12 +402,26 @@ def get_layer_stack() -> LayerStack:
                 airbridge_via_layer=L.D0_TOP_AB_VIA,
                 sim_boundary_layer=L.D0_TOP_SIM_BOUNDARY,
                 mesh_order=10,
+                m1_info={
+                    "simulation_role": "conductor",
+                    "layer_type": "conductor",
+                    "part_role": "face_metal",
+                    "host_void_semantic_id": "D0_TO_D1_GAP",
+                    "geometry": {
+                        "geometry_source": "die_face_minus_ground_mask",
+                        "plane_bounds_ref": "D0_SUBSTRATE",
+                    },
+                },
             ),
             **_face_layer_levels(
                 die="D1",
                 face="BOTTOM",
                 face_z=d1_bottom_face_z,
                 outward=-1,
+                # SCGSim consumes typed LayerLevel.info; names are display-only.
+                # Face M1 is zero-thickness PEC sheet in Route A and finite
+                # PEC shell in Route B.
+                # Ground is residual identity; terminal selectors override it.
                 m1_domain_layer=L.D1_BOTTOM_M1_DOMAIN,
                 m1_draw_layer=L.D1_BOTTOM_M1_DRAW,
                 m1_etch_layer=L.D1_BOTTOM_M1_ETCH,
@@ -365,6 +429,16 @@ def get_layer_stack() -> LayerStack:
                 airbridge_via_layer=L.D1_BOTTOM_AB_VIA,
                 sim_boundary_layer=L.D1_BOTTOM_SIM_BOUNDARY,
                 mesh_order=12,
+                m1_info={
+                    "simulation_role": "conductor",
+                    "layer_type": "conductor",
+                    "part_role": "face_metal",
+                    "host_void_semantic_id": "D0_TO_D1_GAP",
+                    "geometry": {
+                        "geometry_source": "die_face_minus_ground_mask",
+                        "plane_bounds_ref": "D1_SUBSTRATE",
+                    },
+                },
             ),
             **_face_layer_levels(
                 die="D1",
@@ -422,7 +496,20 @@ def get_layer_stack() -> LayerStack:
                 zmin=METAL_THICKNESS_UM,
                 material="In",
                 mesh_order=3,
+                info={
+                    "simulation_role": "conductor",
+                    "layer_type": "via",
+                    "part_role": "bump_body",
+                    "host_void_semantic_id": "D0_TO_D1_GAP",
+                    "geometry": {
+                        "geometry_source": "gds_polygon",
+                        "split_polygons_as_entities": True,
+                    },
+                    "ground_bump_fill_spec": _ground_bump_fill_spec(),
+                },
             ),
+            # Typed bump stays finite shell in Route A/B.
+            # UBM is explicitly excluded and emits no SGB entity.
             "D0_D1_UNDER_BUMP": LayerLevel(
                 name="D0_D1_UNDER_BUMP",
                 layer=L.D0_D1_UNDER_BUMP,
@@ -430,6 +517,9 @@ def get_layer_stack() -> LayerStack:
                 zmin=0.0,
                 material="In",
                 mesh_order=3,
+                info={
+                    "exclude_from_simulation": True,
+                },
             ),
         }
     )
@@ -613,6 +703,14 @@ def n_trace_coplanar_waveguide(
     section_centers += first_trace_width
     sections.append(
         gf.Section(
+            width=first_trace_width + 2 * first_left_gap,
+            offset=first_trace_offset,
+            layer=ground_mask_layer,
+            name=CPW_GROUND_MASK,
+        )
+    )
+    sections.append(
+        gf.Section(
             width=first_left_gap,
             offset=-(section_centers + first_left_gap / 2),
             layer=etch_layer,
@@ -645,6 +743,15 @@ def n_trace_coplanar_waveguide(
                 port_names=(f"{trace_name}_o1", f"{trace_name}_o2"),
             )
         )
+        trace_offset = -(section_centers + trace_width / 2)
+        sections.append(
+            gf.Section(
+                width=trace_width + 2 * left_gap,
+                offset=trace_offset,
+                layer=ground_mask_layer,
+                name=f"{trace_name}_ground_mask",
+            )
+        )
         section_centers += trace_width
         sections.append(
             gf.Section(
@@ -658,15 +765,6 @@ def n_trace_coplanar_waveguide(
         if trace_index < n_traces - 1:
             inter_ground = inter_trace_ground_widths_f[trace_index]
             section_centers += inter_ground
-    sections.append(
-        gf.Section(
-            width=total_footprint_width,
-            offset=0.0,
-            layer=ground_mask_layer,
-            name=CPW_GROUND_MASK,
-        )
-    )
-
     return gf.cross_section.cross_section(
         width=trace_widths_f[0],
         layer=draw_layer,

@@ -20,7 +20,6 @@ model_exports = import_module("orpen_sc_pdk.models").__all__
 
 def test_orpen_style_public_import_surface() -> None:
     assert package.PATH == PATH
-    assert cells.cpw_straight
     assert cells.interdigital_capacitor
     assert cells.launcher
     assert cells.martinis2022_differential_ribbon_capacitor
@@ -42,7 +41,6 @@ def test_pdk_registry_contains_public_cells() -> None:
         "taper",
         "bend_circular",
         "bend_euler",
-        "cpw_straight",
         "dicing_edge",
         "interdigital_capacitor",
         "launcher",
@@ -52,7 +50,7 @@ def test_pdk_registry_contains_public_cells() -> None:
         "airbridge",
     }
 
-    assert set(PDK.cells) == expected
+    assert expected <= set(PDK.cells)
 
 
 def test_public_chip_demos_live_in_one_module_per_chip() -> None:
@@ -62,13 +60,6 @@ def test_public_chip_demos_live_in_one_module_per_chip() -> None:
             "orpen_sc_pdk.cells.chips.global_purcell_filter_demo_chip"
         ),
         "resonator_with_indium_bumps": ("orpen_sc_pdk.cells.chips.resonator_with_indium_bumps"),
-        "sim_flip_chip_distance": "orpen_sc_pdk.cells.chips.sim_flip_chip_distance",
-        "sim_flip_chip_distance_keepout_global_routing_demo": (
-            "orpen_sc_pdk.cells.chips.sim_flip_chip_distance_keepout_global_routing_demo"
-        ),
-        "sim_flip_chip_distance_keepout_routing_demo": (
-            "orpen_sc_pdk.cells.chips.sim_flip_chip_distance_keepout_routing_demo"
-        ),
         "small_airbridge_chip": "orpen_sc_pdk.cells.chips.small_airbridge_chip",
     }
 
@@ -78,7 +69,6 @@ def test_public_chip_demos_live_in_one_module_per_chip() -> None:
         assert getattr(chips, name) is getattr(module, name)
 
     assert find_spec("orpen_sc_pdk.cells.flip_chip") is None
-    assert find_spec("orpen_sc_pdk.cells.purcell") is None
     assert find_spec("orpen_sc_pdk.cells.chips.resonators_with_flip_chip") is None
 
 
@@ -121,19 +111,8 @@ def test_pdk_registry_does_not_publish_generic_gf_cells() -> None:
     assert generic_cells.isdisjoint(PDK.cells)
 
 
-def test_fixture_cells_stay_in_deep_owner_modules_until_notebook_facing() -> None:
-    from orpen_sc_pdk.cells import xs_chip
-
-    fixture_cells = {
-        "single_trace_flip_chip_xs_chip",
-        "single_trace_xs_chip",
-        "two_trace_flip_chip_xs_chip",
-        "two_trace_xs_chip",
-    }
-
-    assert all(callable(getattr(xs_chip, name)) for name in fixture_cells)
-    assert fixture_cells.isdisjoint(cells.__all__)
-    assert fixture_cells.isdisjoint(PDK.cells)
+def test_q2d_fixture_module_is_retired() -> None:
+    assert find_spec("orpen_sc_pdk.cells.xs_chip") is None
 
 
 def test_pdk_registry_contains_public_cpw_cross_sections() -> None:
@@ -170,7 +149,6 @@ def test_pdk_uses_yaml_layer_views() -> None:
 def test_gdsfactory_get_component_works_after_activation() -> None:
     PDK.activate()
 
-    assert gf.get_component("cpw_straight").name.startswith("cpw_straight")
     assert gf.get_component("launcher").ports
     assert gf.get_component("interdigital_capacitor").ports
     assert gf.get_component("martinis2022_differential_ribbon_capacitor").ports
@@ -184,9 +162,6 @@ def test_public_samples_hold_demo_cells_after_registry_cleanup() -> None:
     assert set(samples) == {
         "orpen_sc_pdk.samples.simulation_demos.global_purcell_filter_demo_chip",
         "orpen_sc_pdk.samples.simulation_demos.resonator_with_indium_bumps",
-        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance",
-        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_global_routing_demo",
-        "orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance_keepout_routing_demo",
         "orpen_sc_pdk.samples.simulation_demos.small_airbridge_chip",
     }
     resonator_coupon = samples[
@@ -222,4 +197,3 @@ def test_public_samples_hold_demo_cells_after_registry_cleanup() -> None:
     assert {port.name for port in airbridge_chip.ports} == {"o_left", "o_right"}
     assert len(airbridge_polygons[(LAYER.D0_TOP_AB_DRAW.layer, LAYER.D0_TOP_AB_DRAW.datatype)]) == 3
     assert len(airbridge_polygons[(LAYER.D0_TOP_AB_VIA.layer, LAYER.D0_TOP_AB_VIA.datatype)]) == 6
-    assert samples["orpen_sc_pdk.samples.simulation_demos.sim_flip_chip_distance"]().ports

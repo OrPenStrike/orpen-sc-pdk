@@ -6,17 +6,8 @@ from typing import Literal
 import gdsfactory as gf
 
 from orpen_sc_pdk.helpers.layout.geometry import Point, rotate_point
-from orpen_sc_pdk.ports import MeshProfile, add_junction_lumped_port
+from orpen_sc_pdk.ports import add_junction_lumped_port
 from orpen_sc_pdk.tech import LAYER, Layer
-
-
-def _unit_vector(start: Point, end: Point) -> list[float]:
-    dx = end[0] - start[0]
-    dy = end[1] - start[1]
-    length = math.hypot(dx, dy)
-    if length <= 0:
-        raise ValueError("Simulation junction anchors must not coincide.")
-    return [dx / length, dy / length, 0.0]
 
 
 def _path_orientation(start: Point, end: Point) -> float:
@@ -42,10 +33,9 @@ def manhattan_style_junction(
     junction lumped port. Palace should interpret that sheet as a branch between
     two circuit nodes, not as the microscopic tunnel-current path.
 
-    The junction lumped port is also the simulation-facing anchor for later mesh
-    or geometry splitting. Do not add a separate mesh marker for this junction:
-    the fabrication cross and the simulation sheet are intentionally different
-    semantic geometries.
+    The junction lumped port is the named sheet locator for SCGSim. Do not add a
+    separate mesh marker for this junction: the fabrication cross and the
+    simulation sheet are intentionally different semantic geometries.
     """
 
     if width <= 0:
@@ -85,7 +75,8 @@ def manhattan_style_junction(
     )
     sim_sheet.flatten()
     _ = c << sim_sheet
-    direction = _unit_vector(sim_anchor_start, sim_anchor_end)
+    if sim_anchor_start == sim_anchor_end:
+        raise ValueError("Simulation junction anchors must not coincide.")
     center = (
         (sim_anchor_start[0] + sim_anchor_end[0]) / 2,
         (sim_anchor_start[1] + sim_anchor_end[1]) / 2,
@@ -97,11 +88,8 @@ def manhattan_style_junction(
         name="o_junction_lumped",
         center=center,
         width=width,
-        feature_width_um=width * 3,
         orientation=orientation,
         layer=sim_port_layer,
-        direction=direction,
-        mesh_profile=MeshProfile.SUBMICRON_METAL_TRACE,
     )
 
     c.add_port(

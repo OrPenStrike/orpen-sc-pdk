@@ -2,7 +2,7 @@
 
 import gdsfactory as gf
 
-from orpen_sc_pdk.ports import MeshProfile, add_mesh_port
+from orpen_sc_pdk.ports import add_mesh_port
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
@@ -55,8 +55,6 @@ def martinis2022_differential_ribbon_capacitor(
         name="o_mesh_positive_electrode",
         center=pos_center,
         layer=draw_layer,
-        mesh_profile=MeshProfile.METAL_ISLAND,
-        feature_width_um=ribbon_width_um,
         width=ribbon_width_um,
         orientation=180,
     )
@@ -65,8 +63,6 @@ def martinis2022_differential_ribbon_capacitor(
         name="o_mesh_negative_electrode",
         center=neg_center,
         layer=draw_layer,
-        mesh_profile=MeshProfile.METAL_ISLAND,
-        feature_width_um=ribbon_width_um,
         width=ribbon_width_um,
         orientation=0,
     )

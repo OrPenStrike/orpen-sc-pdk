@@ -8,7 +8,7 @@ from gdsfactory.typings import ComponentSpec, CrossSectionSpec
 from orpen_sc_pdk.cells.resonator_hanger import resonator_hanger
 from orpen_sc_pdk.cells.resonator_meander import resonator_meander
 from orpen_sc_pdk.helpers.layout.etch import add_etch_for_component
-from orpen_sc_pdk.ports import MeshProfile, add_mesh_port
+from orpen_sc_pdk.ports import add_mesh_port
 from orpen_sc_pdk.tech import (
     CPW_ETCH_POS,
     CPW_GROUND_MASK,
@@ -302,10 +302,8 @@ def resonator(
         name="o_mesh_resonator",
         center=hanger_ref.ports["o_hanger_center"].center,
         width=cpw_draw_width,
-        feature_width_um=cpw_draw_width,
         orientation=hanger_ref.ports["o_hanger_center"].orientation,
         layer=draw_layer,
-        mesh_profile=MeshProfile.CRITICAL_METAL_TRACE,
     )
 
     c.add_port("o1", port=hanger_ref.ports["o_hanger_start"])

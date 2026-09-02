@@ -3,8 +3,8 @@
 <p align="center">
   <img alt="Status: public PDK" src="https://img.shields.io/badge/status-public%20PDK-0f766e">
   <img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white">
-  <img alt="GDSFactory 9.43" src="https://img.shields.io/badge/GDSFactory-9.43-4B8BBE">
-  <img alt="GDSFactory+ ready" src="https://img.shields.io/badge/GDSFactory%2B-ready-7c3aed">
+  <img alt="GDSFactory 9.48.x" src="https://img.shields.io/badge/GDSFactory-9.48.x-4B8BBE">
+  <img alt="GDSFactory+ 1.8.20" src="https://img.shields.io/badge/GDSFactory%2B-1.8.20-7c3aed">
   <img alt="Docs: GitHub Pages" src="https://img.shields.io/badge/docs-GitHub%20Pages-0f766e">
   <img alt="License" src="https://img.shields.io/github/license/OrPenStrike/orpen-sc-pdk">
 </p>
@@ -25,10 +25,8 @@ PDK as their base PDK.
   material records, connectivity, and face-aware superconducting process layers.
 - **Parametric public cells** — CPW traces, resonators, launchers, tapers,
   indium bumps, dicing edges, capacitors, and benchmark geometries.
-- **Flip-chip layout demos** — public resonator-based examples for distance,
-  keepout, and 8-direction routing workflows.
-- **Simulation metadata** — mesh-port metadata for downstream Palace, Q2D, and
-  layout-to-simulation assembly.
+- **Simulation locators** — named GDSFactory ports and sheet geometry for SCGSim
+  to compile. Mesh sizes and Palace L/C/R stay in the notebook or runtime.
 - **GDSFactory+ integration** — registered public cells are available through
   the active PDK and can be built from GF+.
 
@@ -49,22 +47,18 @@ this repo.
 | `launcher` | `indium_ground` |
 | <img src="docs/_static/images/components/launcher.svg" alt="Launcher" width="260"> | <img src="docs/_static/images/components/indium_ground.svg" alt="Indium ground field" width="260"> |
 
-### Public Flip-Chip And Routing Layouts
+### Public Layout Demo
 
-[QPDK](https://github.com/gdsfactory/quantum-rf-pdk) shows complete
-qubit-oriented examples; OrPen SC PDK keeps private qubit IP out of the public
-repo and uses public resonator geometry for open routing and flip-chip
-demonstrations.
+[QPDK](https://github.com/gdsfactory/quantum-rf-pdk) is an external
+reference and public example source only. It is neither the OrPen PDK/component
+authority nor the SCGSim production/runtime authority, and it is not a
+production fallback. OrPen SC PDK keeps private qubit IP out of this public
+repository; the remaining demo uses public resonator geometry.
 
-| Flip-Chip Distance | Global Purcell Filter Demo Chip |
-| :---: | :---: |
-| `sim_flip_chip_distance` | `global_purcell_filter_demo_chip` |
-| <img src="docs/_static/images/components/sim_flip_chip_distance.svg" alt="Flip-chip distance layout" width="320"> | <img src="docs/_static/images/components/global_purcell_filter_demo_chip.svg" alt="Global Purcell Filter Demo Chip" width="320"> |
-
-| Resonator Keepout Routing | Global Keepout Routing |
-| :---: | :---: |
-| `sim_flip_chip_distance_keepout_routing_demo` | `sim_flip_chip_distance_keepout_global_routing_demo` |
-| <img src="docs/_static/images/components/sim_flip_chip_distance_keepout_routing_demo.svg" alt="Resonator keepout routing demo" width="320"> | <img src="docs/_static/images/components/sim_flip_chip_distance_keepout_global_routing_demo.svg" alt="Global keepout routing demo" width="320"> |
+| Global Purcell Filter Demo Chip |
+| :---: |
+| `global_purcell_filter_demo_chip` |
+| <img src="docs/_static/images/components/global_purcell_filter_demo_chip.svg" alt="Global Purcell Filter Demo Chip" width="320"> |
 
 ## Quick Start
 
@@ -88,44 +82,27 @@ component = gf.get_component("resonator", length=3500)
 component.show()
 ```
 
-Build one of the public flip-chip routing demos:
-
-```python
-import gdsfactory as gf
-import orpen_sc_pdk
-
-orpen_sc_pdk.activate()
-
-demo = gf.get_component("sim_flip_chip_distance_keepout_global_routing_demo")
-demo.show()
-```
-
 ## Repository Boundaries
 
 | Repository | Owns |
 | --- | --- |
-| `orpen-sc-pdk` | Public process semantics, public cells, public layout helpers, docs, and base-PDK contracts. |
-| Private layout projects | Private cells, private chip assemblies, private layout inputs, notebooks, and run evidence. |
-| `gsim` | Reusable Palace/EPR/reporting workflow, benchmarks, and solver orchestration. |
+| `orpen-sc-pdk` | Public process semantics, material records, public cells, layout helpers, and public component-simulation notebooks. |
+| `scgsim` | Semantic Geometry Builder Core, Palace/AEDT runtimes, handoff, resolve, and reporting. |
+| Private layout projects | Private cells, chip assemblies, private inputs, notebooks, and run evidence. |
 | `gplugins` | Reusable gdsfactory plugin capability. |
 
 Do not put private chip designs directly in this repository.
 
 ## Contributor Setup
 
-Use the ecosystem development group when changing `orpen-sc-pdk` and `gsim`
-together:
+Install only the solver backend needed by a notebook:
 
-```toml
-[dependency-groups]
-ecosystem-dev = [
-  "gsim",
-  "gplugins",
-]
-
-[tool.uv.sources]
-gsim = { path = "../GDSFactory_Community_Workbench/gsim", editable = true, group = "ecosystem-dev" }
+```bash
+uv sync -p 3.12 --group palace-notebooks
+uv sync -p 3.12 --group aedt-notebooks
 ```
+
+Both groups install `scgsim`; OrPen does not carry a second solver runtime.
 
 For the full local contributor environment:
 

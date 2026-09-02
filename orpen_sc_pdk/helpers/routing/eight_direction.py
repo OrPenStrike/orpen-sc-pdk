@@ -17,11 +17,11 @@ from gdsfactory.routing.route_astar import (
     route_astar_single,
 )
 from gdsfactory.typings import ComponentSpec, CrossSectionSpec, LayerSpec, Port, Route
-from klayout import db as kdb
 
 Coordinate = tuple[float, float]
 RouteBbox = tuple[float, float, float, float]
 GridNode = tuple[int, int]
+_PATH_REGION_LAYER: LayerSpec = (1, 0)
 
 
 @dataclass(frozen=True)
@@ -136,7 +136,7 @@ class _RouteCandidate8Dir:
     path: gf.Path
     cross_section: Any
     simplify: float | None
-    resource_region: kdb.Region
+    resource_region: gf.Region
     resource_width: float
     length: float
     cost: float
@@ -148,7 +148,7 @@ class _RouteCandidate8Dir:
 
 @dataclass
 class _GlobalSearchNode8Dir:
-    constraints: tuple[tuple[kdb.Region, ...], ...]
+    constraints: tuple[tuple[gf.Region, ...], ...]
     constraint_keys: tuple[tuple[tuple[int, int, int, int], ...], ...]
     candidates: tuple[_RouteCandidate8Dir, ...]
     cost: float
@@ -244,10 +244,10 @@ def _normalize_route_pairs(
 
 
 def _merged_region(
-    base_region: kdb.Region | None,
-    extra_regions: Sequence[kdb.Region] = (),
-) -> kdb.Region | None:
-    region = kdb.Region()
+    base_region: gf.Region | None,
+    extra_regions: Sequence[gf.Region] = (),
+) -> gf.Region | None:
+    region = gf.Region()
     if base_region is not None and not base_region.is_empty():
         region += base_region
     for extra_region in extra_regions:
@@ -259,7 +259,7 @@ def _merged_region(
     return region.merged()
 
 
-def _region_bbox_key(region: kdb.Region) -> tuple[int, int, int, int]:
+def _region_bbox_key(region: gf.Region) -> tuple[int, int, int, int]:
     bbox = region.bbox()
     return (bbox.left, bbox.bottom, bbox.right, bbox.top)
 
@@ -582,7 +582,7 @@ def _route_resource_region(
     path: gf.Path,
     *,
     resource_width: float,
-) -> kdb.Region:
+) -> gf.Region:
     return _path_region(
         path.points,
         width=resource_width,
@@ -593,40 +593,13 @@ def _path_region(
     points: Sequence[Coordinate] | np.ndarray,
     *,
     width: float,
-) -> kdb.Region:
-    region = kdb.Region()
-    half_width_dbu = max(1, round(width * 1e3 / 2))
-    path_points = [(float(point[0]), float(point[1])) for point in points]
-    for point1, point2 in zip(path_points, path_points[1:], strict=False):
-        dx = point2[0] - point1[0]
-        dy = point2[1] - point1[1]
-        length = hypot(dx, dy)
-        if length <= 1e-9:
-            continue
-
-        nx = -dy / length * width / 2
-        ny = dx / length * width / 2
-        polygon_points = [
-            kdb.Point(round((point1[0] + nx) * 1e3), round((point1[1] + ny) * 1e3)),
-            kdb.Point(round((point2[0] + nx) * 1e3), round((point2[1] + ny) * 1e3)),
-            kdb.Point(round((point2[0] - nx) * 1e3), round((point2[1] - ny) * 1e3)),
-            kdb.Point(round((point1[0] - nx) * 1e3), round((point1[1] - ny) * 1e3)),
-        ]
-        region.insert(kdb.Polygon(polygon_points))
-
-    for point in path_points:
-        x = round(point[0] * 1e3)
-        y = round(point[1] * 1e3)
-        region.insert(
-            kdb.Box(
-                x - half_width_dbu,
-                y - half_width_dbu,
-                x + half_width_dbu,
-                y + half_width_dbu,
-            )
-        )
-
-    return region.merged()
+) -> gf.Region:
+    path_region_shape = _path_region_shape(
+        points=points,
+        width=width,
+        layer=_PATH_REGION_LAYER,
+    )
+    return path_region_shape.get_region(_PATH_REGION_LAYER, merge=True)
 
 
 def _add_debug_path_region(
@@ -636,32 +609,74 @@ def _add_debug_path_region(
     layer: LayerSpec,
     width: float,
 ) -> None:
-    region = _path_region(points, width=width)
-    if not region.is_empty():
-        component.add_polygon(points=region, layer=layer)
+    path_region_debug = _path_region_shape(points=points, width=width, layer=layer)
+    if not path_region_debug.get_region(layer, merge=True).is_empty():
+        _ = component << path_region_debug
 
 
 def _conflict_constraint_region(
-    region: kdb.Region,
+    region: gf.Region,
     *,
     grid_resolution: float,
     route_clearance: float,
-) -> kdb.Region:
+) -> gf.Region:
     bbox = region.bbox()
-    padding = round(max(grid_resolution / 2, route_clearance / 2, 1.0) * 1e3)
-    return kdb.Region(
-        kdb.Box(
-            bbox.left - padding,
-            bbox.bottom - padding,
-            bbox.right + padding,
-            bbox.top + padding,
-        )
+    dbu = gf.kcl.dbu
+    padding = round(max(grid_resolution / 2, route_clearance / 2, 1.0) / dbu)
+    left = bbox.left - padding
+    right = bbox.right + padding
+    bottom = bbox.bottom - padding
+    top = bbox.top + padding
+
+    conflict_box = gf.components.rectangle(
+        size=((right - left) * dbu, (top - bottom) * dbu),
+        centered=False,
+        layer=_PATH_REGION_LAYER,
     )
+    conflict = gf.Component()
+    conflict_ref = conflict << conflict_box
+    conflict_ref.dmove((left * dbu, bottom * dbu))
+    return conflict.get_region(_PATH_REGION_LAYER, merge=True)
+
+
+def _path_region_shape(
+    points: Sequence[Coordinate] | np.ndarray,
+    *,
+    width: float,
+    layer: LayerSpec,
+) -> gf.Component:
+    points_f = [(float(point[0]), float(point[1])) for point in points]
+    if len(points_f) == 0:
+        raise ValueError("points must contain at least one point.")
+
+    footprint = gf.Component()
+    for index in range(len(points_f) - 1):
+        point1 = points_f[index]
+        point2 = points_f[index + 1]
+        if point1 == point2:
+            continue
+
+        segment = gf.Path([point1, point2]).extrude(
+            width=width,
+            layer=layer,
+        )
+        footprint << segment
+
+    for point in points_f:
+        corner = gf.components.rectangle(
+            size=(width, width),
+            centered=True,
+            layer=layer,
+        )
+        corner_ref = footprint << corner
+        corner_ref.dmove(point)
+
+    return footprint
 
 
 def _first_route_conflict(
     candidates: Sequence[_RouteCandidate8Dir],
-) -> tuple[RouteConflict8Dir, kdb.Region] | None:
+) -> tuple[RouteConflict8Dir, gf.Region] | None:
     for index1, route1 in enumerate(candidates):
         for index2 in range(index1 + 1, len(candidates)):
             route2 = candidates[index2]
@@ -759,31 +774,34 @@ def _node_to_point(node: GridNode, x0: float, y0: float, resolution: float) -> C
     return (x0 + node[0] * resolution, y0 + node[1] * resolution)
 
 
-def _region_bbox_um(region: kdb.Region | None) -> RouteBbox | None:
+def _region_bbox_um(region: gf.Region | None) -> RouteBbox | None:
     if region is None or region.is_empty():
         return None
 
     bbox = region.bbox()
     return (
-        bbox.left / 1e3,
-        bbox.bottom / 1e3,
-        bbox.right / 1e3,
-        bbox.top / 1e3,
+        bbox.left * gf.kcl.dbu,
+        bbox.bottom * gf.kcl.dbu,
+        bbox.right * gf.kcl.dbu,
+        bbox.top * gf.kcl.dbu,
     )
 
 
-def _point_intersects_region_um(region: kdb.Region | None, point: Coordinate) -> bool:
+def _point_intersects_region_um(region: gf.Region | None, point: Coordinate) -> bool:
     if region is None or region.is_empty():
         return False
 
-    x = round(point[0] * 1e3)
-    y = round(point[1] * 1e3)
-    box = kdb.Box(x, y, x + 1, y + 1)
-    return not (region & kdb.Region(box)).is_empty()
+    # GF public APIs do not expose an arbitrary CBS-accurate point-in-region query.
+    # Retain a narrow KLayout boundary probe at only this boundary; point
+    # coordinates are converted from µm to active dbu before Region testing.
+    x = round(point[0] / gf.kcl.dbu)
+    y = round(point[1] / gf.kcl.dbu)
+    point_box = gf.kdb.Box(x, y, x + 1, y + 1)
+    return not (region & gf.Region(point_box)).is_empty()
 
 
 def _segment_intersects_region_um(
-    region: kdb.Region | None,
+    region: gf.Region | None,
     point1: Coordinate,
     point2: Coordinate,
     sample_step_um: float,
@@ -808,7 +826,7 @@ def _segment_intersects_region_um(
 def _routing_bounds(
     port1: Port,
     port2: Port,
-    keepout_region: kdb.Region | None,
+    keepout_region: gf.Region | None,
     route_bbox: RouteBbox | None,
     margin: float,
     resolution: float,
@@ -891,8 +909,8 @@ def _route_backbone_points_um(route: Route) -> list[tuple[float, float]]:
         x = float(point.x)
         y = float(point.y)
         if abs(x) > 1e5 or abs(y) > 1e5:
-            x /= 1e3
-            y /= 1e3
+            x *= gf.kcl.dbu
+            y *= gf.kcl.dbu
         points.append((x, y))
 
     return points
@@ -1025,7 +1043,7 @@ def route_astar_shortest(
 def plan_route_8dir(
     port1: Port,
     port2: Port,
-    keepout_region: kdb.Region | None = None,
+    keepout_region: gf.Region | None = None,
     route_bbox: RouteBbox | None = None,
     grid_resolution: float = 100.0,
     bbox_margin: float = 500.0,
@@ -1278,7 +1296,7 @@ def plan_route_8dir(
 def _plan_route_candidate_8dir(
     pair: RoutePair8Dir,
     *,
-    keepout_region: kdb.Region | None,
+    keepout_region: gf.Region | None,
     route_bbox: RouteBbox | None,
     grid_resolution: float,
     cross_section: CrossSectionSpec,
@@ -1438,7 +1456,7 @@ def route_bundle_8dir(
     component: gf.Component,
     ports1: Port | Sequence[Port],
     ports2: Port | Sequence[Port],
-    keepout_region: kdb.Region | None = None,
+    keepout_region: gf.Region | None = None,
     route_bbox: RouteBbox | None = None,
     grid_resolution: float = 100.0,
     cross_section: CrossSectionSpec = "strip",
@@ -1613,7 +1631,7 @@ def route_bundle_8dir_global(
     route_pairs: Sequence[RoutePair8Dir] | None = None,
     ports1: Port | Sequence[Port] | None = None,
     ports2: Port | Sequence[Port] | None = None,
-    keepout_region: kdb.Region | None = None,
+    keepout_region: gf.Region | None = None,
     route_bbox: RouteBbox | None = None,
     grid_resolution: float = 100.0,
     cross_section: CrossSectionSpec = "strip",
@@ -1664,7 +1682,7 @@ def route_bundle_8dir_global(
 
     def plan_candidate(
         pair_index: int,
-        constraints: Sequence[kdb.Region],
+        constraints: Sequence[gf.Region],
     ) -> _RouteCandidate8Dir:
         route_keepout_region = _merged_region(keepout_region, constraints)
         return _plan_route_candidate_8dir(
@@ -1686,7 +1704,7 @@ def route_bundle_8dir_global(
             route_clearance=route_clearance,
         )
 
-    empty_constraints: tuple[tuple[kdb.Region, ...], ...] = tuple(() for _ in pairs)
+    empty_constraints: tuple[tuple[gf.Region, ...], ...] = tuple(() for _ in pairs)
     empty_constraint_keys: tuple[tuple[tuple[int, int, int, int], ...], ...] = tuple(
         () for _ in pairs
     )
@@ -1773,7 +1791,9 @@ def route_bundle_8dir_global(
                 else last_conflict.route1_index
             )
             if conflict_scope == "route":
-                centerline_padding = round(node.candidates[route_index].resource_width / 2 * 1e3)
+                centerline_padding = round(
+                    node.candidates[route_index].resource_width / 2 / gf.kcl.dbu
+                )
                 constraint_region = node.candidates[other_route_index].resource_region.sized(
                     centerline_padding
                 )
@@ -1848,7 +1868,7 @@ def route_8dir_all_angle(
     component: gf.Component,
     port1: Port,
     port2: Port,
-    keepout_region: kdb.Region | None = None,
+    keepout_region: gf.Region | None = None,
     route_bbox: RouteBbox | None = None,
     grid_resolution: float = 100.0,
     cross_section: CrossSectionSpec | None = None,

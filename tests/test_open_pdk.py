@@ -5,7 +5,6 @@ from pathlib import Path
 import gdsfactory as gf
 
 from orpen_sc_pdk.cells import (
-    cpw_straight,
     dicing_edge,
     interdigital_capacitor,
     launcher,
@@ -23,13 +22,37 @@ def test_pdk_activates_and_builds_public_cells() -> None:
     assert gf.get_active_pdk().name == "orpen_sc_pdk"
     assert "D0_TOP_M1" in LAYER_STACK.layers
     assert (LAYER.D1_D2_INDIUM_BUMP.layer, LAYER.D1_D2_INDIUM_BUMP.datatype) == (41, 0)
-    assert cpw_straight().ports
     assert launcher().ports
     assert interdigital_capacitor().ports
     assert martinis2022_differential_ribbon_capacitor().ports
     assert resonator().ports
     assert taper().ports
     assert dicing_edge()
+
+
+def test_flip_chip_layer_metadata() -> None:
+    assert {name for name in LAYER_STACK.layers if "UNDER_BUMP" in name} == {"D0_D1_UNDER_BUMP"}
+    assert LAYER_STACK.layers["D0_TOP_M1"].info == {
+        "layer_type": "conductor",
+        "part_role": "face_metal",
+        "net_id": "Ground",
+        "equipotential_id": "Ground",
+    }
+    assert LAYER_STACK.layers["D1_BOTTOM_M1"].info == {
+        "layer_type": "conductor",
+        "part_role": "face_metal",
+        "net_id": "Ground",
+        "equipotential_id": "Ground",
+    }
+    assert LAYER_STACK.layers["D0_D1_INDIUM_BUMP"].info == {
+        "layer_type": "via",
+        "part_role": "bump_body",
+        "net_id": "Ground",
+        "equipotential_id": "Ground",
+    }
+    assert LAYER_STACK.layers["D0_D1_UNDER_BUMP"].info == {
+        "exclude_from_simulation": True,
+    }
 
 
 def test_public_pdk_has_no_private_imports_or_gds() -> None:

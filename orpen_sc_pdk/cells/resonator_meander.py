@@ -3,7 +3,7 @@
 import gdsfactory as gf
 from gdsfactory.typings import ComponentSpec, CrossSectionSpec
 
-from orpen_sc_pdk.ports import MeshProfile, add_mesh_port
+from orpen_sc_pdk.ports import add_mesh_port
 from orpen_sc_pdk.tech import (
     CPW_ETCH_POS,
     CPW_GROUND_MASK,
@@ -225,10 +225,8 @@ def resonator_meander(
             name=f"o_mesh_meander_straight_{index}",
             center=straight_ref.center,
             width=cpw_draw_width,
-            feature_width_um=cpw_draw_width,
             orientation=straight_ref.ports["o1"].orientation,
             layer=draw_layer,
-            mesh_profile=MeshProfile.CRITICAL_METAL_TRACE,
         )
 
     c.info["length"] = meanders * bend_length + sum(straight_lengths)
