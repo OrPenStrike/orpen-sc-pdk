@@ -22,10 +22,11 @@
 # # Kosen2024 Xmon — GSim Public Engineering Showcase
 #
 # This analysis-only notebook demonstrates an OrPen-PDK-authoritative chain
-# through SCGSim Semantic Geometry Bridge (SGB), sealed solver receipts,
+# through SCGSim Semantic Geometry Builder (SGB), sealed solver receipts,
 # strict Resolve, partial-run inspection, and trust-first Report surfaces.
-# It reuses existing public runs: it does not build geometry, mesh, prepare a
-# handoff, submit a job, or invoke Palace, AEDT, or Q3D.
+# It presents public-classified derived evidence backed by locally retained
+# sealed artifacts: it does not build geometry, mesh, prepare a handoff, submit
+# a job, or invoke Palace, AEDT, or Q3D.
 #
 # The main upstream context is [GSim #230](https://github.com/gdsfactory/gsim/issues/230),
 # with [#61](https://github.com/gdsfactory/gsim/issues/61) and
@@ -36,11 +37,12 @@
 # %% [markdown]
 # ## 1. Read-only controls and fail-closed evidence binding
 #
-# Manual re-analysis requires the existing sealed public run folder. The
-# checked-in notebook output remains renderable without that folder because
-# Quarto execution is disabled. Missing artifacts, a mismatched SCGSim pin,
-# or a changed receipt/source hash fails explicitly; there is no latest-run
-# inference or fabricated fallback.
+# Manual re-analysis requires obtaining the exact sealed artifacts from their
+# custodian and placing them in the expected local run folder. The checked-in
+# notebook output remains renderable without that folder because Quarto
+# execution is disabled. Missing artifacts, a mismatched SCGSim pin, or a
+# changed receipt/source hash fails explicitly; there is no latest-run inference
+# or fabricated fallback.
 
 # %%
 from __future__ import annotations
@@ -77,8 +79,9 @@ def sha256(path: Path) -> str:
 
 if not RUN_ROOT.is_dir():
     raise FileNotFoundError(
-        "Manual re-analysis requires the sealed public Kosen2024 .artifacts folder. "
-        "Pages renders saved outputs and never executes this notebook."
+        "Manual re-analysis requires obtaining the exact sealed Kosen2024 artifacts from "
+        "their custodian and placing them in the expected local .artifacts folder. Pages "
+        "renders saved outputs and never executes this notebook."
     )
 
 trace = json.loads(TRACE_PATH.read_text())
@@ -481,7 +484,7 @@ display(
 # compact semantic trace, current manifests, result tables, and static figures.
 # Raw `.artifacts` remain ignored and uncommitted. A clean Pages checkout
 # renders these saved outputs without a solver or artifact folder. To manually
-# re-analyze, obtain the exact public sealed archives, place them under the
-# explicit run IDs in `.artifacts`, install the pinned SCGSim revision, and run
-# this notebook intentionally; every declared receipt and authority hash is
-# checked before a result is displayed.
+# re-analyze, obtain the exact sealed artifacts from their custodian, place them
+# under the explicit run IDs in `.artifacts`, install the pinned SCGSim revision,
+# and run this notebook intentionally; every declared receipt and authority hash
+# is checked before a result is displayed.

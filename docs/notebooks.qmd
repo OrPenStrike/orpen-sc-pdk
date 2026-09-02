@@ -27,7 +27,8 @@ The analysis-only showcase follows the public OrPen material, LayerStack, and
 component semantics through SCGSim SGB identities, sealed receipts, strict
 Resolve, failed-run inspection, and trust-first Reports. Its checked-in outputs
 render without raw run artifacts or solver execution; manual re-analysis fails
-closed unless the exact sealed public runs are supplied.
+closed unless the exact sealed artifacts are obtained from their custodian and
+placed under the expected local run IDs.
 
 #### RF-grounded electrostatic evidence
 
