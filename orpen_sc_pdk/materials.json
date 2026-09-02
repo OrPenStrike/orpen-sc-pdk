@@ -120,6 +120,30 @@
       "thickness": 0.002,
       "material_name": "Woods2019_Si_MA_effective",
       "source": "Woods et al. 2019 CPW silicon MA fitted-loss candidate"
+    },
+    "LiteratureCentral_MA": {
+      "interface_type": "MA",
+      "thickness": 0.002,
+      "permittivity": 10.0,
+      "loss_tangent": 0.0033,
+      "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950",
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [10.0]; conditional central loss_tangent input: [0.0033]. epsilon_r uses the ordinary median and loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. Existing 0.002 um source-preset thickness is preserved."
+    },
+    "LiteratureCentral_MS": {
+      "interface_type": "MS",
+      "thickness": 0.002,
+      "permittivity": 11.4,
+      "loss_tangent": 0.0004698936049788292,
+      "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950",
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r input: [11.4]; conditional central loss_tangent inputs: [0.00048, 0.00046]. epsilon_r uses the ordinary median and loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. Existing 0.002 um source-preset thickness is preserved."
+    },
+    "LiteratureCentral_SA": {
+      "interface_type": "SA",
+      "thickness": 0.002,
+      "permittivity": 6.635,
+      "loss_tangent": 0.0017,
+      "source": "Synthetic literature-central model from public conditional-extraction and model-input rows; Woods et al. 2019, doi:10.1103/PhysRevApplied.12.014012; Melville et al. 2020, doi:10.1063/5.0021950; OrPen sapphire_EFG public model input",
+      "description": "Synthetic modeling preset, not a measured material property. epsilon_r inputs: [4.0, 9.27]; conditional central loss_tangent input: [0.0017]. epsilon_r uses the ordinary median and loss_tangent uses the log-space median. Assumed-typical and censored upper-bound rows are excluded. Existing 0.002 um source-preset thickness is preserved."
     }
   }
 }

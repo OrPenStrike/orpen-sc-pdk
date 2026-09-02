@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from importlib import import_module
+from math import log10
+from statistics import median
 
 import pytest
 
@@ -98,3 +100,23 @@ def test_interface_preset_records_validate_solver_neutral_schema() -> None:
         "material_name": "AlOx_native_generic",
         "source": "public example only",
     }
+
+
+def test_literature_central_interface_presets_follow_accepted_selection_rule() -> None:
+    records = validate_interface_preset_records()
+    expected_inputs = {
+        "MA": {"permittivity": (10.0,), "loss_tangent": (0.0033,)},
+        "MS": {"permittivity": (11.4,), "loss_tangent": (0.00048, 0.00046)},
+        "SA": {"permittivity": (4.0, 9.27), "loss_tangent": (0.0017,)},
+    }
+
+    for interface_type, inputs in expected_inputs.items():
+        record = records[f"LiteratureCentral_{interface_type}"]
+        expected_loss_tangent = 10 ** median([log10(value) for value in inputs["loss_tangent"]])
+
+        assert record["interface_type"] == interface_type
+        assert record["thickness"] == pytest.approx(0.002)
+        assert record["permittivity"] == pytest.approx(median(inputs["permittivity"]))
+        assert record["loss_tangent"] == pytest.approx(expected_loss_tangent)
+        assert "Synthetic modeling preset" in record["description"]
+        assert "not a measured material property" in record["description"]
