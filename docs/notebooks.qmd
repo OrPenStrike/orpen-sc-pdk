@@ -21,14 +21,6 @@ Palace, AEDT, single-run, or sweep notebooks without duplicating runtime logic.
 - [Palace Route A Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb)
 - [Palace Route B Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb)
 - [Electrostatic boundary alignment](notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb)
-- [GSim public engineering showcase](notebooks/ComponentSimulation/Kosen2024_Xmon/kosen2024_gsim_public_showcase.ipynb)
-
-The analysis-only showcase follows the public OrPen material, LayerStack, and
-component semantics through SCGSim SGB identities, sealed receipts, strict
-Resolve, failed-run inspection, and trust-first Reports. Its checked-in outputs
-render without raw run artifacts or solver execution; manual re-analysis fails
-closed unless the exact sealed artifacts are obtained from their custodian and
-placed under the expected local run IDs.
 
 #### RF-grounded electrostatic evidence
 

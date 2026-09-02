@@ -4,9 +4,10 @@ This folder contains public Jupyter notebooks for `orpen-sc-pdk`.
 
 ## Contributors
 
-The source for notebooks is the `src/` folder, which contains Jupytext
-`py:percent` files. Keep notebook scripts out of the import scope of the Python
-package.
+Notebook authorities live under `src/`, outside the Python package import
+scope. The six Kosen2024 Xmon authorities are Quarto QMD files; their matching
+IPYNBs are derived publication artifacts. Notebook families not yet migrated
+retain their existing Jupytext `py:percent` authority.
 
 Simulation notebooks are organized by simulation scope, then by the public
 thing being simulated:
@@ -32,11 +33,17 @@ Future `ChipSimulation`, `CrossSectionSimulation`, and `CircuitSimulation`
 folders use the same pattern. Solver/backend identity belongs in notebook
 filenames, not in a top-level `AEDTSimulation` or SGB tutorial folder.
 
-Convert one source file with:
+Regenerate all QMD-backed publication notebooks after editing their sources:
 
 ```bash
-uvx jupytext --to ipynb notebooks/src/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.py
+just convert-notebooks
 ```
+
+Generation is explicit and produces clean IPYNBs. `just check-notebooks`
+instead renders every QMD to a temporary notebook and compares Markdown, code,
+order, metadata, and stable cell identities without executing or overwriting
+the tracked IPYNBs. Pages uses the check-only path, so saved publication
+outputs may exist only in the derived IPYNB.
 
 Build the Quarto documentation and notebook pages with:
 

@@ -1,30 +1,27 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.19.3
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
+---
+title: Public OrPen Xmon — Q3D Electrostatic Boundary Alignment
+jupyter:
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
 
-# %% [markdown]
-# # Public OrPen Xmon — Q3D Electrostatic Boundary Alignment
-#
-# Two fresh capacitance-only Q3D runs compare the same physical coupon inside
-# an open/infinite Region and a finite grounded Region enclosure. The Xmon pad
-# is the sole Signal; all physical grounds, couplers, and bumps share one Ground
-# net. The comparison records evidence only and defines no solver-agreement gate.
 
-# %% [markdown]
-# ## Setup and Imports
+Two fresh capacitance-only Q3D runs compare the same physical coupon inside
+an open/infinite Region and a finite grounded Region enclosure. The Xmon pad
+is the sole Signal; all physical grounds, couplers, and bumps share one Ground
+net. The comparison records evidence only and defines no solver-agreement gate.
 
-# %%
+
+## Setup and Imports
+
+```{python}
+#| id: 853592bd
 from __future__ import annotations
 
 import importlib.metadata
@@ -49,11 +46,12 @@ from scgsim.sgb import build_component_stack
 import orpen_sc_pdk
 from orpen_sc_pdk import LAYER_STACK, get_material_records
 from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
+```
 
-# %% [markdown]
-# ## Setup and Run Controls
+## Setup and Run Controls
 
-# %%
+```{python}
+#| id: cd8ed19b
 WORKFLOW_ACTION = "analyze_handoff"  # prepare_handoff | run | analyze_handoff
 OUTPUT_ROOT = Path.cwd() / ".artifacts"
 SOURCE_GDS = OUTPUT_ROOT / "q3d_geometry" / "kosen2024_xmon_boundary_alignment.gds"
@@ -92,11 +90,12 @@ SOLVE_AC_RL = False
 
 if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
     raise ValueError("WORKFLOW_ACTION must be prepare_handoff, run, or analyze_handoff.")
+```
 
-# %% [markdown]
-# ## Create Simulation Component / Coupon
+## Create Simulation Component / Coupon
 
-# %%
+```{python}
+#| id: d8f493de
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     orpen_sc_pdk.activate()
     gf.clear_cache()
@@ -115,11 +114,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         coupon_padding_um=coupon.stack_coupon_padding_um,
     )
     display(component)
+```
 
-# %% [markdown]
-# ## Initialize AEDT Project / App
+## Initialize AEDT Project / App
 
-# %%
+```{python}
+#| id: 58dce070
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     display(
         {
@@ -128,15 +128,16 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             "scgsim_version": importlib.metadata.version("scgsim"),
         }
     )
+```
 
-# %% [markdown]
-# ## Import GDS and Build the HFSS/Q3D/Q2D Model
-#
-# Q3D imports positive GDS layers. The PDK remains authoritative: this phase
-# evaluates its typed face-metal construction and emits one exact shared coupon
-# for both Region-boundary cases.
+## Import GDS and Build the HFSS/Q3D/Q2D Model
 
-# %%
+Q3D imports positive GDS layers. The PDK remains authoritative: this phase
+evaluates its typed face-metal construction and emits one exact shared coupon
+for both Region-boundary cases.
+
+```{python}
+#| id: 53e1ba60
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     flat = component.copy()
     flat.flatten()
@@ -232,11 +233,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         )
     SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
     q3d_geometry.write_gds(SOURCE_GDS, with_metadata=False)
+```
 
-# %% [markdown]
-# ## Geometry Verification
+## Geometry Verification
 
-# %%
+```{python}
+#| id: e56003b2
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     roundtrip = gf.kdb.Layout()
     roundtrip.read(str(SOURCE_GDS))
@@ -250,11 +252,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     ):
         raise ValueError("Each Q3D import layer must round-trip as exactly one object.")
     display(q3d_geometry)
+```
 
-# %% [markdown]
-# ## Materials and Boundaries
+## Materials and Boundaries
 
-# %%
+```{python}
+#| id: ced5a553
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     material_records = get_material_records()
     materials = {
@@ -266,11 +269,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         )
         for material_id in ("vacuum", "Si", "Al")
     }
+```
 
-# %% [markdown]
-# ## Ports / Nets / Excitations
+## Ports / Nets / Excitations
 
-# %%
+```{python}
+#| id: e144d753
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     nets = (
         Q3dNetSpec(
@@ -284,22 +288,24 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         ),
         Q3dNetSpec("ground", "Ground", ground_objects),
     )
+```
 
-# %% [markdown]
-# ## Simulation Setup
+## Simulation Setup
 
-# %%
+```{python}
+#| id: b0d3dab3
 run_control = MatrixRunControl(
     setup_name=SETUP_NAME,
     frequency_ghz=EXTRACTION_FREQUENCY_GHZ,
     maximum_passes=MAXIMUM_PASSES,
     convergence_percent=CONVERGENCE_PERCENT,
 )
+```
 
-# %% [markdown]
-# ## Simulation Configuration
+## Simulation Configuration
 
-# %%
+```{python}
+#| id: 32693d8e
 SPECS = {}
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     for case in BOUNDARY_RUNS:
@@ -318,11 +324,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             grounded_region_net=case["grounded_region_net"],
             aedt_version=AEDT_VERSION,
         )
+```
 
-# %% [markdown]
-# ## Solve and Export
+## Solve and Export
 
-# %%
+```{python}
+#| id: 4515b9ca
 HANDOFFS = {}
 RUN_RETURN_CODES = {}
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
@@ -334,11 +341,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         if WORKFLOW_ACTION == "run":
             completed = subprocess.run([str(handoff.script_path)], cwd=handoff.run_dir, check=False)
             RUN_RETURN_CODES[label] = completed.returncode
+```
 
-# %% [markdown]
-# ## Adaptive-Pass Convergence / Solver Diagnostics
+## Adaptive-Pass Convergence / Solver Diagnostics
 
-# %%
+```{python}
+#| id: 8222a301
 RESULTS = {}
 if WORKFLOW_ACTION in {"run", "analyze_handoff"}:
     for case in BOUNDARY_RUNS:
@@ -346,28 +354,30 @@ if WORKFLOW_ACTION in {"run", "analyze_handoff"}:
         result = resolve_results(RETURNED_RUN_DIRS[label])
         RESULTS[label] = result
         display(result.convergence)
+```
 
-# %% [markdown]
-# ## Results: Plots and Readable Tables
+## Results: Plots and Readable Tables
 
-# %% [markdown]
-# ### Physics Analysis Results
+### Physics Analysis Results
 
-# %%
+```{python}
+#| id: 8556ddff
 for label, result in RESULTS.items():
     display({"boundary_case": label, "rows": result.physics_results()})
+```
 
-# %% [markdown]
-# ### Simulation Performance / Benchmarks
+### Simulation Performance / Benchmarks
 
-# %%
+```{python}
+#| id: '84e59554'
 for label, result in RESULTS.items():
     display({"boundary_case": label, **result.simulation_benchmark()})
+```
 
-# %% [markdown]
-# ## Save and Release AEDT
+## Save and Release AEDT
 
-# %%
+```{python}
+#| id: 930cb1de
 # The SCGSim runner saves the exact project and releases only its owned AEDT session.
 for case in BOUNDARY_RUNS:
     label = case["label"]
@@ -375,3 +385,4 @@ for case in BOUNDARY_RUNS:
         display(RESULTS[label].project_path)
     elif label in HANDOFFS:
         display(HANDOFFS[label].archive_path)
+```

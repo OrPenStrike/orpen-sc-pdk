@@ -1,23 +1,25 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.19.3
-# ---
+---
+title: Public OrPen Xmon — Route B Electrostatic Boundary Alignment
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
 
-# %% [markdown]
-# # Public OrPen Xmon — Route B Electrostatic Boundary Alignment
-#
-# Two fresh finite-thickness Palace runs compare the same expanded vacuum
-# envelope with natural zero-charge exterior faces and with all six exterior
-# faces grounded. The Xmon pad is the sole Terminal. The physical ground net
-# is explicit in both cases; no solver-agreement or equivalence gate is implied.
 
-# %%
+Two fresh finite-thickness Palace runs compare the same expanded vacuum
+envelope with natural zero-charge exterior faces and with all six exterior
+faces grounded. The Xmon pad is the sole Terminal. The physical ground net
+is explicit in both cases; no solver-agreement or equivalence gate is implied.
+
+
+```{python}
+#| id: 2c61b037
 import subprocess
 from pathlib import Path
 
@@ -27,7 +29,12 @@ from scgsim.sgb import build_component_stack
 from scgsim.visualization import inspect_palace_geometry
 
 import orpen_sc_pdk
-from orpen_sc_pdk import LAYER_STACK, get_material_records
+from orpen_sc_pdk import (
+    LAYER_STACK,
+    get_interface_preset_records,
+    get_material_records,
+    validate_interface_preset_records,
+)
 from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 
 # Execute both cases sequentially, prepare their handoffs, or inspect returned runs.
@@ -51,11 +58,12 @@ RETURNED_RUN_DIRS = dict(RUN_DIRS)
 EXPECTED_HANDOFF_IDS = {case["label"]: "" for case in BOUNDARY_RUNS}
 if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
     raise ValueError("WORKFLOW_ACTION must be prepare_handoff, run, or analyze_handoff.")
+```
 
-# %% [markdown]
-# ## Build Component Coupon
+## Build Component Coupon
 
-# %%
+```{python}
+#| id: 990f8ec4
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     COMPONENT_NAME = "kosen2024_flip_chip_xmon_qubit"
     COMPONENT_PARAMETERS = {
@@ -80,11 +88,18 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     component = coupon.component
     STACK_COUPON_PADDING_UM = coupon.stack_coupon_padding_um
     coupon.plot()
+```
 
-# %% [markdown]
-# ## Configure EPR / Problem
+## Configure EPR / Problem
 
-# %%
+The MA/MS/SA inputs use OrPen's synthetic literature-central presets; they are
+modeling inputs, not measured material properties. Each preset records the
+ordinary-median epsilon_r and thickness, the log-space-median loss tangent,
+the excluded assumed-typical and censored-upper-bound rows, and the 2 nm
+thickness modeling convention in its PDK provenance.
+
+```{python}
+#| id: 33e3b6d0
 SIMULATIONS = {}
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     ROUTE = "B"
@@ -94,13 +109,19 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         "fill_pitch_um": 80.0,
         "fill_clearance_um": 30.0,
     }
+    interface_preset_records = validate_interface_preset_records(get_interface_preset_records())
+    EPR_PRESET_NAMES = {
+        "MA": "LiteratureCentral_MA",
+        "MS": "LiteratureCentral_MS",
+        "SA": "LiteratureCentral_SA",
+    }
     EPR_SPECS = {
         kind: {
-            "thickness": 0.003,
-            "permittivity": 10.0,
-            "loss_tangent": 0.0,
+            "thickness": interface_preset_records[name]["thickness"],
+            "permittivity": interface_preset_records[name]["permittivity"],
+            "loss_tangent": interface_preset_records[name]["loss_tangent"],
         }
-        for kind in ("MA", "MS", "SA")
+        for kind, name in EPR_PRESET_NAMES.items()
     }
     TERMINAL_NAME = "xmon_pad"
     TERMINAL_NET_ID = "xmon_pad"
@@ -137,11 +158,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             exterior_boundary_policy=case["exterior_boundary_policy"],
         )
         SIMULATIONS[case["label"]] = sim
+```
 
-# %% [markdown]
-# ## Build Mesh
+## Build Mesh
 
-# %%
+```{python}
+#| id: 491ce8c3
 MESH_PATHS = {}
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     REFINED_MESH_SIZE_UM = 5.0
@@ -155,23 +177,24 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             max_mesh_size=MAX_MESH_SIZE_UM,
         )
         MESH_PATHS[label] = sim.mesh()
+```
 
-# %% [markdown]
-# ## Generate Config
+## Generate Config
 
-# %%
+```{python}
+#| id: 49db60fb
 CONFIG_PATHS = {}
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
-    FEM_ORDER = 1
+    FEM_ORDER = 2
     LINEAR_TOLERANCE = 1e-6
     MAX_ITERATIONS = 2000
     SOLVER_TYPE = "Default"
     PRECONDITIONER = "Default"
     DEVICE = "CPU"
-    AMR_MAX_PASSES = 10
+    AMR_MAX_PASSES = 20
     AMR_NONCONFORMAL = False
     AMR_TOLERANCE = 2e-2
-    AMR_UPDATE_FRACTION = 0.3
+    AMR_UPDATE_FRACTION = 0.15
     SAVE_ADAPT_ITERATIONS = True
     ESTIMATOR_MG = False
     OUTPUT_PARAVIEW = False
@@ -197,11 +220,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             output_grid_function=OUTPUT_GRID_FUNCTION,
         )
         CONFIG_PATHS[label] = sim.write_config()
+```
 
-# %% [markdown]
-# ## Prepare Handoff
+## Prepare Handoff
 
-# %%
+```{python}
+#| id: 355690cf
 HANDOFFS = {}
 RUN_RETURN_CODES = {}
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
@@ -226,11 +250,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         if WORKFLOW_ACTION == "run":
             completed = subprocess.run([str(handoff.script_path)], cwd=handoff.run_dir, check=False)
             RUN_RETURN_CODES[label] = completed.returncode
+```
 
-# %% [markdown]
-# ## Analyze Returned Run
+## Analyze Returned Run
 
-# %%
+```{python}
+#| id: f38571ca
 REPORTS = {}
 if WORKFLOW_ACTION in {"run", "analyze_handoff"}:
     for case in BOUNDARY_RUNS:
@@ -251,3 +276,4 @@ if WORKFLOW_ACTION == "analyze_handoff":
     for case in BOUNDARY_RUNS:
         preview = inspect_palace_geometry(RETURNED_RUN_DIRS[case["label"]])
         preview.explore("boundaries")
+```

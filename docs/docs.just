@@ -8,14 +8,19 @@ notebook_source := "notebooks/src"
 write-justfile-help:
     @just --list > {{docs_source}}/justfile_help.txt
 
-# Convert Jupytext notebook sources to ipynb artifacts for local inspection.
+# Generate derived publication notebooks from canonical QMD sources.
 [group('docs')]
 convert-notebooks:
-    @bash .github/convert-notebooks.sh {{notebook_source}} notebooks
+    @bash .github/convert-notebooks.sh {{notebook_source}} notebooks --generate
+
+# Verify derived notebook inputs without executing or overwriting saved outputs.
+[group('docs')]
+check-notebooks:
+    @bash .github/convert-notebooks.sh {{notebook_source}} notebooks --check
 
 # Prepare generated documentation inputs.
 [group('docs')]
-docs-prerequisites: write-justfile-help convert-notebooks
+docs-prerequisites: write-justfile-help check-notebooks
 
 # Build HTML documentation.
 [group('docs')]
