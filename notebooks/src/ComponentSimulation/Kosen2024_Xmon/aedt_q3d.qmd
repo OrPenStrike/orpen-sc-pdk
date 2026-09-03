@@ -17,6 +17,13 @@ an open/infinite Region and a finite grounded Region enclosure. The Xmon pad
 is the sole Signal; all physical grounds, couplers, and bumps share one Ground
 net. The comparison records evidence only and defines no solver-agreement gate.
 
+The sealed 20260829 runs analyzed by default are immutable historical evidence:
+their eight `QGB` objects were bound to the superconducting `Al` record instead
+of the PDK-authored `In` record. SCGSim lowered both records to native Q3D PEC,
+so their ideal-conductor boundary behavior is retained, but their bump material
+identity and provenance are not canonical. Newly prepared runs derive the QGB
+material identity from `D0_D1_INDIUM_BUMP`; no historical receipt is relabeled.
+
 
 ## Setup and Imports
 
@@ -146,6 +153,7 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     d0_ground_record = layer_records["D0_TOP_GROUND_PLANE"]
     d1_ground_record = layer_records["D1_BOTTOM_GROUND_PLANE"]
     bump_record = layer_records["D0_D1_INDIUM_BUMP"]
+    bump_material_id = str(bump_record["material_id"])
 
     bounds = stack["solution_regions"]["D1_SUBSTRATE"]["geometry"]["domain_bounds_um"]
     domain_box = gf.kdb.Box(
@@ -210,7 +218,9 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     ground_objects = (
         *add_import_region("QGD1", d1_ground_region, d1_z, d1_top, "ground", "Al"),
         *add_import_region("QGD0", d0_ground_region, d0_z, d0_top, "ground", "Al"),
-        *add_import_region("QGB", bump_region, bump_z, bump_top, "ground", "Al"),
+        *add_import_region(
+            "QGB", bump_region, bump_z, bump_top, "ground", bump_material_id
+        ),
     )
     for semantic_id, prefix in (("D0_SUBSTRATE", "QSD0"), ("D1_SUBSTRATE", "QSD1")):
         geometry = stack["solution_regions"][semantic_id]["geometry"]
@@ -260,6 +270,7 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 #| id: ced5a553
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     material_records = get_material_records()
+    material_ids = tuple(dict.fromkeys(("vacuum", "Si", "Al", bump_material_id)))
     materials = {
         material_id: PdkMaterial(
             material_id,
@@ -267,7 +278,7 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
             material_records[material_id]["is_superconducting"],
             material_records[material_id]["aedt_library_name"],
         )
-        for material_id in ("vacuum", "Si", "Al")
+        for material_id in material_ids
     }
 ```
 
