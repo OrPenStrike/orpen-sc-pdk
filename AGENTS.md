@@ -17,6 +17,7 @@ SCGSim owns reusable solver/runtime/result behavior.
 ## Routing
 
 Load `$scq-collaboration-roles`, `$v1-lifecycle`, and
-`$scq-gdsfactory-layout`. Use the registry-selected `layout-shared-develop`
-profile. The canonical Skills own the full collaboration and Git policy; do
+`$scq-gdsfactory-layout`. Resolve the current `develop-main` profile through
+the registry. Package usage starts at `docs/usage/index.md`.
+The canonical Skills own the full collaboration and Git policy; do
 not duplicate it here.

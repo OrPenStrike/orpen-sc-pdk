@@ -5,6 +5,7 @@ alwaysApply: true
 # OrPen SC PDK
 
 Read `AGENTS.md` first. This public repository is owned by the registered OrPen
-SC PDK Repo Lead and uses the canonical Skills and `layout-shared-develop`
-profile named there. Keep private design data out and keep SCGSim as the sole
+SC PDK Repo Lead and resolves the current `develop-main` profile through the
+canonical registry referenced there. Package usage starts at `docs/usage/index.md`.
+Keep private design data out and keep SCGSim as the sole
 reusable solver/runtime/result authority.

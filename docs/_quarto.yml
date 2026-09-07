@@ -8,6 +8,7 @@ project:
     - "features/gdsfactoryplus-discovery.md"
     - "features/scgsim-integration.md"
     - "public-pdk-examples/*.md"
+    - "usage/*.md"
     - "papers/*.md"
     - "notebooks/Public_Docs/component_gallery.ipynb"
     - "notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb"
