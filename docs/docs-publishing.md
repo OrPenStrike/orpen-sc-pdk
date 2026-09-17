@@ -12,7 +12,9 @@ locally and published through GitHub Pages for `OrPenStrike/orpen-sc-pdk`.
 The docs stack follows a static public PDK publication pattern:
 
 - Quarto for the searchable documentation site and notebook pages.
-- Jupytext `py:percent` notebooks stored in `notebooks/src/`.
+- Canonical Quarto QMD notebooks for the migrated Kosen2024 family, stored
+  recursively in `notebooks/src/`.
+- Derived IPYNB publication artifacts stored at matching paths under `notebooks/`.
 - `docs/docs.just` for docs helper commands.
 - GitHub Actions for pull request validation and Pages deployment.
 
@@ -28,8 +30,12 @@ uv sync -p 3.12 --group docs --extra dev
 just docs
 ```
 
-`just docs` builds the static site into `docs/_site`. `just serve-docs` starts
-the Quarto preview server for local editing.
+`just docs` first verifies that every derived IPYNB has the same Markdown,
+code, order, metadata, and stable cell identities as its canonical QMD, then
+builds the static site into `docs/_site`. It never executes notebooks or
+overwrites saved outputs. Run `just convert-notebooks` explicitly after editing
+a QMD to regenerate its clean derived publication artifact. `just serve-docs`
+starts the Quarto preview server for local editing.
 
 The generated Just command reference is included below when the docs are built:
 
@@ -47,6 +53,7 @@ The GitHub Pages workflow should:
 - upload the static site artifact for review;
 - deploy Pages only from `main`;
 - preserve notebook code and saved output in static HTML;
+- verify QMD/IPYNB input parity without executing or rewriting notebooks;
 - copy the browser-only layout viewer and its public SVG resources.
 
 Pull requests validate that architecture pages, notebook pages, and API pages

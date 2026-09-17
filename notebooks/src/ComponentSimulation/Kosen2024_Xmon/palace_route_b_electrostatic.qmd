@@ -1,19 +1,22 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.19.3
-# ---
+---
+title: Public OrPen Xmon — Route B Electrostatic
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
 
-# %% [markdown]
-# # Public OrPen Xmon — Route A Electrostatic
-# This public workflow prepares a Palace manual handoff. It does not submit or run Palace.
 
-# %%
+This public workflow prepares a Palace manual handoff. It does not submit or run Palace.
+
+
+```{python}
+#| id: 2c61b037
 from pathlib import Path
 
 import gdsfactory as gf
@@ -22,39 +25,40 @@ from scgsim.sgb import build_component_stack
 from scgsim.visualization import inspect_palace_geometry
 
 import orpen_sc_pdk
-from orpen_sc_pdk import LAYER_STACK, get_material_records
+from orpen_sc_pdk import (
+    LAYER_STACK,
+    get_interface_preset_records,
+    get_material_records,
+    validate_interface_preset_records,
+)
 from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 from orpen_sc_pdk.tech import OUTER_VACUUM_THICKNESS_UM
 
 # Choose prepare_handoff to prepare a manual run or analyze_handoff to inspect returned results.
-WORKFLOW_ACTION = "prepare_handoff"
+WORKFLOW_ACTION = "analyze_handoff"
 # Use a unique ID for each new prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "kosen2024_xmon_route_a_es_l309p5_w24p65_g20_rfground_vac0_20260829_02"
+RUN_ID = "kosen2024_xmon_route_b_es_l309p5_w24p65_g20_litcentral_fem2_20260903_04"
 RUN_ROOT = Path.cwd() / ".artifacts" / RUN_ID  # Root for this run's artifacts.
 # Exact ID returned by Prepare Handoff; paste it here before analyzing a returned run.
-EXPECTED_HANDOFF_ID = ""
+EXPECTED_HANDOFF_ID = "c6581f995c7585449ebe04d98f484b2f5b24f9f0ed3e3a58d89f81ffa19c078c"
 if WORKFLOW_ACTION not in {"prepare_handoff", "analyze_handoff"}:
     raise ValueError("WORKFLOW_ACTION must be 'prepare_handoff' or 'analyze_handoff'.")
+```
 
-# %% [markdown]
-# ## Build Component Coupon
+## Build Component Coupon
 
-# %%
+```{python}
+#| id: 990f8ec4
 if WORKFLOW_ACTION == "prepare_handoff":
-    # PDK-registered layout cell whose geometry and semantic annotation are simulated.
     COMPONENT_NAME = "kosen2024_flip_chip_xmon_qubit"
     COMPONENT_PARAMETERS = {
-        # Isolated coupon uses corner-anchored shorts, not the cell bump ring.
         "bump_ring_count_per_side": 0,
         "qubit_pad_length": 309.5,
         "qubit_pad_width": 24.65,
         "qubit_gap": 20.0,
     }
-    # Requested XY pad; the helper grows it when indium bumps would not fit.
     COUPON_PADDING_UM = 75.0
-    # Keep indium shorts this far from the pocket keepout and coupon edge.
     GROUND_SHORT_CLEARANCE_UM = 30.0
-    # Coupon GDS placement: "corner_anchors" or dense "full_field". Not SCGSim fill.
     INDIUM_PLACEMENT_MODE = "corner_anchors"
 
     orpen_sc_pdk.activate()
@@ -67,47 +71,36 @@ if WORKFLOW_ACTION == "prepare_handoff":
         placement_mode=INDIUM_PLACEMENT_MODE,
     )
     component = coupon.component
-    # Residual SGB pad so the coupon still covers device bbox + actual padding.
     STACK_COUPON_PADDING_UM = coupon.stack_coupon_padding_um
     coupon.plot()
+```
 
-# %% [markdown]
-# ## Configure EPR / Problem
+## Configure EPR / Problem
 
-# %%
+The MA/MS/SA inputs use OrPen's synthetic literature-central presets; they are
+modeling inputs, not measured process data or material properties. Each preset
+records the
+ordinary-median epsilon_r and thickness, the log-space-median loss tangent,
+the excluded assumed-typical and censored-upper-bound rows, and the 2 nm
+thickness modeling convention in its PDK provenance.
+
+```{python}
+#| id: 33e3b6d0
 if WORKFLOW_ACTION == "prepare_handoff":
-    # Route A models zero-thickness PEC sheets; Route B models finite PEC exclusion shells.
-    ROUTE = "A"
-    # A maps the thin sheets to the physical 8.0 um metal gap.
-    ROUTE_A_THIN_FILM = "metal_gap_equivalent"
+    ROUTE = "B"
     # Add symmetric X/Y/Z padding to the automatic vacuum envelope; only Z is expanded here.
     VACUUM_PADDING_UM = (0.0, 0.0, float(OUTER_VACUUM_THICKNESS_UM))
     INDIUM_GROUND_FILL = {
-        # Coupon GDS already has indium shorts; SCGSim must not lattice-fill.
         "fill": False,
-        # Required by the SCGSim fill API even when fill is disabled.
         "fill_pitch_um": 80.0,
         "fill_clearance_um": 30.0,
-    }
-    EPR_SPECS = {
-        kind: {
-            # Effective interface thickness used in Palace surface-energy postprocessing (um).
-            "thickness": 0.003,
-            # Relative permittivity used to convert interface fields into stored energy.
-            "permittivity": 10.0,
-            # Multiplies participation to estimate dielectric loss; zero disables that loss.
-            "loss_tangent": 0.0,
-        }
-        for kind in ("MA", "MS", "SA")
     }
     # The Xmon pad is the sole driven terminal. Couplers, both ground planes,
     # and the corner-authored bumps form one RF-grounded conductor group.
     TERMINALS = {
         "xmon_pad": "xmon_pad",  # Report name -> exact structured conductor net.
     }
-    # Number of terminal field solutions saved for ParaView/GridFunction; 0 saves none.
     SAVE_FIELDS = 0
-    # Every structured conductor not listed as a terminal shares Palace Ground.
     UNASSIGNED_CONDUCTOR_POLICY = "ground"
     # Leave exterior solution boundaries at Palace's natural zero-charge condition.
     EXTERIOR_BOUNDARY_POLICY = "none"
@@ -124,11 +117,36 @@ if WORKFLOW_ACTION == "prepare_handoff":
     sim.set_output_dir(RUN_ROOT)
     sim.set_vacuum_region(padding=VACUUM_PADDING_UM)
     sim.set_indium_ground_bumps(**INDIUM_GROUND_FILL)
-    sim.set_surface_epr(
-        representation=ROUTE,
-        specs=EPR_SPECS,
-        route_a_thin_film=ROUTE_A_THIN_FILM,
-    )
+    # Select complete validated OrPen records immediately before Surface-EPR setup so
+    # their public source/description provenance remains visible beside the numeric specs.
+    records = validate_interface_preset_records(get_interface_preset_records())
+    EPR_PRESET_NAMES = {
+        "MA": "LiteratureCentral_MA",
+        "MS": "LiteratureCentral_MS",
+        "SA": "LiteratureCentral_SA",
+    }
+    missing_preset_names = sorted(set(EPR_PRESET_NAMES.values()) - records.keys())
+    if missing_preset_names:
+        raise KeyError(f"Missing required OrPen interface presets: {missing_preset_names}")
+    selected_interface_presets = {
+        interface_type: records[preset_name]
+        for interface_type, preset_name in EPR_PRESET_NAMES.items()
+    }
+    for interface_type, preset in selected_interface_presets.items():
+        if preset["interface_type"] != interface_type:
+            raise ValueError(
+                f"OrPen preset {EPR_PRESET_NAMES[interface_type]!r} has interface_type "
+                f"{preset['interface_type']!r}; expected {interface_type!r}."
+            )
+    EPR_SPECS = {
+        interface_type: {
+            "thickness": preset["thickness"],
+            "permittivity": preset["permittivity"],
+            "loss_tangent": preset["loss_tangent"],
+        }
+        for interface_type, preset in selected_interface_presets.items()
+    }
+    sim.set_surface_epr(representation=ROUTE, specs=EPR_SPECS)
     for terminal_name, net_id in TERMINALS.items():
         sim.add_terminal(terminal_name, net_id=net_id)
     sim.set_electrostatic(
@@ -136,53 +154,41 @@ if WORKFLOW_ACTION == "prepare_handoff":
         unassigned_conductor_policy=UNASSIGNED_CONDUCTOR_POLICY,
         exterior_boundary_policy=EXTERIOR_BOUNDARY_POLICY,
     )
+```
 
-# %% [markdown]
-# ## Build Mesh
+## Build Mesh
 
-# %%
+```{python}
+#| id: 491ce8c3
 if WORKFLOW_ACTION == "prepare_handoff":
-    # Target element size near SGB semantic refinement regions.
-    # Smaller elements resolve interfaces more finely.
     REFINED_MESH_SIZE_UM = 5.0
-    # Upper element size in bulk solution volumes; smaller increases the global tetrahedron count.
     MAX_MESH_SIZE_UM = 300.0
 
-    sim.set_mesh(refined_mesh_size=REFINED_MESH_SIZE_UM, max_mesh_size=MAX_MESH_SIZE_UM)
+    sim.set_mesh(
+        refined_mesh_size=REFINED_MESH_SIZE_UM,
+        max_mesh_size=MAX_MESH_SIZE_UM,
+    )
     MESH_PATH = sim.mesh()
+```
 
-# %% [markdown]
-# ## Generate Config
+## Generate Config
 
-# %%
+```{python}
+#| id: 49db60fb
 if WORKFLOW_ACTION == "prepare_handoff":
-    # Polynomial degree of Palace's finite-element basis; higher order costs more memory and work.
-    FEM_ORDER = 1
-    # Relative residual tolerance for each terminal's linear solve.
+    FEM_ORDER = 2
     LINEAR_TOLERANCE = 1e-6
-    # Maximum iterations allowed for each terminal's linear solve.
     MAX_ITERATIONS = 2000
-    # Palace linear-solver selection; "Default" delegates the backend choice to Palace.
     SOLVER_TYPE = "Default"
-    # Optional non-default preconditioner; "Default" keeps Palace's solver-dependent choice.
     PRECONDITIONER = "Default"
-    # MFEM execution backend requested by Palace.
     DEVICE = "CPU"
-    # Maximum adaptive-refinement iterations after the initial solve; 0 disables AMR.
-    AMR_MAX_PASSES = 10
-    # Palace Nonconformal AMR; SCGSim defaults false. Set True only to opt into NC AMR.
+    AMR_MAX_PASSES = 20
     AMR_NONCONFORMAL = False
-    # Stop AMR when the estimated-error norm falls below this value.
     AMR_TOLERANCE = 2e-2
-    # Dörfler error fraction marked per AMR pass; None keeps the Palace default.
-    AMR_UPDATE_FRACTION = 0.3
-    # Save each intermediate AMR solve under iterationX; None keeps the Palace default.
+    AMR_UPDATE_FRACTION = 0.15
     SAVE_ADAPT_ITERATIONS = True
-    # Use multigrid instead of Jacobi for the error-estimator solve; None keeps the default.
     ESTIMATOR_MG = False
-    # Write field data in ParaView format; disabled here to reduce returned-run size.
     OUTPUT_PARAVIEW = False
-    # Write MFEM grid-function files for GLVis; disabled here to reduce returned-run size.
     OUTPUT_GRID_FUNCTION = False
 
     sim.set_numerical(
@@ -202,22 +208,20 @@ if WORKFLOW_ACTION == "prepare_handoff":
         output_grid_function=OUTPUT_GRID_FUNCTION,
     )
     CONFIG_PATH = sim.write_config()
+```
 
-# %% [markdown]
-# ## Prepare Handoff
+## Prepare Handoff
 
-# %%
+```{python}
+#| id: 355690cf
 if WORKFLOW_ACTION == "prepare_handoff":
-    # Execute directly on the LTLab host while retaining SCGSim's handoff/receipt contract.
     MACHINE_PROFILE = "direct-local"
-    # Palace MPI wrapper invoked after the setup commands complete.
     PALACE_EXECUTABLE = "palace"
-    # Commands executed inside the batch job before Palace starts.
     SETUP_COMMANDS = ("module load palace",)
     RESOURCES = {
-        "processes": 32,  # Use each physical CPU core as one MPI slot.
-        "threads": 2,  # Use both hardware threads per core.
-        "command_style": "wrapper",  # Let Palace's wrapper launch the MPI ranks.
+        "processes": 32,
+        "threads": 2,
+        "command_style": "wrapper",
     }
 
     HANDOFF = sim.prepare_handoff(
@@ -226,11 +230,12 @@ if WORKFLOW_ACTION == "prepare_handoff":
         resources=RESOURCES,
         setup_commands=SETUP_COMMANDS,
     )
+```
 
-# %% [markdown]
-# ## Analyze Returned Run
+## Analyze Returned Run
 
-# %%
+```{python}
+#| id: f38571ca
 # Returned handoff root whose receipt and handoff identity SCGSim must verify.
 RETURNED_RUN_DIR = RUN_ROOT
 if WORKFLOW_ACTION == "analyze_handoff":
@@ -241,3 +246,4 @@ if WORKFLOW_ACTION == "analyze_handoff":
     report.show_all_results()
     preview = inspect_palace_geometry(RETURNED_RUN_DIR)
     preview.explore(PREVIEW_MODE)
+```

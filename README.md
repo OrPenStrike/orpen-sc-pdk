@@ -47,18 +47,13 @@ this repo.
 | `launcher` | `indium_ground` |
 | <img src="docs/_static/images/components/launcher.svg" alt="Launcher" width="260"> | <img src="docs/_static/images/components/indium_ground.svg" alt="Indium ground field" width="260"> |
 
-### Public Layout Demo
+### External Reference Boundary
 
 [QPDK](https://github.com/gdsfactory/quantum-rf-pdk) is an external
 reference and public example source only. It is neither the OrPen PDK/component
 authority nor the SCGSim production/runtime authority, and it is not a
 production fallback. OrPen SC PDK keeps private qubit IP out of this public
-repository; the remaining demo uses public resonator geometry.
-
-| Global Purcell Filter Demo Chip |
-| :---: |
-| `global_purcell_filter_demo_chip` |
-| <img src="docs/_static/images/components/global_purcell_filter_demo_chip.svg" alt="Global Purcell Filter Demo Chip" width="320"> |
+repository.
 
 ## Quick Start
 

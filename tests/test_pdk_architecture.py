@@ -56,9 +56,6 @@ def test_pdk_registry_contains_public_cells() -> None:
 def test_public_chip_demos_live_in_one_module_per_chip() -> None:
     chips = import_module("orpen_sc_pdk.cells.chips")
     chip_modules = {
-        "global_purcell_filter_demo_chip": (
-            "orpen_sc_pdk.cells.chips.global_purcell_filter_demo_chip"
-        ),
         "resonator_with_indium_bumps": ("orpen_sc_pdk.cells.chips.resonator_with_indium_bumps"),
         "small_airbridge_chip": "orpen_sc_pdk.cells.chips.small_airbridge_chip",
     }
@@ -160,7 +157,6 @@ def test_public_samples_hold_demo_cells_after_registry_cleanup() -> None:
     samples = package.get_sample_functions()
 
     assert set(samples) == {
-        "orpen_sc_pdk.samples.simulation_demos.global_purcell_filter_demo_chip",
         "orpen_sc_pdk.samples.simulation_demos.resonator_with_indium_bumps",
         "orpen_sc_pdk.samples.simulation_demos.small_airbridge_chip",
     }

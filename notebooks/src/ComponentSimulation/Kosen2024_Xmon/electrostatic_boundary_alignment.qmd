@@ -1,35 +1,28 @@
-# ---
-# execute:
-#   enabled: false
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.19.3
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# simulation_notebook:
-#   artifact_access: read-only
-#   kind: analysis-only
-# ---
+---
+title: Kosen2024 Xmon — Electrostatic Boundary Alignment Evidence
+jupyter:
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+  simulation_notebook:
+    artifact_access: read-only
+    kind: analysis-only
+execute:
+  enabled: false
+---
 
-# %% [markdown]
-# # Kosen2024 Xmon — Electrostatic Boundary Alignment Evidence
-#
-# This analysis-only notebook reads four sealed public runs. It compares the
-# ground-referenced Xmon-pad capacitance for two exterior-boundary choices in
-# Palace Route B and Q3D. Differences are evidence only; no cross-solver
-# agreement threshold or equivalence claim is defined here.
 
-# %% [markdown]
-# ## Public Run Controls
+This analysis-only notebook reads four sealed public runs. It compares the
+ground-referenced Xmon-pad capacitance for two exterior-boundary choices in
+Palace Route B and Q3D. Differences are evidence only; no cross-solver
+agreement threshold or equivalence claim is defined here.
 
-# %%
+
+## Public Run Controls
+
+```{python}
+#| id: 93ca2cf6
 from __future__ import annotations
 
 import csv
@@ -72,11 +65,12 @@ RUNS = (
     },
 )
 FAILED_Q3D_ATTEMPT = "kosen2024_xmon_q3d_l309p5_w24p65_g20_vac250_grounded_cg_20260829_01"
+```
 
-# %% [markdown]
-# ## Resolve Sealed Runs
+## Resolve Sealed Runs
 
-# %%
+```{python}
+#| id: 61fa6ef4
 palace_reports = {
     case["boundary"]: inspect_run_trustworthiness(RUN_ROOT / case["run_id"])
     for case in RUNS
@@ -100,11 +94,12 @@ for boundary, report in palace_reports.items():
     )
 for boundary, result in q3d_results.items():
     display({"backend": "Q3D CG-only", "boundary": boundary, **result.convergence})
+```
 
-# %% [markdown]
-# ## Ground-Referenced C11 Results
+## Ground-Referenced C11 Results
 
-# %%
+```{python}
+#| id: 4f2ded6c
 rows = []
 palace_series = {}
 for case in RUNS:
@@ -179,11 +174,12 @@ for case in RUNS:
     )
 
 display(rows)
+```
 
-# %% [markdown]
-# ## Comparison and Native Convergence Figures
+## Comparison and Native Convergence Figures
 
-# %%
+```{python}
+#| id: 9566792c
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 
 labels = [
@@ -236,11 +232,12 @@ fig.suptitle("Native convergence evidence; no cross-solver agreement gate")
 fig.tight_layout()
 fig.savefig(EVIDENCE_DIR / "convergence.png", dpi=180)
 plt.close(fig)
+```
 
-# %% [markdown]
-# ## Public Evidence Packet
+## Public Evidence Packet
 
-# %%
+```{python}
+#| id: e4299e31
 fieldnames = tuple(rows[0])
 with (EVIDENCE_DIR / "results.csv").open("w", newline="") as stream:
     writer = csv.DictWriter(stream, fieldnames=fieldnames, lineterminator="\n")
@@ -335,3 +332,4 @@ run_set = {
 }
 (EVIDENCE_DIR / "run_set.json").write_text(json.dumps(run_set, indent=2) + "\n")
 display(run_set)
+```

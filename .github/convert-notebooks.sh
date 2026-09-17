@@ -3,18 +3,18 @@ set -euo pipefail
 
 source_dir="${1:-notebooks/src}"
 output_dir="${2:-notebooks}"
+action="${3:---check}"
 
-mkdir -p "${output_dir}"
-
-shopt -s nullglob
-sources=("${source_dir}"/*.py)
-
-if [[ ${#sources[@]} -eq 0 ]]; then
-  echo "No notebook sources found in ${source_dir}."
-  exit 0
-fi
-
-for source in "${sources[@]}"; do
-  stem="$(basename "${source}" .py)"
-  uv run --group docs python -m jupytext --to ipynb "${source}" --output "${output_dir}/${stem}.ipynb"
-done
+case "${action}" in
+  --check)
+    uv run --group docs python scripts/sync_qmd_notebooks.py "${source_dir}" "${output_dir}"
+    ;;
+  --generate)
+    uv run --group docs python scripts/sync_qmd_notebooks.py \
+      "${source_dir}" "${output_dir}" --generate
+    ;;
+  *)
+    echo "Usage: $0 [source-dir] [output-dir] [--check|--generate]" >&2
+    exit 2
+    ;;
+esac

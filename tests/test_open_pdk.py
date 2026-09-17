@@ -33,23 +33,48 @@ def test_pdk_activates_and_builds_public_cells() -> None:
 def test_flip_chip_layer_metadata() -> None:
     assert {name for name in LAYER_STACK.layers if "UNDER_BUMP" in name} == {"D0_D1_UNDER_BUMP"}
     assert LAYER_STACK.layers["D0_TOP_M1"].info == {
+        "simulation_role": "conductor",
         "layer_type": "conductor",
         "part_role": "face_metal",
-        "net_id": "Ground",
-        "equipotential_id": "Ground",
+        "host_void_semantic_id": "D0_TO_D1_GAP",
+        "geometry": {
+            "geometry_source": "die_face_minus_ground_mask",
+            "plane_bounds_ref": "D0_SUBSTRATE",
+        },
     }
     assert LAYER_STACK.layers["D1_BOTTOM_M1"].info == {
+        "simulation_role": "conductor",
         "layer_type": "conductor",
         "part_role": "face_metal",
-        "net_id": "Ground",
-        "equipotential_id": "Ground",
+        "host_void_semantic_id": "D0_TO_D1_GAP",
+        "geometry": {
+            "geometry_source": "die_face_minus_ground_mask",
+            "plane_bounds_ref": "D1_SUBSTRATE",
+        },
     }
-    assert LAYER_STACK.layers["D0_D1_INDIUM_BUMP"].info == {
+    bump_info = LAYER_STACK.layers["D0_D1_INDIUM_BUMP"].info
+    assert set(bump_info) == {
+        "simulation_role",
+        "layer_type",
+        "part_role",
+        "host_void_semantic_id",
+        "geometry",
+        "ground_bump_fill_spec",
+    }
+    assert {key: bump_info[key] for key in ("simulation_role", "layer_type", "part_role")} == {
+        "simulation_role": "conductor",
         "layer_type": "via",
         "part_role": "bump_body",
-        "net_id": "Ground",
-        "equipotential_id": "Ground",
     }
+    assert bump_info["host_void_semantic_id"] == "D0_TO_D1_GAP"
+    assert bump_info["geometry"] == {
+        "geometry_source": "gds_polygon",
+        "split_polygons_as_entities": True,
+    }
+    fill_spec = bump_info["ground_bump_fill_spec"]
+    assert fill_spec["schema_version"] == 1
+    assert fill_spec["body_layer"] == tuple(LAYER.D0_D1_INDIUM_BUMP)
+    assert fill_spec["contact_layer"] == tuple(LAYER.D0_D1_UNDER_BUMP)
     assert LAYER_STACK.layers["D0_D1_UNDER_BUMP"].info == {
         "exclude_from_simulation": True,
     }
