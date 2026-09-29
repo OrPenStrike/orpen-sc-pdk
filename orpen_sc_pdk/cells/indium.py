@@ -99,7 +99,8 @@ def indium_bump(
 
     The indium and under-bump pads are authored on separate process layers but
     intentionally expose no route ports; parent chip assemblies place these as
-    passive flip-chip interconnect candidates.
+    passive flip-chip interconnect candidates. Only the canonical D0/D1 body
+    layer has a physical-stack Entity; alternate layers remain layout-only.
     """
 
     c = gf.Component()
@@ -113,6 +114,23 @@ def indium_bump(
         )
         under_bump.move((-under_bump_size / 2, -under_bump_size / 2))
     c.ports.clear()
+    # Only the canonical D0/D1 layer has a corresponding physical stack level.
+    if tuple(indium_bump_layer) == tuple(LAYER.D0_D1_INDIUM_BUMP):
+        c.info["component_semantics"] = {
+            "schema_version": 2,
+            "conductor_regions": [
+                {
+                    "semantic_id": "D0_D1_INDIUM_BUMP",
+                    "level": "D0_D1_INDIUM_BUMP",
+                    "gds_layer": tuple(int(value) for value in indium_bump_layer),
+                    "geometry": {
+                        "geometry_source": "gds_polygon",
+                        "selector_point_um": (0.0, 0.0),
+                    },
+                    "metadata": {"source_kind": "authored"},
+                }
+            ],
+        }
     return c
 
 

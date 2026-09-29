@@ -48,10 +48,10 @@ from scgsim.aedt import (
     prepare_handoff,
     resolve_results,
 )
-from scgsim.sgb import build_component_stack
+from scgsim.sgb import GeometryPlan
 
 import orpen_sc_pdk
-from orpen_sc_pdk import LAYER_STACK, get_material_records
+from orpen_sc_pdk import LAYER, LAYER_STACK, get_material_records
 from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 ```
 
@@ -114,12 +114,29 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
         placement_mode=INDIUM_PLACEMENT_MODE,
     )
     component = coupon.component
-    stack = build_component_stack(
+    plan = GeometryPlan(
         component=component,
+        root_id="chip",
         layer_stack=LAYER_STACK,
         material_records=get_material_records(),
         coupon_padding_um=coupon.stack_coupon_padding_um,
     )
+    for name, reference in coupon.named_instances.items():
+        plan.register_instance(f"chip/{name}", reference)
+    plan.set_nets({
+        "xmon_pad": ("chip/device/D1_XMON_PAD",),
+        "ground": (
+            "chip/D0_TOP_GROUND_PLANE",
+            "chip/D1_BOTTOM_GROUND_PLANE",
+            *(f"chip/device/D1_COUPLER_{index}" for index in range(1, 5)),
+            *(
+                f"chip/{name}/D0_D1_INDIUM_BUMP"
+                for name in coupon.named_instances if name.startswith("short_")
+            ),
+        ),
+    })
+    snapshot = plan.prepare()
+    stack = snapshot.stack
     display(component)
 ```
 
@@ -150,10 +167,16 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     flat.flatten()
     dbu = float(flat.kcl.dbu)
     layer_records = {item["semantic_id"]: item for item in stack["layers"]}
-    d0_ground_record = layer_records["D0_TOP_GROUND_PLANE"]
-    d1_ground_record = layer_records["D1_BOTTOM_GROUND_PLANE"]
-    bump_record = layer_records["D0_D1_INDIUM_BUMP"]
+    d0_ground_record = layer_records["chip/D0_TOP_GROUND_PLANE"]
+    d1_ground_record = layer_records["chip/D1_BOTTOM_GROUND_PLANE"]
+    bump_records = [
+        layer_records[f"chip/{name}/D0_D1_INDIUM_BUMP"]
+        for name in coupon.named_instances if name.startswith("short_")
+    ]
+    bump_record = bump_records[0]
     bump_material_id = str(bump_record["material_id"])
+    if {item["material_id"] for item in bump_records} != {bump_material_id}:
+        raise ValueError("Coupon bump instances must share one PDK material.")
 
     bounds = stack["solution_regions"]["D1_SUBSTRATE"]["geometry"]["domain_bounds_um"]
     domain_box = gf.kdb.Box(
@@ -161,11 +184,10 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     )
     domain = gf.Region(domain_box)
 
-    d1_draw = flat.get_region(tuple(d1_ground_record["geometry"]["include_layer"]), merge=True)
-    d1_mask = flat.get_region(tuple(d1_ground_record["geometry"]["mask_layer"]), merge=True)
+    d1_draw = flat.get_region(LAYER.D1_BOTTOM_M1_DRAW, merge=True)
+    d1_mask = flat.get_region((d1_ground_record["layer"], d1_ground_record["datatype"]), merge=True)
     d1_metal = (domain - (d1_mask - d1_draw)).merged()
-    conductor_regions = component.info["component_semantics"]["conductor_regions"]
-    xmon_record = next(item for item in conductor_regions if item["semantic_id"] == "D1_XMON_PAD")
+    xmon_record = layer_records["chip/device/D1_XMON_PAD"]
     xmon_selector = gf.kdb.Point(
         *(round(value / dbu) for value in xmon_record["geometry"]["selector_point_um"])
     )

@@ -20,7 +20,7 @@ from pathlib import Path
 
 import gdsfactory as gf
 from scgsim.palace import EigenmodeSim, inspect_run_trustworthiness, resolve_palace_result
-from scgsim.sgb import build_component_stack
+from scgsim.sgb import GeometryPlan
 from scgsim.visualization import inspect_palace_geometry
 
 import orpen_sc_pdk
@@ -104,7 +104,7 @@ if WORKFLOW_ACTION == "prepare_handoff":
         "fill_clearance_um": 30.0,
     }
     # Exact authored GDSFactory port whose sheet geometry and signed direction SGB preserves.
-    PORT_NAME = "o_junction_lumped"
+    PORT_NAME = "chip/device/o_junction_lumped"
     # Logical conductor layer containing the two terminal owners of the junction sheet.
     PORT_LAYER = "D1_BOTTOM_M1"
     # Initial linearized Josephson inductance placed on the Palace LumpedPort boundary (H).
@@ -118,17 +118,32 @@ if WORKFLOW_ACTION == "prepare_handoff":
     # Number of computed mode fields saved for ParaView/GridFunction visualization; 0 saves none.
     SAVE_FIELDS = 0
 
-    stack = build_component_stack(
+    plan = GeometryPlan(
         component=component,
+        root_id="chip",
         layer_stack=LAYER_STACK,
         material_records=get_material_records(),
         coupon_padding_um=STACK_COUPON_PADDING_UM,
     )
+    for name, reference in coupon.named_instances.items():
+        plan.register_instance(f"chip/{name}", reference)
+    plan.set_nets({
+        "xmon_pad": ("chip/device/D1_XMON_PAD",),
+        "Ground": (
+            "chip/D0_TOP_GROUND_PLANE",
+            "chip/D1_BOTTOM_GROUND_PLANE",
+            *(f"chip/device/D1_COUPLER_{index}" for index in range(1, 5)),
+            *(
+                f"chip/{name}/D0_D1_INDIUM_BUMP"
+                for name in coupon.named_instances if name.startswith("short_")
+            ),
+        ),
+    })
+    plan.set_vacuum_region(padding=VACUUM_PADDING_UM)
+    snapshot = plan.prepare()
     sim = EigenmodeSim()
-    sim.set_geometry(component)
-    sim.set_stack(stack)
+    sim.set_plan(snapshot)
     sim.set_output_dir(RUN_ROOT)
-    sim.set_vacuum_region(padding=VACUUM_PADDING_UM)
     sim.set_indium_ground_bumps(**INDIUM_GROUND_FILL)
     # Select complete validated OrPen records immediately before Surface-EPR setup so
     # their public source/description provenance remains visible beside the numeric specs.

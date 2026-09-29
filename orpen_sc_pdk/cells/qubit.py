@@ -296,6 +296,7 @@ def kosen2024_flip_chip_xmon_qubit(
         layer=LAYER.D0_TOP_GROUND_MASK,
         centered=True,
     )
+    bump_instance_names: list[str] = []
     if bump_ring_count_per_side:
         bump_footprint_size = (
             max(indium_bump_size, under_bump_size) if include_under_bump else indium_bump_size
@@ -323,6 +324,8 @@ def kosen2024_flip_chip_xmon_qubit(
             ):
                 bump_ref = c << bump
                 bump_ref.dmove(center)
+                bump_ref.name = f"bump_{len(bump_instance_names):03d}"
+                bump_instance_names.append(bump_ref.name)
 
     # Keep the paper provenance on the exported component as well as in the
     # docstring so downstream GDSFactory consumers do not lose the attribution.
@@ -348,6 +351,7 @@ def kosen2024_flip_chip_xmon_qubit(
     c.info["instantiated_indium_bump_size_um"] = float(indium_bump_size)
     c.info["instantiated_under_bump_size_um"] = float(under_bump_size)
     c.info["bump_count"] = 4 * bump_ring_count_per_side
+    c.info["bump_instance_names"] = tuple(bump_instance_names)
     c.info["junction_topology"] = "single fixed-frequency lower-left Manhattan junction"
     c.info["junction_lumped_center_um"] = tuple(float(value) for value in junction_lumped_center)
     c.info["junction_width_um"] = float(junction_width)
@@ -373,10 +377,9 @@ def kosen2024_flip_chip_xmon_qubit(
         "junction_draw": tuple(int(value) for value in junction_draw_layer),
         "junction_sim_port": tuple(int(value) for value in junction_sim_port_layer),
     }
-    # Component semantics describe nets and topology only. Material, layer,
-    # fabrication, host-volume, and 3D-integration facts remain in the PDK stack.
+    # Local Entity identities and junction source remain independent of final Nets.
+    # Material, host-volume, and 3D-integration facts remain in the PDK stack.
     d1_draw_layer = tuple(int(value) for value in q_chip_draw_layer)
-    d1_ground_mask_layer = tuple(int(value) for value in q_chip_ground_mask_layer)
     coupler_selectors = []
     for index, port_name in enumerate(("o1", "o2", "o3", "o4"), 1):
         port = c.ports[port_name]
@@ -385,7 +388,6 @@ def kosen2024_flip_chip_xmon_qubit(
         coupler_selectors.append(
             (
                 f"D1_COUPLER_{index}",
-                f"coupler_{index}",
                 (
                     float(port.center[0]) - distance * cos(angle),
                     float(port.center[1]) - distance * sin(angle),
@@ -394,82 +396,50 @@ def kosen2024_flip_chip_xmon_qubit(
             )
         )
     c.info["component_semantics"] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "conductor_regions": [
-            {
-                "semantic_id": "D0_TOP_GROUND_PLANE",
-                "level": "D0_TOP_M1",
-                "gds_layer": tuple(int(value) for value in LAYER.D0_TOP_GROUND_MASK),
-                "net_id": "Ground",
-                "metadata": {
-                    "equipotential_id": "Ground",
-                },
-            },
-            {
-                "semantic_id": "D1_BOTTOM_GROUND_PLANE",
-                "level": "D1_BOTTOM_M1",
-                "gds_layer": d1_ground_mask_layer,
-                "net_id": "Ground",
-                "geometry": {
-                    "mask_layer": d1_ground_mask_layer,
-                    "include_layer": d1_draw_layer,
-                    "include_selector_points_um": [
-                        (
-                            float(lower_arm_start[0]),
-                            float((lower_arm_start[1] + lower_arm_end) / 2),
-                        )
-                    ],
-                },
-                "metadata": {
-                    "source_selector": "authored lower junction ground-arm interior",
-                    "equipotential_id": "Ground",
-                },
-            },
             *[
                 {
                     "semantic_id": semantic_id,
                     "level": "D1_BOTTOM_M1",
                     "gds_layer": d1_draw_layer,
-                    "net_id": net_id,
                     "geometry": {
                         "geometry_source": "gds_polygon",
                         "selector_point_um": point,
                     },
-                    "metadata": {
-                        "semantic_group_id": "D1_BOTTOM_SIGNAL_GROUP",
-                        "source_selector": source,
-                    },
+                    "metadata": {"source_selector": source},
                 }
-                for semantic_id, net_id, point, source in [
+                for semantic_id, point, source in [
                     (
                         "D1_XMON_PAD",
-                        "xmon_pad",
                         (0.0, 0.0),
                         "public topology anchor (0, 0)",
                     ),
                     *coupler_selectors,
                 ]
             ],
+        ],
+        "ground_plane_contributions": [
             {
-                "semantic_id": "D0_D1_INDIUM_BUMP",
-                "level": "D0_D1_INDIUM_BUMP",
-                "gds_layer": tuple(int(value) for value in indium_bump_layer),
-                "net_id": "Ground",
-                "metadata": {
-                    "semantic_group_id": "D0_D1_INDIUM_BUMP",
-                    "source_kind": "authored",
-                    "source_semantic_id": "D0_D1_INDIUM_BUMP",
-                    "equipotential_id": "Ground",
-                    "owner_semantic_ids": (
-                        "D0_TOP_GROUND_PLANE",
-                        "D1_BOTTOM_GROUND_PLANE",
-                    ),
-                },
-            },
+                "local_id": "D1_JUNCTION_GROUND_ARM",
+                "plane_id": "D1_BOTTOM_GROUND_PLANE",
+                "level": "D1_BOTTOM_M1",
+                "layer": d1_draw_layer,
+                "selector_point_um": (
+                    float(lower_arm_start[0]),
+                    float((lower_arm_start[1] + lower_arm_end) / 2),
+                ),
+            }
+        ],
+        "ports": [
+            {
+                "name": "o_junction_lumped",
+                "layer": tuple(int(value) for value in junction_sim_port_layer),
+                "target_layer": "D1_BOTTOM_M1",
+            }
         ],
         "metadata": {
             "component_contract": ("kosen2024_flip_chip_xmon_qubit public zero-argument cell"),
-            "signal_group": "D1_BOTTOM_SIGNAL_GROUP",
         },
     }
 

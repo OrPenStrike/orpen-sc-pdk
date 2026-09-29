@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from copy import deepcopy
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Literal
 
 import gdsfactory as gf
@@ -13,7 +13,6 @@ from orpen_sc_pdk.cells.indium import indium_bump
 from orpen_sc_pdk.helpers.layout import indium_bump_centers_around_polygon
 from orpen_sc_pdk.tech import INDIUM_BUMP_SIZE_UM, LAYER, UNDER_BUMP_SIZE_UM, Layer
 
-_BUMP_SEMANTIC_ID = "D0_D1_INDIUM_BUMP"
 _PLACEMENT_MODES = ("corner_anchors", "full_field")
 PlacementMode = Literal["corner_anchors", "full_field"]
 
@@ -27,6 +26,7 @@ class GroundShortCoupon:
     """
 
     component: gf.Component
+    named_instances: Mapping[str, gf.ComponentReference]
     requested_coupon_padding_um: float
     coupon_padding_um: float
     stack_coupon_padding_um: float
@@ -116,7 +116,7 @@ def place_flip_chip_ground_short_bumps(
         )
         if len(centers) < 2:
             raise ValueError(f"expected multiple indium-bump sites, got {centers!r}.")
-        wrapped = _wrap_with_bumps(
+        wrapped, named_instances = _wrap_with_bumps(
             component,
             centers=centers,
             bump_size_um=bump_size_um,
@@ -132,6 +132,7 @@ def place_flip_chip_ground_short_bumps(
             )
             return GroundShortCoupon(
                 component=wrapped,
+                named_instances=MappingProxyType(named_instances),
                 requested_coupon_padding_um=requested,
                 coupon_padding_um=padding,
                 stack_coupon_padding_um=stack_padding,
@@ -171,8 +172,7 @@ def _bump_centers(
     centers = _unique_points((*keepout_centers, *coupon_centers))
     if _has_bump_gap_violation(centers, pitch_um=bump_size_um + bump_gap_um):
         raise ValueError(
-            "corner-anchored indium bumps violate bump-to-bump padding; "
-            f"centers={centers!r}."
+            f"corner-anchored indium bumps violate bump-to-bump padding; centers={centers!r}."
         )
     return centers
 
@@ -192,23 +192,55 @@ def _wrap_with_bumps(
     bump_size_um: float,
     under_bump_size_um: float,
     indium_bump_layer: Layer,
-) -> gf.Component:
+) -> tuple[gf.Component, dict[str, gf.ComponentReference]]:
     wrapped = gf.Component()
     device_ref = wrapped << component
+    device_ref.name = "device"
     wrapped.add_ports(device_ref.ports)
+    named_instances = {"device": device_ref}
+    bump_names = set(component.info.get("bump_instance_names", ()))
+    for bump_ref in component.insts:
+        if bump_ref.name in bump_names:
+            named_instances[f"device/{bump_ref.name}"] = bump_ref
+    if len(named_instances) - 1 != len(bump_names):
+        raise ValueError("Xmon bump instance names do not match actual references")
     bump_cell = indium_bump(
         indium_bump_size=bump_size_um,
         under_bump_size=under_bump_size_um,
         indium_bump_layer=indium_bump_layer,
     )
-    for center in centers:
+    for index, center in enumerate(centers):
         bump_ref = wrapped << bump_cell
         bump_ref.move(center)
-    wrapped.info["component_semantics"] = _authored_bump_semantics(
-        component,
-        indium_bump_layer=indium_bump_layer,
-    )
-    return wrapped
+        name = f"short_{index:03d}"
+        bump_ref.name = name
+        named_instances[name] = bump_ref
+    author_common_flip_chip_ground_planes(wrapped)
+    return wrapped, named_instances
+
+
+def author_common_flip_chip_ground_planes(component: gf.Component) -> gf.Component:
+    """Assign one D0 and one D1 physical ground plane to a final assembly."""
+
+    if "component_semantics" in component.info:
+        raise ValueError("final assembly already has component_semantics")
+    d1_mask = tuple(int(value) for value in LAYER.D1_BOTTOM_GROUND_MASK)
+    component.info["component_semantics"] = {
+        "schema_version": 2,
+        "conductor_regions": [
+            {
+                "semantic_id": "D0_TOP_GROUND_PLANE",
+                "level": "D0_TOP_M1",
+                "gds_layer": tuple(int(value) for value in LAYER.D0_TOP_GROUND_MASK),
+            },
+            {
+                "semantic_id": "D1_BOTTOM_GROUND_PLANE",
+                "level": "D1_BOTTOM_M1",
+                "gds_layer": d1_mask,
+            },
+        ],
+    }
+    return component
 
 
 def _ground_mask_bbox_polygon(
@@ -336,46 +368,8 @@ def _stack_coupon_padding(*, device_bbox, wrapped_bbox, coupon_padding_um: float
     return max(0.0, *pads)
 
 
-def _authored_bump_semantics(component: gf.Component, *, indium_bump_layer: Layer) -> dict:
-    raw = component.info.get("component_semantics")
-    if not isinstance(raw, dict):
-        raise ValueError("component must provide info['component_semantics'].")
-    semantics = deepcopy(dict(raw))
-    regions = semantics.get("conductor_regions")
-    if isinstance(regions, str | bytes) or not isinstance(regions, Sequence):
-        raise TypeError("component conductor_regions must be a sequence.")
-    regions = [deepcopy(record) for record in regions]
-
-    found = False
-    for record in regions:
-        if not isinstance(record, dict) or record.get("semantic_id") != _BUMP_SEMANTIC_ID:
-            continue
-        metadata = record.setdefault("metadata", {})
-        if not isinstance(metadata, dict):
-            raise TypeError("indium bump metadata must be a mapping.")
-        metadata["source_kind"] = "authored"
-        found = True
-    if not found:
-        regions.append(
-            {
-                "semantic_id": _BUMP_SEMANTIC_ID,
-                "level": "D0_D1_INDIUM_BUMP",
-                "gds_layer": tuple(int(value) for value in indium_bump_layer),
-                "net_id": "Ground",
-                "metadata": {
-                    "semantic_group_id": _BUMP_SEMANTIC_ID,
-                    "source_kind": "authored",
-                    "source_semantic_id": _BUMP_SEMANTIC_ID,
-                    "equipotential_id": "Ground",
-                    "owner_semantic_ids": (
-                        "D0_TOP_GROUND_PLANE",
-                        "D1_BOTTOM_GROUND_PLANE",
-                    ),
-                },
-            }
-        )
-    semantics["conductor_regions"] = regions
-    return semantics
-
-
-__all__ = ["GroundShortCoupon", "place_flip_chip_ground_short_bumps"]
+__all__ = [
+    "GroundShortCoupon",
+    "author_common_flip_chip_ground_planes",
+    "place_flip_chip_ground_short_bumps",
+]

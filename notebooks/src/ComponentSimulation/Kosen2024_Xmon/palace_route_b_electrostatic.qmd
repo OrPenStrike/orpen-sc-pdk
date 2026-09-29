@@ -21,7 +21,7 @@ from pathlib import Path
 
 import gdsfactory as gf
 from scgsim.palace import ElectrostaticSim, inspect_run_trustworthiness, resolve_palace_result
-from scgsim.sgb import build_component_stack
+from scgsim.sgb import GeometryPlan
 from scgsim.visualization import inspect_palace_geometry
 
 import orpen_sc_pdk
@@ -101,21 +101,36 @@ if WORKFLOW_ACTION == "prepare_handoff":
         "xmon_pad": "xmon_pad",  # Report name -> exact structured conductor net.
     }
     SAVE_FIELDS = 0
-    UNASSIGNED_CONDUCTOR_POLICY = "ground"
+    UNASSIGNED_CONDUCTOR_POLICY = "error"
     # Leave exterior solution boundaries at Palace's natural zero-charge condition.
     EXTERIOR_BOUNDARY_POLICY = "none"
 
-    stack = build_component_stack(
+    plan = GeometryPlan(
         component=component,
+        root_id="chip",
         layer_stack=LAYER_STACK,
         material_records=get_material_records(),
         coupon_padding_um=STACK_COUPON_PADDING_UM,
     )
+    for name, reference in coupon.named_instances.items():
+        plan.register_instance(f"chip/{name}", reference)
+    plan.set_nets({
+        "xmon_pad": ("chip/device/D1_XMON_PAD",),
+        "Ground": (
+            "chip/D0_TOP_GROUND_PLANE",
+            "chip/D1_BOTTOM_GROUND_PLANE",
+            *(f"chip/device/D1_COUPLER_{index}" for index in range(1, 5)),
+            *(
+                f"chip/{name}/D0_D1_INDIUM_BUMP"
+                for name in coupon.named_instances if name.startswith("short_")
+            ),
+        ),
+    })
+    plan.set_vacuum_region(padding=VACUUM_PADDING_UM)
+    snapshot = plan.prepare()
     sim = ElectrostaticSim()
-    sim.set_geometry(component)
-    sim.set_stack(stack)
+    sim.set_plan(snapshot)
     sim.set_output_dir(RUN_ROOT)
-    sim.set_vacuum_region(padding=VACUUM_PADDING_UM)
     sim.set_indium_ground_bumps(**INDIUM_GROUND_FILL)
     # Select complete validated OrPen records immediately before Surface-EPR setup so
     # their public source/description provenance remains visible beside the numeric specs.
@@ -149,6 +164,7 @@ if WORKFLOW_ACTION == "prepare_handoff":
     sim.set_surface_epr(representation=ROUTE, specs=EPR_SPECS)
     for terminal_name, net_id in TERMINALS.items():
         sim.add_terminal(terminal_name, net_id=net_id)
+    sim.add_ground(net_id="Ground")
     sim.set_electrostatic(
         save_fields=SAVE_FIELDS,
         unassigned_conductor_policy=UNASSIGNED_CONDUCTOR_POLICY,
