@@ -547,6 +547,20 @@ def get_two_die_flip_chip_layer_stack() -> LayerStack:
     return LAYER_STACK
 
 
+def get_single_die_layer_stack() -> LayerStack:
+    """Select the public D0 substrate, top metal and locator sheet for one die.
+
+    Physical dimensions and materials remain the PDK facts. There is no upper
+    die or interdie cavity: SCGSim owns the surrounding vacuum envelope.
+    """
+    levels = {
+        name: LAYER_STACK.layers[name].model_copy(deep=True)
+        for name in ("D0_SUBSTRATE", "D0_TOP_M1", "D0_TOP_SIM_BOUNDARY")
+    }
+    levels["D0_TOP_M1"].info.pop("host_void_semantic_id", None)
+    return LayerStack(layers=levels)
+
+
 LAYER_STACK_FLIP_CHIP = get_two_die_flip_chip_layer_stack()
 
 cross_sections: dict[str, Callable[..., CrossSection]] = {}
@@ -1016,6 +1030,7 @@ __all__ = [
     "get_layer_stack",
     "get_layer_views",
     "get_two_die_flip_chip_layer_stack",
+    "get_single_die_layer_stack",
     "josephson_junction_cross_section_narrow",
     "josephson_junction_cross_section_wide",
     "launcher_cross_section_big",

@@ -1,0 +1,244 @@
+---
+title: "Simple Pad — Palace Eigenmode and EPR"
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
+
+Public synthetic tutorial candidate `orpen-simple-pad-public-tutorial` under
+`scgsim-docs-1.0.2-20261006`: semantic state CONVERGING, delivery LOCAL CANDIDATE,
+no test writes. Owner: OrPen SC PDK. Canonical layout authority is
+`square_pad_capacitor`; reusable runtime belongs to SCGSim. The authored pad
+and connected surrounding Ground are finite Al (0–0.2 um), above one 500 um
+Si die (-500–0 um). There is no second die or fabricated inter-die gap.
+The source locator sheet spans x=99.999–120.001, y=-1–1 um: 20.002 by
+2 um, centered at (110, 0), directed +X. It overlaps each terminal by one
+source DBU (0.001 um) for exact contact binding; physical metal and the
+20 um gap are unchanged. The component owns this overlap metadata.
+
+Source receipt: OrPen base `36b6e6b`; SCGSim runtime 1.0.1 stable source
+`9c032e398f2ebabc2dc53965b2bde5c346a061bc` (develop
+`8361bd902` has unchanged runtime). Use that exact runtime cohort; local
+source authoring is not an installed-version or native-model observation.
+Quarto execution is disabled. This checkpoint has no native geometry, mesh,
+solve, capacitance, frequency, EPR or adequacy claim. Run IDs below identify
+new preparations, not pre-existing evidence; change the ID for each new run.
+Native search/convergence controls are inputs, not research adequacy Gates.
+
+The east sheet (x=99.999–120.001, y=-1–1 um) is a non-galvanic +X locator
+between pad and Ground. This branch declares L=10 nH and C=0 as an
+inductive-only model, not a physical measurement. Palace supports the inductive
+port; it does not add a capacitive branch. Its unspecified exterior is natural
+PMC; HFSS retains its native outer default without an explicit enclosure
+assignment or a claim about its unobserved implicit boundary type. MA/MS/SA use validated
+OrPen LiteratureCentral synthetic assumptions; bulk and port views remain
+separate. No backend-equivalence claim is made.
+
+
+```{python}
+#| id: pem-imports
+from pathlib import Path
+import os
+import subprocess
+import importlib.metadata
+
+import gdsfactory as gf
+from IPython.display import display
+from scgsim.sgb import GeometryPlan
+from scgsim.palace import EigenmodeSim, resolve_palace_result, inspect_run_trustworthiness
+import orpen_sc_pdk
+from orpen_sc_pdk import get_material_records, get_interface_preset_records, validate_interface_preset_records
+from orpen_sc_pdk.tech import get_single_die_layer_stack
+
+WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
+RUN_ID = "simple_pad_palace_eigenmode_20261006_02"
+OUTPUT_ROOT = Path.cwd() / ".artifacts" / "SimplePad"
+RUN_ROOT = OUTPUT_ROOT / RUN_ID
+if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
+    raise ValueError("Unknown WORKFLOW_ACTION")
+display({"scgsim_version": importlib.metadata.version("scgsim"), "run_id": RUN_ID})
+```
+
+## Build Component Coupon
+
+```{python}
+#| id: pem-component
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    PAD_SIDE_UM = 200.0
+    GAP_UM = 20.0
+    DIE_SIDE_UM = 1000.0
+    JUNCTION_WIDTH_UM = 2.0
+    orpen_sc_pdk.activate()
+    gf.clear_cache()
+    component = gf.get_component(
+        "square_pad_capacitor",
+        pad_side_um=PAD_SIDE_UM,
+        gap_um=GAP_UM,
+        die_side_um=DIE_SIDE_UM,
+        junction_width_um=JUNCTION_WIDTH_UM,
+    )
+    layer_stack = get_single_die_layer_stack()
+    plan = GeometryPlan(
+        component=component, root_id="chip", layer_stack=layer_stack,
+        material_records=get_material_records(), coupon_padding_um=0.0,
+    )
+    plan.set_nets({"pad": ("chip/PAD",), "ground": ("chip/GROUND",)})
+    plan.set_vacuum_region(padding=(250.0, 250.0, 1000.0))
+    snapshot = plan.prepare()
+    display(component)
+    display({"bbox_um": str(component.dbbox()), "ports": component.ports})
+```
+
+## Configure EPR / Problem
+
+```{python}
+#| id: pem-problem
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    sim = EigenmodeSim()
+    sim.set_plan(snapshot)
+    sim.set_output_dir(RUN_ROOT)
+    ROUTE = "B"
+    records = validate_interface_preset_records(get_interface_preset_records())
+    preset_names = {kind: f"LiteratureCentral_{kind}" for kind in ("MA", "MS", "SA")}
+    interface_presets = {kind: records[name] for kind, name in preset_names.items()}
+    sim.set_surface_epr(
+        representation=ROUTE,
+        specs={
+            kind: {
+                "thickness": record["thickness"],
+                "permittivity": record["permittivity"],
+                "loss_tangent": record["loss_tangent"],
+                "source": record["source"],
+                "preset": preset_names[kind],
+            }
+            for kind, record in interface_presets.items()
+        },
+    )
+    PORT_NAME = "chip/o_junction_lumped"
+    PORT_TARGET_LAYER = "D0_TOP_M1"
+    PORT_INDUCTANCE_H = 10e-9
+    PORT_CAPACITANCE_F = 0.0  # Inductive-only model; Palace add_port has no C field.
+    NUM_MODES = 1
+    SEARCH_FREQUENCY_HZ = 1e9
+    EIGENMODE_TOLERANCE = 1e-6
+    SAVE_FIELDS = 1
+    sim.add_port(PORT_NAME, layer=PORT_TARGET_LAYER, layout_sheet=True, inductance=PORT_INDUCTANCE_H)
+    sim.set_epr_request(surface_interfaces=("MA", "MS", "SA"), bulk_domain_ids=None, port_names=(PORT_NAME,))
+    sim.set_eigenmode(num_modes=NUM_MODES, target=SEARCH_FREQUENCY_HZ,
+                      tolerance=EIGENMODE_TOLERANCE, save=SAVE_FIELDS)
+    display({
+        "route": ROUTE, "port": PORT_NAME, "target_layer": PORT_TARGET_LAYER,
+        "inductance_h": PORT_INDUCTANCE_H, "capacitance_f": PORT_CAPACITANCE_F,
+        "num_modes": NUM_MODES, "search_frequency_hz": SEARCH_FREQUENCY_HZ,
+        "eigenmode_tolerance": EIGENMODE_TOLERANCE, "save_fields": SAVE_FIELDS,
+        "interface_presets": interface_presets,
+    })
+```
+
+## Build Mesh
+
+```{python}
+#| id: pem-mesh
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    REFINED_MESH_SIZE_UM = 10.0
+    MAX_MESH_SIZE_UM = 200.0
+    # SCGSim owns Delaunay Mesh.Algorithm3D=1; no notebook mesher override.
+    sim.set_mesh(refined_mesh_size=REFINED_MESH_SIZE_UM, max_mesh_size=MAX_MESH_SIZE_UM)
+    MESH_PATH = sim.mesh()
+    display(MESH_PATH)
+```
+
+## Generate Config
+
+```{python}
+#| id: pem-config
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    FEM_ORDER = 2
+    LINEAR_TOLERANCE = 1e-6
+    MAX_ITERATIONS = 2000
+    AMR_MAX_PASSES = 10
+    AMR_TOLERANCE = 0.02
+    AMR_UPDATE_FRACTION = 0.15
+    AMR_NONCONFORMAL = False
+    SAVE_ADAPT_ITERATIONS = True
+    sim.set_numerical(
+        order=FEM_ORDER, tolerance=LINEAR_TOLERANCE, max_iterations=MAX_ITERATIONS,
+        solver_type="Default", preconditioner="Default", device="CPU",
+        amr_max_passes=AMR_MAX_PASSES, amr_tolerance=AMR_TOLERANCE,
+        amr_update_fraction=AMR_UPDATE_FRACTION, amr_nonconformal=AMR_NONCONFORMAL,
+        save_adapt_iterations=SAVE_ADAPT_ITERATIONS,
+        output_paraview=True, output_grid_function=False,
+    )
+    CONFIG_PATH = sim.write_config()
+    display(CONFIG_PATH)
+```
+
+## Prepare Handoff
+Preparation performs real local geometry and meshing, but does not start
+Palace. Only the explicit `run` action invokes the generated handoff script.
+Retain its handoff ID independently of the returned package.
+
+```{python}
+#| id: pem-handoff
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    MACHINE_PROFILE = "direct-local"
+    PALACE_EXECUTABLE = "palace"
+    SETUP_COMMANDS = ("module load palace",)
+    RESOURCES = {"processes": 8, "threads": 1, "command_style": "wrapper"}
+    HANDOFF = sim.prepare_handoff(
+        profile=MACHINE_PROFILE, executable=PALACE_EXECUTABLE,
+        resources=RESOURCES, setup_commands=SETUP_COMMANDS,
+    )
+    display(HANDOFF)
+    display({"retain_independently": HANDOFF.handoff_id})
+    if WORKFLOW_ACTION == "run":
+        subprocess.run([str(HANDOFF.script_path)], cwd=HANDOFF.run_dir, check=True)
+```
+
+## Analyze Returned Run
+Start a fresh analysis kernel. Supply the actual returned directory and the
+independently retained preparation ID through the named environment inputs;
+missing inputs fail natively. Partial inspection is evidence only and does
+not substitute for strict completed-result resolution.
+
+### Run Identity
+
+### Numerical Evidence
+
+### Simulation Benchmark
+
+```{python}
+#| id: pem-trust
+if WORKFLOW_ACTION == "analyze_handoff":
+    RETURNED_RUN_DIR = Path(os.environ["SIMPLE_PAD_RETURNED_RUN_DIR"])
+    report = inspect_run_trustworthiness(RETURNED_RUN_DIR)
+    display(report)
+    if report.completeness == "complete":
+        EXPECTED_HANDOFF_ID = os.environ["SIMPLE_PAD_PALACE_HANDOFF_ID"]
+        result = resolve_palace_result(RETURNED_RUN_DIR, expected_handoff_id=EXPECTED_HANDOFF_ID)
+        display(result.show_run_trustworthiness())
+```
+
+### Physics Analysis Results
+
+```{python}
+#| id: pem-physics
+if WORKFLOW_ACTION == "analyze_handoff":
+    if report.completeness == "complete":
+        result.show_all_results()
+    else:
+        report.show_all_results()
+```
+
+### Simulation Performance / Benchmarks
+
+Read the report's native pass history, mesh/DoF, time and resource evidence
+beside the actual requested controls. Missing channels stay unavailable;
+no trend, numerical accuracy, device loss or lifetime is inferred from execution
+success. Native observations and their interpretation are pending owner execution.

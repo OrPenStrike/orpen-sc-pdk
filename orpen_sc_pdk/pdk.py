@@ -27,6 +27,7 @@ from orpen_sc_pdk.cells import (
     resonator,
     resonator_hanger,
     resonator_meander,
+    square_pad_capacitor,
     straight,
     taper,
 )
@@ -76,6 +77,7 @@ _cells = {
     "manhattan_style_junction": manhattan_style_junction,
     "martinis2022_differential_ribbon_capacitor": martinis2022_differential_ribbon_capacitor,
     "straight": straight,
+    "square_pad_capacitor": square_pad_capacitor,
 }
 
 _cross_sections = {

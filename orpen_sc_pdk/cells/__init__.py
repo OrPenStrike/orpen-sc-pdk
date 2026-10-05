@@ -23,6 +23,7 @@ from orpen_sc_pdk.cells.qubit import kosen2024_flip_chip_xmon_qubit
 from orpen_sc_pdk.cells.resonator import resonator
 from orpen_sc_pdk.cells.resonator_hanger import resonator_hanger
 from orpen_sc_pdk.cells.resonator_meander import resonator_meander
+from orpen_sc_pdk.cells.simple_pad import square_pad_capacitor
 from orpen_sc_pdk.cells.taper import taper
 
 __all__ = [
@@ -49,4 +50,5 @@ __all__ = [
     "manhattan_style_junction",
     "martinis2022_differential_ribbon_capacitor",
     "straight",
+    "square_pad_capacitor",
 ]
