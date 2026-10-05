@@ -1,0 +1,9 @@
+branch,index,interface,surface_id,side,participation,tan_delta,meaning
+palace_eigenmode,1,MA,MA__chip/GROUND__VACUUM_REGION__SIDEWALL,sidewall,8.357809317498e-08,0.0033,native surface-Q row; synthetic loss input
+palace_eigenmode,2,MA,MA__chip/GROUND__VACUUM_REGION__TOP,top,1.984853877328e-07,0.0033,native surface-Q row; synthetic loss input
+palace_eigenmode,3,MA,MA__chip/PAD_0000__VACUUM_REGION__SIDEWALL,sidewall,2.299636064894e-07,0.0033,native surface-Q row; synthetic loss input
+palace_eigenmode,4,MA,MA__chip/PAD_0000__VACUUM_REGION__TOP,top,5.306825121041e-07,0.0033,native surface-Q row; synthetic loss input
+palace_eigenmode,5,MS,MS__chip/GROUND__D0_SUBSTRATE__BOTTOM,bottom,2.982877224445e-05,0.0004698936049788292,native surface-Q row; synthetic loss input
+palace_eigenmode,6,MS,MS__chip/PAD_0000__D0_SUBSTRATE__BOTTOM,bottom,7.550009273696e-05,0.0004698936049788292,native surface-Q row; synthetic loss input
+palace_eigenmode,7,SA,SA__D0_SUBSTRATE__VACUUM_REGION__0001,interface,2.967689159443e-09,0.0017,native surface-Q row; synthetic loss input
+palace_eigenmode,8,SA,SA__D0_SUBSTRATE__VACUUM_REGION__0004__0005,interface,8.246783067875e-05,0.0017,native surface-Q row; synthetic loss input

@@ -1,0 +1,9 @@
+kind,semantic_id,interface,view,participation,unit,provenance
+bulk,D0_SUBSTRATE,,electric,0.8930919475328625,1,separate existing-solution candidate analysis
+bulk,Region,,electric,0.1069080524671375,1,separate existing-solution candidate analysis
+surface,D0_SUBSTRATE,SA,unmasked,4.814142995006153e-05,1,separate existing-solution candidate analysis
+surface,chip/GROUND,MA,unmasked,4.0405007199827714e-08,1,separate existing-solution candidate analysis
+surface,chip/GROUND,MS,unmasked,1.0275986675308863e-05,1,separate existing-solution candidate analysis
+surface,chip/PAD,MA,unmasked,1.5286086155797907e-07,1,separate existing-solution candidate analysis
+surface,chip/PAD,MS,unmasked,3.721952595849216e-05,1,separate existing-solution candidate analysis
+junction,jj,,inductive,0.9958155735721973,1,separate existing-solution candidate analysis

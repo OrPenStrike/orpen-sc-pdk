@@ -1,0 +1,1202 @@
+{
+  "schema": "orpen.simple-pad.teaching-evidence.v1",
+  "semantic_state": "CONVERGING",
+  "data_classification": "PUBLIC_SYNTHETIC_OWNER_DERIVED",
+  "source_revision": "b578281c885edfa58b30135b89e4014d2e323905",
+  "model": {
+    "pad_side_um": 200,
+    "gap_um": 20,
+    "die_side_um": 1000,
+    "al_thickness_um": 0.2,
+    "si_thickness_um": 500,
+    "si_epsilon_r": 11.9,
+    "eigenmode_l_h": 1e-08,
+    "eigenmode_c_f": 0,
+    "interface_presets": "LiteratureCentral_MA/MS/SA; synthetic, not measured"
+  },
+  "publication_boundary": "Derived evidence only. Raw sealed artifacts retained by custodian, not publicly downloadable.",
+  "interpretation": "Operational teaching observations; no solver agreement, numerical adequacy, measured Q/T1 or Human acceptance claim.",
+  "cases": {
+    "palace_electrostatic": {
+      "run_id": "simple_pad_palace_electrostatic_20261006_02",
+      "receipt_sha256": "4b23676aafd86e205487f1a4db396bcabb4b2a6822ab21cc0e00bee35bb87b17",
+      "native_status": "completed",
+      "runtime_revision": "9c032e398f2ebabc2dc53965b2bde5c346a061bc",
+      "runtime_version": "1.0.1",
+      "source_revision": "b578281c885edfa58b30135b89e4014d2e323905",
+      "preparation": "completed",
+      "native_execution": "completed",
+      "strict_resolve": "completed",
+      "clean_kernel_report": "rendered",
+      "raw_artifact_publication": "not_published",
+      "handoff_id": "0d076ed44a82003c33de8652faae211afe0a87a34bee18ff6646d0b354e9c962",
+      "route": "B",
+      "final_snapshot_status": "complete",
+      "pass_index": 10,
+      "snapshot_count": 11,
+      "final_indicator": 0.03940361505666,
+      "configured_amr_tolerance": 0.02,
+      "elapsed_seconds": 453.383184596,
+      "peak_node_memory_mb": 12912.82421875,
+      "degrees_of_freedom": 1285578,
+      "mesh_elements": 893813,
+      "resources": {
+        "mpi_processes": 8,
+        "omp_threads": 1,
+        "profile": "direct-local"
+      },
+      "input_hashes": [
+        {
+          "path": "palace.msh",
+          "bytes": 7402683,
+          "sha256": "fea19475d88c01756e329ee38b605d4f2b043349b4c2de9c069d4319e4e3be87"
+        },
+        {
+          "path": "config.json",
+          "bytes": 3216,
+          "sha256": "f952487640865853331341aced650804cbde0a3ae2f171bb7c12f53e8bf18c42"
+        },
+        {
+          "path": "metadata/mesh_manifest.json",
+          "bytes": 120376,
+          "sha256": "934bf6a4b68ea0bd293321000c84760aa287d863328dcd17d34820f0eecf7278"
+        },
+        {
+          "path": "metadata/palace_index_map.json",
+          "bytes": 79290,
+          "sha256": "82da14985e4137c3c5be5b417f6633535b68eff7f1bbc0b1dbf97f6ccd1acafe"
+        }
+      ],
+      "result_hashes": [
+        {
+          "path": "results/palace/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "59bfe9fad05283091fa2fb9eee7721d7a21d4b08e2b1bed89e61a77268be4c28",
+          "present": true
+        },
+        {
+          "path": "results/palace/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "881fd29944f2b04a23213d898e8dca0b6fe85c08adcd06276745d438cd629d08",
+          "present": true
+        },
+        {
+          "path": "results/palace/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "5c12bb353420df32ac009b0e92b29f5b8afd5d4f063b6b9591282e0303c831ed",
+          "present": true
+        },
+        {
+          "path": "results/palace/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/domain-E.csv",
+          "bytes": 692,
+          "sha256": "6cb7f530df04b6d4a72385d1317efbe8a917139bea4543732dbe525a3751d9c8",
+          "present": true
+        },
+        {
+          "path": "results/palace/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "7b19f5a284e329ddcbf818520130f1fe7d4cccfc8ee6294ea6e744f0b3760ac7",
+          "present": true
+        },
+        {
+          "path": "results/palace/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "d43fbc048a7b9e8ead8ecc9243329ab29d876a7dca644b2318f54c78a8c725b8",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "b1b9694e0c7a2c38141f3395be0aa6eb7122b01bbfccd547ece12fd28b47dea7",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "5d2e14526c88c3bed4d9fb7a6d0f2b75b9c35cb960f01e54192acdbb95f8eb65",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "99b4da815bdf46fc05ec1a0fe3d2d262b6f2216a23e3b9e7e6a7fb9e7aa8bb6b",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/domain-E.csv",
+          "bytes": 692,
+          "sha256": "b62745557f087163b1cc6cabe60179a928e00a1d842b178a2e9efdb40f699ef5",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "6a0fadd18fb0830a23de7deb26d70e720e4d5e266f4738675eff8c5e2ff636d5",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "2aa01784dc693d683bfe0718845f09714b8b9f5298ba29934f5c259cd4913bcf",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "0fe92a5064342934328e936b631bc87d6deae69eb942c122f1f9ff76ff32b3bd",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "aff5b4c75a51ea3ec64bbb2cd9cb66ddc06e6a5b2e05675d4dde8c055d9ae2f6",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "7540240ca9c14d012a31a9308377806f1a80c4ece796d4e4942cb099cee049d0",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/domain-E.csv",
+          "bytes": 692,
+          "sha256": "a3d0bb082422ad910626506479670ec83d69fbfa206ae4a4ba86d817647a5f89",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "d6a61a9bc0cf34b7b6c6980d720ef361040c276afdc777037d6004706283cddd",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "8b4e43b7c511f14a3a822f91e723d9f4a1ac3c2d9de3db6b9587c12e67072323",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "586b857bb38264152cada73351a546fd5911ccf767384e3ea4b364e96501ef1b",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "99c9fcbba8c929a335b10cfdb9edfd716f03fa1351a5739ed8a31359fac164b7",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "6dcf4f5e7bbedd411996f67cb6a57e1e3f7e2ab11b39f82d249840840e784975",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/domain-E.csv",
+          "bytes": 692,
+          "sha256": "d1046b1d12c4599536066c2c06ae950f10d8dfaacf40fd2ac8feb8aa33f877df",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "4231046fbea07e00f7ba9103d18dc23649e459dab1b9617c299f8bafac8d7e5d",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "b4cf02d999fefb7ffd203220510b87689a4452329c6ed875f408ca80ed37a2de",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "4e42c6199301ee817b8125981abf3238bc81eeb1c9712ce85c45af52d5f05ee5",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "004a1d537701bbc998d7c6b0a7ba6755edcdd726964536416818392eaf564934",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "86158c2f7e1f8f6b0b794ff611f9d576943d6b0056e815940380ba64011248d4",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/domain-E.csv",
+          "bytes": 692,
+          "sha256": "85b3a7b7c405c9658de5eb2af0293938398125eb5a0f58b90aeaddb7dea47ad7",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "168150d2c07637e3f2499e3bcd557d6324ec73332b77f65ac7c069b2760b02ec",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "06fd10d75f580b5771c419d5d548f0a5765c981b1bca9824ee5578b8f3dee78b",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "027fb112d6c78083ce637911db2be888a0e8903c4386b7861a46ebdb4bf898aa",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "542071e9372948f2f06b335d7eb89d928958fcb8b6ccb3eafb155ff78f569671",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "2757b8fa13f405319f3b145c779913984bb6b74cebf7ad762388c5760fd65c6f",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/domain-E.csv",
+          "bytes": 692,
+          "sha256": "f4dafeaffd6ddecbbff5dceb698c7790d60e2af938516d2b868e2a91fbd01cba",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "4f671c9d8f62006a8e2c67d798b3538cbee1224af31d826e2dd03aba8383f849",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "a8956da8f0ecb4b13712a7c8b951d10b9bcba2265566845bab7727793e10f6c5",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "854aee36872c9513335b55cbb309aeb2e95ccba1b8307f131d174570ec2c8954",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "7feb9188d686e67d43ffbc02ff2b15235855e48890a9fbe59d6206a444707c95",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "2420c277c8a8efc31fb7b1b5314003227d299b5e57e430993dad4efd5e455e2f",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/domain-E.csv",
+          "bytes": 692,
+          "sha256": "d9396958c94610158b0f51392b6ae8cc3db4e2ffa1b167a6cf6e5d73a5180e54",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "aa3d8a4e6077e34db45a28ef0ef22ae20ca0200241a1dabac34086476ea87ddb",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "c501cbdd08c3e80653451fa6f86bb072c70fa293b64b16d70935124eb87774da",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "d51af2a6bd3563267cb2be6743095847bfb8aadb8de572f39583717838104841",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "2755b3125f1bacb35ea8bfe66f81ced4b81f74a97152055df2ae3cc6222890f0",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "51148212af104321675486d0031c71e23f807416f3aa06a6d67f6518e76502c4",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/domain-E.csv",
+          "bytes": 692,
+          "sha256": "26609b18c6c0c409708b99afe72b58d0e6527590d2828f558b494017cfab227d",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "fab9dae20e22ffe7e9312f433d148782d69494768f1d5860cef46d60fb9955ff",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "af2754bab240d318dd0f941123449484bcc42a844e63fadd3a485b7370724715",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "4fe7d781cc8c9145da246b054df4d9d4e3ce84b3a8a0174af4b6a422f756c6e7",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "2d018f9aa82c37481470bed2c9c7567e6e7eb4a3687602e22c75e21a3858bc58",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "44135d8e46dd0ac18c54a4adc0fb9206061d510c5e18b183550810525e661a1e",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/domain-E.csv",
+          "bytes": 692,
+          "sha256": "13fcc66292663e1c4f8a36bd59c386298b2ab4c0c4b1c885b738774c8736ca78",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "0b3a7d3209ce195fb4cb9027f49e1d53fbfd64284a8bafd44d2ee67769cb1170",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "84a006f0bfe1575476ddfdf673656a38a190213beb5107d7e74b52e4712885c5",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "0fb890403613ee291ac9b5fc08cbeeb10627bf9874e02597ec31ec1188882104",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "4fa65d2051daa96fe2894de4a97c8a66356dd6c6b72eb0a3795189dc64db25fa",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "7838fc4bab591214a801a1d650d25750ee8b82060791ffa4c3f2cebf3ca35270",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/domain-E.csv",
+          "bytes": 692,
+          "sha256": "cd4e0a6c1802d4a6780f04faf5277876974cd0871304bdda445b297197d3a142",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "d30a02926950ed65398f7300670da5f09ebc959f855be82a0cc7dc6298547be1",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "4967c6998891d4d50ee3dbd6cbc144283eeb7be2ab5e03551eaa3e98f02d9285",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/terminal-C.csv",
+          "bytes": 76,
+          "sha256": "52de0d8fd109c9ce18b99e0b84cad54b80115114fcb387b2a40d788e1646a8bc",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/terminal-Cm.csv",
+          "bytes": 76,
+          "sha256": "9175fb0c1e2d44701d06aff594d786a08d9b18f6e1137b1d0e997a36d5e4ccda",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/terminal-Cinv.csv",
+          "bytes": 79,
+          "sha256": "c36cb107b4d9a181758936f88d8634ff01800bbe37b2cc88dfd263547e196c06",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/terminal-V.csv",
+          "bytes": 76,
+          "sha256": "ac46b1100279e60737fea369e5135ca912fa258f16ee48ae7a6c2c2805bdf9a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/domain-E.csv",
+          "bytes": 692,
+          "sha256": "316933b6308365905b1ef1e09d121ddf5006a5f833d3d613b3815d01ed7f55d8",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "db063660bfd2033a4850e731a53d9aace3edb741a25c294c1c60db89297b686c",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "b323fd7e14f26ac720975ef5dcd2c350e001c47d5354d0de6e3320697518f310",
+          "present": true
+        }
+      ],
+      "native_version": "0.16.0-spack",
+      "native_git_tag": "869ee5c",
+      "numerical_convergence_claim": false,
+      "exterior": "natural ZeroCharge"
+    },
+    "aedt_q3d": {
+      "run_id": "simple_pad_aedt_q3d_20261006_02",
+      "receipt_sha256": "42f96647b5619b14ecde93a35f0916a66a3493d8993e79a0eaef9f72bf1b26a1",
+      "native_status": "completed",
+      "runtime_revision": "9c032e398f2ebabc2dc53965b2bde5c346a061bc",
+      "runtime_version": "1.0.1",
+      "source_revision": "b578281c885edfa58b30135b89e4014d2e323905",
+      "preparation": "completed",
+      "native_execution": "completed",
+      "strict_resolve": "completed",
+      "clean_kernel_report": "rendered",
+      "raw_artifact_publication": "not_published",
+      "native_version": "AEDT 2024.2",
+      "pyaedt_version": "1.3.0",
+      "resources": {
+        "cores": 4
+      },
+      "convergence": {
+        "sources": {
+          "asol": {
+            "path": "simple_pad_aedt_q3d_20261006_02.aedtresults/SimplePadQ3d.asol",
+            "bytes": 5529,
+            "sha256": "ad8d7b9442a4d543e07d5d3eee52bb3aba8c379f4491b6be8a93a73eb59db2e7"
+          },
+          "profile": {
+            "path": "simple_pad_aedt_q3d_20261006_02.aedtresults/SimplePadQ3d.results/DV54_S11_V0.profile",
+            "bytes": 5270,
+            "sha256": "fcc759ff988538ad4cd719370d9d40d6a3bcea3001627bf62ce25122f9356c30"
+          }
+        },
+        "capacitance": {
+          "target_percent": 1.0,
+          "converged": true,
+          "stop_reason": "Adaptive Passes converged",
+          "final_pass": 5,
+          "final_matrix_delta_percent": 0.707743,
+          "final_triangle_count": 2983
+        }
+      },
+      "exterior": "open Region; no grounded enclosure",
+      "matrix_sha256": "a2e011563554335b92eb210daf69caa7ba05cec53d32c3a1980887e8ecaecbbc"
+    },
+    "palace_eigenmode": {
+      "run_id": "simple_pad_palace_eigenmode_20261006_02",
+      "receipt_sha256": "4d8e8a818f1fce79e8920523db9a4ee3e209ddb2565b99ce2e1b7aac3310f204",
+      "native_status": "completed",
+      "runtime_revision": "9c032e398f2ebabc2dc53965b2bde5c346a061bc",
+      "runtime_version": "1.0.1",
+      "source_revision": "b578281c885edfa58b30135b89e4014d2e323905",
+      "preparation": "completed",
+      "native_execution": "completed",
+      "strict_resolve": "completed",
+      "clean_kernel_report": "rendered",
+      "raw_artifact_publication": "not_published",
+      "handoff_id": "c1ec2185391ad2f60a712a5bed2358870363e51dafccf2f0a98ec4256848ca60",
+      "route": "B",
+      "final_snapshot_status": "complete",
+      "pass_index": 10,
+      "snapshot_count": 11,
+      "final_indicator": 0.03971339820308,
+      "configured_amr_tolerance": 0.02,
+      "elapsed_seconds": 14385.601568594,
+      "peak_node_memory_mb": 44553.40625,
+      "degrees_of_freedom": 5923848,
+      "mesh_elements": 902632,
+      "resources": {
+        "mpi_processes": 8,
+        "omp_threads": 1,
+        "profile": "direct-local"
+      },
+      "input_hashes": [
+        {
+          "path": "palace.msh",
+          "bytes": 7402683,
+          "sha256": "fea19475d88c01756e329ee38b605d4f2b043349b4c2de9c069d4319e4e3be87"
+        },
+        {
+          "path": "config.json",
+          "bytes": 3397,
+          "sha256": "f7b91e702b511b25a984a1da6cd93d801bea9e171e1d8f3c89c468b707d7a1c4"
+        },
+        {
+          "path": "metadata/mesh_manifest.json",
+          "bytes": 120376,
+          "sha256": "ea99df07f9467ebbf2c70c56dcf6a740e7d79d82a798ed96708c9c0db0c71a77"
+        },
+        {
+          "path": "metadata/palace_index_map.json",
+          "bytes": 82191,
+          "sha256": "9642d10328cadeac4de41c985483a2bd42770982beb91b4973ca76dd3c34480e"
+        }
+      ],
+      "result_hashes": [
+        {
+          "path": "results/palace/eig.csv",
+          "bytes": 300,
+          "sha256": "644917037b65a6c287bd067520b55697c7f7ff061ad9a22c1efe5b084efe03db",
+          "present": true
+        },
+        {
+          "path": "results/palace/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "9bd36c20d48ed74868cb37c9e00e48e87a36ace3c99619ec440f2beb8f8f38cc",
+          "present": true
+        },
+        {
+          "path": "results/palace/port-I.csv",
+          "bytes": 132,
+          "sha256": "2cc5af1a482a75e21d22539e3efe6ec4109942310a09813bfa6814bb2f5a1d41",
+          "present": true
+        },
+        {
+          "path": "results/palace/port-V.csv",
+          "bytes": 132,
+          "sha256": "4d4b6a4f30a95f3f5b90aaa282ea1f90f30db0c6279319cfc645a631e506d7bb",
+          "present": true
+        },
+        {
+          "path": "results/palace/domain-E.csv",
+          "bytes": 692,
+          "sha256": "a81e82abecac008787c60348a2d7df4628cd7ee8839a03180a53791258899057",
+          "present": true
+        },
+        {
+          "path": "results/palace/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "65bea2db1fc2140ea0bd831eb5866920482a6d7c84bc572d0135cb69b23b5585",
+          "present": true
+        },
+        {
+          "path": "results/palace/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "221f5990aa6cf06fbe6160611534fa7f721328dbdfa5f5c033d7f8cf23d7b312",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/eig.csv",
+          "bytes": 300,
+          "sha256": "808768fc7864e3522a99a3b0a879ed76e45318c7a9de3c9b5d4e797f29730cbb",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "e41e9e929bfe85f6081bfa2ffcd09074125ad04c99ef1378bbb44cba25560360",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/port-I.csv",
+          "bytes": 132,
+          "sha256": "e9876881d591ee8359c7d4d7aa357fd279dcbc928a579a8db16c3cf86204616d",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/port-V.csv",
+          "bytes": 132,
+          "sha256": "8ed5292410b8983005ea913eea2193dff5da8ac060c0729f3c5e611d3acc4519",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/domain-E.csv",
+          "bytes": 692,
+          "sha256": "04dba4a4af9c87245b322c5dcb14ae846f4d9336499c617c622ada5e118c5684",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "f1686b7d82570dd08623ef7595a1f91ac939522b0e99734818b426ab78950d47",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration01/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "d79b1633fc460650cad7f95fbba5c91265f5ede434b85d14550a8b387b90c02e",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/eig.csv",
+          "bytes": 300,
+          "sha256": "31cc4c3ebc6f5d7786db5cc99c725b4f2015ab8b4147d4234d9a07eb34a4f9e5",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "b729a1b84f45f8a247e6e32b7b9bb13d760ce50554d10a55996097ae0738efc9",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/port-I.csv",
+          "bytes": 132,
+          "sha256": "383f53595b43292dadc1f9e60044cc04b4a73d48214d448278618d84b11f4535",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/port-V.csv",
+          "bytes": 132,
+          "sha256": "18651ba89a4c0e583569c88035bf8c8119022779c3575865bfc793c42745923e",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/domain-E.csv",
+          "bytes": 692,
+          "sha256": "e62ce95cba153be49b3e5984481c2c0dbb63c5dcd490e5cffb8cd11f93cbf634",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "84fb6e8d8a8cf10a069c55954209058b48cc8c83373040f6dc7d151cab7973e0",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration02/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "9f27236b0ab0a9102661b51eb5f71b2edbed1b214d3ab511841e1110e6825f60",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/eig.csv",
+          "bytes": 300,
+          "sha256": "149c38f52fa625ac593684d0810ad19eb980b96ae8d28e8ef0a81c72704e4841",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "382ece24b1ced14662992f84ca37710c02c87688b91906f432a131ed715e5c76",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/port-I.csv",
+          "bytes": 132,
+          "sha256": "a5b5a766acb19047b67dc92ab52f7447b8144198593a6fd899e4748330dcad79",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/port-V.csv",
+          "bytes": 132,
+          "sha256": "b998850017a796aa31c6d8a812b1f67f5f8d0d6e8e63eefb6a2b410355fc0f95",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/domain-E.csv",
+          "bytes": 692,
+          "sha256": "a72c7893685df2a759022946105c2a2debda4e753d01e82531b39b621e9b8ca8",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "b567e5c921078406eabede701a0f41ddd458e6112a89c9aa2349e1e51b5d9acf",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration03/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "db34776f0999ccda891bbde6207d505f73cf3dba656b38a7080a659940274e6b",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/eig.csv",
+          "bytes": 300,
+          "sha256": "55183ba831def3515807149b6401dd81ebfa3ef980aed0bdd0a6cbace0a43a5e",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "ea384db27787051a591777ecf59a00e4a6eb48a891de612c2e6ffee5bcb90a2b",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/port-I.csv",
+          "bytes": 132,
+          "sha256": "53e099188d28aa9ef7a69a9fc1d89808a6f17002a2f3725526ca2da4e6ceb767",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/port-V.csv",
+          "bytes": 132,
+          "sha256": "259b23d093955a926e8e280e71d3f2f68d27c341ffcc782daeebba5282e0caad",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/domain-E.csv",
+          "bytes": 692,
+          "sha256": "d0b9d6d2ec5ecba025d28a186bd9727336ef7686d61750e2291b587c3a254360",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "029241a94459a41b225e4a02a4d703227b68a748af290ccb5241051b908c0948",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration04/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "343492f844357a3377d89c0601e2255e5b2081f90138d6e6aace317e974bc1de",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/eig.csv",
+          "bytes": 300,
+          "sha256": "4cf0792436e16b4448322e32e0d9c8fcff25c2235fc5155287c796339efbcab0",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "544916578f3f88453d1ec54ae7a2ce75332b54975a7d2f3defc3a10c367c025d",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/port-I.csv",
+          "bytes": 132,
+          "sha256": "63c6656da9f1bea6dfd263a793fb2ef616e9be010d5ed179203f1fcd02a548e9",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/port-V.csv",
+          "bytes": 132,
+          "sha256": "cb8740a0921fdc1ed30559554fff3221a80ba1a75721f92961b4b820fbe07e09",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/domain-E.csv",
+          "bytes": 692,
+          "sha256": "dcd5e328e9aea29b3c63b3bc383698237fde463cee441e54ec2b8f5fe270b15a",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "e01c37945057d9a353b956bd7669d773963c3bc721ad93e4c5c3c7aa24d230a3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration05/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "76f3f62f0627a95d7291a1ff79d6a9a3f89635bb5086e4a20fa57bc59885c7b3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/eig.csv",
+          "bytes": 300,
+          "sha256": "67052c233393a6ced2765227e1358bb59256f5f9032747254307ac09b5e62d56",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "c0ce6b2eeab353c4c5c8dec6abd4effc720491100329639ab258ba0728cef2d2",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/port-I.csv",
+          "bytes": 132,
+          "sha256": "f43868f0bbb37e9f1df0d597352fef6d3afa9f987a1322fd54d071c9cbfd7065",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/port-V.csv",
+          "bytes": 132,
+          "sha256": "946e17b61c123aa63e639badd65e1d21b3a77ee3e2ba63e705ac6049697639e6",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/domain-E.csv",
+          "bytes": 692,
+          "sha256": "2feb0a209d72af69c7c6bd7550853ec36bd635768b24ad2be04525a45d0ac899",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "f09e26dc9d24097c9d69773105b9a13466838eac5f8e7f52b990450f2192628b",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration06/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "6ba19ddb37f28ab846e33d358326492627cdf83cf9a0eca7dee3be52209d39ad",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/eig.csv",
+          "bytes": 300,
+          "sha256": "a51a01edf48a5d6e894b1313dd4e9bcfef67b5e7f21eb60323fddbbf4e2091b4",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "4e7c27d7f3b0feeb4883774b56841303ae0ee83cc3c01cda66d4a3b4ca62a830",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/port-I.csv",
+          "bytes": 132,
+          "sha256": "473a1a6cd18dae88b4f1b050acaab07591fd54a20ec39468c70b7550f886e264",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/port-V.csv",
+          "bytes": 132,
+          "sha256": "4a37692ac9d0a5aacafed874e8b2b105def53a87fc6856dc5f442a081a664ee7",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/domain-E.csv",
+          "bytes": 692,
+          "sha256": "636d9c10d2b7fef1d17ce0d308d9006e2c408ef94e3801b9040e4be83f9c2d5c",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "44e86fcbe845b5eada9d825108ff23c41c6491a2959da261ef5d1d07b85e324d",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration07/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "b05b9cc2a72b9caaa502349bb10548a5c3159a074618ec88c9169aab7b139b3c",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/eig.csv",
+          "bytes": 300,
+          "sha256": "c8593b77221c45fbee6691390995c0da430eba9342286323e7ba2c9b3dd70dba",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "f87386f2ab0dc47ace7f9f0e8072831f98cb92466d0e2bd2aecda14b57f6628e",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/port-I.csv",
+          "bytes": 132,
+          "sha256": "ad06c54120260515220dbe84e9ce3aedbfcf8f3bf357fc86691cbea808a4889e",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/port-V.csv",
+          "bytes": 132,
+          "sha256": "2b6c5df18e9ff0f09edda2388c24553c68aa53091185707b7c8efcda4907b485",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/domain-E.csv",
+          "bytes": 692,
+          "sha256": "5f2d5aba8246c2caadf2d4c009b283628051d79fd97fbe7c9bd63e804bbeb9f8",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "acfd7607678041ad7f49ebea5227be0233b6b8f597d969661c2ed78fab743c22",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration08/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "4bb87f3278244eed86bafebb3370bb8c31a08c0700ce0ed14f554825f46b040b",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/eig.csv",
+          "bytes": 300,
+          "sha256": "3652c048dd78f840133a438767a149130a5618bd1d3d8018823d3679c8ad951d",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "cd0fae0790a4802b4388c40ef239ddb7b1d4af6b556c3e4bfa777e60653998b4",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/port-I.csv",
+          "bytes": 132,
+          "sha256": "102472a50bbf9efc5816a1e32e59c8aaa09dce86bbd8fb894d5b99eba0bd95dc",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/port-V.csv",
+          "bytes": 132,
+          "sha256": "4d470003b21aef0e9829cb6fdbb12a160045a05e6992bd4e6759429d9bca9f6d",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/domain-E.csv",
+          "bytes": 692,
+          "sha256": "bbdc7cb63526c7d6b4a4be4fa8fb78a684a0d9cfe6523ed2c569447b82c50904",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "ca1ab9dee4855573931c2fbb5d1b9a254e645fd438d9bf3c1b993199a0aa2849",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration09/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "d811a4f6eabdc59fbf4f05afd1ad8725822927271979274bef72a0932a2debb3",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/eig.csv",
+          "bytes": 300,
+          "sha256": "3849d8a7c9ae153ffaf64f6f5441b7d3eb4d43a46f9536e3bad5914631f938dd",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/port-EPR.csv",
+          "bytes": 76,
+          "sha256": "a373ca96815e250362948d9bd5caeac1d6dd9db19766b0cab9284822a70477ed",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/port-I.csv",
+          "bytes": 132,
+          "sha256": "54eb92fcd212d5f4ff5a72c042db6b5882b50088ee24c89f10ddf8a18d0df113",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/port-V.csv",
+          "bytes": 132,
+          "sha256": "6df0f4c65a06860edd165fd9daebfd56c43d210164b717d90074013194c58ccd",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/domain-E.csv",
+          "bytes": 692,
+          "sha256": "36f441ef0a2cfe1bde53d52518adcb7174374177dc8f7a85f43fba368d1424ad",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/surface-Q.csv",
+          "bytes": 916,
+          "sha256": "f1f0d83a7f685630c8742ccaa99d65ea598a71c57b677b60c63149067e3f48ab",
+          "present": true
+        },
+        {
+          "path": "results/palace/iteration10/error-indicators.csv",
+          "bytes": 224,
+          "sha256": "e6184b1518bb970403dac650160c18664e17f2c05cfaedbf5992cace883870e8",
+          "present": true
+        }
+      ],
+      "native_version": "0.16.0-spack",
+      "native_git_tag": "869ee5c",
+      "numerical_convergence_claim": false,
+      "exterior": "natural PMC",
+      "epr_status": "native surface, bulk and inductive port tables available",
+      "domain_energy": {
+        "m": 1.0,
+        "E_elec (J)": 4.169884754072e-12,
+        "E_mag (J)": 2.52897489298e-14,
+        "E_cap (J)": 0.0,
+        "E_ind (J)": 4.144557431256e-12,
+        "E_elec[1] (J)": 3.838688332577e-12,
+        "p_elec[1]": 0.920574202639,
+        "E_mag[1] (J)": 1.285218938526e-14,
+        "p_mag[1]": 0.5081975871305,
+        "E_elec[2] (J)": 3.311964214956e-13,
+        "p_elec[2]": 0.07942579736099,
+        "E_mag[2] (J)": 1.243755954454e-14,
+        "p_mag[2]": 0.4918024128695
+      }
+    },
+    "aedt_hfss_eigenmode": {
+      "run_id": "simple_pad_aedt_hfss_eigenmode_20261006_02",
+      "receipt_sha256": "3a6277b92a987237a6721ced545b899dea5c34d98eec0b787359a48e9303077e",
+      "native_status": "completed",
+      "runtime_revision": "9c032e398f2ebabc2dc53965b2bde5c346a061bc",
+      "runtime_version": "1.0.1",
+      "source_revision": "b578281c885edfa58b30135b89e4014d2e323905",
+      "preparation": "completed",
+      "native_execution": "completed",
+      "strict_resolve": "completed",
+      "clean_kernel_report": "rendered",
+      "raw_artifact_publication": "not_published",
+      "native_version": "AEDT 2024.2",
+      "pyaedt_version": "1.3.0",
+      "resources": {
+        "cores": 4
+      },
+      "convergence": {
+        "sources": {
+          "export_convergence": {
+            "path": "results/epr/adaptive-convergence.prop",
+            "bytes": 792,
+            "sha256": "47ee540b14b0f11f512371f8e3a053df681db0ee105042f6513d49516d818f0c"
+          }
+        },
+        "quantity": "maximum_delta_frequency",
+        "unit": "percent",
+        "target": 1.0,
+        "converged": false,
+        "stop_reason": "Converged : No",
+        "final_pass": 10,
+        "final_delta": 1.4862,
+        "final_solved_element_count": 2400
+      },
+      "epr_status": "original returned 1.0.1 EPR partial: native frequency unit empty",
+      "original_epr_sha256": "5e64033bfd180c15ebdd041d3893ef860fd3010426cd02ab0a67eb61baf4b114",
+      "exterior": "native outer default; implicit boundary type not established",
+      "eigenmodes_sha256": "3a4b256e5d24c552aa9580fe18f581a33e3ed11a74929f2a71d725a0d2e928fb"
+    }
+  },
+  "hfss_candidate_epr_derivation": {
+    "parent_native_receipt_sha256": "3a6277b92a987237a6721ced545b899dea5c34d98eec0b787359a48e9303077e",
+    "parent_runtime_revision": "9c032e398f2ebabc2dc53965b2bde5c346a061bc",
+    "parent_runtime_version": "1.0.1",
+    "candidate_version": "1.0.2rc1",
+    "candidate_publication": "internal frozen wheel; not a public release",
+    "candidate_wheel_sha256": "be6c35b008f6bbfdcb02b0ce601dd4e9ea460a6159bea4c0ca268dbf6421303f",
+    "candidate_module_sha256": "84ce02991857c55b4aded392e946f3238ab8b34a5a85d7126e3da85b9f7fbd4a",
+    "derived_result_sha256": "e8e9060ec72e41c5b30dc52372a06cc3d576c25b28332e5056d5cece73fb8f05",
+    "stage_receipt_sha256": "ba723869b14a1f264b59cb93b1369e1c3d9b7a0214f7e5f03b67cea247db696f",
+    "native_passes": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "row_statuses": [
+      "complete",
+      "complete",
+      "complete",
+      "complete",
+      "complete",
+      "complete",
+      "complete",
+      "complete",
+      "complete",
+      "complete"
+    ],
+    "frequency_unit_basis": "same native AdaptivePass query; explicit SIValue=True real/imaginary; original raw empty unit retained",
+    "new_analyze_invocations": 0,
+    "original_returned_receipt_rewritten": false,
+    "public_detached_resolve": "completed",
+    "public_plot_epr_result_and_show_epr": "rendered",
+    "limitations": [
+      "sidewalls uncomputed",
+      "requested 0 um and unmasked rows are alternatives, not additive",
+      "synthetic interface losses do not establish physical device Q/T1",
+      "native convergence remains false"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+branch,quantity,value,unit,meaning
+palace_electrostatic,C11,95.36383731153,fF,sole pad terminal relative to physical Ground
+aedt_q3d,C11,87.00027087746199,fF,pad SignalNet relative to physical GroundNet
+palace_eigenmode,mode_1_frequency,5.137790889095,GHz,linear 10 nH branch; not nonlinear f01
+palace_eigenmode,port_1_participation,0.9939261336199,1,native inductive port participation
+aedt_hfss_eigenmode,mode_1_frequency,4.87905956548,GHz,native LastAdaptive eigenmode text export
