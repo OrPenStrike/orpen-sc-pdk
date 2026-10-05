@@ -4,7 +4,6 @@
   <img alt="Status: public PDK" src="https://img.shields.io/badge/status-public%20PDK-0f766e">
   <img alt="Python 3.12+" src="https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white">
   <img alt="GDSFactory 9.48.x" src="https://img.shields.io/badge/GDSFactory-9.48.x-4B8BBE">
-  <img alt="GDSFactory+ 1.8.20" src="https://img.shields.io/badge/GDSFactory%2B-1.8.20-7c3aed">
   <img alt="Docs: GitHub Pages" src="https://img.shields.io/badge/docs-GitHub%20Pages-0f766e">
   <img alt="License" src="https://img.shields.io/github/license/OrPenStrike/orpen-sc-pdk">
 </p>
@@ -29,6 +28,11 @@ PDK as their base PDK.
   to compile. Mesh sizes and Palace L/C/R stay in the notebook or runtime.
 - **GDSFactory+ integration** — registered public cells are available through
   the active PDK and can be built from GF+.
+
+The VS Code GDSFactory+ extension supplies its own SDK. OrPen does not install
+or pin that SDK; it retains the core `gdsfactory` dependency and PDK discovery
+metadata. Notebooks or scripts that directly use `gdsfactoryplus` must manage
+their SDK dependency in their own consumer environment.
 
 ## Component Gallery
 

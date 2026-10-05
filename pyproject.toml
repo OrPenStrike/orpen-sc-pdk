@@ -36,7 +36,6 @@ dev = [
   "pytest>=9.0.0",
   "ruff>=0.15.11",
 ]
-gdsfactoryplus = ["gdsfactoryplus==1.8.20", "httpx"]
 circuit-runtime = ["superconducting-circuits-runtime"]
 
 [dependency-groups]
