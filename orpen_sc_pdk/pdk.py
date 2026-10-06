@@ -10,6 +10,7 @@ from orpen_sc_pdk.cells import (
     bend_circular,
     bend_euler,
     capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators,
+    circular_pad_capacitor,
     cpw_t_junction,
     dicing_edge,
     indium_bump,
@@ -29,6 +30,7 @@ from orpen_sc_pdk.cells import (
     resonator_meander,
     square_pad_capacitor,
     straight,
+    straight_to_circular_strip,
     taper,
 )
 from orpen_sc_pdk.ports import register_sim_port_types
@@ -78,6 +80,8 @@ _cells = {
     "martinis2022_differential_ribbon_capacitor": martinis2022_differential_ribbon_capacitor,
     "straight": straight,
     "square_pad_capacitor": square_pad_capacitor,
+    "circular_pad_capacitor": circular_pad_capacitor,
+    "straight_to_circular_strip": straight_to_circular_strip,
 }
 
 _cross_sections = {
