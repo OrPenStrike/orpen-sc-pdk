@@ -1,0 +1,76 @@
+{
+  "run_id": "circular_pad_palace_eigenmode_20261007_05",
+  "handoff_id": "a71a6331a3543ad3ecb6774a8c331167290af2ae7e6d5dfb001ea93c953568e5",
+  "evidence_class": "public-derived-existing-source-and-result",
+  "source_revisions": {
+    "orpen_producer": "ff4dcea00d4961ff4f8264f69a0bb8bfe43ed10d",
+    "analysis_source_base": "59fa270b7d6de93b7668cedb79c6a51afa49523b",
+    "scgsim_public_byte_binding": "cd107e4b0d2cca48ef9d58143e0b4b3d3271a263",
+    "scgsim_wheel_sha256": "806e44246e1314057456809cc8de70494ac2316e55fa3f63792370e5790b50dd",
+    "scgsim_version": "1.1.0rc1",
+    "palace_corrected_source": "4e9e1b7232b4c8ca8b964be7e70f1848f578de37",
+    "palace_tree": "cc331201fa18a9e042a8191076d070a6a0d90b46",
+    "palace_elf_sha256": "85e11f62cb72b7248e79753df0edf010881e3c31deb944267f30cedd2fac024b"
+  },
+  "analysis_copy_control_overrides": {
+    "WORKFLOW_ACTION": "analyze_handoff",
+    "RUN_ID": "circular_pad_palace_eigenmode_20261007_05",
+    "EXPECTED_HANDOFF_ID": "a71a6331a3543ad3ecb6774a8c331167290af2ae7e6d5dfb001ea93c953568e5"
+  },
+  "analysis_copy_selection_note": "The executed private analysis copy selected the existing returned folder and retained handoff ID through environment selection. Its source base is not a claim of unchanged canonical-source execution. The executed analysis hash is recorded separately; the later public presentation revision was not executed.",
+  "input_sha256": {
+    "source_layout_gds": "c36667a5d024530b6f7d7ef4df1b304ad31435a41feb7e57e3a535e23746694f",
+    "mesh": "046bf793499b78baed22e578641c9e6a453ab7b2e0d73655b3e922f774e47aa9",
+    "config": "e7f1a67eb7862587e25bb508a836cda1732c69de6a9d515dfb81ab276d17c9b8",
+    "mesh_manifest": "e7d5f9c98366743abd6f6d638217558b671f9c8ba58b24084e8722125b99ff02"
+  },
+  "observation_sha256": {
+    "safe_terminal_receipt": "bf1a8507b12bebe54165daf5cd10db7265131c0ef970040ff398d0bdfeafbdfc",
+    "returned_run_receipt": "97fcb1977592a95a6ad0e65bf0a90a78e46b66fef228097aacbae527c2dd6c26",
+    "executed_analysis_notebook": "bea21ebb0c45277833fc8e34422d110a05f52530b48a686905924374ef823699",
+    "source_result_csv": {
+      "iteration1/eig.csv": "1e91b68bd007d1ee688524bf2c260d87a58465f87bdafa5398140df7e4c0ed3b",
+      "iteration1/error-indicators.csv": "3bf6af95dff217d4aa72de8adc8ee3e56178688d33de4358ab8d293ccbb07f0b",
+      "iteration2/eig.csv": "807ba4de72e553219630be196905c2464bf5e4e971426582fda09498e429d99c",
+      "iteration2/error-indicators.csv": "b7678df5d1befd287d7a46c1c35d304916ef3e69e8533805764f476f48feeb0c",
+      "iteration3/eig.csv": "36c8f35a5a3cca1af68dea7edf3b56d5b02e7c7c9863a84cf7efb80981e65f8c",
+      "iteration3/error-indicators.csv": "a698ce93403c1ef896161d4ab5f87ed118ba459c6bd63d288db54c6e9dda7ed8",
+      "iteration4/eig.csv": "3495788c2c886e0d6af5451062f91d3a84363c3a7f355ff525d700651ca4378b",
+      "iteration4/error-indicators.csv": "4f7ddd44de4c1c9494b554985ce09e1c2f04b760883b9b8bf6ab3a075984c295",
+      "eig.csv": "39f5c657debaa3503f2658f1aefa481823c44ee9e9eb55baacb5172b18adc490",
+      "error-indicators.csv": "f08554052a3e8c10a3f85bd3684291a61f027cfa4bd5d95c84702dd4277a9697"
+    }
+  },
+  "derivation": {
+    "source_layout.png": "Read existing disk GDS with GDSFactory; render layer 1/0 electrode and layer 202/1 non-metal locator polygons in micrometres. Locator is not an added conductor.",
+    "frequency_amr.csv": "Select mode 1 Re(f) and indicator Norm from the existing iteration1-4 and final CSVs; no solver execution.",
+    "frequency_amr.png": "Plot frequency_amr.csv; configured indicator 0.02 is a declared native input, not a new criterion.",
+    "typed_epr.csv": "Transcribe structured epr_result observations recorded in the safe terminal receipt; preserve signed junction semantics."
+  },
+  "observations": {
+    "refinement_operations": 4,
+    "solve_estimate_snapshots": 5,
+    "final_dof": 825454,
+    "final_elements": 111039,
+    "mpi_processes": 8,
+    "omp_threads": 1,
+    "vtu_volume_type": 71,
+    "vtu_volume_nodes_per_cell": 10,
+    "vtu_boundary_type": 69,
+    "vtu_boundary_nodes_per_cell": 6
+  },
+  "limits": [
+    "PCG warnings at 10000 iterations retained; final indicator 0.1200141096788 versus configured 0.02.",
+    "Uniform area/length surrogate, not exact equipotential curved-terminal voltage.",
+    "Shared-node motion and continuous-circle accuracy unmeasured; saved cell order alone does not establish them.",
+    "No Q/T1, accuracy, convergence or cross-solver equivalence claim.",
+    "Later presentation revision not executed; original _03 preparation and failed _04 retained unchanged."
+  ],
+  "public_artifact_sha256": {
+    "source_layout.png": "1fc658dea21c22996204e208453a6bffa9f34ed36f7ef5e593cf571e32ba4910",
+    "frequency_amr.csv": "215e1128e01895d9ea524633583a48e7dd8e9d41dbe6f8cf2bc0854917854f1e",
+    "frequency_amr.png": "896d92254e671507ae79577ef88e4c6fd2ba8ba58f3b388e01a3f75b10723d45",
+    "typed_epr.csv": "c8cbc145655b3205308f674c1fcc573c389de16e2f79c47feda88b450bb07b8c",
+    "README.md": "f7e16cf2164ceff8287b24f2aee25ab92d09e2f072a0f8ae2e8705db91dbd17c"
+  }
+}
