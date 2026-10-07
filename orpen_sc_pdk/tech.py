@@ -104,8 +104,9 @@ interface_preset_records = {}
 
 SUBSTRATE_THICKNESS_UM = 500.0
 METAL_THICKNESS_UM = 200 * nm
-AIRBRIDGE_VIA_THICKNESS_UM = 100 * nm
-AIRBRIDGE_THICKNESS_UM = 200 * nm
+# Nominal rectangular-prism model: pier height equals the gap above base metal.
+AIRBRIDGE_VIA_THICKNESS_UM = 3.0
+AIRBRIDGE_THICKNESS_UM = 300 * nm
 # Nominal public metal-to-metal spacing; compressed process heights may be lower.
 D0_D1_METAL_FACE_GAP_UM = 8.0
 D0_D1_SUBSTRATE_FACE_GAP_UM = D0_D1_METAL_FACE_GAP_UM + 2 * METAL_THICKNESS_UM
@@ -220,10 +221,13 @@ def _face_layer_level(
     thickness: float,
     material: str,
     mesh_order: int | None = None,
+    info: dict[str, Any] | None = None,
 ) -> LayerLevel:
     kwargs: dict[str, Any] = {}
     if mesh_order is not None:
         kwargs["mesh_order"] = mesh_order
+    if info is not None:
+        kwargs["info"] = info
 
     return LayerLevel(
         name=name,
@@ -274,6 +278,21 @@ def _face_layer_levels(
     m1_info: dict[str, Any] | None = None,
 ) -> dict[str, LayerLevel]:
     prefix = f"{die}_{face}"
+    airbridge_process = {
+        "model": "nominal_rectangular_prisms",
+        "gap_above_base_metal_um": AIRBRIDGE_VIA_THICKNESS_UM,
+        "deck_thickness_um": AIRBRIDGE_THICKNESS_UM,
+        "base_metal_thickness_um": METAL_THICKNESS_UM,
+        "material_id": "Al",
+        "die": die,
+        "face": face,
+        "outward": outward,
+        "placement_authority": "human_selected_nominal_gap_above_base_metal",
+        "source_doi": "10.1063/1.4863745",
+        "source_url": "https://clelandlab.uchicago.edu/pdf/chen%20airbridges%20apl%202014.pdf",
+        "supplement_url": "https://web.physics.ucsb.edu/~martinisgroup/papers/Chen2013supp.pdf",
+        "source_scope": "3 um scaffold/separation and 300 nm Al; not footprint or arch geometry",
+    }
     return {
         f"{prefix}_M1": _m1_layer_level(
             name=f"{prefix}_M1",
@@ -293,6 +312,14 @@ def _face_layer_levels(
             offset=METAL_THICKNESS_UM,
             thickness=AIRBRIDGE_VIA_THICKNESS_UM,
             material="Al",
+            info={
+                "simulation_role": "conductor",
+                "layer_type": "via",
+                "part_role": "airbridge_post",
+                "airbridge_part": "pier",
+                "geometry": {"geometry_source": "gds_polygon"},
+                "airbridge_process": airbridge_process,
+            },
         ),
         f"{prefix}_AIRBRIDGE": _face_layer_level(
             name=f"{prefix}_AIRBRIDGE",
@@ -302,6 +329,14 @@ def _face_layer_levels(
             offset=METAL_THICKNESS_UM + AIRBRIDGE_VIA_THICKNESS_UM,
             thickness=AIRBRIDGE_THICKNESS_UM,
             material="Al",
+            info={
+                "simulation_role": "conductor",
+                "layer_type": "conductor",
+                "part_role": "airbridge_deck",
+                "airbridge_part": "deck",
+                "geometry": {"geometry_source": "gds_polygon"},
+                "airbridge_process": airbridge_process,
+            },
         ),
         f"{prefix}_SIM_BOUNDARY": _face_port_sheet_layer_level(
             name=f"{prefix}_SIM_BOUNDARY",
@@ -547,17 +582,22 @@ def get_two_die_flip_chip_layer_stack() -> LayerStack:
     return LAYER_STACK
 
 
-def get_single_die_layer_stack() -> LayerStack:
+def get_single_die_layer_stack(*, include_airbridges: bool = False) -> LayerStack:
     """Select the public D0 substrate, top metal and locator sheet for one die.
 
     Physical dimensions and materials remain the PDK facts. There is no upper
     die or interdie cavity: SCGSim owns the surrounding vacuum envelope.
+    Opt in to the nominal D0 top airbridge pier and deck levels. The default
+    retains the existing three-level stack; returned levels are detached copies.
     """
     levels = {
         name: LAYER_STACK.layers[name].model_copy(deep=True)
         for name in ("D0_SUBSTRATE", "D0_TOP_M1", "D0_TOP_SIM_BOUNDARY")
     }
     levels["D0_TOP_M1"].info.pop("host_void_semantic_id", None)
+    if include_airbridges:
+        for name in ("D0_TOP_AIRBRIDGE_VIA", "D0_TOP_AIRBRIDGE"):
+            levels[name] = LAYER_STACK.layers[name].model_copy(deep=True)
     return LayerStack(layers=levels)
 
 

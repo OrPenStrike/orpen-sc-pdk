@@ -23,6 +23,11 @@ def airbridge(
     the width is along local X. The component is centered at the local origin and
     provides no route ports; parent placement is expected to orient/rotate it as
     needed in assembly contexts.
+
+    Canonical same-face layer pairs declare local deck and pier Entities using
+    PDK stack levels, without electrical Nets. Unknown/custom pairs remain
+    layout-only. The stack is a nominal rectangular-prism electrostatic model,
+    not the released reflow arch or a complete paper-footprint replica.
     """
 
     if not all(isfinite(v) for v in (bridge_span, bridge_width, via_size)):
@@ -53,4 +58,36 @@ def airbridge(
         via.move((0.0, y))
 
     c.ports.clear()
+    for prefix in ("D0_TOP", "D0_BOTTOM", "D1_TOP", "D1_BOTTOM"):
+        if (
+            tuple(airbridge_draw_layer) == tuple(getattr(LAYER, f"{prefix}_AB_DRAW"))
+            and tuple(airbridge_via_layer) == tuple(getattr(LAYER, f"{prefix}_AB_VIA"))
+        ):
+            c.info["component_semantics"] = {
+                "schema_version": 2,
+                "conductor_regions": [
+                    {
+                        "semantic_id": semantic_id,
+                        "level": f"{prefix}_{level_suffix}",
+                        "gds_layer": tuple(int(value) for value in layer),
+                        "geometry": {
+                            "geometry_source": "gds_polygon",
+                            "selector_point_um": point,
+                        },
+                        "metadata": {"source_kind": "authored"},
+                    }
+                    for semantic_id, level_suffix, layer, point in (
+                        ("DECK", "AIRBRIDGE", airbridge_draw_layer, (0.0, 0.0)),
+                        (
+                            "PIER_MINUS", "AIRBRIDGE_VIA", airbridge_via_layer,
+                            (0.0, -bridge_span / 2),
+                        ),
+                        (
+                            "PIER_PLUS", "AIRBRIDGE_VIA", airbridge_via_layer,
+                            (0.0, bridge_span / 2),
+                        ),
+                    )
+                ],
+            }
+            break
     return c
