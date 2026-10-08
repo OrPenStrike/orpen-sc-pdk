@@ -9,13 +9,17 @@ from orpen_sc_pdk.cells import (
     airbridge,
     bend_circular,
     bend_euler,
+    bspline_strip,
     capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators,
     circular_pad_capacitor,
     cpw_t_junction,
+    cpw_airbridge_coupon,
     dicing_edge,
+    flip_chip_pad_coupon,
     indium_bump,
     indium_ground,
     interdigital_capacitor,
+    interpolation_spline_strip,
     kosen2024_flip_chip_xmon_qubit,
     launcher,
     manhattan_style_junction,
@@ -82,6 +86,10 @@ _cells = {
     "square_pad_capacitor": square_pad_capacitor,
     "circular_pad_capacitor": circular_pad_capacitor,
     "straight_to_circular_strip": straight_to_circular_strip,
+    "interpolation_spline_strip": interpolation_spline_strip,
+    "bspline_strip": bspline_strip,
+    "flip_chip_pad_coupon": flip_chip_pad_coupon,
+    "cpw_airbridge_coupon": cpw_airbridge_coupon,
 }
 
 _cross_sections = {

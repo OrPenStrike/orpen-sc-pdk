@@ -17,6 +17,13 @@
 # # Finite-ground CPW — Q3D Extraction
 
 # %% [markdown]
+# Source-only SCGSim v2 alignment, CONVERGING / LOCAL CANDIDATE; not executed.
+# In a separate consumer environment with this OrPen checkout installed:
+# `python -m pip install "scgsim[aedt] @ git+https://github.com/OrPenStrike/scgsim.git@cc1424c84ffe9d295a57dbabb3c2ab6431110f6c"`
+# The ordinary project pin remains 2eed1eb; uv sync does not select this v2 cohort.
+# Historical native results retain their original run/runtime identities.
+# No native preparation, solve, Resolve or Report is claimed for this source.
+#
 # ## Setup and Imports
 
 # %%
@@ -28,10 +35,9 @@ from pathlib import Path
 import gdsfactory as gf
 from IPython.display import display
 from scgsim.aedt import (
-    LayerImport,
     MatrixRunControl,
-    ObjectBinding,
     PdkMaterial,
+    Q3dBodySpec,
     Q3dNetSpec,
     Q3dSpec,
     prepare_handoff,
@@ -51,7 +57,7 @@ orpen_sc_pdk.activate()
 # Choose prepare_handoff to create files, run to execute, or analyze_handoff to inspect results.
 WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
 # Use a new unique ID for each prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "cpw_finite_ground_q3d"
+RUN_ID = "cpw_finite_ground_q3d_v2_20261009_01"
 # Root directory for prepared geometry and handoff artifacts.
 OUTPUT_ROOT = Path("notebooks/.artifacts/ComponentSimulation/CpwFiniteGround")
 RUN_DIR = OUTPUT_ROOT / RUN_ID
@@ -93,8 +99,10 @@ coupon << gf.components.rectangle(
     layer=LAYER.D0_SUBSTRATE_AREA,
 )
 SOURCE_GDS = OUTPUT_ROOT / "geometry" / f"{RUN_ID}.gds"
-SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
-coupon.write_gds(SOURCE_GDS, with_metadata=False)
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
+    with SOURCE_GDS.open("xb") as stream:
+        coupon.write_gds(stream.name, with_metadata=False)
 coupon.plot()
 
 # %% [markdown]
@@ -112,17 +120,21 @@ design_name = "CpwFiniteGroundQ3d"
 # ## Import GDS and Build the HFSS/Q3D/Q2D Model
 
 # %%
-# GDS layer number/datatype, AEDT name, bottom z and thickness (um).
-layer_imports = (
-    LayerImport(1, 0, "D0_TOP_M1", 0.0, metal_thickness_um),
-    LayerImport(201, 0, "D0_SUBSTRATE", -substrate_thickness_um, 0.0),
-)
-# Imported object name, source layer, semantic role, and material ID.
-object_bindings = (
-    ObjectBinding("D0_TOP_M1_1", 1, "signal", "Nb"),
-    ObjectBinding("D0_TOP_M1_2", 1, "ground", "Nb"),
-    ObjectBinding("D0_TOP_M1_3", 1, "ground", "Nb"),
-    ObjectBinding("D0_SUBSTRATE_4", 201, "substrate", "Si"),
+# Source-free body-v3 records mirror the four GDSFactory rectangles exactly.
+# Body IDs are authored identities, not guesses about native imported names.
+x = trace_length_um / 2
+s = signal_width_um / 2
+g = s + gap_um
+w = ground_width_um
+bodies = (
+    Q3dBodySpec("SignalBody", ((-x, -s), (x, -s), (x, s), (-x, s)), (),
+                0.0, metal_thickness_um, "Nb", "signal", "Signal"),
+    Q3dBodySpec("GroundLeftBody", ((-x, g), (x, g), (x, g+w), (-x, g+w)), (),
+                0.0, metal_thickness_um, "Nb", "ground", "GroundLeft"),
+    Q3dBodySpec("GroundRightBody", ((-x, -g-w), (x, -g-w), (x, -g), (-x, -g)), (),
+                0.0, metal_thickness_um, "Nb", "ground", "GroundRight"),
+    Q3dBodySpec("SubstrateBody", ((-x, -g-w), (x, -g-w), (x, g+w), (-x, g+w)), (),
+                -substrate_thickness_um, 0.0, "Si", "substrate", None),
 )
 
 # %% [markdown]
@@ -155,9 +167,9 @@ region_padding_um = (0.0, 0.0, 100.0, 100.0, 1000.0, 1000.0)
 # Net names, roles, object members, and terminal directions define Q3D excitations.
 nets = (
     # Net name, net role, member objects, and optional terminal object/directions.
-    Q3dNetSpec("Signal", "Signal", ("D0_TOP_M1_1",), "D0_TOP_M1_1", "-X", "D0_TOP_M1_1", "+X"),
-    Q3dNetSpec("GroundLeft", "Ground", ("D0_TOP_M1_2",)),
-    Q3dNetSpec("GroundRight", "Ground", ("D0_TOP_M1_3",)),
+    Q3dNetSpec("Signal", "Signal", ("SignalBody",), "SignalBody", "-X", "SignalBody", "+X"),
+    Q3dNetSpec("GroundLeft", "Ground", ("GroundLeftBody",)),
+    Q3dNetSpec("GroundRight", "Ground", ("GroundRightBody",)),
 )
 
 # %% [markdown]
@@ -169,13 +181,11 @@ frequency_ghz = 6.0
 # Maximum adaptive passes.
 maximum_passes = 3
 spec = Q3dSpec(
-    gds_path=SOURCE_GDS,
     project_name=project_name,
     design_name=design_name,
     materials=materials,
     vacuum_material_id="vacuum",
-    layer_imports=layer_imports,
-    object_bindings=object_bindings,
+    bodies=bodies,
     nets=nets,
     run_control=MatrixRunControl("Setup1", frequency_ghz, maximum_passes),
     region_padding_um=region_padding_um,

@@ -38,6 +38,20 @@ The PDK superconducting Al record is lowered by SCGSim to native PEC; finite
 geometry is preserved, not a finite-conductivity loss measurement. Palace's
 natural electrostatic exterior and Q3D's open Region are not claimed equivalent.
 
+## Runtime Prerequisite — Not Migrated to SCGSim v2
+
+This notebook retains its original runtime contract below; it is **not v2
+ready**. SCGSim public revision `cc1424c84ffe9d295a57dbabb3c2ab6431110f6c`
+(`2.0.0.dev1`) accepts Q3D body-v3 only, not this GDS-piece request.
+Its public finite C/G GeometryPlan helper is terminal-free, whereas this
+notebook explicitly assigns pad source/sink faces in -Z/+Z even with
+AC/RL disabled. Removing those native assignments is not authorized.
+The helper otherwise matches the open, ungrounded Region and padding.
+A supported faithful migration is unresolved; do not install v2 to execute
+this source or interpret historical results as v2 observations. The ordinary
+OrPen project pin is unchanged; the original exact runtime cohort remains
+identified above, not replaced by a newer execution claim.
+
 ## Setup and Imports
 
 ```{python}

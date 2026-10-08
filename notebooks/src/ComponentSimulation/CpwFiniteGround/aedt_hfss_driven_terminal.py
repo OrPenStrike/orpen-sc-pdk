@@ -17,6 +17,13 @@
 # # Finite-ground CPW — HFSS Driven Terminal
 
 # %% [markdown]
+# Source-only SCGSim v2 alignment, CONVERGING / LOCAL CANDIDATE; not executed.
+# In a separate consumer environment with this OrPen checkout installed:
+# `python -m pip install "scgsim[aedt] @ git+https://github.com/OrPenStrike/scgsim.git@cc1424c84ffe9d295a57dbabb3c2ab6431110f6c"`
+# The ordinary project pin remains 2eed1eb; uv sync does not select this v2 cohort.
+# Historical native results retain their original run/runtime identities.
+# No native preparation, solve, Resolve or Report is claimed for this source.
+#
 # ## Setup and Imports
 
 # %%
@@ -53,7 +60,7 @@ orpen_sc_pdk.activate()
 # Choose prepare_handoff to create files, run to execute, or analyze_handoff to inspect results.
 WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
 # Use a new unique ID for each prepared run; SCGSim refuses non-empty output directories.
-RUN_ID = "cpw_finite_ground_hfss_terminal"
+RUN_ID = "cpw_finite_ground_hfss_terminal_v2_20261009_01"
 # Root directory for prepared geometry and handoff artifacts.
 OUTPUT_ROOT = Path("notebooks/.artifacts/ComponentSimulation/CpwFiniteGround")
 RUN_DIR = OUTPUT_ROOT / RUN_ID
@@ -94,8 +101,10 @@ coupon << gf.components.rectangle(
     layer=LAYER.D0_SUBSTRATE_AREA,
 )
 SOURCE_GDS = OUTPUT_ROOT / "geometry" / f"{RUN_ID}.gds"
-SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
-coupon.write_gds(SOURCE_GDS, with_metadata=False)
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
+    with SOURCE_GDS.open("xb") as stream:
+        coupon.write_gds(stream.name, with_metadata=False)
 coupon.plot()
 
 # %% [markdown]

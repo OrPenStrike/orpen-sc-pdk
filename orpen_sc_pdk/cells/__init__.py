@@ -28,7 +28,9 @@ from orpen_sc_pdk.cells.simple_pad import (
     square_pad_capacitor,
     straight_to_circular_strip,
 )
+from orpen_sc_pdk.cells.spline_strip import bspline_strip, interpolation_spline_strip
 from orpen_sc_pdk.cells.taper import taper
+from orpen_sc_pdk.cells.test_components import cpw_airbridge_coupon, flip_chip_pad_coupon
 
 __all__ = [
     "indium_bump",
@@ -57,4 +59,8 @@ __all__ = [
     "square_pad_capacitor",
     "circular_pad_capacitor",
     "straight_to_circular_strip",
+    "interpolation_spline_strip",
+    "bspline_strip",
+    "flip_chip_pad_coupon",
+    "cpw_airbridge_coupon",
 ]

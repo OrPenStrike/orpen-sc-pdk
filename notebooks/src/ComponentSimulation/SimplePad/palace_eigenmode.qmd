@@ -22,10 +22,22 @@ The source locator sheet spans x=99.999–120.001, y=-1–1 um: 20.002 by
 source DBU (0.001 um) for exact contact binding; physical metal and the
 20 um gap are unchanged. The component owns this overlap metadata.
 
-Source receipt: OrPen base `36b6e6b`; SCGSim runtime 1.0.1 stable source
-`9c032e398f2ebabc2dc53965b2bde5c346a061bc` (develop
-`8361bd902` has unchanged runtime). Use that exact runtime cohort; local
-source authoring is not an installed-version or native-model observation.
+Historical source receipt: OrPen base `36b6e6b`; SCGSim runtime 1.0.1
+source `9c032e398f2ebabc2dc53965b2bde5c346a061bc`. This identifies
+the earlier authoring cohort, not the revised v2 source below.
+Current source-only SCGSim v2 candidate targets public revision
+`cc1424c84ffe9d295a57dbabb3c2ab6431110f6c` (`2.0.0.dev1`). Use a separate
+consumer environment; the ordinary OrPen project still pins `2eed1eb`.
+For example, in a fresh virtual environment with this OrPen checkout installed:
+
+```bash
+python -m pip install "scgsim[palace,visualization,aedt] @ git+https://github.com/OrPenStrike/scgsim.git@cc1424c84ffe9d295a57dbabb3c2ab6431110f6c"
+```
+
+Do not use the ordinary project's `uv sync` as a v2 installation instruction.
+This alignment was not executed: preparation, native modeling, mesh, solve,
+fields, Resolve and Report remain unobserved for these revised sources.
+Historical results retain their original runtime and run identity.
 Quarto execution is disabled. This checkpoint has no native geometry, mesh,
 solve, capacitance, frequency, EPR or adequacy claim. Run IDs below identify
 new preparations, not pre-existing evidence; change the ID for each new run.
@@ -50,14 +62,14 @@ import importlib.metadata
 
 import gdsfactory as gf
 from IPython.display import display
-from scgsim.sgb import GeometryPlan
+from scgsim.geometry import GeometryPlan
 from scgsim.palace import EigenmodeSim, resolve_palace_result, inspect_run_trustworthiness
 import orpen_sc_pdk
 from orpen_sc_pdk import get_material_records, get_interface_preset_records, validate_interface_preset_records
 from orpen_sc_pdk.tech import get_single_die_layer_stack
 
 WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
-RUN_ID = "simple_pad_palace_eigenmode_20261006_02"
+RUN_ID = "simple_pad_palace_eigenmode_v2_20261009_01"
 OUTPUT_ROOT = Path.cwd() / ".artifacts" / "SimplePad"
 RUN_ROOT = OUTPUT_ROOT / RUN_ID
 if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
