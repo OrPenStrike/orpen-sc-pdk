@@ -50,15 +50,19 @@ required by an OrPen consumer.
 `get_single_die_layer_stack(*, include_airbridges=False)` retains the existing
 D0 substrate, top metal and locator levels. Opting in adds detached copies of
 `D0_TOP_AIRBRIDGE_VIA` and `D0_TOP_AIRBRIDGE`; it does not add an upper die or
-interdie host cavity. The Al base metal remains 0.2 µm thick. The nominal
+interdie host cavity. The default Al base metal is 0.1 µm (100 nm) thick. The nominal
 underside gap above that metal is 3 µm (also the pier height), and the Al deck
 film is separately 0.3 µm thick:
 
 | D0 top part | z range (µm) | Material |
 | --- | --- | --- |
-| Base metal | 0–0.2 | Al |
-| Landing piers | 0.2–3.2 | Al |
-| Bridge deck | 3.2–3.5 | Al |
+| Base metal | 0–0.1 | Al |
+| Landing piers | 0.1–3.1 | Al |
+| Bridge deck | 3.1–3.4 | Al |
+
+Earlier source plates and native runs that used the 200 nm M1 default retain
+their original stack and provenance. Changing this default does not regenerate
+those artifacts or change an explicitly fixed notebook-local metal model.
 
 The full face-aware stack uses the same nominal heights along each face's
 outward direction. `AIRBRIDGE_VIA_THICKNESS_UM` denotes the 3 µm pier height,

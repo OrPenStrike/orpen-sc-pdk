@@ -58,7 +58,7 @@ tangents define outward `o1`/`o2` directions; default tangent pairs are horizont
 and default end caps are perpendicular to them. Source-local `TRACE` owns the
 real polygon and its closed boundary chain. Final electrical Nets belong to
 the consumer; no implicit circuit, Ground, JJ or native port is assigned.
-The existing single-die stack remains Al0..0.2 um and Si-500..0 um.
+The current single-die default stack is Al0..0.1 um (100 nm) and Si-500..0 um.
 
 ## 06/07 composition ownership
 
@@ -70,17 +70,22 @@ production authority.
 06 retains named `LOWER_PAD_DIE`, `UPPER_GROUND`, `UPPER_SUBSTRATE` and four
 `BUMP_*` references at(+/-250,+/-250) um. Children keep local PAD/GROUND and bump
 Entities; upper metal declares `UPPER_GROUND` on canonical D1_BOTTOM_M1(2/0),
-outward-Z, z8.2..8.4 um. In bumps40/0 span0.2..8.2 um. Existing UBM40/1
+outward-Z, z8.1..8.2 um. In bumps40/0 span0.1..8.1 um. Existing UBM40/1
 footprints remain separate source process detail and simulation-excluded by PDK
 policy. The lower child's nonmetal locator is unused and not forwarded.
 
 07 retains local SIGNAL/GROUND_MINUS/GROUND_PLUS and the named AIRBRIDGE child.
 The canonical child owns DECK10/0 and PIER_MINUS/PIER_PLUS10/1. Source stack
 selection is `get_single_die_layer_stack(include_airbridges=True)`: base Al
-0..0.2, piers0.2..3.2, deck3.2..3.5 um. The actual source deck/pier overlap is
+0..0.1, piers0.1..3.1, deck3.1..3.4 um. The actual source deck/pier overlap is
 12x7 um per pier, not full pier coverage or a reflow-arch redesign. No GF/native
 ports or final Nets are invented. Source contact intent is not connectivity
 or native conformity proof.
+
+The Human-selected M1 default is now100 nm. Previously delivered source
+inspection plates and native evidence with200 nm M1 retain their original
+identities; they are not regenerated or relabeled as the new default stack.
+XY geometry, the8 um bump gap,3 um airbridge gap and300 nm deck are unchanged.
 
 ## Inspection and execution boundary
 

@@ -103,7 +103,7 @@ material_alias_records = get_material_alias_records()
 interface_preset_records = {}
 
 SUBSTRATE_THICKNESS_UM = 500.0
-METAL_THICKNESS_UM = 200 * nm
+METAL_THICKNESS_UM = 100 * nm
 # Nominal rectangular-prism model: pier height equals the gap above base metal.
 AIRBRIDGE_VIA_THICKNESS_UM = 3.0
 AIRBRIDGE_THICKNESS_UM = 300 * nm
