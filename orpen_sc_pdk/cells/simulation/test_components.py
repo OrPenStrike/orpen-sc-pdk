@@ -6,13 +6,14 @@ Children retain local Entities; callers, not these cells, assign final Nets.
 """
 
 import gdsfactory as gf
-from orpen_sc_pdk.cells.airbridge import airbridge
-from orpen_sc_pdk.cells.indium import indium_bump
-from orpen_sc_pdk.cells.simple_pad import square_pad_capacitor
+
+from orpen_sc_pdk.cells.layout.airbridge import airbridge
+from orpen_sc_pdk.cells.layout.indium import indium_bump
+from orpen_sc_pdk.cells.simulation.simple_pad import square_pad_capacitor
 from orpen_sc_pdk.tech import LAYER
 
 
-@gf.cell
+@gf.cell(tags=["simulation", "chip", "simple_pad", "flip_chip", "bump"])
 def flip_chip_pad_coupon() -> gf.Component:
     """Compose the default lower pad, full upper plane and four Ground bump sites.
 
@@ -32,19 +33,24 @@ def flip_chip_pad_coupon() -> gf.Component:
     )
     upper_substrate.name = "UPPER_SUBSTRATE"
     for x, y, name in (
-        (-250.0, -250.0, "BUMP_MM"), (-250.0, 250.0, "BUMP_MP"),
-        (250.0, -250.0, "BUMP_PM"), (250.0, 250.0, "BUMP_PP"),
+        (-250.0, -250.0, "BUMP_MM"),
+        (-250.0, 250.0, "BUMP_MP"),
+        (250.0, -250.0, "BUMP_PM"),
+        (250.0, 250.0, "BUMP_PP"),
     ):
         bump = c << indium_bump()
         bump.name = name
         bump.move((x, y))
     c.info["component_semantics"] = {
         "schema_version": 2,
-        "conductor_regions": [{
-            "semantic_id": "UPPER_GROUND", "level": "D1_BOTTOM_M1",
-            "gds_layer": tuple(LAYER.D1_BOTTOM_M1_DRAW),
-            "geometry": {"geometry_source": "gds_polygon", "selector_point_um": (0.0, 0.0)},
-        }],
+        "conductor_regions": [
+            {
+                "semantic_id": "UPPER_GROUND",
+                "level": "D1_BOTTOM_M1",
+                "gds_layer": tuple(LAYER.D1_BOTTOM_M1_DRAW),
+                "geometry": {"geometry_source": "gds_polygon", "selector_point_um": (0.0, 0.0)},
+            }
+        ],
     }
     c.info["inspection_source_intent"] = {
         "contact_intent": "Ground-to-Ground only; no bump near central PAD",
@@ -56,7 +62,7 @@ def flip_chip_pad_coupon() -> gf.Component:
     return c
 
 
-@gf.cell
+@gf.cell(tags=["simulation", "cpw", "single_die", "airbridge"])
 def cpw_airbridge_coupon() -> gf.Component:
     """Compose positive finite-ground Al CPW with the unchanged canonical bridge.
 
@@ -82,14 +88,19 @@ def cpw_airbridge_coupon() -> gf.Component:
     bridge.name = "AIRBRIDGE"
     c.info["component_semantics"] = {
         "schema_version": 2,
-        "conductor_regions": [{
-            "semantic_id": name, "level": "D0_TOP_M1",
-            "gds_layer": tuple(LAYER.D0_TOP_M1_DRAW),
-            "geometry": {"geometry_source": "gds_polygon", "selector_point_um": point},
-        } for name, point in (
-            ("SIGNAL", (0.0, 0.0)), ("GROUND_MINUS", (0.0, -51.0)),
-            ("GROUND_PLUS", (0.0, 51.0)),
-        )],
+        "conductor_regions": [
+            {
+                "semantic_id": name,
+                "level": "D0_TOP_M1",
+                "gds_layer": tuple(LAYER.D0_TOP_M1_DRAW),
+                "geometry": {"geometry_source": "gds_polygon", "selector_point_um": point},
+            }
+            for name, point in (
+                ("SIGNAL", (0.0, 0.0)),
+                ("GROUND_MINUS", (0.0, -51.0)),
+                ("GROUND_PLUS", (0.0, 51.0)),
+            )
+        ],
     }
     c.info["inspection_source_intent"] = {
         "stack_selection": "get_single_die_layer_stack(include_airbridges=True)",

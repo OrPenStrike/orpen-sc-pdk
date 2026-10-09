@@ -1,8 +1,8 @@
 """Canonical public cell registry for the OrPen SC PDK."""
 
-from orpen_sc_pdk.cells.airbridge import airbridge
-from orpen_sc_pdk.cells.capacitor import interdigital_capacitor
-from orpen_sc_pdk.cells.cpw import (
+from orpen_sc_pdk.cells.layout.airbridge import airbridge
+from orpen_sc_pdk.cells.layout.capacitor import interdigital_capacitor
+from orpen_sc_pdk.cells.layout.cpw import (
     cpw_t_junction,
     launcher,
     mtl_bend_bend_transition,
@@ -11,26 +11,26 @@ from orpen_sc_pdk.cells.cpw import (
     mtl_straight_bend_transition,
     n_trace_mtl_section,
 )
-from orpen_sc_pdk.cells.dicing import dicing_edge
-from orpen_sc_pdk.cells.indium import indium_bump, indium_ground
-from orpen_sc_pdk.cells.junction import manhattan_style_junction
-from orpen_sc_pdk.cells.martinis import martinis2022_differential_ribbon_capacitor
-from orpen_sc_pdk.cells.primitives import bend_circular, bend_euler, straight
-from orpen_sc_pdk.cells.purcell import (
+from orpen_sc_pdk.cells.layout.dicing import dicing_edge
+from orpen_sc_pdk.cells.layout.indium import indium_bump, indium_ground
+from orpen_sc_pdk.cells.layout.junction import manhattan_style_junction
+from orpen_sc_pdk.cells.layout.martinis import martinis2022_differential_ribbon_capacitor
+from orpen_sc_pdk.cells.layout.primitives import bend_circular, bend_euler, straight
+from orpen_sc_pdk.cells.layout.purcell import (
     capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators,
 )
-from orpen_sc_pdk.cells.qubit import kosen2024_flip_chip_xmon_qubit
-from orpen_sc_pdk.cells.resonator import resonator
-from orpen_sc_pdk.cells.resonator_hanger import resonator_hanger
-from orpen_sc_pdk.cells.resonator_meander import resonator_meander
-from orpen_sc_pdk.cells.simple_pad import (
+from orpen_sc_pdk.cells.layout.qubit import kosen2024_flip_chip_xmon_qubit
+from orpen_sc_pdk.cells.layout.resonator import resonator
+from orpen_sc_pdk.cells.layout.resonator_hanger import resonator_hanger
+from orpen_sc_pdk.cells.layout.resonator_meander import resonator_meander
+from orpen_sc_pdk.cells.layout.taper import taper
+from orpen_sc_pdk.cells.simulation.simple_pad import (
     circular_pad_capacitor,
     square_pad_capacitor,
     straight_to_circular_strip,
 )
-from orpen_sc_pdk.cells.spline_strip import bspline_strip, interpolation_spline_strip
-from orpen_sc_pdk.cells.taper import taper
-from orpen_sc_pdk.cells.test_components import cpw_airbridge_coupon, flip_chip_pad_coupon
+from orpen_sc_pdk.cells.simulation.spline_strip import bspline_strip, interpolation_spline_strip
+from orpen_sc_pdk.cells.simulation.test_components import cpw_airbridge_coupon, flip_chip_pad_coupon
 
 __all__ = [
     "indium_bump",

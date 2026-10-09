@@ -14,7 +14,7 @@ def _path_orientation(start: Point, end: Point) -> float:
     return math.degrees(math.atan2(end[1] - start[1], end[0] - start[0])) % 360
 
 
-@gf.cell(tags=["junctions", "elements"])
+@gf.cell(tags=["layout", "junction", "manhattan"])
 def manhattan_style_junction(
     width: float = 0.09,
     length: float = 5.0,

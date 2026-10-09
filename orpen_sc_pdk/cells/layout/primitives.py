@@ -6,7 +6,7 @@ import gdsfactory as gf
 from gdsfactory.typings import CrossSectionSpec, LayerSpec
 
 
-@gf.cell
+@gf.cell(tags=["layout", "primitive", "bend_circular", "circular_arc"])
 def bend_circular(
     radius: float | None = None,
     angle: float = 90.0,
@@ -31,7 +31,7 @@ def bend_circular(
     )
 
 
-@gf.cell
+@gf.cell(tags=["layout", "primitive", "bend_euler"])
 def bend_euler(
     radius: float | None = None,
     angle: float = 90.0,
@@ -60,7 +60,7 @@ def bend_euler(
     )
 
 
-@gf.cell
+@gf.cell(tags=["layout", "primitive", "straight"])
 def straight(
     length: float = 10.0,
     npoints: int = 2,

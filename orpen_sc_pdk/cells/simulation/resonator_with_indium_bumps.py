@@ -2,13 +2,13 @@
 
 import gdsfactory as gf
 
-from orpen_sc_pdk.cells.indium import indium_ground
+from orpen_sc_pdk.cells.layout.indium import indium_ground
 from orpen_sc_pdk.helpers.layout import get_keepout_region_from_targets
 from orpen_sc_pdk.ports import SimulationPortType
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
-@gf.cell(tags=["chips"])
+@gf.cell(tags=["simulation", "chip", "resonator", "resonator_with_indium_bumps", "bump"])
 def resonator_with_indium_bumps(
     resonator_length: float = 4000.0,
     resonator_meanders: int = 6,

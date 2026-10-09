@@ -7,7 +7,7 @@ import gdsfactory as gf
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "airbridge"])
 def airbridge(
     bridge_span: float = 84.0,
     bridge_width: float = 12.0,
@@ -59,10 +59,9 @@ def airbridge(
 
     c.ports.clear()
     for prefix in ("D0_TOP", "D0_BOTTOM", "D1_TOP", "D1_BOTTOM"):
-        if (
-            tuple(airbridge_draw_layer) == tuple(getattr(LAYER, f"{prefix}_AB_DRAW"))
-            and tuple(airbridge_via_layer) == tuple(getattr(LAYER, f"{prefix}_AB_VIA"))
-        ):
+        if tuple(airbridge_draw_layer) == tuple(getattr(LAYER, f"{prefix}_AB_DRAW")) and tuple(
+            airbridge_via_layer
+        ) == tuple(getattr(LAYER, f"{prefix}_AB_VIA")):
             c.info["component_semantics"] = {
                 "schema_version": 2,
                 "conductor_regions": [
@@ -79,11 +78,15 @@ def airbridge(
                     for semantic_id, level_suffix, layer, point in (
                         ("DECK", "AIRBRIDGE", airbridge_draw_layer, (0.0, 0.0)),
                         (
-                            "PIER_MINUS", "AIRBRIDGE_VIA", airbridge_via_layer,
+                            "PIER_MINUS",
+                            "AIRBRIDGE_VIA",
+                            airbridge_via_layer,
                             (0.0, -bridge_span / 2),
                         ),
                         (
-                            "PIER_PLUS", "AIRBRIDGE_VIA", airbridge_via_layer,
+                            "PIER_PLUS",
+                            "AIRBRIDGE_VIA",
+                            airbridge_via_layer,
                             (0.0, bridge_span / 2),
                         ),
                     )

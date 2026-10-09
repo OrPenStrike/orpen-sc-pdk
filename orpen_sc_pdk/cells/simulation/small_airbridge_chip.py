@@ -3,11 +3,11 @@
 import gdsfactory as gf
 from gdsfactory.typings import CrossSectionSpec
 
-from orpen_sc_pdk.cells.airbridge import airbridge
+from orpen_sc_pdk.cells.layout.airbridge import airbridge
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
-@gf.cell(tags=["chips"])
+@gf.cell(tags=["simulation", "chip", "cpw", "small_airbridge_chip"])
 def small_airbridge_chip(
     chip_width: float = 2200.0,
     chip_height: float = 900.0,

@@ -18,7 +18,7 @@ from orpen_sc_pdk.tech import (
 )
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "cpw"])
 def cpw_t_junction(
     trunk_length: float = 200.0,
     branch_length: float = 100.0,
@@ -86,7 +86,7 @@ def cpw_t_junction(
     return component
 
 
-@gf.cell
+@gf.cell(tags=["layout", "cpw"])
 def n_trace_mtl_section(
     length: float = 500.0,
     cross_section: CrossSectionSpec = "coupled_cpw_w7_s6_d3",
@@ -154,7 +154,7 @@ def _coupled_mtl_cross_section(
     return xs, mtl_xs
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "cpw", "coupling_segment"])
 def mtl_bend_coupling_section(
     coupled_length: float = 500.0,
     inter_trace_ground_width: float = 3.0,
@@ -224,7 +224,7 @@ def mtl_bend_coupling_section(
     return component
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "cpw", "coupling_segment"])
 def mtl_straight_bend_coupling_section(
     coupled_length: float = 500.0,
     inter_trace_ground_width: float = 3.0,
@@ -302,7 +302,7 @@ def mtl_straight_bend_coupling_section(
     return component
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "cpw"])
 def mtl_straight_bend_transition(
     straight_length: float = 100.0,
     inter_trace_ground_width: float = 3.0,
@@ -411,7 +411,7 @@ def mtl_straight_bend_transition(
     return component
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "cpw"])
 def mtl_bend_bend_transition(
     bend_radius: float = 100.0,
     inter_trace_ground_width: float = 3.0,
@@ -506,7 +506,7 @@ def mtl_bend_bend_transition(
     return component
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "cpw"])
 def launcher(
     pad_width: float = 150.0,
     pad_length: float = 150.0,

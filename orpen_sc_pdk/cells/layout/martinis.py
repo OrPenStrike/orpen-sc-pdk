@@ -11,7 +11,7 @@ def _check_positive(name: str, value: float) -> None:
         raise ValueError(f"{name} must be positive, got {value!r}.")
 
 
-@gf.cell(tags=["capacitors", "benchmarks"])
+@gf.cell(tags=["layout", "capacitor", "martinis2022"])
 def martinis2022_differential_ribbon_capacitor(
     a_um: float = 50.0,
     b_um: float = 100.0,

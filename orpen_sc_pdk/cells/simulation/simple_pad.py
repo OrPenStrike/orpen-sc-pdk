@@ -8,7 +8,7 @@ from orpen_sc_pdk.ports import add_junction_lumped_port
 from orpen_sc_pdk.tech import LAYER
 
 
-@gf.cell
+@gf.cell(tags=["simulation", "capacitor", "simple_pad", "single_die"])
 def square_pad_capacitor(
     pad_side_um: float = 200.0,
     gap_um: float = 20.0,
@@ -104,7 +104,7 @@ def square_pad_capacitor(
     return component
 
 
-@gf.cell
+@gf.cell(tags=["simulation", "capacitor", "circular_pad", "single_die", "circular_arc"])
 def circular_pad_capacitor(
     outer_radius_um: float = 100.0,
     inner_radius_um: float = 0.0,
@@ -276,7 +276,7 @@ def _circle_boundary(radius: float, *, clockwise: bool = False) -> list[dict]:
     ]
 
 
-@gf.cell
+@gf.cell(tags=["simulation", "primitive", "curved_strip", "single_die", "circular_arc"])
 def straight_to_circular_strip(
     straight_length_um: float = 100.0,
     bend_radius_um: float = 100.0,

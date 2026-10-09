@@ -16,8 +16,8 @@ cell before creating another one:
 
 | Need | Public source example | Public result |
 | --- | --- | --- |
-| CPW transition | [`cells/taper.py`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/main/orpen_sc_pdk/cells/taper.py) | DRAW conductor, derived clearance, and route ports |
-| Differential capacitor | [`cells/martinis.py`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/main/orpen_sc_pdk/cells/martinis.py) | registered capacitor cell with named mesh locators |
+| CPW transition | [`cells/layout/taper.py`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/main/orpen_sc_pdk/cells/layout/taper.py) | DRAW conductor, derived clearance, and route ports |
+| Differential capacitor | [`cells/layout/martinis.py`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/main/orpen_sc_pdk/cells/layout/martinis.py) | registered capacitor cell with named mesh locators |
 | Reusable catalog | [`cells/__init__.py`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/main/orpen_sc_pdk/cells/__init__.py) | the public import surface |
 | PDK discovery | [`pdk.py`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/main/orpen_sc_pdk/pdk.py) | active-PDK cell registration |
 

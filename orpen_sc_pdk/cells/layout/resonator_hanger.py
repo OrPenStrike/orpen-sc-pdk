@@ -9,7 +9,7 @@ from orpen_sc_pdk.ports import add_mesh_port
 from orpen_sc_pdk.tech import LAYER, Layer
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "resonator", "hanger"])
 def resonator_hanger(
     coupling_length: float = 200.0,
     straight_length: float = 160.0,

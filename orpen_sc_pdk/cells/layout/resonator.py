@@ -5,8 +5,8 @@ from typing import Literal
 import gdsfactory as gf
 from gdsfactory.typings import ComponentSpec, CrossSectionSpec
 
-from orpen_sc_pdk.cells.resonator_hanger import resonator_hanger
-from orpen_sc_pdk.cells.resonator_meander import resonator_meander
+from orpen_sc_pdk.cells.layout.resonator_hanger import resonator_hanger
+from orpen_sc_pdk.cells.layout.resonator_meander import resonator_meander
 from orpen_sc_pdk.helpers.layout.etch import add_etch_for_component
 from orpen_sc_pdk.ports import add_mesh_port
 from orpen_sc_pdk.tech import (
@@ -26,7 +26,7 @@ def _component_length(component: gf.Component, name: str) -> float:
     return float(length)
 
 
-@gf.cell(tags=["resonators"])
+@gf.cell(tags=["layout", "resonator", "hanger", "meander"])
 def resonator(
     length: float = 4000.0,
     meanders: int = 6,

@@ -403,7 +403,7 @@ def _add_open_end_cap(
     return open_etch_ref, open_cap_port_name
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "resonator", "intrinsic_purcell"])
 def capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators(
     readout_open_length: float = 2539.512388,
     shared_short_length: float = 2270.302789,

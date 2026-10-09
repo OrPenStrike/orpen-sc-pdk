@@ -9,7 +9,7 @@ from typing import Literal
 
 import gdsfactory as gf
 
-from orpen_sc_pdk.cells.indium import indium_bump
+from orpen_sc_pdk.cells.layout.indium import indium_bump
 from orpen_sc_pdk.helpers.layout import indium_bump_centers_around_polygon
 from orpen_sc_pdk.tech import INDIUM_BUMP_SIZE_UM, LAYER, UNDER_BUMP_SIZE_UM, Layer
 

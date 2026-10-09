@@ -10,7 +10,7 @@ from functools import lru_cache, partial
 from gdsfactory.typings import ComponentFactory
 
 from . import cells, config, materials, tech
-from .cells.indium import (
+from .cells.layout.indium import (
     IndiumGroundBumpSpec,
     get_indium_ground_bump_spec,
 )

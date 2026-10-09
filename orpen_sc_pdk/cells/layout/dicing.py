@@ -5,7 +5,7 @@ import gdsfactory as gf
 from orpen_sc_pdk.tech import LAYER
 
 
-@gf.cell
+@gf.cell(tags=["layout", "dicing"])
 def dicing_edge(
     size: tuple[float, float] = (10000.0, 10000.0),
     width: float = 50.0,

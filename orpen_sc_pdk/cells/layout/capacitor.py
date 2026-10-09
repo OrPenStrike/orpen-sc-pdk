@@ -12,7 +12,7 @@ from orpen_sc_pdk.helpers.layout import add_etch_for_component
 from orpen_sc_pdk.tech import LAYER
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "capacitor", "interdigital"])
 def interdigital_capacitor(
     fingers: int = 20,
     finger_length: float = 100.0,

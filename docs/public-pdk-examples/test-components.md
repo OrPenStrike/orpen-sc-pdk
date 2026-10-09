@@ -62,7 +62,7 @@ The current single-die default stack is Al0..0.1 um (100 nm) and Si-500..0 um.
 
 ## 06/07 composition ownership
 
-`cells/test_components.py` is the current production source for06/07, migrated
+`cells/simulation/test_components.py` is the current production source for06/07, migrated
 from the prior task-local candidate without physical geometry changes. Prior
 task-local files and figures remain historical evidence, not a second current
 production authority.

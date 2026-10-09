@@ -12,7 +12,7 @@ from orpen_sc_pdk.tech import (
 )
 
 
-@gf.cell(tags=["elements"])
+@gf.cell(tags=["layout", "resonator", "meander"])
 def resonator_meander(
     length: float = 4000.0,
     meanders: int = 6,

@@ -13,8 +13,8 @@ from math import cos, isfinite, radians, sin
 
 import gdsfactory as gf
 
-from orpen_sc_pdk.cells.indium import indium_bump
-from orpen_sc_pdk.cells.junction import manhattan_style_junction
+from orpen_sc_pdk.cells.layout.indium import indium_bump
+from orpen_sc_pdk.cells.layout.junction import manhattan_style_junction
 from orpen_sc_pdk.helpers.layout import add_etch_for_component
 from orpen_sc_pdk.tech import D0_D1_METAL_FACE_GAP_UM, LAYER, Layer
 
@@ -108,7 +108,7 @@ def _xmon_coupling_electrode(
     return c
 
 
-@gf.cell(tags=["qubits", "flip_chip"])
+@gf.cell(tags=["layout", "qubit", "kosen2024", "flip_chip"])
 def kosen2024_flip_chip_xmon_qubit(
     qubit_pad_length: float = 309.5,
     qubit_pad_width: float = 24.65,
