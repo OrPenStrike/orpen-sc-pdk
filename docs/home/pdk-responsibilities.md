@@ -29,8 +29,9 @@ layer and process semantics.
 
 The [source test-layout families](../public-pdk-examples/test-components.md)
 are available geometry, not a claim that native mesh, contact or solve tests
-are complete. See [cell organization](../usage/cell-organization.md) for factory
-locations and discovery tags.
+are complete. See [Cells](../public-pdk-examples/index.md) for factory selection
+and practical tags, and [Process](../materials-and-technology.md) for layer,
+stack and material use.
 
 See [ecosystem-workspace](ecosystem-workspace.md) for the local workspace and
 contribution loop.

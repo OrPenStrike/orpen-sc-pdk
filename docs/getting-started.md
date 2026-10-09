@@ -34,8 +34,8 @@ cross-sections; do not silently substitute another PDK.
 
 Choose the existing [Cells](public-pdk-examples/index.md) and read their typed
 settings/source intent before composing a design. Use [Process](materials-and-technology.md)
-for layers, materials and stack facts. The [GDSFactory+ guide](features/gdsfactoryplus-discovery.md)
-describes optional interactive by-name build/review in the same public project.
+for layers, materials and stack facts. The [build and compose guide](public-pdk-examples/component-authoring.md)
+shows how to use existing cells and their ports in your own component.
 
 ## Add simulation only when needed
 

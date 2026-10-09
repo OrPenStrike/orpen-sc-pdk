@@ -5,7 +5,6 @@ project:
     - "*.qmd"
     - "*.md"
     - "home/*.md"
-    - "features/gdsfactoryplus-discovery.md"
     - "features/scgsim-integration.md"
     - "features/docs-theme.md"
     - "public-pdk-examples/*.md"
@@ -31,6 +30,7 @@ project:
     - "reference/*.qmd"
   resources:
     - _static/images/components/*.svg
+    - _static/images/test-components/*
   pre-render:
     - uv run --project .. --group docs quartodoc build
 
@@ -57,19 +57,12 @@ website:
       - text: API
         href: reference/index.qmd
   sidebar:
-    - id: getting-started
-      title: Get Started
-      contents:
-        - getting-started.md
-        - features/gdsfactoryplus-discovery.md
     - id: cells
       title: Cells
       contents:
         - public-pdk-examples/index.md
         - public-pdk-examples/test-components.md
-        - usage/cell-organization.md
         - public-pdk-examples/component-authoring.md
-        - layout-viewer.qmd
         - notebooks/Public_Docs/component_gallery.ipynb
     - id: process
       title: Process

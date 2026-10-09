@@ -8,16 +8,29 @@ cross-sections, process layers, materials and semantic source geometry for
 GDSFactory. Install the package in your own project; keep private chip designs,
 parameters and run evidence in that project.
 
-Build reusable cells with GDSFactory, inspect their settings and tags, and
-compose layouts using OrPen's CPW cross-sections, layers and material records.
-The base M1 film defaults to 100 nm; airbridge and bump levels retain their
-separately declared dimensions. Choose parameters and materials appropriate
-to your own design rather than treating examples as
-measured process specifications.
+## Component layouts
 
-Simulation is optional. The public notebooks pass source layouts and semantic
-intent to SCGSim for native geometry, meshes, solver handoff, result resolution
-and reporting. Choose the version-bound example that matches your runtime.
+![Default CPW resonator: actual DRAW and ETCH.](_static/images/components/resonator.svg){#fig-overview-resonator width=35%}
+
+{{< askr-image-view target="fig-overview-resonator" label="Image: resonator" >}}
+
+![Default interdigital capacitor: actual DRAW and ETCH.](_static/images/components/interdigital_capacitor.svg){#fig-overview-idc width=65%}
+
+{{< askr-image-view target="fig-overview-idc" label="Image: interdigital capacitor" >}}
+
+Open [Cells](public-pdk-examples/index.md#components-layout) for more component
+views, or the [Test Components Set](public-pdk-examples/test-components.md) for
+source-derived pad, strip, CPW, flip-chip and airbridge layouts. These are
+image previews of current default factories: deep-teal DRAW and soft light-teal ETCH,
+with auxiliary layers omitted. They are not a native GDS or simulation viewer.
+
+Build reusable cells with GDSFactory and compose layouts using OrPen's CPW
+cross-sections, layers and materials. The base M1 film defaults to 100 nm;
+airbridge and bump levels retain their separately declared dimensions.
+Examples are not measured process specifications.
+
+Simulation is optional: version-bound notebooks pass layouts and semantic
+intent to SCGSim for native geometry, meshes, solver handoff and reporting.
 
 ## Choose a task
 

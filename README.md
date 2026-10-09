@@ -31,18 +31,15 @@ PDK as their base PDK.
   airbridge source geometries with public component-simulation notebooks.
 - **Simulation locators** — named GDSFactory ports and sheet geometry for SCGSim
   to compile. Mesh sizes and Palace L/C/R stay in the notebook or runtime.
-- **GDSFactory+ integration** — registered public cells are available through
-  the active PDK and can be built from GF+.
-
-The VS Code GDSFactory+ extension supplies its own SDK. OrPen does not install
-or pin that SDK; it retains the core `gdsfactory` dependency and PDK discovery
-metadata. Notebooks or scripts that directly use `gdsfactoryplus` must manage
-their SDK dependency in their own consumer environment.
+- **Registered factories** — activate OrPen and build public cells through
+  GDSFactory's active PDK. Project metadata declares the project and PDK names;
+  it does not establish an extension SDK or live viewer installation.
 
 ## Component Gallery
 
-These previews are generated from the actual public `@gf.cell` factories in
-this repo.
+These previews show current public factory defaults: deep-teal DRAW `1/0`
+and soft light-teal ETCH `1/1` polygons only. Auxiliary layers are omitted; a missing
+ETCH layer is not filled in.
 
 ### Passive Building Blocks
 
@@ -51,10 +48,10 @@ this repo.
 | `resonator` | `interdigital_capacitor` | `martinis2022_differential_ribbon_capacitor` |
 | <img src="docs/_static/images/components/resonator.svg" alt="CPW resonator" width="260"> | <img src="docs/_static/images/components/interdigital_capacitor.svg" alt="Interdigital capacitor" width="260"> | <img src="docs/_static/images/components/martinis2022_differential_ribbon_capacitor.svg" alt="Martinis ribbon capacitor" width="260"> |
 
-| Launcher | Indium Ground Field |
-| :---: | :---: |
-| `launcher` | `indium_ground` |
-| <img src="docs/_static/images/components/launcher.svg" alt="Launcher" width="260"> | <img src="docs/_static/images/components/indium_ground.svg" alt="Indium ground field" width="260"> |
+| Launcher |
+| :---: |
+| `launcher` |
+| <img src="docs/_static/images/components/launcher.svg" alt="Launcher DRAW and ETCH" width="260"> |
 
 ### More available public cells
 
@@ -68,9 +65,9 @@ this repo.
 | Intrinsic Purcell readout resonators | [Purcell factory](orpen_sc_pdk/cells/layout/purcell.py) |
 
 These are available source factories, not evidence of fabricated-device or
-native-solver qualification. The [cell organization and discovery tags](docs/usage/cell-organization.md)
-describe the layout/simulation source split; public imports and PDK names remain
-unchanged.
+native-solver qualification. [Cells](docs/public-pdk-examples/index.md) gives
+practical factory selection and flat-tag guidance; public imports and PDK names
+remain unchanged.
 
 ### Public source test-layout families
 
