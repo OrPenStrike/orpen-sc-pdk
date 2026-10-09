@@ -1,0 +1,161 @@
+/* Dark values intentionally live beside the light token authority for native Quarto switching. */
+/*-- scss:defaults --*/
+$body-bg: #161618 !default;
+$body-color: #d4d4d4 !default;
+$link-color: #7b97aa !default;
+$navbar-bg: #161618 !default;
+$navbar-fg: #ebebec !default;
+$navbar-hl: #7b97aa !default;
+$sidebar-bg: #161618 !default;
+$sidebar-fg: #d4d4d4 !default;
+$sidebar-hl: #7b97aa !default;
+$toc-color: #646464 !default;
+$border-color: #393639 !default;
+$headings-color: #ebebec !default;
+$table-border-color: #393639 !default;
+$table-striped-bg: rgba(143, 159, 169, .15) !default;
+$code-color: #ebebec !default;
+$code-block-bg: #1f1f22 !default;
+$pre-color: #ebebec !default;
+
+$qdk-divider-content: rgba(212, 212, 212, .24) !default;
+$qdk-divider-layout: rgba(212, 212, 212, .10) !default;
+$qdk-mark: #e5c76b33 !default;
+$qdk-code-color: var(--qdk-text) !default;
+
+/*-- scss:rules --*/
+html { color-scheme: dark; }
+#quarto-appendix.default {
+  background-color: var(--qdk-canvas);
+  border-top-color: var(--qdk-border);
+  color: var(--qdk-text);
+}
+#quarto-appendix.default .quarto-appendix-heading {
+  color: var(--qdk-heading);
+  opacity: 1;
+}
+#quarto-appendix.default .csl-entry {
+  color: var(--qdk-text);
+}
+#quarto-appendix.default .csl-entry a {
+  color: var(--qdk-link);
+}
+#quarto-appendix.default .quarto-appendix-bibtex,
+#quarto-appendix.default .quarto-appendix-citeas {
+  border-color: var(--qdk-border);
+}
+
+:root {
+  --qdk-canvas: #{$body-bg};
+  --qdk-text: #{$body-color};
+  --qdk-heading: #{$headings-color};
+  --qdk-muted: #{$toc-color};
+  --qdk-link: #{$link-color};
+  --qdk-tertiary: #{$qdk-tertiary};
+  --qdk-border: #{$border-color};
+  --qdk-divider-content: #{$qdk-divider-content};
+  --qdk-divider-layout: #{$qdk-divider-layout};
+  --qdk-highlight: #{$code-bg};
+  --qdk-mark: #{$qdk-mark};
+  --qdk-focus: #{$link-color};
+}
+
+/*
+ * Quarto swaps this stylesheet for the light alternative without changing the
+ * body's theme class. Keep these unprefixed rules in this dark layer so the
+ * light theme retains its native palette while every Pandoc token remains
+ * legible on Quartz's canvas.
+ */
+div.sourceCode,
+pre.sourceCode,
+pre:has(code.sourceCode) {
+  background-color: var(--qdk-code-background);
+  background-image: none;
+  border-color: var(--qdk-code-border);
+  color: var(--qdk-code-color);
+}
+
+div.sourceCode code,
+pre.sourceCode code,
+pre:has(code.sourceCode) code {
+  background: transparent;
+  color: var(--qdk-code-color);
+}
+
+/* The outer Quarto source wrapper owns the one dark frame. */
+div.sourceCode > pre.sourceCode,
+div.sourceCode > pre.sourceCode > code.sourceCode {
+  background: transparent;
+  background-image: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+pre > code.sourceCode > span,
+code.sourceCode > span,
+div.sourceCode,
+code.sourceCode span {
+  color: var(--qdk-code-color);
+}
+
+/* Pandoc/Quarto syntax classes: GitHub Dark-like hues, no neon fallback. */
+code.sourceCode span.co,
+code.sourceCode span.do {
+  color: #8b949e;
+}
+
+code.sourceCode span.kw,
+code.sourceCode span.cf,
+code.sourceCode span.op {
+  color: #ff7b72;
+}
+
+code.sourceCode span.st,
+code.sourceCode span.ch,
+code.sourceCode span.ss,
+code.sourceCode span.vs,
+code.sourceCode span.dv,
+code.sourceCode span.fl,
+code.sourceCode span.bn,
+code.sourceCode span.cn {
+  color: #a5d6ff;
+}
+
+code.sourceCode span.fu {
+  color: #d2a8ff;
+}
+
+code.sourceCode span.bu,
+code.sourceCode span.dt,
+code.sourceCode span.at,
+code.sourceCode span.ot,
+code.sourceCode span.va,
+code.sourceCode span.ex,
+code.sourceCode span.im {
+  color: #79c0ff;
+}
+
+pre.numberSource,
+code.sourceCode > span > a:first-child {
+  border-color: var(--qdk-code-border);
+  color: #8b949e;
+}
+
+.code-copy-button {
+  background-color: var(--qdk-code-copy-background);
+  border: 1px solid var(--qdk-code-border);
+  color: var(--qdk-code-copy-color);
+}
+
+.code-copy-button > .bi::before {
+  /* Quarto supplies this icon as an embedded SVG; neutralize its source hue. */
+  filter: grayscale(1) brightness(1.3);
+}
+
+.code-copy-button:hover,
+.code-copy-button:focus-visible,
+.code-copy-button-checked {
+  background-color: var(--qdk-code-copy-hover-background);
+  color: var(--qdk-code-copy-hover-color);
+}

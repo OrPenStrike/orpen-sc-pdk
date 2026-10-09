@@ -1,0 +1,44 @@
+<script>
+// Askr owns entries and focus restoration; Quarto owns the viewer and image state.
+(() => {
+  function setup() {
+    const template = document.getElementById('askr-logout-config');
+    if (template) {
+      const tools = document.querySelector('#quarto-header .quarto-navbar-tools');
+      if (!tools) throw new Error('Askr Logout requires a website Header with navbar tools.');
+      tools.append(template.content.cloneNode(true));
+      document.getElementById('quarto-header').classList.add('askr-has-logout');
+    }
+
+    const buttons = document.querySelectorAll('.askr-image-view');
+    if (typeof lightboxQuarto === 'undefined') {
+      if (buttons.length) throw new Error('Askr image-view requires Quarto native Lightbox.');
+      return;
+    }
+    let entry = null;
+    function anchorFor(button) {
+      const target = document.getElementById(button.dataset.askrImageTarget);
+      return target?.closest('a.lightbox') || target?.querySelector('a.lightbox');
+    }
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('.askr-image-view');
+      if (button) {
+        const anchor = anchorFor(button);
+        if (!anchor) throw new Error('Askr image-view target has no native Lightbox entry.');
+        entry = button;
+        anchor.click();
+      } else {
+        const anchor = event.target.closest('a.lightbox');
+        // A button's synthetic anchor click must not replace the real trigger.
+        if (anchor && event.isTrusted) entry = anchor;
+      }
+    }, true);
+    lightboxQuarto.on('close', () => {
+      if (entry?.isConnected) entry.focus({preventScroll: true});
+      entry = null;
+    });
+  }
+  if (document.readyState === 'complete') setup();
+  else window.addEventListener('load', setup, {once: true});
+})();
+</script>

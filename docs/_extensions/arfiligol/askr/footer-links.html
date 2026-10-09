@@ -1,0 +1,25 @@
+<script>
+// Append credit without interpreting or replacing native navigation configuration.
+document.addEventListener('DOMContentLoaded', function () {
+  const credit = document.getElementById('askr-footer-credit');
+  if (!credit) return;
+  let footer = document.querySelector('footer.footer');
+  if (!footer) {
+    footer = document.createElement('footer');
+    footer.className = 'footer';
+    const row = document.createElement('div');
+    row.className = 'nav-footer';
+    footer.append(row);
+    document.body.append(footer);
+  }
+  let right = footer.querySelector('.nav-footer-right');
+  if (!right) {
+    right = document.createElement('div');
+    right.className = 'nav-footer-right';
+    footer.querySelector('.nav-footer').append(right);
+  }
+  // Quarto emits a nonbreaking-space placeholder for an unauthored region.
+  if (!right.childElementCount && !right.textContent.trim()) right.textContent = '';
+  right.append(credit.content.cloneNode(true));
+});
+</script>

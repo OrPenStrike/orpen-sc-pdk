@@ -10,8 +10,10 @@
 
 `orpen-sc-pdk` is OrPenStrike's public superconducting quantum/RF base PDK for
 [gdsfactory](https://gdsfactory.github.io/gdsfactory/). It provides public
-process layers, layer stack semantics, CPW cross-sections, passive layout cells,
-flip-chip support geometry, routing helpers, and public simulation layout demos.
+process layers, layer stack semantics, CPW cross-sections, reusable layout cells,
+flip-chip support geometry, routing helpers, and public source layouts for
+SCGSim testing. OrPen owns those layouts, their semantic intent and canonical
+public notebooks; SCGSim owns mesh generation, native solvers and result handling.
 
 The boundary is deliberate: this repository contains reusable public PDK
 infrastructure. Private chip designs, private qubit geometry, private parameters,
@@ -23,7 +25,10 @@ PDK as their base PDK.
 - **Public process contract** — `LAYER`, `LAYER_STACK`, `LAYER_VIEWS`,
   material records, connectivity, and face-aware superconducting process layers.
 - **Parametric public cells** — CPW traces, resonators, launchers, tapers,
-  indium bumps, dicing edges, capacitors, and benchmark geometries.
+  airbridges, indium bumps, dicing edges, capacitors, junctions and public Xmon
+  reference geometry.
+- **Public SCGSim test layouts** — pad, curved-strip, finite-CPW, flip-chip and
+  airbridge source geometries with public component-simulation notebooks.
 - **Simulation locators** — named GDSFactory ports and sheet geometry for SCGSim
   to compile. Mesh sizes and Palace L/C/R stay in the notebook or runtime.
 - **GDSFactory+ integration** — registered public cells are available through
@@ -51,6 +56,39 @@ this repo.
 | `launcher` | `indium_ground` |
 | <img src="docs/_static/images/components/launcher.svg" alt="Launcher" width="260"> | <img src="docs/_static/images/components/indium_ground.svg" alt="Indium ground field" width="260"> |
 
+### More available public cells
+
+| Factory | Canonical source |
+| --- | --- |
+| `airbridge` | [Airbridge deck and piers](orpen_sc_pdk/cells/layout/airbridge.py) |
+| `indium_bump`, `indium_ground` | [Indium bump and keepout-aware field](orpen_sc_pdk/cells/layout/indium.py) |
+| `kosen2024_flip_chip_xmon_qubit` | [Public Kosen 2024 Xmon reference](orpen_sc_pdk/cells/layout/qubit.py) |
+| `manhattan_style_junction` | [Manhattan junction](orpen_sc_pdk/cells/layout/junction.py) |
+| CPW junction, coupling sections and transitions | [CPW factories](orpen_sc_pdk/cells/layout/cpw.py) |
+| Intrinsic Purcell readout resonators | [Purcell factory](orpen_sc_pdk/cells/layout/purcell.py) |
+
+These are available source factories, not evidence of fabricated-device or
+native-solver qualification. The [cell organization and discovery tags](docs/usage/cell-organization.md)
+describe the layout/simulation source split; public imports and PDK names remain
+unchanged.
+
+### Public source test-layout families
+
+| Family | Factory or canonical source | Scope |
+| --- | --- | --- |
+| 01 square pad | [`square_pad_capacitor`](orpen_sc_pdk/cells/simulation/simple_pad.py) | Single-die island and nonmetal locator |
+| 02 circular disk | [`circular_pad_capacitor`](orpen_sc_pdk/cells/simulation/simple_pad.py) | Default inner radius is zero |
+| 03 annulus | [`circular_pad_capacitor(inner_radius_um=80)`](orpen_sc_pdk/cells/simulation/simple_pad.py) | Same factory; hole is not Ground |
+| 04 curved strips | [`straight_to_circular_strip`](orpen_sc_pdk/cells/simulation/simple_pad.py), [`interpolation_spline_strip`, `bspline_strip`](orpen_sc_pdk/cells/simulation/spline_strip.py) | Three distinct source definitions; no native curve-equivalence claim |
+| 05 finite CPW | [Notebook-local coupon section](notebooks/src/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.py) | Not a registered PDK cell |
+| 06 flip-chip pad | [`flip_chip_pad_coupon`](orpen_sc_pdk/cells/simulation/test_components.py) | Two dies and four bumps; source contact geometry, not native contact proof |
+| 07 CPW airbridge | [`cpw_airbridge_coupon`](orpen_sc_pdk/cells/simulation/test_components.py) | CPW with airbridge deck/piers; source geometry, not native conformity proof |
+
+The [source test-components guide](docs/public-pdk-examples/test-components.md)
+records definitions and limits. Layout availability does not mean every native
+test is implemented or completed. The nominal single-die base Al film is
+100 nm (0.1 µm); retained results keep their original stack and provenance.
+
 ### External Reference Boundary
 
 [QPDK](https://github.com/gdsfactory/quantum-rf-pdk) is an external
@@ -61,34 +99,24 @@ repository.
 
 ## Quick Start
 
-Install the public PDK from Git:
+Install the public development line in your existing Python 3.12 or 3.13
+environment:
 
 ```bash
-uv init scq-layout-consumer
-cd scq-layout-consumer
-uv add "orpen-sc-pdk @ git+https://github.com/OrPenStrike/orpen-sc-pdk.git"
+python -m pip install "orpen-sc-pdk @ git+https://github.com/OrPenStrike/orpen-sc-pdk.git@develop"
 ```
 
-Activate the PDK and build a public cell:
-
-```python
-import gdsfactory as gf
-import orpen_sc_pdk
-
-orpen_sc_pdk.activate()
-
-component = gf.get_component("resonator", length=3500)
-component.show()
-```
+This selects `develop`, not a stable release; record the resolved revision.
+Follow [Get Started](docs/getting-started.md) to activate OrPen, build a public
+cell and optionally open an available local viewer.
 
 ## Repository Boundaries
 
 | Repository | Owns |
 | --- | --- |
-| `orpen-sc-pdk` | Public process semantics, material records, public cells, layout helpers, and public component-simulation notebooks. |
+| `orpen-sc-pdk` | Public process semantics, material records, reusable cells/helpers, public SCGSim test-layout source and semantic intent, and canonical component-simulation notebooks. |
 | `scgsim` | Semantic Geometry Builder Core, Palace/AEDT runtimes, handoff, resolve, and reporting. |
 | Private layout projects | Private cells, chip assemblies, private inputs, notebooks, and run evidence. |
-| `gplugins` | Reusable gdsfactory plugin capability. |
 
 Do not put private chip designs directly in this repository.
 
@@ -103,11 +131,15 @@ uv sync -p 3.12 --group aedt-notebooks
 
 Both groups install `scgsim`; OrPen does not carry a second solver runtime.
 
-For the full local contributor environment:
+For the declared project extras (development and the optional circuit runtime):
 
 ```bash
 uv sync -p 3.12 --all-extras
 ```
+
+This does not select every dependency group. Add `--group docs` or the matching
+Palace/AEDT group when needed. OrPen's simulation examples consume SCGSim;
+`gplugins` is not a dependency or fallback runtime for this package.
 
 Run the focused validation checks:
 
@@ -125,8 +157,14 @@ Build the static HTML docs:
 just docs
 ```
 
-The Quarto site includes searchable reference pages, rendered notebook cells
-and outputs, and a browser-only interactive viewer for public layout exports.
+Start with [Get Started](docs/getting-started.md), then choose
+[Cells](docs/public-pdk-examples/index.md), [Process](docs/materials-and-technology.md)
+or [Simulation](docs/notebooks.qmd). The site includes searchable API reference
+pages and saved notebook content. Its custom browser-only SVG gallery displays
+the existing public previews; it is not an Askr feature, native GF+ viewer,
+or GDS/semantic inspection tool.
+It uses the unmodified [Askr theme](docs/features/docs-theme.md), including its
+default typography, reading measure and light/dark palette.
 
 Serve the built docs locally:
 

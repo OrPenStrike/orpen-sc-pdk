@@ -3,34 +3,38 @@ title: "OrPen SC PDK"
 description: "Public superconducting quantum and RF PDK documentation."
 ---
 
-`orpen-sc-pdk` is the public superconducting quantum/RF PDK for contributors who
-need to keep a Primary Layout in a private repository while still improving
-shared GDSFactory ecosystem infrastructure.
+`orpen-sc-pdk` provides public superconducting quantum/RF layout cells, CPW
+cross-sections, process layers, materials and semantic source geometry for
+GDSFactory. Install the package in your own project; keep private chip designs,
+parameters and run evidence in that project.
 
-The public PDK does not migrate private layout/IP into a public repo. It owns
-the public process contract: layer names, layer views, the layer stack, material
-semantics, public CPW cross-sections, reusable layout helpers, public cells,
-static GF+ import mechanics, and
-publication-safe documentation. Private layout repositories keep real chip geometry, private
-parameters, private notebooks, GDS inputs from private designs, and private
-run evidence.
+Build reusable cells with GDSFactory, inspect their settings and tags, and
+compose layouts using OrPen's CPW cross-sections, layers and material records.
+The base M1 film defaults to 100 nm; airbridge and bump levels retain their
+separately declared dimensions. Choose parameters and materials appropriate
+to your own design rather than treating examples as
+measured process specifications.
 
-The intended workflow is local and reviewable: a project installs
-`orpen-sc-pdk` for layout and process facts, then uses `scgsim` for semantic
-geometry, mesh/config generation, solver handoff, result resolution, and
-reporting. OrPen's notebooks demonstrate that boundary without owning a second
-simulation runtime.
+Simulation is optional. The public notebooks pass source layouts and semantic
+intent to SCGSim for native geometry, meshes, solver handoff, result resolution
+and reporting. Choose the version-bound example that matches your runtime.
 
-## Start By Task
+## Choose a task
 
-- [Use the public PDK](home/pdk-responsibilities.md): process semantics, cells,
-  materials, static GF+ import mechanics, and documentation.
-- [Connect a private layout repository](home/ecosystem-workspace.md) without
-  publishing private layout or IP.
-- [Develop ecosystem features](developing-features.md) through the current
-  OrPen/SCGSim responsibility boundary.
-- [Read public examples](public-pdk-examples/index.md), including runnable
-  Palace and AEDT notebooks backed by `scgsim`.
-- [Explore layout exports](layout-viewer.qmd) in the static interactive viewer.
-- [Open SCQ Design Kit](https://github.com/arfiligol/SCQ_Design), the canonical
-  workspace source for cross-repository Design Targets and Knowledge.
+- [Get Started](getting-started.md): install, activate OrPen and build a cell.
+- [Cells](public-pdk-examples/index.md): choose factories, source test-layout
+  families, tags or the custom static SVG gallery.
+- [Process](materials-and-technology.md): layers, stack, materials, interface
+  presets and the source/runtime ownership boundary.
+- [Simulation](notebooks.qmd): choose a version-bound public SCGSim example;
+  distinguish revised source candidates from retained execution evidence.
+- [API](reference/index.qmd): package, cell and material interfaces.
+
+Source availability is not native mesh/contact/solver proof. The public source
+test layouts and newer runtime examples retain their stated limitations.
+
+## Contributor and research links
+
+[Development](developing-features.md), [workspace boundaries](home/ecosystem-workspace.md),
+[theme/toolchain](features/docs-theme.md) and [public paper research](paper-review.md)
+are secondary resources. They are not prerequisites for using the public PDK.

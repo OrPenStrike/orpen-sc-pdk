@@ -23,6 +23,8 @@ jobs:
           enable-cache: true
       - uses: extractions/setup-just@v3
       - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.10.19
       - run: uv sync -p 3.12 --locked --group docs --extra dev
       - run: just docs
       - uses: actions/upload-artifact@v4

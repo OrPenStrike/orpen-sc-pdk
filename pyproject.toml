@@ -49,7 +49,6 @@ docs = [
 palace-notebooks = ["scgsim[palace,visualization]"]
 aedt-notebooks = ["scgsim[aedt]"]
 ecosystem-dev = [
-  "gplugins",
   "kaleido>=1.0.0",
   "pandas>=2.0",
   "plotly>=6.0.0",

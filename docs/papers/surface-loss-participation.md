@@ -9,12 +9,15 @@ surface-Q mapping, dielectric loss attribution, and report validation.
 
 No private NCUAS preset names, private material values, unpublished fitting
 results, or private run evidence belong on this page. This page is the public
-source queue used before any MA/MS/SA preset becomes part of the PDK contract.
+source queue for interpreting MA/MS/SA presets and possible future revisions.
+The current six public records live in `materials.json` and are returned by
+`materials.get_interface_preset_records()`; the empty technology-level dictionary
+is not their source of truth. Availability does not establish process suitability
+or automatic acceptance of a candidate.
 
 ## Preset Review Fields
 
-Before a source can populate `orpen_sc_pdk.tech.interface_preset_records`, the
-review must identify:
+Useful provenance fields for reviewing a source include:
 
 - interface role: `MA`, `MS`, `SA`, bulk substrate, or another explicit role;
 - geometry family: CPW resonator, transmon, flip-chip package, or other;
@@ -33,15 +36,15 @@ review must identify:
 | Source | Candidate use | Review status |
 |---|---|---|
 | Wenner et al., "Surface loss simulations of superconducting coplanar waveguide resonators," Applied Physics Letters 99, 113513 (2011), [doi:10.1063/1.3637047](https://doi.org/10.1063/1.3637047) | Defines the CPW `MA`/`MS`/`SA` interface taxonomy used by many surface-loss workflows and is suitable for validating role naming, scaling checks, and report interpretation. | Keep as taxonomy/reference first; do not turn its example assumptions into public defaults without an explicit process match. |
-| Woods et al., "Determining Interface Dielectric Losses in Superconducting Coplanar-Waveguide Resonators," Physical Review Applied 12, 014012 (2019), [doi:10.1103/PhysRevApplied.12.014012](https://doi.org/10.1103/PhysRevApplied.12.014012) | Candidate source for extracted `MA`, `MS`, `SA`, and substrate-loss values in CPW resonators after the public material/process assumptions are reviewed. | Primary candidate for source-backed preset extraction; values still need a public review table and tests before entering the PDK table. |
+| Woods et al., "Determining Interface Dielectric Losses in Superconducting Coplanar-Waveguide Resonators," Physical Review Applied 12, 014012 (2019), [doi:10.1103/PhysRevApplied.12.014012](https://doi.org/10.1103/PhysRevApplied.12.014012) | Source for interpreting `MA`, `MS`, `SA`, and substrate-loss values in CPW resonators with their material/process assumptions. | Existing Woods2019 public records are caller-selected conventions, not proof of an OrPen process match. |
 | Wang et al., "Surface participation and dielectric loss in superconducting qubits," Applied Physics Letters 107, 162601 (2015), [doi:10.1063/1.4934486](https://doi.org/10.1063/1.4934486) | Useful for transmon surface-participation validation and geometry-dependent report checks. | Candidate validation target, not a direct CPW preset default. |
 | Lahtinen and Mottonen, "Effects of device geometry and material properties on dielectric losses in superconducting coplanar-waveguide resonators," Journal of Physics: Condensed Matter 32, 405702 (2020), [doi:10.1088/1361-648X/ab98c8](https://doi.org/10.1088/1361-648X/ab98c8) | Useful for uncertainty-aware CPW resonator material/loss interpretation and inverse-problem style validation. | Candidate for provenance and uncertainty schema design, not a default preset. |
 
 ## Candidate Value Extraction
 
 These rows are review candidates only. They are not public defaults, and they
-do not populate `orpen_sc_pdk.tech.interface_preset_records` until the public
-preset gate below is satisfied.
+do not themselves change the public database or establish acceptance. They are
+distinct from the existing database records and their exact identifiers.
 
 | Candidate record | Role | Thickness (um) | Relative permittivity | Loss tangent | Source basis | Status |
 |---|---:|---:|---:|---:|---|---|
@@ -59,19 +62,13 @@ Open review decisions:
   for any OrPen process scope or remain caller-selected presets;
 - decide whether `Wenner2011_CPW_assumed_*_candidate` rows should stay
   documentation-only scaling checks rather than accepted PDK records;
-- add tests only after the accepted candidate IDs and material/process scope are
-  finalized.
+- any future automated tests require a separate explicit assignment against
+  accepted record semantics.
 
-## Public Preset Gate
+## Interpretation boundary
 
-The public PDK can accept an interface preset only after:
-
-1. the candidate source is listed above or in another public review page;
-2. the record has a non-empty source/provenance string;
-3. the role mapping is explicit and matches the SCGSim surface-EPR contract;
-4. the record uses either a public material name or explicit permittivity;
-5. tests prove the record validates through
-   `validate_interface_preset_records()` and can be handed to SCGSim without
-   adding PDK-owned solver runtime logic;
-6. any automatic default-selection rule is documented separately from the
-   caller-supplied preset table.
+Provenance, explicit interface roles and material assumptions support review;
+they are not an automatically activated eligibility or acceptance rule.
+Caller-selected records do not imply an automatic default-selection policy.
+OrPen owns the public records, while SCGSim owns simulation interpretation and
+execution; a source queue does not create a PDK-owned solver implementation.

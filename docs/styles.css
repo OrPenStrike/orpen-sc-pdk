@@ -1,57 +1,12 @@
-main.content {
-  min-width: 0;
-  line-height: 1.6;
-}
-
-.navbar,
-.sidebar,
-.margin-sidebar {
-  border-color: var(--scq-line-subtle);
-}
-
-.callout {
-  background-color: var(--scq-surface);
-}
-
+/* Consumer behavior only; Askr owns typography, palette and reading layout. */
 main.content table {
   display: block;
-  width: max-content;
   max-width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-main.content table th,
-main.content table td {
-  min-width: 8rem;
-  vertical-align: top;
-}
-
-main.content table th:first-child,
-main.content table td:first-child {
-  min-width: 12rem;
-}
-
-main.content .math.display {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 575.98px) {
-  main.content #title-block-header {
-    padding-top: 1rem;
-  }
-
-  main.content table th,
-  main.content table td,
-  main.content table th:first-child,
-  main.content table td:first-child {
-    min-width: 8rem;
-  }
-
   main.content .scq-two-column-table table {
     display: table;
     width: 100%;
@@ -60,7 +15,6 @@ main.content .math.display {
 
   main.content .scq-two-column-table table th,
   main.content .scq-two-column-table table td {
-    min-width: 0;
     overflow-wrap: anywhere;
   }
 
@@ -68,18 +22,6 @@ main.content .math.display {
   main.content .scq-two-column-table table td:first-child {
     width: 40%;
   }
-}
-
-#quarto-sidebar {
-  max-width: 280px;
-}
-
-.sidebar-navigation .sidebar-item-text {
-  white-space: normal;
-}
-
-.mermaid {
-  color: var(--bs-body-color);
 }
 
 .hb-flow-narrow,
@@ -103,6 +45,14 @@ main.content .math.display {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.diagram-popout-button,
+.diagram-popout-toolbar button,
+.diagram-popout-dialog,
+.diagram-popout-toolbar {
+  --scq-line-subtle: var(--qdk-border);
+  --scq-surface: var(--qdk-canvas);
 }
 
 .diagram-popout-button,

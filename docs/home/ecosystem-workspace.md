@@ -7,11 +7,13 @@ Keep each repository focused on one authority:
 | `orpen-sc-pdk` | Public process layers, layer stack, material records, components, routing/layout helpers, and public simulation notebooks. |
 | `scgsim` | In-tree Semantic Geometry Builder Core, Palace/AEDT backends, mesh/config generation, handoff, resolve, and reports. |
 | Private layout projects | Private components, chip assemblies, private notebook sources, inputs, and run evidence. |
-| `gplugins` | Generic GDSFactory plugin capability. |
 
 The normal consumer route installs `orpen-sc-pdk` and the required SCGSim
 backend. A local checkout of a legacy solver-compatibility package or external
 Semantic Geometry Builder is not part of the runtime dependency graph.
+OrPen no longer includes `gplugins` in its optional ecosystem group; public
+simulation examples use SCGSim. Other ecosystem tools retain their declared
+dependencies.
 
 ```bash
 uv sync -p 3.12 --group palace-notebooks

@@ -1,0 +1,39 @@
+<script>
+// The render filter owns source identity. This handler only transfers that
+// source on an explicit click and exposes it if clipboard access is denied.
+const askrMathCopyTimers = new WeakMap();
+document.addEventListener('click', async (event) => {
+  const button = event.target.closest('.askr-math-copy');
+  if (!button) return;
+  const component = button.closest('.askr-copyable-math');
+  const source = component.querySelector('.askr-math-source');
+  const textarea = source.querySelector('textarea');
+  const status = component.querySelector('.askr-math-status');
+  clearTimeout(askrMathCopyTimers.get(button));
+  button.classList.remove('is-copied');
+  button.textContent = 'Copy';
+  button.disabled = true;
+  status.classList.remove('askr-math-status-success');
+  status.textContent = '';
+  try {
+    await navigator.clipboard.writeText(textarea.value);
+    button.textContent = 'Copied!';
+    button.classList.add('is-copied');
+    status.classList.add('askr-math-status-success');
+    status.textContent = 'Copied';
+    askrMathCopyTimers.set(button, setTimeout(() => {
+      button.textContent = 'Copy';
+      button.classList.remove('is-copied');
+      status.textContent = '';
+      askrMathCopyTimers.delete(button);
+    }, 2000));
+  } catch {
+    source.hidden = false;
+    textarea.focus();
+    textarea.select();
+    status.textContent = 'Copy unavailable. Select the source below to copy manually.';
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>

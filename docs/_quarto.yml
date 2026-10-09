@@ -7,10 +7,16 @@ project:
     - "home/*.md"
     - "features/gdsfactoryplus-discovery.md"
     - "features/scgsim-integration.md"
+    - "features/docs-theme.md"
     - "public-pdk-examples/*.md"
     - "usage/*.md"
     - "papers/*.md"
     - "notebooks/Public_Docs/component_gallery.ipynb"
+    - "notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb"
+    - "notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb"
+    - "notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb"
+    - "notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb"
+    - "notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb"
     - "notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb"
     - "notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb"
     - "notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb"
@@ -41,73 +47,73 @@ website:
     left:
       - text: Overview
         href: index.qmd
-      - text: SCQ Design Kit
-        href: https://github.com/arfiligol/SCQ_Design
-      - text: Development
-        href: developing-features.md
-      - text: Notebooks
+      - text: Get Started
+        href: getting-started.md
+      - text: Cells
+        href: public-pdk-examples/index.md
+      - text: Process
+        href: materials-and-technology.md
+      - text: Simulation
         href: notebooks.qmd
-      - text: Layout Viewer
-        href: layout-viewer.qmd
       - text: API
         href: reference/index.qmd
   sidebar:
-    style: docked
-    contents:
-      - index.qmd
-      - section: Public PDK
-        contents:
-          - home/pdk-responsibilities.md
-          - home/ecosystem-workspace.md
-          - materials-and-technology.md
-          - public-pdk-examples/index.md
-          - public-pdk-examples/component-authoring.md
-      - section: Development
-        contents:
-          - developing-features.md
-          - features/scgsim-integration.md
-          - features/gdsfactoryplus-discovery.md
-      - section: Notebooks and Layouts
-        contents:
-          - notebooks.qmd
-          - layout-viewer.qmd
-          - notebooks/Public_Docs/component_gallery.ipynb
-          - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb
-          - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb
-          - notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb
-          - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb
-          - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb
-          - notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb
-          - notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_terminal.ipynb
-          - notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb
-          - notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb
-      - section: API Reference
-        contents:
-          - reference/index.qmd
-      - section: Public Research
-        contents:
-          - paper-review.md
-          - papers/cpw-resonator-references.md
-          - papers/transmon-reference-designs.md
-          - papers/flip-chip-3d-integration.md
+    - id: getting-started
+      title: Get Started
+      contents:
+        - getting-started.md
+        - features/gdsfactoryplus-discovery.md
+    - id: cells
+      title: Cells
+      contents:
+        - public-pdk-examples/index.md
+        - public-pdk-examples/test-components.md
+        - usage/cell-organization.md
+        - public-pdk-examples/component-authoring.md
+        - layout-viewer.qmd
+        - notebooks/Public_Docs/component_gallery.ipynb
+    - id: process
+      title: Process
+      contents:
+        - materials-and-technology.md
+        - home/pdk-responsibilities.md
+    - id: simulation
+      title: Simulation
+      contents:
+        - notebooks.qmd
+        - features/scgsim-integration.md
+        - section: Source-only v2 examples
+          contents:
+            - notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb
+            - notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb
+            - notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb
+            - notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb
+            - notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb
+        - section: Xmon examples and historical evidence
+          contents:
+            - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb
+            - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb
+            - notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb
+            - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb
+            - notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb
+            - notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb
+        - section: CPW examples
+          contents:
+            - notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_terminal.ipynb
+            - notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.ipynb
+            - notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb
+            - notebooks/ComponentSimulation/CpwFiniteGround/aedt_q3d.ipynb
+            - notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb
+    - id: api
+      title: API
+      contents:
+        - auto: reference
 
 format:
-  html:
-    theme:
-      light: [cosmo, theme-light.scss]
-      dark: [cosmo, theme-dark.scss]
+  askr-html:
     css: [styles.css, layout-viewer.css]
     html-math-method: mathjax
-    respect-user-color-scheme: true
-    toc: true
-    page-layout: article
-    grid:
-      sidebar-width: 260px
-      body-width: 960px
-      margin-width: 240px
-      gutter-width: 2.5rem
     code-copy: true
-    code-overflow: wrap
 
 execute:
   enabled: false

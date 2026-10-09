@@ -1,0 +1,405 @@
+<meta name="theme-color" content="#faf8f8">
+<script>
+(function () {
+  function paint() {
+    var link = document.querySelector("link#quarto-bootstrap.quarto-color-alternate");
+    var on = link && link.getAttribute("rel") === "stylesheet";
+    var meta = document.querySelector('meta[name="theme-color"]');
+    var canvas = getComputedStyle(document.documentElement).getPropertyValue("--qdk-canvas").trim();
+    if (meta && canvas) meta.setAttribute("content", canvas);
+    document.documentElement.style.colorScheme = on ? "dark" : "light";
+  }
+  function hook() {
+    requestAnimationFrame(paint);
+    // A newly enabled alternate sheet may finish loading after the rel change.
+    document.querySelectorAll('link.quarto-color-scheme').forEach(function (sheet) {
+      sheet.addEventListener("load", paint);
+    });
+    new MutationObserver(function () { requestAnimationFrame(paint); }).observe(document.body, {
+      attributes: true, attributeFilter: ["class"]
+    });
+    var link = document.querySelector("link#quarto-bootstrap.quarto-color-alternate");
+    if (link) new MutationObserver(function () { requestAnimationFrame(paint); }).observe(link, { attributes: true, attributeFilter: ["rel"] });
+    var orig = window.quartoToggleColorScheme;
+    if (!orig || orig.__qdk) return;
+    window.quartoToggleColorScheme = function () {
+      var result = orig.apply(this, arguments);
+      requestAnimationFrame(paint);
+      return result;
+    };
+    window.quartoToggleColorScheme.__qdk = true;
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hook);
+  else hook();
+
+  // Quarto owns group selection and persistence. Its grouped-tab runtime updates
+  // active classes; mirror those classes into attributes, never a second state.
+  function groupedTabs() {
+    document.querySelectorAll('.panel-tabset[data-group]').forEach(function (tabset) {
+      if (tabset.dataset.askrTabsBound) return;
+      tabset.dataset.askrTabsBound = "true";
+      var tabs = Array.from(tabset.querySelectorAll(':scope > [role="tablist"] [role="tab"]'));
+      // Persisted group choices may activate a tab that Bootstrap did not
+      // initialize on load. Initialize every native Tab once for keyboard use.
+      if (window.bootstrap) tabs.forEach(function (tab) {
+        window.bootstrap.Tab.getOrCreateInstance(tab);
+      });
+      function sync() {
+        tabs.forEach(function (tab) {
+          var selected = tab.classList.contains("active");
+          tab.setAttribute("aria-selected", selected ? "true" : "false");
+          tab.setAttribute("tabindex", selected ? "0" : "-1");
+        });
+      }
+      var observer = new MutationObserver(sync);
+      tabs.forEach(function (tab) {
+        observer.observe(tab, { attributes: true, attributeFilter: ["class"] });
+      });
+      // Bootstrap keyboard activation is not a click. After it selects/focuses
+      // a tab, route that native activation through Quarto's group click handler;
+      // no group or storage logic is duplicated here.
+      tabset.addEventListener("keydown", function (event) {
+        if (!tabs.includes(event.target) || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+        requestAnimationFrame(function () {
+          var selected = document.activeElement;
+          if (tabs.includes(selected) && selected.classList.contains("active")) selected.click();
+        });
+      }, true);
+      sync();
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", groupedTabs);
+  else groupedTabs();
+  window.addEventListener("pageshow", groupedTabs);
+
+  function hideShown(selector) {
+    document.querySelectorAll(selector).forEach(function (el) {
+      if (!el.classList.contains("show") || !window.bootstrap) return;
+      window.bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).hide();
+    });
+  }
+  // Measure the existing inline layout, not a second navigation tree. Quarto /
+  // Bootstrap remain the owners of disclosure state and navigation links.
+  function adaptiveAreas() {
+    var header = document.querySelector("#quarto-header");
+    var container = header && header.querySelector(".navbar-container");
+    var area = header && header.querySelector("#navbarCollapse");
+    var button = header && header.querySelector(".navbar-toggler");
+    var brand = header && header.querySelector(".navbar-brand-container");
+    if (!container || !area || !button || !brand) return;
+    var tools = container.querySelector('.quarto-navbar-tools');
+    var collapseTools = tools && area.contains(tools);
+    var authoredTools = tools ? Array.from(tools.children).filter(function (el) {
+      return !el.matches('.quarto-color-scheme-toggle, .quarto-reader-toggle, .askr-logout');
+    }) : [];
+    var panelTools;
+    if (collapseTools) {
+      container.appendChild(tools);
+      panelTools = document.createElement('div');
+      panelTools.className = 'askr-panel-tools';
+      area.appendChild(panelTools);
+    }
+    var mutations = new MutationObserver(schedule);
+    function observe() { mutations.observe(container, { childList: true, subtree: true, characterData: true }); }
+    button.setAttribute("aria-label", "Areas");
+    button.removeAttribute("role");
+    button.title = "Areas";
+    var frame;
+    var compact;
+    function update() {
+      frame = null;
+      // Moving native nodes is presentation only, not a new navigation authority.
+      mutations.disconnect();
+      if (collapseTools) authoredTools.slice().reverse().forEach(function (el) { tools.insertBefore(el, tools.firstChild); });
+      if (tools) container.style.setProperty('--askr-tools-width', tools.getBoundingClientRect().width + 'px');
+      var active = document.activeElement;
+      var previous = compact;
+      header.classList.add("askr-areas-measuring");
+      header.classList.remove("askr-areas-collapsed");
+      var mobile = window.matchMedia("(max-width: 991.98px)").matches;
+      var list = area.querySelector(".navbar-nav");
+      var title = brand.querySelector(".askr-version-title") || brand.querySelector(".navbar-title");
+      if (title) title.title = title.textContent.trim();
+      var titleFits = !title || title.scrollWidth <= title.clientWidth;
+      var linksFit = !list || list.scrollWidth <= area.clientWidth;
+      var areaRect = area.getBoundingClientRect();
+      var brandRect = brand.getBoundingClientRect();
+      var controlsFit = Array.from(container.querySelectorAll(":scope > #quarto-search, :scope > .quarto-navbar-tools")).every(function (control) {
+        var rect = control.getBoundingClientRect();
+        return !rect.width || rect.right <= areaRect.left || rect.left >= areaRect.right;
+      });
+      compact = mobile || !titleFits || !linksFit || brandRect.right > areaRect.left || !controlsFit;
+      header.classList.toggle("askr-areas-collapsed", compact);
+      header.classList.remove("askr-areas-measuring");
+      if (compact && collapseTools) authoredTools.forEach(function (el) { panelTools.appendChild(el); });
+      if (tools) container.style.setProperty('--askr-tools-width', tools.getBoundingClientRect().width + 'px');
+      if (mobile) {
+        var left = 0;
+        var right = container.getBoundingClientRect().right;
+        var gap = parseFloat(getComputedStyle(header.querySelector(".quarto-navbar-tools") || container).columnGap) || 0;
+        header.querySelectorAll(".quarto-btn-toggle, #quarto-search").forEach(function (control) {
+          var rect = control.getBoundingClientRect();
+          if (rect.width && getComputedStyle(control).display !== "none") left = Math.max(left, rect.right);
+        });
+        header.querySelectorAll(".quarto-navbar-tools, .navbar-toggler").forEach(function (control) {
+          var rect = control.getBoundingClientRect();
+          if (rect.width) right = Math.min(right, rect.left);
+        });
+        header.style.setProperty("--askr-brand-left", (left + gap) + "px");
+        header.style.setProperty("--askr-brand-right", (container.getBoundingClientRect().right - right + gap) + "px");
+      }
+      observe();
+      if (previous !== undefined && previous !== compact) {
+        // Complete any in-flight Bootstrap animation before resetting state.
+        if (area.classList.contains("collapsing")) area.dispatchEvent(new Event("transitionend"));
+        hideShown("#navbarCollapse.show");
+        if (area.classList.contains("collapsing")) area.dispatchEvent(new Event("transitionend"));
+        area.classList.remove("qdk-open");
+        document.querySelector("#qdk-area-glass").classList.remove("qdk-glass-in");
+        button.setAttribute("aria-expanded", "false");
+        if (compact && area.contains(active)) button.focus();
+        else if (!compact && active === button) {
+          var link = area.querySelector("a.nav-link");
+          if (link) link.focus();
+        }
+      }
+    }
+    function schedule() {
+      if (!frame) frame = requestAnimationFrame(update);
+    }
+    new ResizeObserver(schedule).observe(container);
+    // Version and Logout entries are mounted after the original Header.
+    observe();
+    window.addEventListener("resize", schedule);
+    window.addEventListener("pageshow", schedule);
+    if (document.fonts) {
+      document.fonts.ready.then(schedule);
+      document.fonts.addEventListener("loadingdone", schedule);
+    }
+    schedule();
+  }
+  function menus() {
+    if (!document.querySelector("#qdk-area-glass")) {
+      var glass = document.createElement("div");
+      glass.id = "qdk-area-glass";
+      glass.style.position = "fixed";
+      glass.style.inset = "0";
+      document.body.appendChild(glass);
+    }
+    var area = document.querySelector("#navbarCollapse");
+    var pages = document.querySelector("#quarto-sidebar");
+    var areaGlass = document.querySelector("#qdk-area-glass");
+    var pagesGlass = document.querySelector("#quarto-sidebar-glass");
+    if (area) {
+      area.addEventListener("show.bs.collapse", function (event) {
+        if (event.target !== area) return;
+        area.classList.add("qdk-open");
+        areaGlass.classList.add("qdk-glass-in");
+      });
+      area.addEventListener("hide.bs.collapse", function (event) {
+        if (event.target !== area) return;
+        area.classList.remove("qdk-open");
+        areaGlass.classList.remove("qdk-glass-in");
+        var header = document.querySelector("#quarto-header");
+        if (header.classList.contains("headroom--frozen") && !(pages && pages.classList.contains("qdk-open")) && window.quartoToggleHeadroom) window.quartoToggleHeadroom();
+      });
+    }
+    if (pages && pagesGlass) {
+      pages.addEventListener("show.bs.collapse", function (event) {
+        if (event.target !== pages) return;
+        pages.classList.add("qdk-open");
+        pagesGlass.classList.add("qdk-glass-in");
+      });
+      pages.addEventListener("hide.bs.collapse", function (event) {
+        if (event.target !== pages) return;
+        pages.classList.remove("qdk-open");
+        pagesGlass.classList.remove("qdk-glass-in");
+      });
+      pages.addEventListener("click", function (event) {
+        if (event.target.closest("a, button, .sidebar-item-toggle")) return;
+        hideShown(".quarto-sidebar-collapse-item.show");
+      });
+    }
+    var areaButton = document.querySelector("#quarto-header .navbar-toggler");
+    var pagesButton = document.querySelector("#quarto-header .quarto-btn-toggle");
+    if (areaButton) areaButton.addEventListener("click", function () {
+      hideShown(".quarto-sidebar-collapse-item.show");
+    });
+    if (area) area.addEventListener("click", function (event) {
+      if (event.target.closest("a.nav-link") && document.querySelector("#quarto-header.askr-areas-collapsed")) hideShown("#navbarCollapse.show");
+    });
+    if (pagesButton) pagesButton.addEventListener("click", function () {
+      hideShown("#navbarCollapse.show");
+    });
+    document.addEventListener("click", function (event) {
+      var area = document.querySelector("#navbarCollapse");
+      if (!area || !area.classList.contains("show")) return;
+      if (area.contains(event.target) || (areaButton && areaButton.contains(event.target))) return;
+      hideShown("#navbarCollapse.show");
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && area && area.classList.contains("show")) {
+        event.preventDefault();
+        hideShown("#navbarCollapse.show");
+        areaButton.focus();
+      }
+    });
+    versions(hideShown);
+    adaptiveAreas();
+  }
+  function versions(hideShown) {
+    var brand = document.querySelector("#quarto-header .navbar-brand");
+    var slot = document.querySelector("#quarto-header .navbar-brand-container");
+    if (!brand || !slot || slot.querySelector(".askr-version")) return;
+    var offset = document.querySelector('meta[name="quarto:offset"]');
+    var manifest = new URL((offset ? offset.getAttribute("content") : "./") + "askr-versions.json", location.href);
+    fetch(manifest.href).then(function (response) {
+      if (!response.ok) throw new Error("missing");
+      return response.json();
+    }).then(function (data) {
+      mountVersions(data, hideShown, brand, slot, new URL("./", manifest));
+    }).catch(function () {
+      var dataEl = document.getElementById("askr-versions");
+      if (!dataEl) return;
+      try { mountVersions(JSON.parse(dataEl.textContent), hideShown, brand, slot, new URL("./", manifest)); } catch (error) { return; }
+    });
+  }
+  function mountVersions(data, hideShown, brand, slot, siteRoot) {
+    if (!data.versions || !data.versions.length || slot.querySelector(".askr-version")) return;
+    var params = new URLSearchParams(location.search);
+    var mode = params.get("askr-version-mode") === "title" ? "title" : (data.mode === "title" ? "title" : "inline");
+    var title = brand.textContent.trim();
+    if (params.get("askr-version-mode") === "title" && data.longTitle) title = data.longTitle;
+    // Manifest roots are relative to the deployed site, not the origin. Quarto's
+    // offset locates that site even from a nested page under a repository prefix.
+    function versionRoot(item) {
+      var root = item.root || "/";
+      var relative = root.replace(/^\/+/, "");
+      return new URL(relative ? relative.replace(/\/?$/, "/") : "./", siteRoot);
+    }
+    function pathMatches(root) {
+      var path = location.pathname;
+      var normalized = root.pathname;
+      return path === normalized.slice(0, -1) || path.indexOf(normalized) === 0;
+    }
+    function itemHref(item) {
+      if (item.href) {
+        var fixed = new URL(item.href.replace(/^\/(?!\/)/, ""), siteRoot);
+        if (params.get("askr-version-mode")) fixed.searchParams.set("askr-version-mode", params.get("askr-version-mode"));
+        return fixed.href;
+      }
+      var path = location.pathname;
+      var bases = data.versions.filter(function (version) { return version.root; })
+        .sort(function (a, b) { return versionRoot(b).pathname.length - versionRoot(a).pathname.length; });
+      var from = bases.filter(function (version) { return pathMatches(versionRoot(version)); })[0];
+      var fromRoot = from ? versionRoot(from) : siteRoot;
+      var rest = path.slice(fromRoot.pathname.length);
+      var target = new URL(rest, versionRoot(item));
+      target.search = location.search;
+      target.hash = location.hash;
+      return target.href;
+    }
+    var current = data.versions.filter(function (item) { return item.label === params.get("askr-version"); })[0];
+    if (!current) {
+      var rooted = data.versions.filter(function (item) { return item.root && pathMatches(versionRoot(item)); })
+        .sort(function (a, b) { return b.root.length - a.root.length; });
+      current = rooted[0] || data.versions.filter(function (item) { return item.latest; })[0] || data.versions[0];
+    }
+    var root = document.createElement("div");
+    root.className = "askr-version";
+    root.dataset.mode = mode;
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "askr-version-button";
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-controls", "askr-version-links");
+    var titleSpan = document.createElement("span");
+    titleSpan.className = "askr-version-title";
+    titleSpan.textContent = title;
+    button.appendChild(titleSpan);
+    if (mode === "inline") {
+      var number = document.createElement("span");
+      number.className = "askr-version-number";
+      number.textContent = current.label;
+      button.appendChild(number);
+    }
+    var chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    chevron.setAttribute("class", "askr-version-chevron");
+    chevron.setAttribute("viewBox", "0 0 16 16");
+    chevron.setAttribute("aria-hidden", "true");
+    var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M4 6l4 4 4-4");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-width", "1.6");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    chevron.appendChild(path);
+    button.appendChild(chevron);
+    var menu = document.createElement("div");
+    menu.className = "askr-version-menu";
+    menu.hidden = true;
+    menu.id = "askr-version-links";
+    data.versions.forEach(function (item) {
+      var link = document.createElement("a");
+      link.href = itemHref(item);
+      link.dataset.versionHome = versionRoot(item).href;
+      if (item.label === current.label) link.setAttribute("aria-current", "true");
+      var label = document.createElement("span");
+      label.textContent = item.label;
+      link.appendChild(label);
+      if (item.latest) {
+        var latest = document.createElement("span");
+        latest.className = "askr-version-latest";
+        latest.textContent = "Latest";
+        link.appendChild(latest);
+      }
+      menu.appendChild(link);
+    });
+    function setOpen(open) {
+      if (open) hideShown(".quarto-sidebar-collapse-item.show, #navbarCollapse.show");
+      menu.hidden = !open;
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    button.addEventListener("click", function (event) {
+      event.stopPropagation();
+      setOpen(menu.hidden);
+    });
+    document.addEventListener("click", function (event) {
+      if (!root.contains(event.target)) setOpen(false);
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && !menu.hidden) {
+        event.preventDefault();
+        setOpen(false);
+        button.focus();
+      }
+    });
+    root.addEventListener("focusout", function (event) {
+      if (!root.contains(event.relatedTarget)) setOpen(false);
+    });
+    root.appendChild(button);
+    root.appendChild(menu);
+    slot.appendChild(root);
+    document.addEventListener("click", function (event) {
+      var link = event.target.closest && event.target.closest(".askr-version-menu a");
+      if (!link || !root.contains(link)) return;
+      var href = link.getAttribute("href");
+      if (!href) return;
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.origin !== location.origin) return;
+      event.preventDefault();
+      fetch(href).then(function (response) {
+        if (response.status !== 404) {
+          location.assign(href);
+          return;
+        }
+        location.assign(link.dataset.versionHome);
+      }).catch(function () {
+        location.assign(href);
+      });
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", menus);
+  else menus();
+})();
+</script>

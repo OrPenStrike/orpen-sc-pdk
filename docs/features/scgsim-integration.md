@@ -86,9 +86,8 @@ The consumer owns electrical Net assignment; the PDK declares no net or Group.
 
 The levels use the existing typed `part_role` values `airbridge_deck` and
 `airbridge_post`; the PDK does not relabel these parts as bumps or face metal.
-The public [SCGSim develop checkpoint
-`1e278492ce06f857e0926c2b2d2ed8e2f351ac55`](https://github.com/OrPenStrike/scgsim/tree/1e278492ce06f857e0926c2b2d2ed8e2f351ac55)
-(`1.2.0.dev1`, not a stable release) provides
+The public [SCGSim 1.2.0.dev1 checkpoint](https://github.com/OrPenStrike/scgsim/tree/1e278492ce06f857e0926c2b2d2ed8e2f351ac55)
+(not the installed dependency pin or a stable release) provides
 `scgsim.aedt.prepare_q3d_from_geometry(plan.prepare(), ...)`. It consumes a
 `GeometryPlan` snapshot of role-neutral finite source geometry with explicit
 PDK materials and caller-assigned final Nets. For C/G-only preparation, it

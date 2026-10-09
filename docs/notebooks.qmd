@@ -1,5 +1,5 @@
 ---
-title: "Notebooks"
+title: "Simulation"
 description: "Publication-safe OrPen notebooks using SCGSim runtimes."
 ---
 
@@ -11,7 +11,34 @@ and reports.
 Notebook folders classify the simulated thing first. A thing may contain
 Palace, AEDT, single-run, or sweep notebooks without duplicating runtime logic.
 
-## Component simulation
+## Choose the notebook's runtime cohort
+
+The ordinary project's dependency remains
+[SCGSim 1.1.0rc1](https://github.com/OrPenStrike/scgsim/tree/2eed1eb4a9bcc7b1b020feb4953d5ed27e7d7b71).
+The five revised examples below declare a separate consumer environment using
+[SCGSim v2 development (2.0.0.dev1)](https://github.com/OrPenStrike/scgsim/tree/cc1424c84ffe9d295a57dbabb3c2ab6431110f6c).
+Follow each canonical
+source's installation instructions in that separate environment; selecting an
+ordinary project dependency group does not select the v2 cohort.
+
+### Source-only v2 examples
+
+| Example | Rendered source | Canonical paired source |
+|---|---|---|
+| SimplePad AEDT Q3D | [Notebook](notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/aedt_q3d.qmd) |
+| SimplePad AEDT HFSS eigenmode | [Notebook](notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.qmd) |
+| SimplePad Palace electrostatic | [Notebook](notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/palace_electrostatic.qmd) |
+| SimplePad Palace eigenmode | [Notebook](notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/palace_eigenmode.qmd) |
+| CircularPad Palace eigenmode | [Notebook](notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/CircularPad/palace_eigenmode.qmd) |
+
+These revised sources have not been executed as part of this documentation
+update. Rendering is execution-disabled and preserves checked-in outputs; old
+outputs are historical evidence, not successful execution of the revised v2
+source. Notebook-local historical stacks can differ from the PDK's current
+100 nm metal default. OrPen supplies source layouts and semantic intent;
+SCGSim owns native geometry, meshes, solvers, resolution and reports.
+
+## Existing component examples and historical evidence
 
 ### Kosen2024 Xmon
 

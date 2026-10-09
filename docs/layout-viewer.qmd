@@ -1,11 +1,14 @@
 ---
-title: "Interactive Layout Viewer"
-description: "Explore public OrPen layout exports in a static browser-only viewer."
+title: "Static SVG Layout Gallery"
+description: "Pan and zoom the existing public OrPen SVG previews."
 ---
 
 The viewer below is part of the generated static site. It supports panning,
 zooming, reset, and component selection entirely in the browser; it does not
 need Python, a notebook kernel, or a server-side layout service.
+This is OrPen's custom SVG gallery, not Askr's native image Lightbox, the
+GDSFactory+ Layout Viewer or a GDS/semantic inspection interface. Changing a
+selection only loads another checked-in public SVG; it does not build a cell.
 
 <iframe class="layout-viewer-frame" src="layout-viewer/index.html" title="Interactive OrPen layout viewer"></iframe>
 
