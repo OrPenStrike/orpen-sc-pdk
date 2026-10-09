@@ -138,8 +138,7 @@ uv sync -p 3.12 --all-extras
 ```
 
 This does not select every dependency group. Add `--group docs` or the matching
-Palace/AEDT group when needed. OrPen's simulation examples consume SCGSim;
-`gplugins` is not a dependency or fallback runtime for this package.
+Palace/AEDT group when needed. OrPen's simulation examples consume SCGSim.
 
 Run the focused validation checks:
 
@@ -160,9 +159,9 @@ just docs
 Start with [Get Started](docs/getting-started.md), then choose
 [Cells](docs/public-pdk-examples/index.md), [Process](docs/materials-and-technology.md)
 or [Simulation](docs/notebooks.qmd). The site includes searchable API reference
-pages and saved notebook content. Its custom browser-only SVG gallery displays
-the existing public previews; it is not an Askr feature, native GF+ viewer,
-or GDS/semantic inspection tool.
+pages and saved notebook content. The Cells page uses Askr's inline Image Viewer
+to zoom, pan and expand the existing public SVG previews. It displays images,
+not native GDS layers or semantic inspection results.
 It uses the unmodified [Askr theme](docs/features/docs-theme.md), including its
 default typography, reading measure and light/dark palette.
 

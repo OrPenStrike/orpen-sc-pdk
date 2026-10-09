@@ -9,11 +9,9 @@ Keep each repository focused on one authority:
 | Private layout projects | Private components, chip assemblies, private notebook sources, inputs, and run evidence. |
 
 The normal consumer route installs `orpen-sc-pdk` and the required SCGSim
-backend. A local checkout of a legacy solver-compatibility package or external
-Semantic Geometry Builder is not part of the runtime dependency graph.
-OrPen no longer includes `gplugins` in its optional ecosystem group; public
-simulation examples use SCGSim. Other ecosystem tools retain their declared
-dependencies.
+backend. Public simulation examples use SCGSim's in-tree Semantic Geometry
+Builder and reusable backend runtimes. Other ecosystem tools retain their
+declared dependencies.
 
 ```bash
 uv sync -p 3.12 --group palace-notebooks

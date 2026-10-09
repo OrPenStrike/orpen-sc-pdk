@@ -1,12 +1,12 @@
 # Documentation theme and toolchain
 
 This site uses the public `askr-html` format from
-[Askr v0.7.0 released source](https://github.com/arfiligol/askr/tree/b79fec30ff7b256ab07170c7c338b9e488d38fae).
+[Askr v0.8.0 released source](https://github.com/arfiligol/askr/tree/v0.8.0).
 The unchanged extension is
 vendored at `docs/_extensions/arfiligol/askr`, including its MIT license,
 third-party notices and local font/icon assets. The extension manifest
-`_extension.yml` declares version `0.7.0` and Quarto `>=1.9.38 <1.11`.
-The [released extension metadata](https://github.com/arfiligol/askr/blob/b79fec30ff7b256ab07170c7c338b9e488d38fae/_extensions/askr/_extension.yml)
+`_extension.yml` declares version `0.8.0` and Quarto `>=1.9.38 <1.11`.
+The [released extension metadata](https://github.com/arfiligol/askr/blob/v0.8.0/_extensions/askr/_extension.yml)
 records the format and compatibility requirements.
 
 The root `_extensions` symlink points to `docs/_extensions`. It lets relative
@@ -20,15 +20,17 @@ then check `quarto --version`. To reproduce the extension installation:
 
 ```bash
 cd docs
-quarto add arfiligol/askr@v0.7.0 --no-prompt
+quarto add arfiligol/askr@v0.8.0 --no-prompt
 ```
 
 Commit reviewed extension updates as consumer bytes; do not edit the installed
 copy or track a moving branch. `_quarto.yml` selects `askr-html` without
 replacing its themes, reading measure, fonts, colors or native controls.
-`styles.css` and `layout-viewer.css` retain only local table overflow, diagram
-popout behavior and the static viewer frame. Their consumer-only color aliases
-follow Askr's `--qdk-border` and `--qdk-canvas` tokens.
+`styles.css` retains only local table overflow and diagram popout behavior.
+Its consumer-only color aliases follow Askr's `--qdk-border` and `--qdk-canvas`
+tokens. The [Cells gallery](../public-pdk-examples/index.md#components-layout)
+uses the stock inline Image Viewer; the previous custom iframe viewer is retired.
+See the [released viewer usage](https://github.com/arfiligol/askr/blob/v0.8.0/usage/image-viewer.qmd).
 
 Documentation rendering has `execute.enabled: false`: it publishes saved
 notebook content, not fresh simulations. The normal documentation prerequisites

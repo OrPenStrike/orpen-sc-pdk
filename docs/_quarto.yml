@@ -31,7 +31,6 @@ project:
     - "reference/*.qmd"
   resources:
     - _static/images/components/*.svg
-    - layout-viewer/*
   pre-render:
     - uv run --project .. --group docs quartodoc build
 
@@ -111,7 +110,7 @@ website:
 
 format:
   askr-html:
-    css: [styles.css, layout-viewer.css]
+    css: [styles.css]
     html-math-method: mathjax
     code-copy: true
 

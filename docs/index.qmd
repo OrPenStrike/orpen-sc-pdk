@@ -23,7 +23,7 @@ and reporting. Choose the version-bound example that matches your runtime.
 
 - [Get Started](getting-started.md): install, activate OrPen and build a cell.
 - [Cells](public-pdk-examples/index.md): choose factories, source test-layout
-  families, tags or the custom static SVG gallery.
+  families, tags or the inline component layout gallery.
 - [Process](materials-and-technology.md): layers, stack, materials, interface
   presets and the source/runtime ownership boundary.
 - [Simulation](notebooks.qmd): choose a version-bound public SCGSim example;

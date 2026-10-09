@@ -21,8 +21,7 @@ Reusable simulation behavior does not live here:
 - `scgsim` owns the Semantic Geometry Builder Core, Palace and AEDT backends,
   mesh/config generation, handoff, run resolution, and reports;
 - `orpen-sc-pdk` supplies components, layer-stack facts, material records,
-  semantic annotations, and public notebooks that consume that API;
-- OrPen does not require `gplugins` or use it as a simulation fallback.
+  semantic annotations, and public notebooks that consume that API.
 
 Private layout/IP belongs in a separate private layout repo. The private repo
 may export GF cells and chip assemblies, but the public PDK remains the owner of

@@ -148,7 +148,7 @@ or fabrication qualification.
 ## Review the rendered result
 
 The [component gallery](../notebooks/Public_Docs/component_gallery.ipynb)
-shows checked-in public notebook code and output. The [Layout
-Viewer](../layout-viewer.qmd) provides browser-only pan, zoom, and component
-selection for publication-safe exports. Use the existing [layout and simulation
+shows checked-in public notebook code and output. The [Cells layout
+gallery](index.md#components-layout) provides inline image zoom, pan and expand
+controls for existing public SVG previews. Use the existing [layout and simulation
 notebooks](../notebooks.qmd) for runnable SCGSim examples.

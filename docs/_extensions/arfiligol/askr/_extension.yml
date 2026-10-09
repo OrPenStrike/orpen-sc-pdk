@@ -1,7 +1,7 @@
 # askr-html is a native Quarto format extension; consumer content and runtime stay native.
 title: Askr
 author: arfiligol
-version: 0.7.0
+version: 0.8.0
 quarto-required: ">=1.9.38 <1.11"
 contributes:
   shortcodes:
@@ -15,6 +15,7 @@ contributes:
       include-in-header: theme-color.html
       include-after-body: [math-copy.html, viewer-controls.html, footer-links.html]
       filters:
+        - viewer-prepare.lua
         - math-copy.lua
         - footer-credit.lua
         - path: viewer-config.lua

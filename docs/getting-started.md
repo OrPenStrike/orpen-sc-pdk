@@ -40,7 +40,7 @@ describes optional interactive by-name build/review in the same public project.
 ## Add simulation only when needed
 
 Layout use does not require an AEDT or Palace installation. Public simulation
-notebooks consume SCGSim rather than `gplugins` or a second OrPen runtime.
+notebooks consume SCGSim's reusable simulation runtime.
 Select a [Simulation](notebooks.qmd) example and follow its exact runtime
 prerequisites. The newer source-only examples require a separate SCGSim v2
 environment; the ordinary project dependency groups do not select that cohort.

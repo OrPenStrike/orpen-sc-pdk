@@ -861,7 +861,7 @@ tbody td, .table > tbody > tr > td { border-bottom: 1px solid var(--qdk-table-bo
 @media (prefers-reduced-motion: reduce) { .askr-math-copy { transition: none; } }
 .askr-math-copy:focus-visible, .askr-math-source textarea:focus-visible { outline: 2px solid var(--qdk-focus); outline-offset: 2px; }
 
-// Only skin the Quarto-owned GLightbox; images and zoom mechanics stay native.
+// Entry links stay usable without JavaScript; viewer chrome is image-viewer.css.
 .askr-image-source { display: none; }
 .askr-image-view {
   display: inline-flex;
@@ -878,27 +878,6 @@ tbody td, .table > tbody > tr > td { border-bottom: 1px solid var(--qdk-table-bo
   line-height: 1.3;
 }
 .askr-image-view:hover { border-color: var(--qdk-control-hover); color: var(--qdk-control-hover); }
-body .glightbox-container .gclose,
-body .glightbox-container .gprev,
-body .glightbox-container .gnext {
-  background: var(--qdk-canvas);
-  color: var(--qdk-control-color);
-  border: 1px solid var(--qdk-control-border);
-  border-radius: var(--qdk-control-radius);
-  opacity: 1;
-}
-body .glightbox-container :is(.gclose, .gprev, .gnext) svg,
-body .glightbox-container :is(.gclose, .gprev, .gnext) svg path { fill: currentColor; }
-body .glightbox-container :is(.gclose, .gprev, .gnext):hover { color: var(--qdk-control-hover); border-color: var(--qdk-control-hover); }
-body .glightbox-container :is(.gprev, .gnext).disabled { opacity: .3; }
-body .glightbox-container :is(.gclose, .gprev, .gnext):focus-visible { outline: var(--qdk-focus-width) solid var(--qdk-focus); outline-offset: var(--qdk-focus-offset); }
-body .glightbox-container .gslide .gslide-description,
-body .glightbox-container .gslide-description .gslide-title,
-body .glightbox-container .gslide-description .gslide-desc {
-  background: var(--qdk-canvas);
-  color: var(--qdk-text);
-  font-family: var(--qdk-body-font);
-}
 .askr-math-status { color: var(--qdk-text); font-size: .8rem; }
 .askr-math-source textarea { background: var(--qdk-code-background); border: 1px solid var(--qdk-border); color: var(--qdk-text); display: block; font-family: var(--qdk-mono-font); min-height: 5rem; padding: .5rem; resize: vertical; width: 100%; }
 
