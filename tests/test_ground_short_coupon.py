@@ -2,7 +2,7 @@
 
 import pytest
 
-from orpen_sc_pdk.cells.qubit import kosen2024_flip_chip_xmon_qubit
+from orpen_sc_pdk.cells.layout.qubit import kosen2024_flip_chip_xmon_qubit
 from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
 from orpen_sc_pdk.pdk import PDK
 from orpen_sc_pdk.tech import LAYER

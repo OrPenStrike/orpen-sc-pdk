@@ -54,19 +54,21 @@ def test_pdk_registry_contains_public_cells() -> None:
 
 
 def test_public_chip_demos_live_in_one_module_per_chip() -> None:
-    chips = import_module("orpen_sc_pdk.cells.chips")
+    demos = import_module("orpen_sc_pdk.samples.simulation_demos")
     chip_modules = {
-        "resonator_with_indium_bumps": ("orpen_sc_pdk.cells.chips.resonator_with_indium_bumps"),
-        "small_airbridge_chip": "orpen_sc_pdk.cells.chips.small_airbridge_chip",
+        "resonator_with_indium_bumps": (
+            "orpen_sc_pdk.cells.simulation.resonator_with_indium_bumps"
+        ),
+        "small_airbridge_chip": "orpen_sc_pdk.cells.simulation.small_airbridge_chip",
     }
 
-    assert set(chips.__all__) == set(chip_modules)
+    assert set(demos.__all__) == set(chip_modules)
     for name, module_name in chip_modules.items():
         module = import_module(module_name)
-        assert getattr(chips, name) is getattr(module, name)
+        assert getattr(demos, name) is getattr(module, name)
 
     assert find_spec("orpen_sc_pdk.cells.flip_chip") is None
-    assert find_spec("orpen_sc_pdk.cells.chips.resonators_with_flip_chip") is None
+    assert find_spec("orpen_sc_pdk.cells.chips") is None
 
 
 def test_pdk_registry_removed_misleading_cell_names() -> None:
