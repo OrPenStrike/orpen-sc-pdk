@@ -18,6 +18,48 @@ and nonmetal locators; they are not solver results.
 | **06 Flip-chip pad** — [`flip_chip_pad_coupon()`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/orpen_sc_pdk/cells/simulation/test_components.py). Lower pad, full upper bottom-face plane and four existing bumps at (±250, ±250) µm. | ![Flip-chip source: separate lower and upper faces plus bump detail.](../_static/images/test-components/06-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/06-source.png" label="Image: 06 flip-chip pad" >}} |
 | **07 CPW airbridge** — [`cpw_airbridge_coupon()`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/orpen_sc_pdk/cells/simulation/test_components.py). Positive CPW with the existing deck and two piers crossing above Signal. | ![Airbridge source: CPW crossing and actual pier overlap detail.](../_static/images/test-components/07-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/07-source.png" label="Image: 07 CPW airbridge" >}} |
 
+## Driven Terminal: Lumped and Wave Port comparison
+
+This selected source-layout pair uses the same through CPW, straight MTL
+coupling section and short–open meander resonator. It lets readers compare
+excitation geometry while keeping the resonator, Ground and airbridges fixed.
+These are source geometry inspection plates, not native port assignments or
+solver results.
+
+| Layout | Source-derived inspection plate |
+| --- | --- |
+| **Lumped** — two launchers and internal nonmetal Signal–Ground sheets. | ![Lumped source layout: shared resonator, bridge placement and internal sheet detail.](../_static/images/test-components/driven-terminal-lumped-resonator.png){width=260} {{< askr-image-view src="../_static/images/test-components/driven-terminal-lumped-resonator.png" label="Image: Lumped comparison" >}} |
+| **Wave** — no launchers; constant-width CPW ends at the finite boundary. | ![Wave source layout: the same resonator and bridges with boundary-cut CPW ends.](../_static/images/test-components/driven-terminal-wave-resonator.png){width=260} {{< askr-image-view src="../_static/images/test-components/driven-terminal-wave-resonator.png" label="Image: Wave Port comparison" >}} |
+
+| Excitation detail | Lumped | Wave |
+| --- | --- | --- |
+| End geometry | Launcher pads and tapers | Boundary-cut CPW; no launcher or taper |
+| Sheet intent | Existing 85 × 150 µm nonmetal sheet inside each launcher end gap | Proposed exterior YZ sheet at each CPW cut |
+| Proposed direction | Sheet normal +Z; integration Signal → Ground | Exterior normals −X / +X; reference Ground on both sides of Signal |
+| Current status | Source sheet geometry, not an assigned native terminal | Boundary geometry and proposed wave-sheet intent, not a solved port mode |
+
+Each layout has **17 airbridges**: 11 on constant-width through leads and six
+at the canonical meander's straight-section centres. The lowest meander row
+is omitted because the same bridge span would also cross the through TL.
+The through bridges stay outside the coupling and adjacent-turn exclusion;
+there are no bridges on launchers, tapers, bends or the open cap. Placement and
+pitch are preview settings, not fabrication rules or slotline-suppression proof.
+
+These assemblies use a 12 µm-wide central deck with **14 × 14 µm full end
+landings**, covering the existing 14 × 14 µm piers. The deck's overall span is
+98 µm. This assembly-owned shape differs from unchanged family 07 above,
+whose stock deck only partially covers each pier. The shared source stack is
+100 nm base M1, 3 µm post height above M1 and a 0.3 µm deck: posts Z =
+0.1–3.1 µm, deck Z = 3.1–3.4 µm. [Process](../materials-and-technology.md)
+describes the physical layers and stack.
+
+The selected geometry is an owner-composed assembly using the
+[public PDK source](https://github.com/OrPenStrike/orpen-sc-pdk/tree/7f89c3381097ac894705e8c54434ebfbfc758693),
+not a registered or downloadable public factory. It has been selected for
+SCG preparation; formal notebook authoring and native operations are pending.
+The short–open topology does not establish a target frequency, exact
+quarter-wavelength design, native connectivity or Lumped/Wave equivalence.
+
 ## Build a registered source layout
 
 ```python
