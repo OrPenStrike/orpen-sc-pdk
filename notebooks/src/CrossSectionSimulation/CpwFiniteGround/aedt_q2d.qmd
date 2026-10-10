@@ -1,0 +1,251 @@
+---
+title: "Finite-ground CPW — Q2D cross section"
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
+
+Extract per-unit-length matrices from an independently authored CPW cross
+section. See the [Q2D requirements](../../../simulation/requirements/q2d-cross-section.html).
+This special model retains a 10 µm signal, 10 µm gaps, 40 µm grounds and
+Nb 200 nm above a 200 µm wide, 500 µm deep Si substrate. It is not a
+3D coupon slice or the current-PDK Al model. Native rectangles and conductor
+assignments define the case; no GDS is imported.
+
+Use [SCGSim 2.0.0rc1](https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de)
+in a separately selected consumer environment. The exact source revision is recorded
+in the controls below. Execution is disabled; no native solve or returned-result
+claim is made. `AUTHORING_ONLY` constructs non-solving inputs; preparation/run
+are explicit, and analysis reads an independent returned directory.
+
+## Setup and Imports
+
+```{python}
+#| id: q2d-0
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+from uuid import uuid4
+
+from IPython.display import display
+from scgsim.aedt import (
+    AedtResources,
+    MatrixRunControl,
+    PdkMaterial,
+    Q2dConductorSpec,
+    Q2dRectangleSpec,
+    Q2dSpec,
+    prepare_handoff,
+    resolve_results,
+)
+
+from orpen_sc_pdk.materials import get_material_records
+```
+
+## Setup and Run Controls
+
+```{python}
+#| id: q2d-1
+WORKFLOW_ACTION = "AUTHORING_ONLY"  # AUTHORING_ONLY | prepare_handoff | run | analyze_handoff
+RUN_ID = f"cpw_q2d_{uuid4().hex}"
+OUTPUT_ROOT = Path.cwd() / ".artifacts" / "CpwFiniteGround"
+RUN_DIR = OUTPUT_ROOT / RUN_ID
+RETURNED_RUN_DIR = None  # Set independently to an immutable returned-run directory.
+SCGSIM_RUNTIME_REVISION = "85d8bedb733b1e17737d935029618351b30ea5de"
+RESOURCES = AedtResources(cores=4, ram_limit_percent=30)
+# Cross-section signal width (um).
+signal_width_um = 10.0
+# Signal-to-ground gap (um).
+gap_um = 10.0
+# Ground conductor width (um).
+ground_width_um = 40.0
+# Substrate width (um).
+substrate_width_um = 200.0
+# Metal thickness (um).
+metal_thickness_um = 0.2
+# Substrate thickness (um).
+substrate_thickness_um = 500.0
+# AEDT version used for project generation.
+aedt_version = "2024.2"
+# AEDT project name.
+project_name = RUN_ID
+# AEDT design name.
+design_name = "CpwFiniteGroundQ2d"
+# Region padding tuple in -X,+X,-Y,+Y order (um).
+region_padding_um = (100.0, 100.0, 1000.0, 100.0)
+# Matrix solve frequency (GHz).
+frequency_ghz = 6.0
+# Maximum adaptive passes.
+maximum_passes = 3
+```
+
+## Create Simulation Component / Coupon
+
+```{python}
+#| id: q2d-2
+# Q2D rectangles below are independently authored; no component is built.
+```
+
+## Initialize AEDT Project / App
+
+```{python}
+#| id: q2d-3
+# Only the generated native runner owns an AEDT session.
+```
+
+## Build Native Q2D Geometry and Conductors
+
+```{python}
+#| id: q2d-4
+if WORKFLOW_ACTION != "analyze_handoff":
+    signal_half_width_um = signal_width_um / 2
+    left_ground_xmin_um = -(signal_half_width_um + gap_um + ground_width_um)
+    right_ground_xmin_um = signal_half_width_um + gap_um
+    rectangles = (
+        # Each row gives name, lower-left coordinate (um), size (um), and material.
+        Q2dRectangleSpec(
+            "Substrate",
+            (-substrate_width_um / 2, -substrate_thickness_um),
+            (substrate_width_um, substrate_thickness_um),
+            "Si",
+        ),
+        Q2dRectangleSpec(
+            "Signal",
+            (-signal_half_width_um, 0.0),
+            (signal_width_um, metal_thickness_um),
+            "Nb",
+        ),
+        Q2dRectangleSpec(
+            "GroundLeft",
+            (left_ground_xmin_um, 0.0),
+            (ground_width_um, metal_thickness_um),
+            "Nb",
+        ),
+        Q2dRectangleSpec(
+            "GroundRight",
+            (right_ground_xmin_um, 0.0),
+            (ground_width_um, metal_thickness_um),
+            "Nb",
+        ),
+    )
+```
+
+## Geometry Verification
+
+```{python}
+#| id: q2d-5
+if WORKFLOW_ACTION != "analyze_handoff":
+    display(rectangles)
+```
+
+## Materials and Boundaries
+
+```{python}
+#| id: q2d-6
+if WORKFLOW_ACTION != "analyze_handoff":
+    material_records = get_material_records()
+    materials = {
+        material_id: PdkMaterial(
+            material_id,
+            material_records[material_id]["material_kind"],
+            material_records[material_id]["is_superconducting"],
+            material_records[material_id]["aedt_library_name"],
+        )
+        for material_id in ("vacuum", "Si", "Nb")
+    }
+```
+
+## Ports / Nets / Excitations
+
+```{python}
+#| id: q2d-7
+if WORKFLOW_ACTION != "analyze_handoff":
+    conductors = (
+        # Each row gives conductor name, net name, rectangle members, and thickness (um).
+        Q2dConductorSpec("Signal", "SignalLine", ("Signal",), metal_thickness_um),
+        Q2dConductorSpec(
+            "Ground", "ReferenceGround", ("GroundLeft", "GroundRight"), metal_thickness_um
+        ),
+    )
+```
+
+## Simulation Setup
+
+```{python}
+#| id: q2d-8
+if WORKFLOW_ACTION != "analyze_handoff":
+    spec = Q2dSpec(
+        project_name=project_name,
+        design_name=design_name,
+        materials=materials,
+        vacuum_material_id="vacuum",
+        rectangles=rectangles,
+        conductors=conductors,
+        run_control=MatrixRunControl("Setup1", frequency_ghz, maximum_passes),
+        region_padding_um=region_padding_um,
+        aedt_version=aedt_version,
+    )
+```
+
+## Simulation Configuration
+
+```{python}
+#| id: q2d-9
+if WORKFLOW_ACTION != "analyze_handoff":
+    display(spec)
+```
+
+## Solve and Export
+
+```{python}
+#| id: q2d-10
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    HANDOFF = prepare_handoff(spec=spec, output_dir=RUN_DIR, resources=RESOURCES)
+    display(HANDOFF)
+    if WORKFLOW_ACTION == "run":
+        subprocess.run([str(HANDOFF.script_path)], cwd=HANDOFF.run_dir, check=True)
+```
+
+## Adaptive-Pass Convergence / Solver Diagnostics
+
+```{python}
+#| id: q2d-11
+if WORKFLOW_ACTION == "analyze_handoff":
+    result = resolve_results(Path(RETURNED_RUN_DIR))
+    result.show_all_results(show_details=True)
+```
+
+## Results: Plots and Readable Tables
+
+### Physics Analysis Results
+
+```{python}
+#| id: q2d-physics
+if WORKFLOW_ACTION == "analyze_handoff":
+    display(result.physics_results())
+```
+
+### Simulation Performance / Benchmarks
+
+```{python}
+#| id: q2d-benchmark
+if WORKFLOW_ACTION == "analyze_handoff":
+    display(result.simulation_benchmark())
+```
+
+## Save and Release AEDT
+
+```{python}
+#| id: q2d-13
+if WORKFLOW_ACTION == "analyze_handoff":
+    display({"project": result.project_path, "receipt": result.receipt_path})
+elif WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    display(HANDOFF.archive_path)
+```

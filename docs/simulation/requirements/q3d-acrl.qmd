@@ -1,0 +1,68 @@
+---
+title: "Q3D C/G and AC/RL"
+description: "Extract finite-CPW matrices with explicit conductor ownership and current paths."
+sidebar: simulation
+---
+
+## Purpose and selected system
+
+Extract capacitance/conductance and AC resistance/inductance matrices for the
+finite-ground CPW coupon. Preserve its finite Signal, two Ground conductors
+and substrate rather than substituting an infinite line section.
+C/G and AC/RL are distinct extraction products, not full-wave S-parameters.
+
+## Model, boundaries and current paths
+
+Use the notebook's body geometry, material records, conductor thickness and
+physical Z. Preserve the surrounding region and its exterior/reference
+treatment. State matrix ordering, units and any reference reduction.
+
+Bind each body to its intended Signal or Ground Net. C/G describes the
+electric conductor arrangement; AC/RL additionally needs the authored current
+path. Specify the Signal source and sink objects and their face directions.
+Ground classification is not a source/sink assignment.
+
+Extraction frequency selects the material/current response under study.
+Mesh and adaptive pass settings govern numerical extraction. Exact values,
+enabled matrix families and output selections live in the notebook.
+
+::: {.callout-note}
+A superconducting material identity must retain the actual native modeling
+interpretation. It does not by itself prove an extracted kinetic inductance.
+:::
+
+## Workflow
+
+::: {.panel-tabset}
+
+### Palace
+
+For a static capacitance question, use the separately defined
+[electrostatic workflow](electrostatic-capacitance.qmd). A Palace comparison
+must state its reference and boundary conventions; it is not a substitute
+for this current-path-dependent AC/RL extraction.
+
+### AEDT
+
+Use [Finite CPW Q3D](../../notebooks/ComponentSimulation/CpwFiniteGround/aedt_q3d.ipynb).
+Construct the native bodies, inspect material and Net assignments, bind the
+source/sink pair and extract the requested families. Analyze returned matrices
+separately from preparation.
+
+:::
+
+## Expected outputs
+
+Retain native body/material and Net readback, source/sink faces and directions,
+applied setup and adaptive history. Return C/G and AC/RL outputs with their
+actual frequencies, units and conductor ordering. Keep any reduced matrix or
+derived circuit quantity linked to its raw matrix and convention.
+
+Do not label capacitance-only output as completed AC/RL extraction, or
+interpret a matrix entry without its reference/current-path definition.
+No new extraction accuracy or agreement threshold is introduced here.
+
+See [source ownership](../tools/source-ownership.qmd),
+[materials and Z](../tools/materials-stack-z.qmd),
+[contacts](../tools/contacts-multilevel.qmd) and
+[handoff/results](../tools/handoff-resolve-report.qmd).

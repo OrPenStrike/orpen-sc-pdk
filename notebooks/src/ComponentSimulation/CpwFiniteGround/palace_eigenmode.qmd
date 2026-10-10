@@ -1,5 +1,5 @@
 ---
-title: "Circular Pad — Curved Geometry and Palace Eigenmode"
+title: "Finite-ground CPW — Palace Eigenmode and EPR"
 jupyter:
   kernelspec:
     display_name: Python 3
@@ -15,12 +15,14 @@ Canonical source-only candidate; semantic state CONVERGING, delivery LOCAL
 CANDIDATE, no test writes. OrPen owns physical source facts, this notebook
 owns case settings and final Nets, and SCGSim owns runtime.
 
-This synthetic `circular_pad_capacitor` linear LC model uses radius 100 µm,
-radial gap 20 µm, a 1000 µm die, current PDK 100 nm Al and 500 µm Si.
-The east-facing nonmetal locator binds the linear 10 nH inductive branch,
-with no added capacitive branch. It is not ordinary CPW, generic RLC or a
-measured device. Component source owns curved boundary chains and local
-PAD/GROUND facts; this notebook owns final Nets.
+Ordinary distributed CPW: the public `finite_ground_cpw_coupon()` preserves
+the 500 µm length, 10 µm Signal, 6 µm gaps, two 80 µm Ground strips and
+500 × 182 µm substrate area. This new model explicitly uses current PDK
+100 nm Al above 500 µm Si, not the historical HFSS Nb/sheet declaration.
+It has no ports or lumped loads; this notebook owns final Signal/Ground Nets.
+Palace numerical controls reuse the canonical SimplePad recipe; the 3 GHz
+lower-bound/two-mode search and six-pass maximum inherit the existing HFSS
+CPW recipe. No setup-equivalence or mode-identity claim follows.
 
 Read the [eigenmode requirements](../../../simulation/requirements/eigenmode.qmd)
 and [EPR/loss requirements](../../../simulation/requirements/epr-loss.qmd).
@@ -34,14 +36,12 @@ handoff or solves. Heavy preparation requires explicit `prepare_handoff` or
 are synthetic assumptions; numerical controls are inputs, not adequacy Gates.
 No new native geometry, mesh, fields, solve or numerical-accuracy claim is made.
 
-Historical evidence is separate: the original `circular_pad_palace_eigenmode_20261007_08`
-cohort used SCGSim 1.1.0rc1 and reported 5.573354161115 GHz with retained
-PCG warnings. Those results do not execute or validate this source; see the
-[original evidence and identity manifest](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/ComponentSimulation/CircularPad/evidence/README.md).
+The older HFSS CPW recipe is an input-settings reference, not execution
+evidence for this new Palace source. No historical output is attributed here.
 
 
 ```{python}
-#| id: cpe-imports
+#| id: fcpe-imports
 import importlib.metadata
 import json
 import os
@@ -65,13 +65,14 @@ if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
         get_material_records,
         validate_interface_preset_records,
     )
+    from orpen_sc_pdk.cells.simulation.cpw_coupons import finite_ground_cpw_coupon
     from orpen_sc_pdk.tech import get_single_die_layer_stack
 
 if WORKFLOW_ACTION in {"analyze_handoff", "save_from_returned"}:
     from scgsim.palace import inspect_run_trustworthiness, resolve_palace_result
 
-RUN_ID = f"circular_pad_palace_eigenmode_v2_{uuid4().hex}"
-OUTPUT_ROOT = Path.cwd() / ".artifacts" / "CircularPad"
+RUN_ID = f"finite_cpw_palace_eigenmode_v2_{uuid4().hex}"
+OUTPUT_ROOT = Path.cwd() / ".artifacts" / "CpwFiniteGround"
 RUN_ROOT = OUTPUT_ROOT / RUN_ID
 if WORKFLOW_ACTION not in {
     "AUTHORING_ONLY",
@@ -88,23 +89,11 @@ display({"scgsim_version": importlib.metadata.version("scgsim"), "run_id": RUN_I
 ## Build Component Coupon
 
 ```{python}
-#| id: cpe-component
+#| id: fcpe-component
 if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
-    OUTER_RADIUS_UM = 100.0
-    INNER_RADIUS_UM = 0.0
-    GAP_UM = 20.0
-    DIE_SIDE_UM = 1000.0
-    JUNCTION_WIDTH_UM = 2.0
     orpen_sc_pdk.activate()
     gf.clear_cache()
-    component = gf.get_component(
-        "circular_pad_capacitor",
-        outer_radius_um=OUTER_RADIUS_UM,
-        inner_radius_um=INNER_RADIUS_UM,
-        gap_um=GAP_UM,
-        die_side_um=DIE_SIDE_UM,
-        junction_width_um=JUNCTION_WIDTH_UM,
-    )
+    component = finite_ground_cpw_coupon()
     layer_stack = get_single_die_layer_stack()
     plan = GeometryPlan(
         component=component,
@@ -113,33 +102,36 @@ if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
         material_records=get_material_records(),
         coupon_padding_um=0.0,
     )
-    plan.set_nets({"pad": ("chip/PAD",), "ground": ("chip/GROUND",)})
-    plan.set_vacuum_region(padding=(250.0, 250.0, 1000.0))
-    snapshot = plan.prepare()
-    display(component)
-    display(
+    plan.set_nets(
         {
-            "bbox_um": str(component.dbbox()),
-            "ports": component.ports,
-            "paired_gds_sha256": snapshot.gds_sha256,
+            "signal": ("chip/SIGNAL",),
+            "ground": ("chip/GROUND_PLUS", "chip/GROUND_MINUS"),
         }
     )
+    plan.set_vacuum_region(
+        padding={
+            "x_minus_um": 100.0,
+            "x_plus_um": 100.0,
+            "y_minus_um": 100.0,
+            "y_plus_um": 100.0,
+            "z_minus_um": 1000.0,
+            "z_plus_um": 1000.0,
+        }
+    )
+    snapshot = plan.prepare()
+    display(component)
+    display({"bbox_um": str(component.dbbox()), "ports": component.ports})
 ```
 
 ## Configure EPR / Problem
 
-LiteratureCentral MA/MS/SA are synthetic model conventions, not measured
-process data. EPR is baseline unmasked / zero-inset only. Positive-inset
-perimeter distances use chords in the selected Palace runtime; this workflow
-does not claim exact curved mask separation or introduce a mask study.
-
 ```{python}
-#| id: cpe-problem
+#| id: fcpe-problem
 if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
-    ROUTE = "B"
     sim = EigenmodeSim()
     sim.set_plan(snapshot)
     sim.set_output_dir(RUN_ROOT)
+    ROUTE = "B"
     records = validate_interface_preset_records(get_interface_preset_records())
     preset_names = {kind: f"LiteratureCentral_{kind}" for kind in ("MA", "MS", "SA")}
     interface_presets = {kind: records[name] for kind, name in preset_names.items()}
@@ -156,15 +148,14 @@ if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
             for kind, record in interface_presets.items()
         },
     )
-    PORT_NAME = "chip/o_junction_lumped"
-    PORT_INDUCTANCE_H = 10e-9
-    PORT_CAPACITANCE_F = 0.0  # Inductive-only model; no Palace capacitive branch.
-    sim.add_port(PORT_NAME, layer="D0_TOP_M1", layout_sheet=True, inductance=PORT_INDUCTANCE_H)
+    # Ordinary CPW: no ports or loads; select dielectric quantities only.
     sim.set_epr_request(
-        surface_interfaces=("MA", "MS", "SA"), bulk_domain_ids=None, port_names=(PORT_NAME,)
+        surface_interfaces=("MA", "MS", "SA"),
+        bulk_domain_ids=None,
+        port_names=(),
     )
-    NUM_MODES = 1
-    SEARCH_FREQUENCY_HZ = 1e9  # Search lower bound, not a desired frequency.
+    NUM_MODES = 2
+    SEARCH_FREQUENCY_HZ = 3e9
     EIGENMODE_TOLERANCE = 1e-6
     SAVE_FIELDS = 1
     sim.set_eigenmode(
@@ -176,8 +167,12 @@ if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     display(
         {
             "route": ROUTE,
-            "inductance_h": PORT_INDUCTANCE_H,
-            "capacitance_f": PORT_CAPACITANCE_F,
+            "ports": (),
+            "loads": (),
+            "num_modes": NUM_MODES,
+            "search_frequency_hz": SEARCH_FREQUENCY_HZ,
+            "eigenmode_tolerance": EIGENMODE_TOLERANCE,
+            "save_fields": SAVE_FIELDS,
             "interface_presets": interface_presets,
         }
     )
@@ -186,18 +181,16 @@ if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
 
 ## Build Mesh
 
-Geometric order is independent of field FEM order. SCGSim owns the shared
-curve arrangement, source rebinding, elevation and one HighOrder optimization.
-
 ```{python}
-#| id: cpe-mesh
+#| id: fcpe-mesh
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     REFINED_MESH_SIZE_UM = 10.0
     MAX_MESH_SIZE_UM = 200.0
-    ALGORITHM_3D = "HXT"
-    MESH_THREADS = 8
+    # SCGSim owns Delaunay Mesh.Algorithm3D=1; no notebook mesher override.
+    ALGORITHM_3D = "Delaunay"
+    MESH_THREADS = 1
     SURFACE_THREADS = 1
-    GEOMETRY_ORDER = 2
+    GEOMETRY_ORDER = 1  # Geometry mesh degree, not field FEM order.
     HIGH_ORDER_OPTIMIZE = True
     sim.set_mesh(
         refined_mesh_size=REFINED_MESH_SIZE_UM,
@@ -210,21 +203,17 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     )
     MESH_PATH = sim.mesh()
     display(MESH_PATH)
-    display(sim.mesh_summary())
 ```
 
 ## Generate Config
 
-The maximum permits native early stopping; four completed AMR passes are not
-required. Controls are declared inputs, not scientific acceptance criteria.
-
 ```{python}
-#| id: cpe-config
+#| id: fcpe-config
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     FEM_ORDER = 2
     LINEAR_TOLERANCE = 1e-6
     MAX_ITERATIONS = 2000
-    AMR_MAX_PASSES = 4
+    AMR_MAX_PASSES = 6
     AMR_TOLERANCE = 0.02
     AMR_UPDATE_FRACTION = 0.15
     AMR_NONCONFORMAL = False
@@ -250,18 +239,15 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 ```
 
 ## Prepare Handoff
-
-Only `run` invokes the generated script. Use a fresh RUN_ID for each new
-preparation; existing destinations fail rather than being overwritten. Exact
-host executable/setup provenance belongs in the owner's execution receipt,
-not a machine-local public default. There is no automatic retry or fallback.
-`PALACE_EXECUTABLE` must select an actual Palace MPI wrapper: the generated
-script supplies `-np 8 -nt 1` through `resources["command_style"] = "wrapper"`.
-A direct ELF is not a wrapper. Select a fresh RUN_ID before changing the action
-to `prepare_handoff` or `run`; the fresh RUN_ID never names historical evidence.
+Preparation performs real local geometry and meshing, but does not start
+Palace. Only the explicit `run` action invokes the generated handoff script.
+Retain its handoff ID independently of the returned package.
+Select an actual MPI wrapper, not a direct ELF: the generated script supplies
+`-np 8 -nt 1`. The native executable must include corrected Palace source
+`4e9e1b7232b4c8ca8b964be7e70f1848f578de37`; this notebook does not install it.
 
 ```{python}
-#| id: cpe-handoff
+#| id: fcpe-handoff
 if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     MACHINE_PROFILE = "direct-local"
     PALACE_EXECUTABLE = os.environ["PALACE_EXECUTABLE"]
@@ -280,23 +266,22 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 ```
 
 ## Analyze Returned Run
-
-In a fresh analysis kernel, set `CIRCULAR_PAD_RETURNED_RUN_DIR` to the actual
-returned folder and supply its independently retained preparation ID through
-`CIRCULAR_PAD_PALACE_HANDOFF_ID`. There is no historical-path or identity default.
-Missing inputs fail natively; failed/partial
-results stay failed/partial and never become a strict completed result.
-Analyze does not build, mesh or solve.
+Start a fresh analysis kernel. Supply the actual returned directory and the
+independently retained preparation ID through the named environment inputs;
+missing inputs fail natively. Partial inspection is evidence only and does
+not substitute for strict completed-result resolution.
 
 ### Run Identity
+
 ### Numerical Evidence
+
 ### Simulation Benchmark
 
 ```{python}
-#| id: cpe-trust
+#| id: fcpe-trust
 if WORKFLOW_ACTION in {"analyze_handoff", "save_from_returned"}:
-    RETURNED_RUN_DIR = Path(os.environ["CIRCULAR_PAD_RETURNED_RUN_DIR"])
-    EXPECTED_HANDOFF_ID = os.environ["CIRCULAR_PAD_PALACE_HANDOFF_ID"]
+    RETURNED_RUN_DIR = Path(os.environ["FINITE_CPW_RETURNED_RUN_DIR"])
+    EXPECTED_HANDOFF_ID = os.environ["FINITE_CPW_PALACE_HANDOFF_ID"]
     report = inspect_run_trustworthiness(RETURNED_RUN_DIR)
     display(report.show_run_trustworthiness(show_details=True))
     display(report.show_simulation_benchmark(show_details=True))
@@ -306,22 +291,8 @@ if WORKFLOW_ACTION in {"analyze_handoff", "save_from_returned"}:
 
 ### Physics Analysis Results
 
-Historical `_08` only: the frequency moves from 5.310657080530 to 5.573354161115 GHz across the
-recorded refinements; the configured four-refinement maximum was reached.
-The final native indicator is 0.1186681863426 versus the configured 0.02;
-this is an observation, not a numerical-adequacy criterion. All five
-postprocessing phases emitted two PCG nonconvergences at 10000 iterations
-(final relative residuals 9.537e-6 and 2.349e-5). The initial natural
-PMC/ZeroCharge boundary warning also remains part of the run evidence.
-The typed EPR result contains nine surface, two bulk and one junction row.
-The raw signed Palace junction participation is -0.9948401783541
-(`signed_palace=true`): it is neither absolute-valued nor interpreted as a
-negative physical energy. Surface values are unmasked, zero-inset baselines;
-the interface losses are synthetic model inputs. See the
-[derived evidence tables and provenance](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/ComponentSimulation/CircularPad/evidence/README.md).
-
 ```{python}
-#| id: cpe-physics
+#| id: fcpe-physics
 if WORKFLOW_ACTION in {"analyze_handoff", "save_from_returned"}:
     if report.completeness == "complete":
         display(result.show_physics_quantities(ranking_limit=None))
@@ -333,16 +304,16 @@ if WORKFLOW_ACTION in {"analyze_handoff", "save_from_returned"}:
 
 ### Saved EPR and Offline Loss
 
-Strict completed result extraction and loss reanalysis require no new component,
-GDS, CAD, mesh or fields. Empty overrides preserve the verified assumptions;
-explicit caller film edits change offline loss assumptions, not native fields.
-Use real Group IDs in the portable snapshot. Do not absolute-value signed EPR.
-The caller-owned save destination is opened exclusively to avoid overwrite.
+Only a strict completed eigenmode result produces this portable snapshot.
+Offline changes below retain native participation and source bindings; they
+change model film assumptions, not fields. This ordinary CPW requests no junction participation. Surface and bulk views
+remain distinct; offline loss is a model interpretation, not device lifetime.
+The explicit save path is caller-owned and opened exclusively to avoid overwrite.
 
 ```{python}
-#| id: cpe-save-epr
+#| id: fcpe-save-epr
 if WORKFLOW_ACTION == "save_from_returned":
-    EPR_SAVE_PATH = Path(os.environ["CIRCULAR_PAD_PALACE_EPR_SAVE_PATH"])
+    EPR_SAVE_PATH = Path(os.environ["FINITE_CPW_PALACE_EPR_SAVE_PATH"])
     epr = result.epr_result()
     with EPR_SAVE_PATH.open("x", encoding="utf-8") as stream:
         json.dump(epr.to_payload(), stream, indent=2)
@@ -356,12 +327,12 @@ returned result. Existing files are never silently reused as a save fallback.
 `analyze_handoff` does not create a snapshot.
 
 ```{python}
-#| id: cpe-offline-epr
+#| id: fcpe-offline-epr
 if WORKFLOW_ACTION in {"save_from_returned", "analyze_saved_epr"}:
-    EPR_SAVE_PATH = Path(os.environ["CIRCULAR_PAD_PALACE_EPR_SAVE_PATH"])
+    EPR_SAVE_PATH = Path(os.environ["FINITE_CPW_PALACE_EPR_SAVE_PATH"])
     saved_epr = resolve_epr_result(EPR_SAVE_PATH)
-    SURFACE_DEFAULTS = {}  # Explicit MA/MS/SA film assumptions, if requested.
-    GROUP_OVERRIDES = {}  # Real saved Group IDs only.
+    SURFACE_DEFAULTS = {}  # Caller may explicitly supply MA/MS/SA film assumptions.
+    GROUP_OVERRIDES = {}  # Use real Group IDs from saved_epr; never fabricate IDs.
     offline_epr = reanalyze_epr(
         saved_epr,
         surface_defaults=SURFACE_DEFAULTS,
@@ -372,11 +343,8 @@ if WORKFLOW_ACTION in {"save_from_returned", "analyze_saved_epr"}:
 
 ### Simulation Performance / Benchmarks
 
-Read actual emitted geometric node/order data and native AMR histories beside
-the declared controls. The final native metadata records 846008 ND unknowns and
-114197 tetrahedra, using 8 MPI processes × 1 OpenMP thread. Ordinary saved
-VTU output across eight pieces contains 10-node Lagrange tetrahedra (VTK 71)
-and 6-node Lagrange triangles (VTK 69). That observes quadratic serialization
-after AMR, not exact shared-node motion or geometric accuracy. Continuous-circle
-fidelity and interior nodal state beyond those saved outputs remain unmeasured.
-No Q/T1, cross-solver equivalence, accuracy or convergence conclusion follows.
+Read the report's native pass history, mesh/DoF, time and resource evidence
+beside the actual requested controls. Missing channels stay unavailable;
+no trend, numerical accuracy, device loss or lifetime is inferred from execution
+success. Native observations and their interpretation are pending owner execution.
+

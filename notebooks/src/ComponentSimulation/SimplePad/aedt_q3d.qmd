@@ -11,71 +11,45 @@ execute:
   enabled: false
 ---
 
-Public synthetic tutorial candidate `orpen-simple-pad-public-tutorial` under
-`scgsim-docs-1.0.2-20261006`: semantic state CONVERGING, delivery LOCAL CANDIDATE,
-no test writes. Owner: OrPen SC PDK. Canonical layout authority is
-`square_pad_capacitor`; reusable runtime belongs to SCGSim. The authored pad
-and connected surrounding Ground are finite Al (0–0.2 um), above one 500 um
-Si die (-500–0 um). There is no second die or fabricated inter-die gap.
-The source locator sheet spans x=99.999–120.001, y=-1–1 um: 20.002 by
-2 um, centered at (110, 0), directed +X. It overlaps each terminal by one
-source DBU (0.001 um) for exact contact binding; physical metal and the
-20 um gap are unchanged. The component owns this overlap metadata.
+Extract the square pad's capacitance and conductance at 5 GHz. See the
+[capacitance requirements](../../../simulation/requirements/electrostatic-capacitance.html).
+The 200 µm pad, 20 µm gap and connected surrounding Ground occupy one
+1000 µm Si die: Al 100 nm above Si 500 µm. The explicit body-v3 model retains
+Signal source −Z / sink +Z, native Ground, an open Region, and `solve_ac_rl=False`.
+It is a PEC extraction model, not a finite-conductivity loss measurement.
 
-Historical source receipt: OrPen base `36b6e6b`; SCGSim runtime 1.0.1 source
-`9c032e398f2ebabc2dc53965b2bde5c346a061bc` (develop
-`8361bd902` has unchanged runtime). This identifies the earlier authoring
-cohort, not an execution of the revised body-v3 source below.
-Quarto execution is disabled. This checkpoint has no native geometry, mesh,
-solve, capacitance, frequency, EPR or adequacy claim. Run IDs below identify
-new preparations, not pre-existing evidence; change the ID for each new run.
-Native search/convergence controls are inputs, not research adequacy Gates.
-
-This branch requests CG-only extraction at 5 GHz: no AC R/L and no junction
-L/C branch. Q3D's surrounding Region is open, not assigned to a grounded
-Region net. The pad is Signal and the single connected ring is Ground.
-The PDK superconducting Al record is lowered by SCGSim to native PEC; finite
-geometry is preserved, not a finite-conductivity loss measurement. Palace's
-natural electrostatic exterior and Q3D's open Region are not claimed equivalent.
-
-## Runtime Prerequisite — Source-Only SCGSim v2 Candidate
-
-This body-v3 source targets public SCGSim revision
-`cc1424c84ffe9d295a57dbabb3c2ab6431110f6c` (`2.0.0.dev1`).
-In a separate consumer environment with this OrPen checkout installed:
-
-```bash
-python -m pip install "scgsim[aedt] @ git+https://github.com/OrPenStrike/scgsim.git@cc1424c84ffe9d295a57dbabb3c2ab6431110f6c"
-```
-
-The ordinary OrPen project pin remains unchanged; its `uv sync` does not
-select this v2 cohort. This revised source has not been imported, prepared,
-serialized, executed or resolved. Historical native observations retain their
-original run/runtime identities and are not v2 evidence for this source.
-The original 4-core / 80-percent RAM request is retained for provenance, not
-execution admission: any future run needs an owner-bound resource allocation
-within the shared SCG 20-core / 30-percent physical-host RAM budget. No scheduling or resource retune
-is performed here.
+Use [SCGSim 2.0.0rc1](https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de)
+in a separately selected consumer environment. The exact source revision is recorded
+in the controls below. Execution is disabled; no native solve or returned-result
+claim is made. `AUTHORING_ONLY` constructs non-solving inputs; preparation/run
+are explicit, and analysis reads an independent returned directory.
 
 ## Setup and Imports
 
 ```{python}
 #| id: q3d-imports
-from pathlib import Path
+import importlib.metadata
 import os
 import subprocess
-import importlib.metadata
+from pathlib import Path
+from uuid import uuid4
 
 import gdsfactory as gf
 from IPython.display import display
 from scgsim.aedt import (
-    AedtResources, Q3dBodySpec, PdkMaterial,
-    Q3dNetSpec, Q3dSpec, MatrixRunControl, prepare_handoff,
+    AedtResources,
+    MatrixRunControl,
+    PdkMaterial,
+    PhysicalLayerSpec,
+    Q3dBodySpec,
+    Q3dNetSpec,
+    Q3dSpec,
+    prepare_handoff,
     resolve_results,
 )
 
 import orpen_sc_pdk
-from orpen_sc_pdk import get_material_records, get_interface_preset_records, validate_interface_preset_records
+from orpen_sc_pdk import get_material_records
 from orpen_sc_pdk.tech import LAYER, get_single_die_layer_stack
 ```
 
@@ -83,8 +57,9 @@ from orpen_sc_pdk.tech import LAYER, get_single_die_layer_stack
 
 ```{python}
 #| id: q3d-controls
-WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
-RUN_ID = "simple_pad_aedt_q3d_v2_20261009_01"
+WORKFLOW_ACTION = "AUTHORING_ONLY"  # AUTHORING_ONLY | prepare_handoff | run | analyze_handoff
+RUN_ID = f"simple_pad_aedt_q3d_{uuid4().hex}"
+MODELING = "solid"
 OUTPUT_ROOT = Path.cwd() / ".artifacts" / "SimplePad"
 RUN_DIR = OUTPUT_ROOT / RUN_ID
 PAD_SIDE_UM = 200.0
@@ -94,11 +69,11 @@ JUNCTION_WIDTH_UM = 2.0
 VACUUM_PADDING_UM = (250.0, 250.0, 1000.0)
 AEDT_VERSION = "2024.2"
 PYAEDT_VERSION = "1.3.0"
-SCGSIM_RUNTIME_REVISION = "cc1424c84ffe9d295a57dbabb3c2ab6431110f6c"
+SCGSIM_RUNTIME_REVISION = "85d8bedb733b1e17737d935029618351b30ea5de"
 SETUP_NAME = "Setup1"
 MAXIMUM_PASSES = 10
 CONVERGENCE_PERCENT = 1.0
-RESOURCES = AedtResources(cores=4, ram_limit_percent=80)
+RESOURCES = AedtResources(cores=4, ram_limit_percent=30)
 EXTRACTION_FREQUENCY_GHZ = 5.0
 SOLVE_AC_RL = False
 GROUNDED_REGION_NET = None
@@ -106,7 +81,7 @@ SOURCE_GDS = OUTPUT_ROOT / "source_gds" / f"{RUN_ID}.gds"
 PAD_IMPORT_LAYER = (300, 0)
 GROUND_IMPORT_LAYER = (301, 0)
 SUBSTRATE_IMPORT_LAYER = (302, 0)
-if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
+if WORKFLOW_ACTION not in {"AUTHORING_ONLY", "prepare_handoff", "run", "analyze_handoff"}:
     raise ValueError("Unknown WORKFLOW_ACTION")
 ```
 
@@ -114,12 +89,15 @@ if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
 
 ```{python}
 #| id: q3d-component
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION != "analyze_handoff":
     orpen_sc_pdk.activate()
     gf.clear_cache()
     component = gf.get_component(
-        "square_pad_capacitor", pad_side_um=PAD_SIDE_UM, gap_um=GAP_UM,
-        die_side_um=DIE_SIDE_UM, junction_width_um=JUNCTION_WIDTH_UM,
+        "square_pad_capacitor",
+        pad_side_um=PAD_SIDE_UM,
+        gap_um=GAP_UM,
+        die_side_um=DIE_SIDE_UM,
+        junction_width_um=JUNCTION_WIDTH_UM,
     )
     layer_stack = get_single_die_layer_stack()
     material_records = get_material_records()
@@ -133,12 +111,16 @@ Only the generated runner in the explicit `run` action owns native AEDT.
 
 ```{python}
 #| id: q3d-runtime
-display({
-    "requested_aedt": AEDT_VERSION, "requested_pyaedt": PYAEDT_VERSION,
-    "installed_pyaedt": importlib.metadata.version("pyaedt"),
-    "installed_scgsim": importlib.metadata.version("scgsim"),
-    "runtime_source": SCGSIM_RUNTIME_REVISION, "run_id": RUN_ID,
-})
+display(
+    {
+        "requested_aedt": AEDT_VERSION,
+        "requested_pyaedt": PYAEDT_VERSION,
+        "installed_pyaedt": importlib.metadata.version("pyaedt"),
+        "installed_scgsim": importlib.metadata.version("scgsim"),
+        "runtime_source": SCGSIM_RUNTIME_REVISION,
+        "run_id": RUN_ID,
+    }
+)
 ```
 
 ## Import GDS and Build the HFSS/Q3D/Q2D Model
@@ -155,21 +137,31 @@ die square minus that centered opening: one connected body with one hole,
 not four independently assigned nets. The substrate is the same die square.
 At the current controls, pad edges are ±100 um, opening edges ±120 um and
 die edges ±500 um. Finite Z bounds come from the selected PDK levels: Al
-0–0.2 um, Si -500–0 um. The nonmetal locator and negative mask are not bodies.
+0–0.1 um, Si -500–0 um. The nonmetal locator and negative mask are not bodies.
 
 ```{python}
 #| id: q3d-source
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION != "analyze_handoff":
     pad_selector = gf.components.rectangle(
-        size=(PAD_SIDE_UM, PAD_SIDE_UM), centered=True, layer=LAYER.D0_TOP_M1_DRAW,
+        size=(PAD_SIDE_UM, PAD_SIDE_UM),
+        centered=True,
+        layer=LAYER.D0_TOP_M1_DRAW,
     )
     pad_geometry = gf.boolean(
-        A=component, B=pad_selector, operation="and", layer=PAD_IMPORT_LAYER,
-        layer1=LAYER.D0_TOP_M1_DRAW, layer2=LAYER.D0_TOP_M1_DRAW,
+        A=component,
+        B=pad_selector,
+        operation="and",
+        layer=PAD_IMPORT_LAYER,
+        layer1=LAYER.D0_TOP_M1_DRAW,
+        layer2=LAYER.D0_TOP_M1_DRAW,
     )
     ground_geometry = gf.boolean(
-        A=component, B=pad_selector, operation="not", layer=GROUND_IMPORT_LAYER,
-        layer1=LAYER.D0_TOP_M1_DRAW, layer2=LAYER.D0_TOP_M1_DRAW,
+        A=component,
+        B=pad_selector,
+        operation="not",
+        layer=GROUND_IMPORT_LAYER,
+        layer1=LAYER.D0_TOP_M1_DRAW,
+        layer2=LAYER.D0_TOP_M1_DRAW,
     )
     substrate_geometry = component.extract(layers=[LAYER.D0_SUBSTRATE_AREA])
     substrate_geometry.remap_layers({LAYER.D0_SUBSTRATE_AREA: SUBSTRATE_IMPORT_LAYER})
@@ -177,10 +169,10 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     q3d_geometry << pad_geometry
     q3d_geometry << ground_geometry
     q3d_geometry << substrate_geometry
-    SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
-    # Exclusive creation keeps a repeated run ID from silently replacing source GDS.
-    with SOURCE_GDS.open("xb") as stream:
-        q3d_geometry.write_gds(stream.name, with_metadata=False)
+    if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+        SOURCE_GDS.parent.mkdir(parents=True, exist_ok=True)
+        with SOURCE_GDS.open("xb") as stream:
+            q3d_geometry.write_gds(stream.name, with_metadata=False)
     metal_level = layer_stack.layers["D0_TOP_M1"]
     substrate_level = layer_stack.layers["D0_SUBSTRATE"]
     # Owner-authored rings from the same component parameters, not GDS conversion.
@@ -192,16 +184,37 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
     opening_hole = ((-h, -h), (-h, h), (h, h), (h, -h))
     bodies = (
         Q3dBodySpec(
-            "pad_body", pad_ring, (), metal_level.zmin,
-            metal_level.zmin + metal_level.thickness, "Al", "signal", "pad",
+            "pad_body",
+            pad_ring,
+            (),
+            metal_level.zmin,
+            metal_level.zmin + metal_level.thickness,
+            "Al",
+            "signal",
+            "pad",
+            physical_layer_id="D0_TOP_M1",
         ),
         Q3dBodySpec(
-            "ground_body", die_ring, (opening_hole,), metal_level.zmin,
-            metal_level.zmin + metal_level.thickness, "Al", "ground", "ground",
+            "ground_body",
+            die_ring,
+            (opening_hole,),
+            metal_level.zmin,
+            metal_level.zmin + metal_level.thickness,
+            "Al",
+            "ground",
+            "ground",
+            physical_layer_id="D0_TOP_M1",
         ),
         Q3dBodySpec(
-            "substrate_body", die_ring, (), substrate_level.zmin,
-            substrate_level.zmin + substrate_level.thickness, "Si", "substrate", None,
+            "substrate_body",
+            die_ring,
+            (),
+            substrate_level.zmin,
+            substrate_level.zmin + substrate_level.thickness,
+            "Si",
+            "substrate",
+            None,
+            physical_layer_id="D0_SUBSTRATE",
         ),
     )
 ```
@@ -213,7 +226,7 @@ in its receipt; analyze those observations after retrieval.
 
 ```{python}
 #| id: q3d-geometry
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION != "analyze_handoff":
     display({"component_bbox_um": str(component.dbbox()), "ports": component.ports})
     display(q3d_geometry)
     display({"source_free_bodies": bodies, "inspection_gds": SOURCE_GDS})
@@ -223,10 +236,11 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 
 ```{python}
 #| id: q3d-materials
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION != "analyze_handoff":
     materials = {
         material_id: PdkMaterial(
-            material_id, material_records[material_id]["material_kind"],
+            material_id,
+            material_records[material_id]["material_kind"],
             material_records[material_id]["is_superconducting"],
             material_records[material_id]["aedt_library_name"],
         )
@@ -238,7 +252,7 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 
 ```{python}
 #| id: q3d-nets
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION != "analyze_handoff":
     nets = (
         Q3dNetSpec("pad", "Signal", ("pad_body",), "pad_body", "-Z", "pad_body", "+Z"),
         Q3dNetSpec("ground", "Ground", ("ground_body",)),
@@ -249,10 +263,12 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 
 ```{python}
 #| id: q3d-setup
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION != "analyze_handoff":
     run_control = MatrixRunControl(
-        setup_name=SETUP_NAME, frequency_ghz=EXTRACTION_FREQUENCY_GHZ,
-        maximum_passes=MAXIMUM_PASSES, convergence_percent=CONVERGENCE_PERCENT,
+        setup_name=SETUP_NAME,
+        frequency_ghz=EXTRACTION_FREQUENCY_GHZ,
+        maximum_passes=MAXIMUM_PASSES,
+        convergence_percent=CONVERGENCE_PERCENT,
     )
 ```
 
@@ -260,15 +276,38 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 
 ```{python}
 #| id: q3d-spec
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION != "analyze_handoff":
     px, py, pz = VACUUM_PADDING_UM
     spec = Q3dSpec(
-        project_name=RUN_ID, design_name="SimplePadQ3d",
-        materials=materials, vacuum_material_id="vacuum",
-        bodies=bodies, nets=nets, geometry_source=None,
-        run_control=run_control, region_padding_um=(px, px, py, py, pz, pz),
-        solve_ac_rl=SOLVE_AC_RL, grounded_region_net=GROUNDED_REGION_NET,
-        aedt_version=AEDT_VERSION, pyaedt_version=PYAEDT_VERSION,
+        modeling=MODELING,
+        project_name=RUN_ID,
+        design_name="SimplePadQ3d",
+        physical_layers=(
+            PhysicalLayerSpec(
+                "D0_TOP_M1",
+                "stack_film",
+                metal_level.zmin,
+                metal_level.zmin + metal_level.thickness,
+                "lower",
+            ),
+            PhysicalLayerSpec(
+                "D0_SUBSTRATE",
+                "retained_solid",
+                substrate_level.zmin,
+                substrate_level.zmin + substrate_level.thickness,
+            ),
+        ),
+        materials=materials,
+        vacuum_material_id="vacuum",
+        bodies=bodies,
+        nets=nets,
+        geometry_source=None,
+        run_control=run_control,
+        region_padding_um=(px, px, py, py, pz, pz),
+        solve_ac_rl=SOLVE_AC_RL,
+        grounded_region_net=GROUNDED_REGION_NET,
+        aedt_version=AEDT_VERSION,
+        pyaedt_version=PYAEDT_VERSION,
     )
     display(spec)
 ```

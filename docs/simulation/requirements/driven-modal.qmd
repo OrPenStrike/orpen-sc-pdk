@@ -1,0 +1,68 @@
+---
+title: "Driven Modal"
+description: "Calculate modal RF response of the selected finite-ground CPW coupon."
+sidebar: simulation
+---
+
+## Purpose and selected system
+
+Calculate reflection, transmission and fields when the selected port mode
+excites the finite-ground CPW coupon. The layout is a straight Signal between
+two finite Ground conductors, above a substrate, with exterior port cuts.
+Use the notebook's exact section and length rather than a new generic CPW.
+
+Modal is a solution kind, not another name for Wave excitation.
+[Terminal response](driven-terminal.qmd) has a distinct conductor-reference
+interpretation.
+
+## Model and excitation choices
+
+Specify conductor connectivity, materials, metal representation, physical Z,
+substrate extent and the surrounding region. Preserve the exterior boundary
+treatment and the port cuts.
+
+For each port, retain its ordering, sheet extent, normal, integration-line
+endpoints/direction, requested mode and normalization. De-embedding and
+renormalization must remain explicit. A layout locator is not native port
+readback.
+
+The adaptive setup frequency and the output sweep have different purposes.
+Mesh and pass controls govern adaptation; the sweep type/range/sample settings
+govern reported response. Exact values and field-saving choices belong to
+the notebook, with no duplicate numerical recipe here.
+
+## Workflow
+
+::: {.panel-tabset}
+
+### Palace
+
+A comparison using Palace must identify its own excitation basis, boundary
+treatment and S-data convention. It is not automatically an HFSS Modal
+calculation because the CPW source is shared.
+
+### AEDT
+
+Use [Finite CPW HFSS Driven Modal](../../notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.ipynb).
+Construct and inspect the native coupon, materials and port integration lines.
+Solve the adaptive setup and requested sweep, then resolve returned data
+independently of the live model session.
+
+:::
+
+## Expected outputs
+
+Retain native port geometry and solved port-mode information, applied setup,
+mesh/adaptive history and actual sweep samples. Return modal S-data and
+requested magnitude/phase or field views with port/mode ordering and
+normalization.
+
+::: {.callout-note}
+A response comparison must preserve each model's material, exterior and port
+conventions. Similar plots do not alone establish equivalent physical models
+or numerical accuracy.
+:::
+
+Continue with [materials and Z](../tools/materials-stack-z.qmd),
+[mesh/FEM/AMR](../tools/mesh-fem-amr.qmd) and
+[handoff, resolution and reporting](../tools/handoff-resolve-report.qmd).

@@ -1,0 +1,227 @@
+---
+title: "Geometry — source ownership and detached snapshots"
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
+
+This public source-observation candidate is CONVERGING / LOCAL CANDIDATE.
+OrPen owns the canonical components, stack and source semantics; the caller
+owns final Nets. SCGSim owns preparation and all later native operations.
+Read the [source-ownership tool requirements](../../../simulation/tools/source-ownership.qmd).
+This notebook owns the concrete case settings, not a second semantic schema.
+
+Authoring target: [SCGSim v2 RC1][scgsim-rc1], OrPen suite base `f4f5098`.
+The ordinary OrPen environment/pin is unchanged. Use an independently prepared
+environment for that exact SCGSim checkpoint; no installation happens here.
+Execution is disabled; no notebook kernel run or saved output is attached.
+Bounded isolated source construction was observed separately. Historical output
+is not evidence for these cells.
+
+## Environment and observation identity
+
+```{python}
+#| id: gso-environment
+import importlib.metadata
+from uuid import uuid4
+
+import gdsfactory as gf
+from IPython.display import display
+from scgsim.geometry import GeometryPlan, summarize_geometry_input
+
+import orpen_sc_pdk
+from orpen_sc_pdk import LAYER_STACK, get_material_records
+from orpen_sc_pdk.helpers.assembly import place_flip_chip_ground_short_bumps
+from orpen_sc_pdk.tech import get_single_die_layer_stack
+
+OBSERVATION_ID = f"geometry-source-ownership-{uuid4().hex}"
+display(
+    {
+        "observation_id": OBSERVATION_ID,
+        "scgsim_version": importlib.metadata.version("scgsim"),
+        "scgsim_authoring_revision": "85d8bedb733b1e17737d935029618351b30ea5de",
+        "units": "XY and Z: um; port orientation: degrees",
+        "evidence_stage": "source records only; no native model",
+    }
+)
+orpen_sc_pdk.activate()
+gf.clear_cache()
+```
+
+## Root-owned square and circular pad sources
+
+Each factory already owns its local `PAD`, `GROUND`, and nonmetal
+`o_junction_lumped` locator. Root qualification creates `chip/PAD` and
+`chip/GROUND`, not a fictitious `chip/device` child. The locator carries source
+geometry and outward direction; it does not assign a native terminal or RLC.
+
+```{python}
+#| id: gso-root-components
+square = gf.get_component(
+    "square_pad_capacitor",
+    pad_side_um=200.0,
+    gap_um=20.0,
+    die_side_um=1000.0,
+    junction_width_um=2.0,
+)
+circle = gf.get_component(
+    "circular_pad_capacitor",
+    outer_radius_um=100.0,
+    inner_radius_um=0.0,
+    gap_um=20.0,
+    die_side_um=1000.0,
+    junction_width_um=2.0,
+)
+root_snapshots = {}
+for case_id, component in (("01-square", square), ("02-circle", circle)):
+    component.plot()
+    display(
+        {
+            "case_id": case_id,
+            "bbox_um": str(component.dbbox()),
+            "source_semantics": component.info["component_semantics"],
+            "gf_ports": component.ports,
+        }
+    )
+    plan = GeometryPlan(
+        component,
+        root_id="chip",
+        layer_stack=get_single_die_layer_stack(),
+        material_records=get_material_records(),
+        coupon_padding_um=0.0,
+    )
+    display(plan.entities)
+    plan.set_nets({"pad": ("chip/PAD",), "ground": ("chip/GROUND",)})
+    plan.set_vacuum_region(padding=(250.0, 250.0, 1000.0))
+    snapshot = plan.prepare()
+    root_snapshots[case_id] = snapshot
+    display(
+        {
+            "case_id": case_id,
+            "gds_sha256": snapshot.gds_sha256,
+            "source_occurrences": snapshot.source_occurrences,
+        }
+    )
+    display(summarize_geometry_input(snapshot.geometry_input, prepared_stack=snapshot.stack))
+```
+
+## Actual named children of the public Xmon coupon
+
+Reuse the existing Xmon coupon producer and its `named_instances`. These are
+real references returned by OrPen, including the device and authored shorts.
+The caller assigns the same public terminal/Ground grouping as the existing
+Xmon electrostatic example; names are not recovered from polygon residue.
+
+```{python}
+#| id: gso-xmon-coupon
+xmon = gf.get_component(
+    "kosen2024_flip_chip_xmon_qubit",
+    bump_ring_count_per_side=0,
+    qubit_pad_length=309.5,
+    qubit_pad_width=24.65,
+    qubit_gap=20.0,
+)
+coupon = place_flip_chip_ground_short_bumps(
+    xmon,
+    coupon_padding_um=75.0,
+    clearance_um=30.0,
+    placement_mode="corner_anchors",
+)
+coupon.plot()
+xmon_plan = GeometryPlan(
+    coupon.component,
+    root_id="chip",
+    layer_stack=LAYER_STACK,
+    material_records=get_material_records(),
+    coupon_padding_um=coupon.stack_coupon_padding_um,
+)
+for name, reference in coupon.named_instances.items():
+    xmon_plan.register_instance(f"chip/{name}", reference)
+display(
+    {
+        "named_instances": tuple(coupon.named_instances),
+        "entities_before_final_nets": xmon_plan.entities,
+    }
+)
+xmon_plan.set_nets(
+    {
+        "xmon_pad": ("chip/device/D1_XMON_PAD",),
+        "Ground": (
+            "chip/D0_TOP_GROUND_PLANE",
+            "chip/D1_BOTTOM_GROUND_PLANE",
+            *(f"chip/device/D1_COUPLER_{index}" for index in range(1, 5)),
+            *(
+                f"chip/{name}/D0_D1_INDIUM_BUMP"
+                for name in coupon.named_instances
+                if name.startswith("short_")
+            ),
+        ),
+    }
+)
+xmon_snapshot = xmon_plan.prepare()
+display(
+    {"gds_sha256": xmon_snapshot.gds_sha256, "source_occurrences": xmon_snapshot.source_occurrences}
+)
+display(summarize_geometry_input(xmon_snapshot.geometry_input, prepared_stack=xmon_snapshot.stack))
+```
+
+## Detached getter ownership
+
+At the selected checkpoint, the observed getter returns a tuple of detached
+mutable dictionaries. Only returned copies are changed here. The component, PDK stack, plan and
+snapshot remain source authorities. Display the edited copy next to a fresh
+getter; this is an observable example, not a notebook-local equality Gate.
+
+```{python}
+#| id: gso-detached-getters
+snapshot = root_snapshots["01-square"]
+returned_input = snapshot.geometry_input
+returned_stack = snapshot.stack
+returned_occurrences = snapshot.source_occurrences
+display(
+    {
+        "returned_occurrences_type": type(returned_occurrences).__name__,
+        "returned_occurrence_record_type": type(returned_occurrences[0]).__name__,
+    }
+)
+returned_input.metadata["caller_copy_note"] = "changed only in returned input"
+returned_stack["metadata"]["caller_copy_note"] = "changed only in returned stack"
+returned_occurrences[0]["caller_copy_note"] = "changed only in returned occurrences"
+display(
+    {
+        "edited_input_metadata": returned_input.metadata,
+        "fresh_input_metadata": snapshot.geometry_input.metadata,
+    }
+)
+display(
+    {
+        "edited_stack_metadata": returned_stack["metadata"],
+        "fresh_stack_metadata": snapshot.stack["metadata"],
+    }
+)
+display(
+    {
+        "edited_occurrences": returned_occurrences,
+        "fresh_occurrences": snapshot.source_occurrences,
+        "snapshot_gds_sha256": snapshot.gds_sha256,
+    }
+)
+```
+
+## Stage boundary and failure behavior
+
+`prepare()` writes/reads temporary source GDS and stack records and returns a
+detached `GeometryPlanSnapshot`. It does not lower CAD, create native bodies,
+mesh, or solve. Public API errors remain visible for missing declarations,
+unregistered semantic children, invalid occurrence ownership, or unknown Net
+members. No recovery path rewrites the source or fabricates missing records.
+Native geometry/assignments and returned-run analysis are separate future
+observations; no capacitance, contact, EPR, or solver result is claimed here.
+
+[scgsim-rc1]: https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de

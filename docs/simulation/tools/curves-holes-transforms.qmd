@@ -1,0 +1,78 @@
+---
+title: "Curves, holes and transforms"
+description: "Preserve the declared boundary shape and placement through native modeling."
+sidebar: simulation
+---
+
+The requested conductor boundary must reach the native model with its hole
+topology, curve meaning and placement intact. A smooth picture is not a
+replacement for the declared geometry.
+
+## Input supplied by OrPen
+
+- Positive metal outer rings and explicit nonmetal holes.
+- Authored line/arc/spline laws, parameters and trims when selected.
+- Polygon-only input and the exact selected edge chain when reconstruction is requested.
+- Source units and actual rotation/reflection/translation.
+- Port anchors, normals and directed lines in their owning source frame.
+
+Interpolation through-points are not B-spline control points. OrPen's Hermite
+strip definition must not be treated as equivalent to another interpolation
+law merely because both pass through the same points.
+
+## Backend requirements
+
+::: {.panel-tabset}
+
+### Palace
+
+| Workflow stage | Required delivery |
+| --- | --- |
+| Boundary construction | Build the requested CAD edges/faces and hole loops for the selected Route A/B model. |
+| Reconstruction | Replace only the explicitly selected polygon chain; retain other edges and source attribution. |
+| Placement | Transform geometry, curve directions and ports once; retain reflected orientation. |
+| Discretization | Keep CAD shape, geometric mesh order and FEM order distinguishable. |
+
+### AEDT
+
+| Workflow stage | Required delivery |
+| --- | --- |
+| Boundary construction | Build native conductor contours with preserved holes and declared curve/approximation meaning. |
+| Reconstruction | Honor the same explicit reconstruction choice if used; do not silently fit a new contour. |
+| Placement | Transform bodies/supports and port directions consistently, with source-to-native coordinates. |
+| Discretization | Keep source shape and native geometry separate from adaptive mesh approximation. |
+
+:::
+
+If the requested shape cannot be represented, return that fact; do not report
+success after an undisclosed polygonal or lower-order replacement. This is a
+required output/failure behavior, not a record of current implementation.
+
+## Final product to inspect
+
+Native boundary views and source-linked edge/loop records, including holes,
+endpoints, trims and transformed port directions. For higher-order mesh
+curvature, include representative coordinates/connectivity; degree labels alone
+do not prove curved geometry.
+
+Candidates: disk/annulus for holes and circles; arc/interpolation/B-spline
+strips for distinct curve laws; explicitly placed variants for transforms.
+[Inspect these sources](../../public-pdk-examples/test-components.md).
+
+::: {.callout-note title="Inspect the declared shape first"}
+
+[Curves, holes and transforms](../../notebooks/ComponentSimulation/GeometrySemantics/geometry_curves_holes_transforms.ipynb)
+keeps the source contour, curve declaration and actual placed reference
+together. Use it to identify the requested boundary before examining the
+backend's native edges/loops. Compare the annulus hole, strip endpoints and
+transformed port anchors, rather than comparing only silhouettes.
+
+:::
+
+A sheet normal describes its plane orientation; a directed integration or
+current line describes the selected in-plane direction. Both must follow the
+authored placement without being substituted for each other.
+
+Serves [capacitance](../requirements/electrostatic-capacitance.qmd),
+[eigenmode](../requirements/eigenmode.qmd), [EPR](../requirements/epr-loss.qmd)
+and [driven modal](../requirements/driven-modal.qmd).

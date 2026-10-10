@@ -1,0 +1,71 @@
+---
+title: "Driven Terminal"
+description: "Compare conductor-referenced excitation of the selected Lumped and Wave layouts."
+sidebar: simulation
+---
+
+## Purpose and selected layouts
+
+Calculate terminal-referenced transmission, reflection and fields for the
+selected through-CPW coupled to a short–open meander resonator. Compare two
+authored source variants while retaining the resonator and 17 airbridges:
+
+- Lumped: launchers with internal nonmetal Signal–Ground support sheets.
+- Wave: no launchers; constant-width CPW ends at exterior cuts.
+
+The reproducible public source pair is being integrated with this notebook
+suite, not presented here as already published.
+[View the source layouts](../../public-pdk-examples/test-components.md#driven-terminal-lumped-and-wave-port-comparison).
+
+## Model and excitation choices
+
+Preserve Signal, Ground, substrate, bridge decks/posts and their physical
+contact/Z relationships. Specify the vacuum region and exterior treatment.
+
+Terminal is the solution kind; Lumped and Wave are port kinds. For Lumped
+excitation, distinguish the internal support normal from its directed
+Signal–Ground integration line. For Wave excitation, define the exterior
+cross-section and reference conductors. In both cases retain port ordering,
+impedance/normalization, renormalization and de-embedding intent.
+
+Setup frequency controls adaptation; the sweep defines the returned response
+samples. Mesh, pass controls and field retention govern numerical evidence.
+Their concrete values live only in the corresponding notebook.
+
+## Workflow
+
+::: {.panel-tabset}
+
+### Palace
+
+A Palace driven comparison would need an explicitly stated excitation basis
+and response convention. Shared layout does not turn it into HFSS Terminal
+data or establish port-kind equivalence.
+
+### AEDT
+
+Use the separate [Lumped notebook](../../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_lumped.ipynb)
+and [Wave notebook](../../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_wave.ipynb).
+Construct the selected variant, inspect native Terminal assignments and
+reference conductors, then perform adaptation and the requested sweep.
+Resolve each returned run independently.
+
+:::
+
+## Expected outputs
+
+Retain native solution type, port sheets/cut geometry, terminal references,
+integration directions and material/contact readback. Return terminal S-data
+and magnitude/phase plots with frequency, ordering and reference convention,
+alongside adaptive and sweep history.
+
+::: {.callout-note}
+Touchstone reference impedance is not solved modal Wave-port characteristic
+impedance. Keep those quantities separate. Matching resonator geometry does
+not establish equivalent Lumped and Wave responses.
+:::
+
+See [source ownership](../tools/source-ownership.qmd),
+[contacts](../tools/contacts-multilevel.qmd),
+[mesh controls](../tools/mesh-fem-amr.qmd) and
+[handoff/results](../tools/handoff-resolve-report.qmd).

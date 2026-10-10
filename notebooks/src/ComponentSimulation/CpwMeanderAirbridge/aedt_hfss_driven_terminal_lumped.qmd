@@ -1,0 +1,191 @@
+---
+title: "17-bridge CPW–meander · Driven Terminal / Lumped Ports"
+jupyter: python3
+execute:
+  enabled: false
+---
+
+Excite the launcher variant through its two neutral nonmetal sheets. Read the
+[Driven Terminal requirement](../../../simulation/requirements/driven-terminal.qmd)
+for the system and expected output. The same source supports can receive
+[Eigenmode RLC treatments](aedt_hfss_eigenmode_rlc.ipynb) without redrawing them.
+
+Target: [SCGSim v2 RC1](https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de),
+PDK candidate, AEDT 2024.2 / PyAEDT 1.3.0 in a separate selected runtime.
+Source-only publication; no old native output is attributed to this notebook.
+
+## Action and identity
+
+```{python}
+#| id: meander-terminal-lumped-imports
+import json
+import subprocess
+from importlib.metadata import version
+from pathlib import Path
+from uuid import uuid4
+
+from IPython.display import display
+from scgsim.aedt import (
+    AedtResources,
+    FrequencySweepSpec,
+    HfssRunControl,
+    LumpedTerminalPort,
+    prepare_hfss_driven_from_geometry,
+    prepare_planar_geometry_input,
+    resolve_results,
+)
+from scgsim.geometry import (
+    GeometryBuildInput,
+    LayoutPolygonSpec,
+    LumpedSupport,
+    SemanticEntitySpec,
+    VacuumRegionSpec,
+    apply_vacuum_region_to_stack,
+)
+
+import orpen_sc_pdk
+from orpen_sc_pdk.cells import cpw_meander_airbridge_lumped_coupon
+from orpen_sc_pdk.cells.simulation import get_cpw_meander_airbridge_source_records
+
+orpen_sc_pdk.activate()
+WORKFLOW_ACTION = "author"  # author | prepare_handoff | run | analyze
+VARIANT = "lumped"
+RUN_ID = f"meander-terminal-lumped-{uuid4().hex[:12]}"
+OUTPUT_ROOT = Path("notebooks/.artifacts/ComponentSimulation/CpwMeanderAirbridge")
+RUN_DIR = OUTPUT_ROOT / RUN_ID
+RETURNED_RUN_DIR = OUTPUT_ROOT / "returned-run"
+ANALYSIS_KIND = "strict"  # strict | receipt_only
+display({name: version(name) for name in ("scgsim", "gdsfactory", "orpen-sc-pdk")})
+```
+
+## Layout, stack and neutral sheets
+
+![Selected launcher source geometry; not native port readback.](https://raw.githubusercontent.com/OrPenStrike/orpen-sc-pdk/f4f509843c2c7177773798bf6a8a906f94c63a11/docs/_static/images/test-components/driven-terminal-lumped-resonator.png)
+
+```{python}
+#| id: meander-terminal-lumped-layout
+if WORKFLOW_ACTION != "analyze":
+    coupon = cpw_meander_airbridge_lumped_coupon()
+    coupon.plot()
+```
+
+M1 Al is 100 nm; posts start at its upper face, with deck underside 3 µm above
+that face and deck thickness 0.3 µm. Each launcher support is the actual 202/1
+nonmetal sheet at Z=0.05 µm, normal +Z, local dimensions 85×150 µm. Its ordered
+contacts run Signal→positive Ground. It is not a conductor or a junction.
+
+{{< include _source_input.qmd >}}
+
+## Terminal ownership and sweep controls
+
+P1 is left and P2 is right. Each exact Signal Entity and positive Ground Entity
+comes from its source declaration. One Ground Entity can own multiple positive
+rings; native names/order are not guessed. Impedance is explicitly 50 Ω, with
+no renormalization or deembedding. These are **Driven Terminal Lumped ports**,
+not Driven Modal ports.
+
+```{python}
+#| id: meander-terminal-lumped-settings
+MODEL = "thin_film"
+impedance_ohm = 50.0
+resources = AedtResources(cores=4, ram_limit_percent=20)
+geometry_workers = 1
+run_control = HfssRunControl(
+    setup_name="Setup1",
+    sweep_name="Sweep1",
+    sweep=FrequencySweepSpec(3.0, 8.0, 3),
+    maximum_passes=2,
+    minimum_passes=1,
+    minimum_converged_passes=1,
+    maximum_delta_s=0.02,
+    percent_refinement=30.0,
+)
+if WORKFLOW_ACTION != "analyze":
+    ports = tuple(
+        LumpedTerminalPort(
+            index=i,
+            name=f"P{i}",
+            support_id=s.support_id,
+            signal_entity_ids=s.terminal_a_entity_ids,
+            reference_entity_ids=s.terminal_b_entity_ids,
+            impedance_ohm=impedance_ohm,
+            renormalize=False,
+            deembed_um=0.0,
+        )
+        for i, s in enumerate(supports, 1)
+    )
+    display([p.to_payload() for p in ports])
+    display(run_control.to_payload())
+```
+
+The selected source enclosure retains its finite XY and source air top. HFSS
+uses the closed default exterior. Numerical controls inherit the selected
+short-observation case; neither two passes nor three sweep samples promises
+convergence or resolution of the resonator response.
+
+## Prepare / handoff
+
+```{python}
+#| id: meander-terminal-lumped-prepare
+HANDOFF = None
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    geometry = prepare_planar_geometry_input(
+        build_input,
+        prepared_stack=stack,
+        modeling=MODEL,
+    )
+    HANDOFF = prepare_hfss_driven_from_geometry(
+        modeling=MODEL,
+        geometry=geometry,
+        project_name=RUN_ID,
+        design_name="MeanderTerminalLumped",
+        run_control=run_control,
+        ports=ports,
+        output_dir=RUN_DIR,
+        geometry_workers=geometry_workers,
+        resources=resources,
+    )
+    display(HANDOFF)
+```
+
+Source and effective sheet Z remain distinct. Review the explicit physical
+contact association and enabled port settings in the handoff. Preparation and
+native execution are not performed in this documentation round.
+
+## Run: explicit native transaction
+
+```{python}
+#| id: meander-terminal-lumped-run
+if WORKFLOW_ACTION == "run":
+    subprocess.run([str(HANDOFF.script_path)], cwd=HANDOFF.run_dir, check=True)
+```
+
+## Returned Run: fresh kernel / relocated input
+
+```{python}
+#| id: meander-terminal-lumped-returned
+RESULT = None
+if WORKFLOW_ACTION == "analyze":
+    if ANALYSIS_KIND == "strict":
+        RESULT = resolve_results(RETURNED_RUN_DIR)
+    elif ANALYSIS_KIND == "receipt_only":
+        display(json.loads((RETURNED_RUN_DIR / "metadata/aedt_run_receipt.json").read_text()))
+    else:
+        raise ValueError("choose strict or receipt_only analysis")
+```
+
+### S-data and resource history
+
+```{python}
+#| id: meander-terminal-lumped-report
+if RESULT is not None:
+    display(RESULT.physics_results())
+    display(RESULT.simulation_benchmark())
+    display(RESULT.show_all_results(show_details=True))
+```
+
+Inspect actual terminal order/references, S-data frequency and units, boundary
+type, pass history and warnings. Keep missing native properties missing. Port
+impedance settings do not prove line characteristic impedance. The
+[Wave variant](aedt_hfss_driven_terminal_wave.ipynb) is a different exterior-cut
+model, not an aligned-plane numerical-equivalence experiment.

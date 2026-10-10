@@ -11,76 +11,72 @@ execute:
   enabled: false
 ---
 
-Public synthetic tutorial candidate `orpen-simple-pad-public-tutorial` under
-`scgsim-docs-1.0.2-20261006`: semantic state CONVERGING, delivery LOCAL CANDIDATE,
-no test writes. Owner: OrPen SC PDK. Canonical layout authority is
-`square_pad_capacitor`; reusable runtime belongs to SCGSim. The authored pad
-and connected surrounding Ground are finite Al (0–0.2 um), above one 500 um
-Si die (-500–0 um). There is no second die or fabricated inter-die gap.
-The source locator sheet spans x=99.999–120.001, y=-1–1 um: 20.002 by
-2 um, centered at (110, 0), directed +X. It overlaps each terminal by one
-source DBU (0.001 um) for exact contact binding; physical metal and the
-20 um gap are unchanged. The component owns this overlap metadata.
+Solve the square pad's inductively shunted eigenmode and inspect EPR. See the
+[EPR requirements](../../../simulation/requirements/epr-loss.html).
+The 200 µm pad, 20 µm gap and connected Ground use Al 100 nm on a
+1000 µm wide, 500 µm deep Si die. The east junction is directed +X from pad
+to Ground, with L=10 nH and C=0; its source locator overlaps each terminal by
+one 0.001 µm DBU without changing the physical gap.
 
-Historical source receipt: OrPen base `36b6e6b`; SCGSim runtime 1.0.1
-source `9c032e398f2ebabc2dc53965b2bde5c346a061bc`. This identifies
-the earlier authoring cohort, not the revised v2 source below.
-Current source-only SCGSim v2 candidate targets public revision
-`cc1424c84ffe9d295a57dbabb3c2ab6431110f6c` (`2.0.0.dev1`). Use a separate
-consumer environment; the ordinary OrPen project still pins `2eed1eb`.
-For example, in a fresh virtual environment with this OrPen checkout installed:
+Horizontal surface EPR uses OrPen LiteratureCentral assumptions, not measured
+loss; sidewalls are excluded by the selected runtime. Bulk/junction readout and
+offline typed reanalysis reuse resolved field integrals without another Analyze.
+HFSS retains its native outer boundary behavior; no explicit Region
+PerfectE, Radiation or PML is added.
 
-```bash
-python -m pip install "scgsim[palace,visualization,aedt] @ git+https://github.com/OrPenStrike/scgsim.git@cc1424c84ffe9d295a57dbabb3c2ab6431110f6c"
-```
-
-Do not use the ordinary project's `uv sync` as a v2 installation instruction.
-This alignment was not executed: preparation, native modeling, mesh, solve,
-fields, Resolve and Report remain unobserved for these revised sources.
-Historical results retain their original runtime and run identity.
-Quarto execution is disabled. This checkpoint has no native geometry, mesh,
-solve, capacitance, frequency, EPR or adequacy claim. Run IDs below identify
-new preparations, not pre-existing evidence; change the ID for each new run.
-Native search/convergence controls are inputs, not research adequacy Gates.
-
-The authored east junction sheet is non-galvanic, directed +X from pad to
-Ground, L=10 nH and C=0 (an explicit inductive-only model). Surface EPR uses
-OrPen LiteratureCentral synthetic assumptions, not measured loss. HFSS keeps
-its native outer default: no new Region PerfectE/Radiation/PML assignment is
-made, and the unobserved implicit boundary type is not asserted. Palace
-Eigenmode's natural PMC convention differs; this is not an equivalence claim.
-Native HFSS construction and saved-field interpretation require the actual
-licensed AEDT host. Adaptive EPR and later saved-field analysis are distinct;
-this tutorial requests adaptive surface/bulk/junction evidence only.
+Use [SCGSim 2.0.0rc1](https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de)
+in a separately selected consumer environment. The exact source revision is recorded
+in the controls below. Execution is disabled; no native solve or returned-result
+claim is made. `AUTHORING_ONLY` constructs non-solving inputs; preparation/run
+are explicit, and analysis reads an independent returned directory.
 
 ## Setup and Imports
 
 ```{python}
 #| id: hem-imports
-from pathlib import Path
+import importlib.metadata
+import json
 import os
 import subprocess
-import importlib.metadata
+from pathlib import Path
+from uuid import uuid4
 
 import gdsfactory as gf
 from IPython.display import display
 from scgsim.aedt import (
-    AedtResources, EigenmodeSim, EigenmodeRunControl, EprAnalysisRequest,
-    SurfaceEprSpec, planar_junction_from_port, prepare_planar_geometry_input,
+    AedtResources,
+    EigenmodeRunControl,
+    EigenmodeSim,
+    EprAnalysisRequest,
+    SurfaceEprSpec,
+    analyze_epr,
+    parse_aedt_spec,
+    planar_junction_from_port,
+    prepare_planar_geometry_input,
+    reanalyze_epr,
+    resolve_epr_result,
     resolve_results,
+    resolve_saved_solution,
 )
 from scgsim.geometry import GeometryPlan
+
 import orpen_sc_pdk
-from orpen_sc_pdk import get_material_records, get_interface_preset_records, validate_interface_preset_records
-from orpen_sc_pdk.tech import LAYER, get_single_die_layer_stack
+from orpen_sc_pdk import (
+    get_interface_preset_records,
+    get_material_records,
+    validate_interface_preset_records,
+)
+from orpen_sc_pdk.tech import get_single_die_layer_stack
 ```
 
 ## Setup and Run Controls
 
 ```{python}
 #| id: hem-controls
-WORKFLOW_ACTION = "prepare_handoff"  # prepare_handoff | run | analyze_handoff
-RUN_ID = "simple_pad_aedt_hfss_eigenmode_v2_20261009_01"
+WORKFLOW_ACTION = "AUTHORING_ONLY"  # AUTHORING_ONLY | prepare_handoff | run | analyze_handoff
+# Additional actions: evaluate_saved_fields | reanalyze_saved_epr
+RUN_ID = f"simple_pad_aedt_hfss_eigenmode_{uuid4().hex}"
+MODELING = "solid"
 OUTPUT_ROOT = Path.cwd() / ".artifacts" / "SimplePad"
 RUN_DIR = OUTPUT_ROOT / RUN_ID
 PAD_SIDE_UM = 200.0
@@ -90,12 +86,11 @@ JUNCTION_WIDTH_UM = 2.0
 VACUUM_PADDING_UM = (250.0, 250.0, 1000.0)
 AEDT_VERSION = "2024.2"  # Current SCGSim Eigenmode facade binds this runtime version.
 PYAEDT_VERSION = "1.3.0"
-SCGSIM_RUNTIME_REVISION = "cc1424c84ffe9d295a57dbabb3c2ab6431110f6c"
+SCGSIM_RUNTIME_REVISION = "85d8bedb733b1e17737d935029618351b30ea5de"
 SETUP_NAME = "Setup1"
 MAXIMUM_PASSES = 10
 CONVERGENCE_PERCENT = 1.0
-RESOURCES = AedtResources(cores=4, ram_limit_percent=80)
-ROUTE = "B"
+RESOURCES = AedtResources(cores=4, ram_limit_percent=30)
 SEARCH_FREQUENCY_GHZ = 1.0
 NUM_MODES = 1
 PORT_NAME = "chip/o_junction_lumped"
@@ -104,7 +99,17 @@ PORT_INDUCTANCE_H = 10e-9
 PORT_CAPACITANCE_F = 0.0
 EPR_MARGINS_UM = (0.0,)
 PRESET_NAMES = {kind: f"LiteratureCentral_{kind}" for kind in ("MA", "MS", "SA")}
-if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
+if WORKFLOW_ACTION == "evaluate_saved_fields":
+    ORIGINAL_SOLVED_RUN_DIR = Path(os.environ["SIMPLE_PAD_ORIGINAL_SOLVED_RUN_DIR"])
+    SAVED_SOLUTION_MANIFEST = Path(os.environ["SIMPLE_PAD_SAVED_SOLUTION_MANIFEST"])
+    SAVED_FIELD_OUTPUT_ROOT = Path(os.environ["SIMPLE_PAD_SAVED_FIELD_OUTPUT_ROOT"])
+    SAVED_FIELD_RUN_DIR = SAVED_FIELD_OUTPUT_ROOT / f"saved_epr_{uuid4().hex}"
+elif WORKFLOW_ACTION == "reanalyze_saved_epr":
+    DETACHED_EPR_RESULT_PATH = Path(os.environ["SIMPLE_PAD_DETACHED_EPR_RESULT_PATH"])
+if WORKFLOW_ACTION not in {
+    "AUTHORING_ONLY", "prepare_handoff", "run", "analyze_handoff",
+    "evaluate_saved_fields", "reanalyze_saved_epr",
+}:
     raise ValueError("Unknown WORKFLOW_ACTION")
 ```
 
@@ -112,18 +117,24 @@ if WORKFLOW_ACTION not in {"prepare_handoff", "run", "analyze_handoff"}:
 
 ```{python}
 #| id: hem-component
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     orpen_sc_pdk.activate()
     gf.clear_cache()
     component = gf.get_component(
-        "square_pad_capacitor", pad_side_um=PAD_SIDE_UM, gap_um=GAP_UM,
-        die_side_um=DIE_SIDE_UM, junction_width_um=JUNCTION_WIDTH_UM,
+        "square_pad_capacitor",
+        pad_side_um=PAD_SIDE_UM,
+        gap_um=GAP_UM,
+        die_side_um=DIE_SIDE_UM,
+        junction_width_um=JUNCTION_WIDTH_UM,
     )
     layer_stack = get_single_die_layer_stack()
     material_records = get_material_records()
     plan = GeometryPlan(
-        component=component, root_id="chip", layer_stack=layer_stack,
-        material_records=material_records, coupon_padding_um=0.0,
+        component=component,
+        root_id="chip",
+        layer_stack=layer_stack,
+        material_records=material_records,
+        coupon_padding_um=0.0,
     )
     plan.set_nets({"pad": ("chip/PAD",), "ground": ("chip/GROUND",)})
     plan.set_vacuum_region(padding=VACUUM_PADDING_UM)
@@ -137,12 +148,16 @@ Only the generated runner in the explicit `run` action owns native AEDT.
 
 ```{python}
 #| id: hem-runtime
-display({
-    "requested_aedt": AEDT_VERSION, "requested_pyaedt": PYAEDT_VERSION,
-    "installed_pyaedt": importlib.metadata.version("pyaedt"),
-    "installed_scgsim": importlib.metadata.version("scgsim"),
-    "runtime_source": SCGSIM_RUNTIME_REVISION, "run_id": RUN_ID,
-})
+display(
+    {
+        "requested_aedt": AEDT_VERSION,
+        "requested_pyaedt": PYAEDT_VERSION,
+        "installed_pyaedt": importlib.metadata.version("pyaedt"),
+        "installed_scgsim": importlib.metadata.version("scgsim"),
+        "runtime_source": SCGSIM_RUNTIME_REVISION,
+        "run_id": RUN_ID,
+    }
+)
 ```
 
 ## Import GDS and Build the HFSS/Q3D/Q2D Model
@@ -153,15 +168,21 @@ opens AEDT. There is no notebook-local parser or source-normalization clone.
 
 ```{python}
 #| id: hem-source
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     junction = planar_junction_from_port(
-        snapshot.geometry_input, port_name=PORT_NAME, junction_id=JUNCTION_ID,
-        terminal_a_net="pad", terminal_b_net="ground",
-        inductance_h=PORT_INDUCTANCE_H, capacitance_f=PORT_CAPACITANCE_F,
+        snapshot.geometry_input,
+        port_name=PORT_NAME,
+        junction_id=JUNCTION_ID,
+        terminal_a_net="pad",
+        terminal_b_net="ground",
+        inductance_h=PORT_INDUCTANCE_H,
+        capacitance_f=PORT_CAPACITANCE_F,
     )
     prepared = prepare_planar_geometry_input(
-        snapshot.geometry_input, prepared_stack=snapshot.stack,
-        route=ROUTE, junctions=(junction,),
+        snapshot.geometry_input,
+        prepared_stack=snapshot.stack,
+        modeling=MODELING,
+        junctions=(junction,),
     )
     catalogue = prepared.contribution_catalog
 ```
@@ -173,7 +194,7 @@ in its receipt; analyze those observations after retrieval.
 
 ```{python}
 #| id: hem-geometry
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     display({"component_bbox_um": str(component.dbbox()), "ports": component.ports})
     display(catalogue)
 ```
@@ -182,25 +203,30 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 
 ```{python}
 #| id: hem-materials
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     presets = validate_interface_preset_records(get_interface_preset_records())
     surface_specs = []
     for record in catalogue:
         kind = record["interface_kind"]
-        if kind not in PRESET_NAMES:
+        if kind not in PRESET_NAMES or record["field_side"] == "sidewall":
             continue
         preset_name = PRESET_NAMES[kind]
         preset = presets[preset_name]
-        surface_specs.append(SurfaceEprSpec(
-            contribution_id=record["contribution_id"],
-            source_polygon_id=record["source_polygon_ids"][0],
-            interface_kind=kind, field_side=record["field_side"],
-            margins_um=EPR_MARGINS_UM,
-            film_thickness_m=preset["thickness"] * 1e-6,
-            film_relative_permittivity=preset["permittivity"],
-            loss_tangent=preset["loss_tangent"], source=preset["source"], preset=preset_name,
-        ))
-    sim = EigenmodeSim()
+        surface_specs.append(
+            SurfaceEprSpec(
+                contribution_id=record["contribution_id"],
+                source_polygon_id=record["source_polygon_ids"][0],
+                interface_kind=kind,
+                field_side=record["field_side"],
+                margins_um=EPR_MARGINS_UM,
+                film_thickness_m=preset["thickness"] * 1e-6,
+                film_relative_permittivity=preset["permittivity"],
+                loss_tangent=preset["loss_tangent"],
+                source=preset["source"],
+                preset=preset_name,
+            )
+        )
+    sim = EigenmodeSim(modeling=MODELING)
     sim.set_plan(snapshot)
     sim.set_output_dir(RUN_DIR)
     sim.set_surface_epr(contributions=surface_specs)
@@ -210,35 +236,43 @@ if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
 
 ```{python}
 #| id: hem-nets
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     sim.add_junction(junction)
-    sim.set_epr_request(EprAnalysisRequest(
-        mode_indices=(1,),
-        surface_contribution_ids=tuple(item.contribution_id for item in surface_specs),
-        junction_ids=(JUNCTION_ID,),
-        bulk_domain_ids=None,  # All configured native bulk domains, including Region.
-    ))
+    sim.set_epr_request(
+        EprAnalysisRequest(
+            mode_indices=(1,),
+            surface_contribution_ids=tuple(item.contribution_id for item in surface_specs),
+            junction_ids=(JUNCTION_ID,),
+            bulk_domain_ids=None,  # All configured native bulk domains, including Region.
+        )
+    )
 ```
 
 ## Simulation Setup
 
 ```{python}
 #| id: hem-setup
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     run_control = EigenmodeRunControl(
-        setup_name=SETUP_NAME, minimum_frequency_ghz=SEARCH_FREQUENCY_GHZ,
-        num_modes=NUM_MODES, maximum_passes=MAXIMUM_PASSES,
+        setup_name=SETUP_NAME,
+        minimum_frequency_ghz=SEARCH_FREQUENCY_GHZ,
+        num_modes=NUM_MODES,
+        maximum_passes=MAXIMUM_PASSES,
         maximum_delta_frequency_percent=CONVERGENCE_PERCENT,
     )
-    sim.set_eigenmode(project_name=RUN_ID, design_name="SimplePadEigenmode",
-                      route=ROUTE, run_control=run_control, resources=RESOURCES)
+    sim.set_eigenmode(
+        project_name=RUN_ID,
+        design_name="SimplePadEigenmode",
+        run_control=run_control,
+        resources=RESOURCES,
+    )
 ```
 
 ## Simulation Configuration
 
 ```{python}
 #| id: hem-spec
-if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+if WORKFLOW_ACTION in {"AUTHORING_ONLY", "prepare_handoff", "run"}:
     display(sim.input_summary())
 ```
 
@@ -272,6 +306,46 @@ if WORKFLOW_ACTION == "analyze_handoff":
     result.show_all_results(show_details=True)
 ```
 
+### Saved-field evaluation and offline readout
+
+The optional `evaluate_saved_fields` action requires a completed original run
+and a sealed saved-solution manifest. It loads the original prepared geometry,
+mode selection, junctions, film assumptions and run controls from that run's
+specification; it never reconstructs the coupon from today's source controls.
+`analyze_epr` opens an owned disposable copy of the saved AEDT project to
+evaluate retained fields. It does not call native Analyze or re-solve. This
+action still needs the licensed AEDT host and writes a fresh analysis directory.
+
+`reanalyze_saved_epr` instead reads an explicitly supplied detached EPR JSON
+and recomputes its typed readout offline. It neither opens AEDT nor evaluates
+fields, and does not replace or rewrite the supplied result.
+
+```{python}
+#| id: hem-saved-fields
+if WORKFLOW_ACTION == "evaluate_saved_fields":
+    original_result = resolve_results(ORIGINAL_SOLVED_RUN_DIR)
+    original_spec = parse_aedt_spec(
+        json.loads((ORIGINAL_SOLVED_RUN_DIR / "aedt_spec.json").read_text()),
+        base_dir=ORIGINAL_SOLVED_RUN_DIR,
+    )
+    saved_solution = resolve_saved_solution(SAVED_SOLUTION_MANIFEST)
+    saved_epr = analyze_epr(
+        saved_solution=saved_solution,
+        geometry=original_spec.geometry,
+        project_name=original_spec.project_name,
+        design_name=original_spec.design_name,
+        run_control=original_spec.run_control,
+        epr_request=original_spec.epr_request,
+        output_dir=SAVED_FIELD_RUN_DIR,
+        geometry_workers=1,
+    )
+    display(saved_epr)
+elif WORKFLOW_ACTION == "reanalyze_saved_epr":
+    saved_epr = resolve_epr_result(DETACHED_EPR_RESULT_PATH)
+    display(saved_epr)
+    display(reanalyze_epr(saved_epr))
+```
+
 ## Results: Plots and Readable Tables
 ### Physics Analysis Results
 
@@ -279,7 +353,10 @@ if WORKFLOW_ACTION == "analyze_handoff":
 #| id: hem-physics
 if WORKFLOW_ACTION == "analyze_handoff":
     display(result.physics_results())
-    display(result.epr_result())
+    epr = result.epr_result()
+    display(epr)
+    # Offline typed readout reuses the resolved integrals; no AEDT Analyze.
+    display(reanalyze_epr(epr))
 ```
 
 ### Simulation Performance / Benchmarks

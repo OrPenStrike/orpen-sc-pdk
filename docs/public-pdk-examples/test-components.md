@@ -14,7 +14,7 @@ and nonmetal locators; they are not solver results.
 | **04A Circular-arc strip** — [`straight_to_circular_strip()`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/orpen_sc_pdk/cells/simulation/simple_pad.py). Straight portions joined to the source circular arc; no background Ground or JJ. | ![Circular-arc strip: footprint and endpoint detail.](../_static/images/test-components/04a-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/04a-source.png" label="Image: 04A arc strip" >}} |
 | **04B Interpolation strip** — [`interpolation_spline_strip()`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/orpen_sc_pdk/cells/simulation/spline_strip.py). Piecewise cubic Hermite graph through the source points. | ![Interpolation strip: actual source polygon and ports.](../_static/images/test-components/04b-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/04b-source.png" label="Image: 04B interpolation strip" >}} |
 | **04C B-spline strip** — [`bspline_strip()`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/orpen_sc_pdk/cells/simulation/spline_strip.py). Degree-three rational B-spline with explicit controls, knots and weights. | ![B-spline strip: actual source polygon and ports.](../_static/images/test-components/04c-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/04c-source.png" label="Image: 04C B-spline strip" >}} |
-| **05 Finite CPW** — [canonical notebook-local coupon section](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.py). Three rectangles: length 500 µm, signal 10 µm, gaps 6 µm, grounds 80 µm. Not a registered factory. | ![Finite CPW: exact notebook-local rectangles and substrate.](../_static/images/test-components/05-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/05-source.png" label="Image: 05 finite CPW" >}} |
+| **05 Finite CPW** — `finite_ground_cpw_coupon()` in the current local source candidate. Three conductor rectangles: length 500 µm, signal 10 µm, gaps 6 µm, grounds 80 µm, on the PDK substrate. | ![Finite CPW: source rectangles and substrate.](../_static/images/test-components/05-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/05-source.png" label="Image: 05 finite CPW" >}} |
 | **06 Flip-chip pad** — [`flip_chip_pad_coupon()`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/orpen_sc_pdk/cells/simulation/test_components.py). Lower pad, full upper bottom-face plane and four existing bumps at (±250, ±250) µm. | ![Flip-chip source: separate lower and upper faces plus bump detail.](../_static/images/test-components/06-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/06-source.png" label="Image: 06 flip-chip pad" >}} |
 | **07 CPW airbridge** — [`cpw_airbridge_coupon()`](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/orpen_sc_pdk/cells/simulation/test_components.py). Positive CPW with the existing deck and two piers crossing above Signal. | ![Airbridge source: CPW crossing and actual pier overlap detail.](../_static/images/test-components/07-source.png){width=220} {{< askr-image-view src="../_static/images/test-components/07-source.png" label="Image: 07 CPW airbridge" >}} |
 
@@ -53,10 +53,15 @@ whose stock deck only partially covers each pier. The shared source stack is
 0.1–3.1 µm, deck Z = 3.1–3.4 µm. [Process](../materials-and-technology.md)
 describes the physical layers and stack.
 
-The selected geometry is an owner-composed assembly using the
-[public PDK source](https://github.com/OrPenStrike/orpen-sc-pdk/tree/7f89c3381097ac894705e8c54434ebfbfc758693),
-not a registered or downloadable public factory. It has been selected for
-SCG preparation; formal notebook authoring and native operations are pending.
+The selected assembly from the
+[public PDK source](https://github.com/OrPenStrike/orpen-sc-pdk/tree/7f89c3381097ac894705e8c54434ebfbfc758693)
+is now integrated into the local candidate as
+`cpw_meander_airbridge_lumped_coupon()` and
+`cpw_meander_airbridge_wave_coupon()`. Both use one shared source implementation
+and expose the complete body, occurrence and neutral support declarations.
+The [Notebook catalog](../simulation/notebooks.qmd) links the concrete RLC and
+Terminal authoring examples. This local source integration has not been published
+or executed as a new native observation.
 The short–open topology does not establish a target frequency, exact
 quarter-wavelength design, native connectivity or Lumped/Wave equivalence.
 
@@ -111,14 +116,15 @@ not full pier coverage. Source contact intent is not native connectivity proof.
 
 ## Simulation scope
 
-Existing [pad and CPW notebooks](../notebooks.qmd) have version-bound
-preparation, native handoff, result resolution and reporting. There are no new
-runnable notebooks for 04B, 04C, 06 or 07. These source images do not demonstrate
-native lowering, contact conformity, mesh quality or solver success.
+The [Notebook catalog](../simulation/notebooks.qmd) connects requirements to
+version-bound pad/CPW authoring and source geometry observations for 04A/B/C,
+06 and 07. Their current clean notebooks have no attached execution output.
+These source images do not demonstrate native lowering, contact conformity,
+mesh quality or solver success.
 
-05 uses only its existing source-authoring rectangles and substrate. The
-figure's current PDK stack annotation does not replace the notebook backend's
-separate Nb/sheet modelling choice. The Q2D CPW example uses gap 10 µm and
+05 retains the existing rectangles and substrate. Current 3D examples use the
+PDK Al stack; historical Nb/sheet outputs retain their original model. The
+Q2D CPW example uses gap 10 µm and
 ground 40 µm, not this 3D coupon's gap 6 µm and ground 80 µm; it is not an
 automatic equivalent slice. Historical 200 nm M1 evidence retains its original
 identity and is not relabelled as the current 100 nm default.

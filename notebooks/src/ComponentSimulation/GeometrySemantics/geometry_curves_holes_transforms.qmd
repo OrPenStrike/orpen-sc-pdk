@@ -1,0 +1,287 @@
+---
+title: "Geometry — curves, holes and rigid occurrences"
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
+
+Public source-only candidate: CONVERGING / LOCAL CANDIDATE. Read the
+[curves, holes and transforms requirements](../../../simulation/tools/curves-holes-transforms.qmd).
+OrPen owns canonical curve laws and sampled source polygons; SCGSim owns
+their source binding and any later native representation. This notebook owns
+concrete inputs and displays real records rather than a second normalizer.
+
+Authoring target: [SCGSim v2 RC1][scgsim-rc1], OrPen suite base `f4f5098`.
+An independently prepared exact-checkpoint environment is required; the
+ordinary environment/pin stays unchanged. Execution is disabled; bounded isolated
+source construction was observed separately, without a notebook kernel run or
+saved output. Native conformity is
+UNOBSERVED, including OCC interpolation versus the authored Hermite law.
+
+## Environment and observation identity
+
+```{python}
+#| id: gch-environment
+import importlib.metadata
+import json
+from dataclasses import replace
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from uuid import uuid4
+
+import gdsfactory as gf
+from IPython.display import display
+from scgsim.geometry import (
+    GdsBoundaryReconstructionSpec,
+    GeometryPlan,
+    build_gds_stack_geometry_input,
+    summarize_geometry_input,
+)
+
+import orpen_sc_pdk
+from orpen_sc_pdk import get_material_records
+from orpen_sc_pdk.tech import get_single_die_layer_stack
+
+OBSERVATION_ID = f"geometry-curves-holes-{uuid4().hex}"
+display(
+    {
+        "observation_id": OBSERVATION_ID,
+        "scgsim_version": importlib.metadata.version("scgsim"),
+        "scgsim_authoring_revision": "85d8bedb733b1e17737d935029618351b30ea5de",
+        "units": "XY and Z: um; rotations: degrees",
+    }
+)
+orpen_sc_pdk.activate()
+gf.clear_cache()
+```
+
+## Canonical disk and annulus: hole ownership
+
+The annulus's inner void belongs to `PAD_INNER`, not Ground. Ground has its
+own opening. Authored circular arcs and their hole roles are distinct from
+the polygon witness exported to GDS.
+
+```{python}
+#| id: gch-circular-sources
+disk = gf.get_component(
+    "circular_pad_capacitor",
+    outer_radius_um=100.0,
+    inner_radius_um=0.0,
+    gap_um=20.0,
+    die_side_um=1000.0,
+    junction_width_um=2.0,
+)
+annulus = gf.get_component(
+    "circular_pad_capacitor",
+    outer_radius_um=100.0,
+    inner_radius_um=80.0,
+    gap_um=20.0,
+    die_side_um=1000.0,
+    junction_width_um=2.0,
+)
+circular_snapshots = {}
+for case_id, component in (("02-disk", disk), ("03-annulus", annulus)):
+    component.plot()
+    plan = GeometryPlan(
+        component,
+        root_id="chip",
+        layer_stack=get_single_die_layer_stack(),
+        material_records=get_material_records(),
+        coupon_padding_um=0.0,
+    )
+    plan.set_nets({"pad": ("chip/PAD",), "ground": ("chip/GROUND",)})
+    snapshot = plan.prepare()
+    circular_snapshots[case_id] = snapshot
+    source_input = snapshot.geometry_input
+    display(
+        {
+            "case_id": case_id,
+            "gds_sha256": snapshot.gds_sha256,
+            "authored_boundaries": source_input.boundary_curves,
+            "polygon_records_with_holes": source_input.polygons,
+        }
+    )
+    display(summarize_geometry_input(source_input, prepared_stack=snapshot.stack))
+```
+
+## Canonical 04A / 04B / 04C strips
+
+04A is line-to-quarter-circle; 04B is the source-defined interpolating
+Hermite Y(X) graph; 04C is a clamped rational B-spline. Source sampling below
+is the existing factory's GDS construction input, not a new research envelope
+or conformity tolerance. The two spline boundaries have fixed Y separation,
+not constant-normal-width offsets. The B-spline controls are not interpolation
+points. There is no Ground, junction, or implicit final Net in these factories.
+
+```{python}
+#| id: gch-strip-sources
+strip_a = gf.get_component(
+    "straight_to_circular_strip",
+    straight_length_um=100.0,
+    bend_radius_um=100.0,
+    strip_width_um=10.0,
+    die_side_um=1000.0,
+)
+strip_b = gf.get_component(
+    "interpolation_spline_strip",
+    through_points_um=((-200.0, 0.0), (-100.0, 60.0), (0.0, -40.0), (100.0, 60.0), (200.0, 0.0)),
+    strip_width_um=10.0,
+    die_side_um=1000.0,
+    samples_per_span=32,
+)
+strip_c = gf.get_component(
+    "bspline_strip",
+    control_points_um=((-200.0, 0.0), (-100.0, 0.0), (0.0, 150.0), (100.0, -30.0), (200.0, -30.0)),
+    degree=3,
+    weights=(1.0, 1.0, 1.0, 1.0, 1.0),
+    knots=(0.0, 0.5, 1.0),
+    multiplicities=(4, 1, 4),
+    strip_width_um=10.0,
+    die_side_um=1000.0,
+    samples_per_span=64,
+)
+strip_snapshots = {}
+for case_id, component in (("04A", strip_a), ("04B", strip_b), ("04C", strip_c)):
+    component.plot()
+    display(
+        {
+            "case_id": case_id,
+            "bbox_um": str(component.dbbox()),
+            "gf_ports": component.ports,
+            "source_declaration": component.info["component_semantics"],
+        }
+    )
+    plan = GeometryPlan(
+        component,
+        root_id="chip",
+        layer_stack=get_single_die_layer_stack(),
+        material_records=get_material_records(),
+        coupon_padding_um=0.0,
+    )
+    plan.set_nets({"trace": ("chip/TRACE",)})
+    snapshot = plan.prepare()
+    strip_snapshots[case_id] = snapshot
+    display(
+        {
+            "case_id": case_id,
+            "gds_sha256": snapshot.gds_sha256,
+            "boundaries": snapshot.geometry_input.boundary_curves,
+        }
+    )
+for component in (strip_b, strip_c):
+    display(component.info["spline_source"])
+```
+
+## Separate polygon-only input and explicit reconstruction
+
+Read the disk's actual GDS bytes and detached stack through the public adapter.
+GDS contains sampled polygons, not the component's authored analytic arcs.
+This is a separate polygon-only input. Explicit closed interpolation-spline
+reconstruction below consumes that recorded ring, not the original circle law;
+it is not an equivalence claim. No reconstruction is enabled implicitly.
+
+```{python}
+#| id: gch-polygon-reconstruction
+disk_snapshot = circular_snapshots["02-disk"]
+with TemporaryDirectory(prefix="geometry-polygon-source-") as temporary:
+    source_dir = Path(temporary)
+    gds_path = source_dir / "disk.gds"
+    stack_path = source_dir / "disk.stack.json"
+    gds_path.write_bytes(disk_snapshot.gds_bytes)
+    stack_path.write_text(json.dumps(disk_snapshot.stack), encoding="utf-8")
+    polygon_only_input = build_gds_stack_geometry_input(
+        gds_file=gds_path,
+        stack_file=stack_path,
+        top_cell_name=disk.name,
+    )
+reconstruction = GdsBoundaryReconstructionSpec(
+    boundary_id="chip/PAD_POLYGON_RECONSTRUCTION",
+    entity_id="chip/PAD",
+    selector_point_um=(0.0, 0.0),
+    kind="interpolation_spline",
+    role="outer",
+    closed=True,
+    source_occurrence_path="chip",
+)
+reconstructed_input = replace(
+    polygon_only_input,
+    boundary_reconstruction=(reconstruction,),
+)
+display(
+    {
+        "authored_source_curves": disk_snapshot.geometry_input.boundary_curves,
+        "polygon_only_curves": polygon_only_input.boundary_curves,
+        "polygon_only_reconstruction": polygon_only_input.boundary_reconstruction,
+        "explicit_reconstruction": reconstructed_input.boundary_reconstruction,
+    }
+)
+display(summarize_geometry_input(reconstructed_input, prepared_stack=disk_snapshot.stack))
+```
+
+## Actual rigid occurrences and qualified ports
+
+Compose two actual canonical 04A occurrences, using only rigid public
+GDSFactory transforms. The empty root declaration is the public v2 assembly
+schema; conductor/curve facts stay with each child. Final Nets are caller-owned.
+GF `o1/o2` remain actual route ports; these factories do not declare nonmetal
+solver locator sheets. Qualified GF port displays below do not invent native
+ports or source sheet bindings.
+
+```{python}
+#| id: gch-rigid-occurrences
+assembly = gf.Component()
+assembly.info["component_semantics"] = {"schema_version": 2, "conductor_regions": []}
+rotated = assembly.add_ref(strip_a, name="ROTATED")
+rotated.rotate(90.0)
+rotated.move((-600.0, 0.0))
+mirrored = assembly.add_ref(strip_a, name="MIRRORED")
+mirrored.mirror_x()
+mirrored.move((600.0, 0.0))
+assembly.plot()
+rigid_plan = GeometryPlan(
+    assembly,
+    root_id="chip",
+    layer_stack=get_single_die_layer_stack(),
+    material_records=get_material_records(),
+    coupon_padding_um=0.0,
+)
+rigid_plan.register_instance("chip/ROTATED", rotated)
+rigid_plan.register_instance("chip/MIRRORED", mirrored)
+rigid_plan.set_nets(
+    {"rotated_trace": ("chip/ROTATED/TRACE",), "mirrored_trace": ("chip/MIRRORED/TRACE",)}
+)
+rigid_snapshot = rigid_plan.prepare()
+display(
+    {
+        "occurrences": rigid_snapshot.source_occurrences,
+        "qualified_boundaries": rigid_snapshot.geometry_input.boundary_curves,
+    }
+)
+for occurrence_id, reference in (("ROTATED", rotated), ("MIRRORED", mirrored)):
+    for port in reference.ports:
+        display(
+            {
+                "qualified_gf_port": f"chip/{occurrence_id}/{port.name}",
+                "center_um": tuple(port.center),
+                "width_um": port.width,
+                "orientation_degrees": port.orientation,
+            }
+        )
+```
+
+## Native future, not source proof
+
+These cells construct source inputs only. No CAD, Gmsh, native AEDT, mesh,
+contact, or solve is invoked. Source arcs, hole ownership, transformed controls
+and qualified identities must later be checked against actual native objects.
+SCGSim's public errors remain visible; in particular its AEDT planar adapter
+does not support active source curve intent at the selected checkpoint. Do not
+silently strip curves to make an authored-curve native request appear supported.
+
+[scgsim-rc1]: https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de

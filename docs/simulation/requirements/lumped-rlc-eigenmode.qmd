@@ -1,0 +1,67 @@
+---
+title: "Lumped RLC Eigenmode"
+description: "Evaluate explicit linear loading on the selected CPW–meander–airbridge assembly."
+sidebar: simulation
+---
+
+## Purpose and selected system
+
+Calculate how an explicit linear RLC network changes the modes of the selected
+through-CPW and short–open meander resonator assembly. Preserve the launcher
+variant's coupling geometry and 17 airbridges. Its reproducible public source
+is being integrated with this notebook suite; these pages do not claim it is
+already published.
+
+This is a loaded electromagnetic mode problem, not automatic Josephson
+nonlinearity or EPR analysis.
+
+## Model, support and boundary choices
+
+Use the notebook's exact conductor, substrate, bridge-deck/post and vacuum
+model. Keep physical contact identity and Z separate from the nonmetal support
+sheet. A named neutral support locates the electrical treatment; it is not
+positive metal and does not create a galvanic short.
+
+Select Series or Parallel topology and R, L and C independently. `None`
+disables a branch; zero is a selected value, not a disabling convention.
+Keep the support/contact normal distinct from the directed current line.
+Terminal owners, load units and exterior treatment must be explicit.
+
+Mode search, mesh, adaptation and field-saving choices belong to the concrete
+notebook. They are calculation settings, not a new accuracy or design Gate.
+
+## Workflow
+
+::: {.panel-tabset}
+
+### Palace
+
+A Palace loaded-mode comparison must state its own physical load and boundary
+treatment. The [SimplePad Palace LC notebook](../../notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb)
+illustrates a separately authored inductive model; it is not the selected
+assembly or a substitution for its general RLC network.
+
+### AEDT
+
+Use [CPW–meander RLC Eigenmode](../../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_eigenmode_rlc.ipynb).
+Construct the selected source, bind the support and electrical treatment,
+inspect their native placement and values, and solve the loaded modes.
+Analyze the returned run separately.
+
+:::
+
+## Expected outputs
+
+Retain native support/contact readback, Series/Parallel treatment and enabled
+branches, applied setup and adaptive history. Return mode frequencies and
+requested saved fields with the exact load identity. Any native loss/Q output
+must retain its physical interpretation.
+
+::: {.callout-note}
+A generic RLC treatment does not create a Josephson junction or an EPR
+contribution. Use [EPR and loss](epr-loss.qmd) for that separate analysis purpose.
+:::
+
+See [source ownership](../tools/source-ownership.qmd),
+[contacts and levels](../tools/contacts-multilevel.qmd) and
+[handoff/results](../tools/handoff-resolve-report.qmd).

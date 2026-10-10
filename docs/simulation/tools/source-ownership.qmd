@@ -1,0 +1,77 @@
+---
+title: "Source identity and ownership"
+description: "Keep source geometry, placed occurrences and electrical ownership recognizable in the final product."
+sidebar: simulation
+---
+
+OrPen supplies the Layout, process records and model intent. SCGSim must carry
+that meaning into the solver model and back into user-readable results.
+The user must be able to tell which source conductor a native object or
+matrix label represents.
+
+## Input supplied by OrPen
+
+- Component/source identity, selected layers and units.
+- Local conductor regions, outer rings and holes, ports/supports and material/level associations.
+- Actual child occurrences and their local-to-placed transforms.
+- Caller-owned final Nets, reference conductors and intended contacts.
+
+A repeated child keeps its occurrence identity. One Net may contain multiple
+bodies; that is not an instruction to merge all their geometry.
+
+For a flip-chip coupon, keep the lower Ground, upper Ground and each bump
+recognizable even when the caller assigns them to one Ground Net. Keep the
+central Pad on its separate Net. Its local outline and holes must remain
+distinct from the placed child and the surrounding plane.
+
+## Backend requirements
+
+::: {.panel-tabset}
+
+### Palace
+
+| Workflow stage | Required delivery |
+| --- | --- |
+| Source to model | Carry Entity/occurrence/Net membership into CAD, physical boundary groups and solution-domain regions. |
+| Placement | Apply the authored occurrence transform once to geometry, directions and selections. |
+| Electrical ownership | Bind source conductors to potential boundaries, PEC/lumped selections and result labels. |
+| Result attribution | Preserve source membership even if the solver groups several regions. |
+
+### AEDT
+
+| Workflow stage | Required delivery |
+| --- | --- |
+| Source to model | Carry membership into native bodies/sheets, material assignments and excitation selections. |
+| Placement | Apply the same placement to bodies and support/terminal selections; no guessed native-object names. |
+| Electrical ownership | Bind bodies to requested Net/port/reference types without treating a label as physical connectivity. |
+| Result attribution | Preserve native body/Net/terminal ordering and map it back to the requested source owners. |
+
+:::
+
+Q2D starts from the explicitly authored section instead of a placed 3D
+component; its region/conductor identity must still reach the output matrices.
+
+## Final product to inspect
+
+A source-to-native mapping table, model preview and ordered result labels.
+It must distinguish local and placed coordinates, actual child occurrences
+and computational grouping. Detached readout must not depend on mutable live
+component objects.
+
+::: {.callout-note title="Follow the source into the model"}
+
+Use [Source ownership](../../notebooks/ComponentSimulation/GeometrySemantics/geometry_source_ownership.ipynb)
+for local regions, named occurrences, placed coordinates and final Net
+membership. Inspect its source observations first, then the corresponding
+backend notebook's native body/group mapping and returned-result labels.
+These are separate observation stages, not three names for a source preview.
+
+:::
+
+The [flip-chip coupon](../../public-pdk-examples/test-components.md) supplies
+multiple bodies on one Ground and genuine child ownership. Rotation/reflection
+uses explicitly authored placements, not renamed flattened polygons.
+
+Serves [capacitance](../requirements/electrostatic-capacitance.qmd),
+[eigenmode](../requirements/eigenmode.qmd), [driven terminal](../requirements/driven-terminal.qmd)
+and [Q3D](../requirements/q3d-acrl.qmd). No API or internal schema is prescribed here.

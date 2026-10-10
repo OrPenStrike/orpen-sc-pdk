@@ -1,0 +1,162 @@
+## Source records → caller-owned model
+
+This one shared authoring cell wires the producer's complete placed rings to
+SCGSim's public input records. It does not fit geometry, infer connectivity or
+choose native object names. The source record's `::` keys and qualified
+occurrence/local Entity IDs are explicitly paired below. Placed body rings are
+not transformed again; local neutral supports carry their one recorded affine.
+
+```{python}
+#| id: meander-owner-source-input
+if WORKFLOW_ACTION != "analyze":
+    source = get_cpw_meander_airbridge_source_records(VARIANT)
+    # Geometry classification is separate from physical superconductivity.
+    # Preserve the full source record, including is_superconducting.
+    geometry_material_kinds = {
+        "superconductor": "conductor",
+        "conductive": "conductor",
+        "conductor": "conductor",
+        "dielectric": "dielectric",
+        "vacuum": "vacuum",
+    }
+    entity_ids = {
+        e["qualified_entity_id"]: f"{e['source_occurrence_path']}/{e['local_semantic_id']}"
+        for e in source["entities"]
+    }
+    # This notebook explicitly adopts the producer's case grouping proposal.
+    # It is not PDK-owned or a connectivity result from the native backend.
+    final_nets = {
+        entity_ids[source_id]: net
+        for group, net in (("signal", "Signal"), ("ground", "Ground"))
+        for source_id in source["case_net_groups"][group]
+    }
+    polygons, entities, conductor_layers, solution_regions = [], [], [], {}
+    bounds = dict(
+        zip(
+            ("x_min_um", "y_min_um", "x_max_um", "y_max_um"),
+            source["source_envelope"]["bounds_xy_um"],
+            strict=True,
+        )
+    )
+    for e in source["entities"]:
+        sid = entity_ids[e["qualified_entity_id"]]
+        level = source["source_levels"][e["source_level"]]
+        material = source["material_records"][e["source_material"]]
+        dielectric = material["material_kind"] == "dielectric"
+        low, high = e["source_z_interval_um"]
+        geometry = {"z_min_um": low, "z_max_um": high, "thickness_um": level["thickness"]}
+        metadata = {
+            "source_semantic_id": sid,
+            "source_record_id": e["qualified_entity_id"],
+            "source_occurrence_path": e["source_occurrence_path"],
+            "source_local_entity_id": e["local_semantic_id"],
+            "body_membership_id": e["body_membership_id"],
+        }
+        if "aedt_modeling" in level["info"]:
+            metadata["aedt_modeling"] = level["info"]["aedt_modeling"]
+        polygon_ids = []
+        for p in e["placed_polygons"]:
+            polygon_ids.append(p["polygon_id"])
+            polygons.append(
+                LayoutPolygonSpec(
+                    polygon_id=p["polygon_id"],
+                    layer="/".join(map(str, p["layer"])),
+                    exterior=tuple(map(tuple, p["outer_um"])),
+                    holes=tuple(tuple(map(tuple, h)) for h in p["holes_um"]),
+                    object_name=sid,
+                    net_name=final_nets.get(sid),
+                    metadata={"coordinate_frame": p["coordinate_frame"]},
+                )
+            )
+        if len(e["placed_polygons"]) == 1:
+            p = e["placed_polygons"][0]
+            geometry.update(outer_loop=p["outer_um"], hole_loops=p["holes_um"])
+        if dielectric:
+            geometry["domain_bounds_um"] = bounds
+        record = dict(
+            semantic_id=sid,
+            role="solution_region" if dielectric else "metal",
+            material_id=e["source_material"],
+            material_kind=geometry_material_kinds[material["material_kind"]],
+            priority=level["mesh_order"],
+            geometry_kind="domain" if dielectric else "layout_extrusion",
+            geometry=geometry,
+            metadata=metadata,
+        )
+        part_role = None if dielectric else level["info"]["part_role"]
+        entities.append(
+            SemanticEntitySpec(
+                **record,
+                polygon_ids=tuple(polygon_ids),
+                net_id=final_nets.get(sid),
+                part_role=part_role,
+                host_void_semantic_id=None if dielectric else "VACUUM_REGION",
+            )
+        )
+        if dielectric:
+            solution_regions[sid] = record
+        else:
+            conductor_layers.append({**record, "part_role": part_role})
+    materials = {
+        name: {
+            **record,
+            "kind": geometry_material_kinds[record["material_kind"]],
+            "permittivity": record["relative_permittivity"],
+        }
+        for name, record in source["material_records"].items()
+    }
+    stack = {
+        "materials": materials,
+        "layers": conductor_layers,
+        "solution_regions": solution_regions,
+        "metadata": {},
+    }
+    source_bottom = min(e["source_z_interval_um"][0] for e in source["entities"])
+    source_top = max(e["source_z_interval_um"][1] for e in source["entities"])
+    envelope_bottom, envelope_top = source["source_envelope"]["z_interval_um"]
+    stack = apply_vacuum_region_to_stack(
+        stack,
+        VacuumRegionSpec(
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            source_bottom - envelope_bottom,
+            envelope_top - source_top,
+        ),
+    )
+    vacuum = stack["solution_regions"]["VACUUM_REGION"]
+    entities.append(
+        SemanticEntitySpec(
+            semantic_id="VACUUM_REGION",
+            role="solution_region",
+            material_id=vacuum["material_id"],
+            material_kind="vacuum",
+            priority=0,
+            geometry_kind="domain",
+            geometry=vacuum["geometry"],
+            metadata=vacuum["metadata"],
+        )
+    )
+    supports = tuple(LumpedSupport.from_payload(s) for s in source["local_supports"])
+    build_input = GeometryBuildInput(
+        polygons=tuple(polygons),
+        entities=tuple(entities),
+        solution_regions=stack["solution_regions"],
+        lumped_supports=supports,
+        metadata={
+            "source_dbu_um": source["source_dbu_um"],
+            "caller_final_nets": final_nets,
+            "source_coordinate_authority": "placed bodies / local supports",
+        },
+    )
+    display(
+        {
+            "variant": VARIANT,
+            "source_levels": source["source_levels"],
+            "source_envelope": source["source_envelope"],
+            "entity_count": len(source["entities"]),
+            "supports": [s.to_payload() for s in supports],
+        }
+    )
+```

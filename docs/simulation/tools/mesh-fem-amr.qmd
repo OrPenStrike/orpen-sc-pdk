@@ -1,0 +1,77 @@
+---
+title: "Mesh, FEM and adaptive history"
+description: "Expose the actual discretization and solver-specific refinement evidence."
+sidebar: simulation
+---
+
+SCGSim must expose the mesh and adaptive calculation used for the requested
+quantity. A completed solve and a small algebraic residual are not the same
+as adequate geometric or field resolution.
+
+## Input supplied by the case
+
+- Source dimensions, holes, contacts and curve intent.
+- Requested local/bulk mesh treatment and element/FEM order where applicable.
+- Backend-specific adaptation settings, requested modes/frequencies and retained fields.
+- Which physical quantity's history must be shown: C, mode frequency, participation or S-data.
+
+Mesh settings are simulation choices, not inferred fabrication rules.
+
+## Backend workflows
+
+::: {.panel-tabset}
+
+### Palace
+
+1. Produce the selected Gmsh geometry/mesh with visible boundary/material groups.
+2. Record geometric order separately from FEM order; retain the actual high-order operation and resulting mesh.
+3. Execute the configured solve/refinement sequence with native exit and warnings.
+4. Return actual elements/DOFs when recorded, per-iteration quantities and AMR indicators; distinguish eigenpair residuals from adaptation indicators.
+5. Show final mesh selection and source-linked coordinates when local curvature/contact evidence is requested.
+
+### AEDT
+
+| Family | Required adaptive readout |
+| --- | --- |
+| HFSS Eigenmode | Mode frequency/error per available pass, mesh growth, mode count and stop reason |
+| HFSS Driven | Adaptive delta-S/pass history separately from frequency-sweep completion and port-mode calculation |
+| Q3D / Q2D | Matrix-family/conductor error and pass history, frequencies, enabled analysis families and stop reason |
+
+Native geometry/material/mesh-operation assignments must be readable before
+the history is interpreted. AEDT adaptation must not be described using
+Palace FEM-order or AMR-indicator labels.
+
+:::
+
+## Final product to inspect
+
+Applied-control summary, actual mesh/model views and family-specific history
+plots with units, pass labels and missing values retained. Do not fabricate a
+trend from one sample or call configured stop criteria a scientific accuracy
+guarantee.
+
+Candidates: square pad for basic discretization, disk/annulus for curved
+boundaries, and bump/airbridge coupons for interfaces.
+[Source views](../../public-pdk-examples/test-components.md).
+
+::: {.callout-note title="Read the mesh beside the requested quantity"}
+
+Use [CircularPad Palace Eigenmode](../../notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb)
+for curved-boundary geometry and mode/participation history.
+[SimplePad Palace Electrostatic](../../notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb)
+and [SimplePad Palace Eigenmode](../../notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb)
+provide the simpler capacitance and mode cases. Inspect the saved mesh's
+element types, boundary membership and selected local coordinates before
+interpreting the returned refinement history.
+
+:::
+
+An order-two label is not curvature evidence: inspect midside placement and
+connectivity against the intended boundary. Keep geometric order, field/FEM
+order and the observed change in the requested quantity separate. Frequency
+history cannot stand in for participation history, and neither supplies a
+universal adequacy threshold.
+
+Serves [capacitance](../requirements/electrostatic-capacitance.qmd),
+[eigenmode](../requirements/eigenmode.qmd), [EPR](../requirements/epr-loss.qmd)
+and [Driven Modal](../requirements/driven-modal.qmd).

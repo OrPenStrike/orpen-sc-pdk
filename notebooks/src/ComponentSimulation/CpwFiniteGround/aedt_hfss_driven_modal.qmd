@@ -1,0 +1,32 @@
+---
+title: "Finite-ground CPW — historical HFSS Driven Modal settings"
+execute:
+  enabled: false
+---
+
+Historical authoring reference, **not a current usable notebook**. See the
+[Driven Modal requirements](../../../simulation/requirements/driven-modal.html).
+The original source is preserved in task-private history; no native evidence
+is attributed to this page.
+
+## Authored case
+
+| Setting | Original value |
+| --- | --- |
+| Coupon length / signal width | 500 µm / 10 µm |
+| Signal-to-ground gap / each ground width | 6 µm / 80 µm |
+| Conductors / substrate | Nb sheets / Si 500 µm |
+| Ports | Ordered `o1` at −X and `o2` at +X |
+| Integration lines | (−250, 0, 0) → (−250, 20, 0) µm; (250, 0, 0) → (250, 20, 0) µm |
+| Region padding | 0, 0, 100, 100, 1000, 1000 µm in native order |
+| Sweep | Fast, 3–8 GHz, 20,000 output points |
+| CPW length mesh | Signal and both grounds; maximum length 10 µm |
+| Desktop / PyAEDT | 2024.2 / 1.3.0 |
+
+## Current authoring limitation
+
+[SCGSim 2.0.0rc1](https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de)
+has no body-first Driven Modal interface. The prior import workflow relied on
+unobserved native object-name bindings. It is not reproduced as executable
+code, and Driven Terminal is not substituted for Modal. A current usable
+Modal notebook remains incomplete.

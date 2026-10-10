@@ -1,0 +1,81 @@
+---
+title: "Materials, stack and Z mapping"
+description: "Produce the requested physical or thin-film model without losing layer or material meaning."
+sidebar: simulation
+---
+
+The model must identify which metal/dielectric representation produced the
+result. OrPen supplies physical process facts; the simulation case chooses
+the approximation.
+
+## Input supplied by OrPen
+
+- Material identity/properties and explicit native-library or ideal-conductor intent.
+- Physical layer identities, aliases, layer/datatype selectors and body membership.
+- Z intervals, thicknesses, host die and lower/upper contact orientation.
+- Stack-bearing film, local deck/film and retained post/bump declarations.
+
+Interface-loss film thickness is separate from metal thickness. Source
+superconducting identity does not authorize an invented kinetic-inductance model.
+
+## Backend requirements
+
+::: {.panel-tabset}
+
+### Palace
+
+| Model choice | Required delivery |
+| --- | --- |
+| Finite metal | Represent the requested Route B metal boundary/exclusion and remaining dielectric/air solution domain. |
+| Sheet approximation | State the selected Route A sheet location and treatment of the metal interval and surrounding domain. |
+| Physical-level collapse | Keep physical/effective dimensions and interface locations attributable; no unexplained shift of upper geometry. |
+| Multilevel structures | Preserve post/bump endpoints and conductor interfaces under the declared route. |
+| Materials | Assign explicit properties to material regions and boundaries. |
+
+### AEDT
+
+| Model choice | Required delivery |
+| --- | --- |
+| Finite metal | Build solid conductors at the declared physical intervals. |
+| Sheet approximation | State the selected thin-film map and effective sheet contact plane. |
+| Physical-level collapse | Collapse a stack-bearing interval once per physical level; local deck thickness must not compress surrounding stack. |
+| Multilevel structures | Retain posts/bumps as solids under the same Z map, without inferred extension. |
+| Materials | Assign native material/PEC treatment with original physical material identity retained. |
+
+:::
+
+Route A/B and solid/thin-film are different backend model choices, not names
+for interchangeable geometry. Q2D uses explicitly authored section materials
+and thickness, not an automatic 3D stack collapse.
+
+## Final product to inspect
+
+A physical-to-effective Z table plus native material and cross-section views.
+Include conductor, substrate, Region, supports/ports and upper structures.
+Historical outputs retain the stack that was actually used.
+
+Candidates: SimplePad for the base film, airbridge for local deck/posts and
+flip-chip for opposing faces/bumps.
+[Process and source views](../../public-pdk-examples/test-components.md).
+
+::: {.callout-note title="Inspect physical and effective heights together"}
+
+[Multilevel contacts](../../notebooks/ComponentSimulation/GeometrySemantics/geometry_multilevel_contacts.ipynb)
+provides the physical source view for bumps, posts and decks.
+[SimplePad Q3D](../../notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb)
+and [SimplePad HFSS EPR](../../notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb)
+provide the corresponding Solid/Thin Film case choices. Inspect the prepared
+Z map, then native body/sheet extents and material assignments; a source stack
+table alone does not demonstrate those native observations.
+
+:::
+
+For Thin Film, distinguish the base stack-bearing film from the local bridge
+deck: remove the former interval once per physical identity, not once per
+bump or polygon. Map each retained post/bump endpoint with the same stack map.
+The deck becomes a sheet at its declared contact side without shortening the
+surrounding stack by its own thickness.
+
+Serves [capacitance](../requirements/electrostatic-capacitance.qmd),
+[eigenmode](../requirements/eigenmode.qmd), [EPR](../requirements/epr-loss.qmd),
+[driven terminal](../requirements/driven-terminal.qmd) and [Q3D](../requirements/q3d-acrl.qmd).

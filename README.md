@@ -77,7 +77,7 @@ remain unchanged.
 | 02 circular disk | [`circular_pad_capacitor`](orpen_sc_pdk/cells/simulation/simple_pad.py) | Default inner radius is zero |
 | 03 annulus | [`circular_pad_capacitor(inner_radius_um=80)`](orpen_sc_pdk/cells/simulation/simple_pad.py) | Same factory; hole is not Ground |
 | 04 curved strips | [`straight_to_circular_strip`](orpen_sc_pdk/cells/simulation/simple_pad.py), [`interpolation_spline_strip`, `bspline_strip`](orpen_sc_pdk/cells/simulation/spline_strip.py) | Three distinct source definitions; no native curve-equivalence claim |
-| 05 finite CPW | [Notebook-local coupon section](notebooks/src/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.py) | Not a registered PDK cell |
+| 05 finite CPW | [`finite_ground_cpw_coupon`](orpen_sc_pdk/cells/simulation/cpw_coupons.py) | Shared source factory with explicit finite Signal and two Ground strips |
 | 06 flip-chip pad | [`flip_chip_pad_coupon`](orpen_sc_pdk/cells/simulation/test_components.py) | Two dies and four bumps; source contact geometry, not native contact proof |
 | 07 CPW airbridge | [`cpw_airbridge_coupon`](orpen_sc_pdk/cells/simulation/test_components.py) | CPW with airbridge deck/piers; source geometry, not native conformity proof |
 

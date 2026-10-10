@@ -1,0 +1,79 @@
+---
+title: "Handoff, Resolve and Report"
+description: "Deliver a portable saved result that can be read and presented without repeating the solve."
+sidebar: simulation
+---
+
+The final product is a portable run/result package plus a readable Report,
+not only a live solver session. OrPen must be able to move the package, open a
+fresh analysis process and inspect the same attributed result.
+
+## Backend workflows
+
+::: {.panel-tabset}
+
+### Palace
+
+| Stage | Required delivery |
+| --- | --- |
+| Prepare | Source/stack/settings identity, final mesh/config, launch/runtime requirements and a distinct not-run handoff. |
+| Execute | Explicit native operation, actual exit/recorder evidence, warnings and output cohort; no automatic retry. |
+| Return | Completed or partial/failed status from the real operation, with fields, matrices/modes and refinement history actually produced. |
+| Resolve | Fresh-process strict completed-result resolution using the retained preparation identity; separate inspection of incomplete packages without inventing completion. |
+| Report | Readable physics output, native warnings, adaptation, mesh selection and separate cost/performance information. |
+
+### AEDT
+
+| Stage | Required delivery |
+| --- | --- |
+| Prepare | Source/body/section request and model/setup/port settings, runtime/resource requirements and a distinct not-run handoff. |
+| Execute | Owned project/design/session; native build/assignment/setup readback, solve/export, save and release without affecting another Desktop. |
+| Return | Saved project and required results/dependencies, raw exports, native completion and actual convergence evidence. |
+| Resolve | Fresh-process reading of the sealed returned cohort; no live-object dependence, hidden Analyze or regenerated model. |
+| Report | Correct family/port/matrix/mode labels, units, missingness, setup and history; offline HTML usable for desktop/mobile reading. |
+
+:::
+
+The package must preserve input/output identity, relative paths and model
+dependencies after relocation. A preparation receipt is not a solve receipt.
+
+OrPen supplies the exact source/stack and chosen case settings, together with
+the preparation identity retained independently of the return. The handoff
+must carry these inputs into the real operation; the returned cohort must
+retain enough identity to read the same quantity after moving the package.
+
+## Saved fields and offline loss
+
+For AEDT EPR, saved-field evaluation may open the retained native solution to
+acquire requested integrals, but must not run Analyze again. Keep that operation
+separate from file-only reanalysis of already acquired typed participation.
+Offline loss readout changes only explicitly supplied assumptions.
+
+For Palace, retain the native energies/participation/fields needed for the
+same requested interpretation. A missing output is shown as unavailable,
+not synthesized from a prior pass or a different family.
+
+## Final product to inspect
+
+One coherent result package and Report showing physics outputs, actual run
+status/warnings and numerical history, with separate performance information.
+Do not replace the result with screenshots, cached objects or an implementation
+checklist. Publication of private run data is not part of this requirement.
+
+::: {.callout-note title="Continue in the same backend notebook"}
+
+Follow the Prepare, Handoff, returned-run Resolve and Report stages in
+[SimplePad Palace Electrostatic](../../notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb),
+[CircularPad Palace Eigenmode](../../notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb),
+[SimplePad Q3D](../../notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb)
+or [SimplePad HFSS EPR](../../notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb),
+according to the requested quantity. Open returned-run analysis in a fresh
+process; Resolve and Report are reading stages, not instructions for another
+solve. Keep saved-field evaluation and file-only loss reanalysis separate.
+
+:::
+
+Serves all Layer 1 uses: [capacitance](../requirements/electrostatic-capacitance.qmd),
+[eigenmode](../requirements/eigenmode.qmd), [EPR](../requirements/epr-loss.qmd),
+[Terminal](../requirements/driven-terminal.qmd), [Modal](../requirements/driven-modal.qmd),
+[Q3D](../requirements/q3d-acrl.qmd) and [Q2D](../requirements/q2d-cross-section.qmd).

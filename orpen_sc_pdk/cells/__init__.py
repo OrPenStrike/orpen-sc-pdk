@@ -24,6 +24,12 @@ from orpen_sc_pdk.cells.layout.resonator import resonator
 from orpen_sc_pdk.cells.layout.resonator_hanger import resonator_hanger
 from orpen_sc_pdk.cells.layout.resonator_meander import resonator_meander
 from orpen_sc_pdk.cells.layout.taper import taper
+from orpen_sc_pdk.cells.simulation.cpw_coupons import (
+    cpw_meander_airbridge_lumped_coupon,
+    cpw_meander_airbridge_wave_coupon,
+    finite_ground_cpw_coupon,
+    get_cpw_meander_airbridge_source_records,
+)
 from orpen_sc_pdk.cells.simulation.simple_pad import (
     circular_pad_capacitor,
     square_pad_capacitor,
@@ -63,4 +69,8 @@ __all__ = [
     "bspline_strip",
     "flip_chip_pad_coupon",
     "cpw_airbridge_coupon",
+    "cpw_meander_airbridge_lumped_coupon",
+    "cpw_meander_airbridge_wave_coupon",
+    "finite_ground_cpw_coupon",
+    "get_cpw_meander_airbridge_source_records",
 ]

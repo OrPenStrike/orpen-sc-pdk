@@ -1,0 +1,245 @@
+---
+title: "Finite-ground CPW — HFSS Eigenmode"
+jupyter:
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+  simulation_notebook:
+    kind: single
+execute:
+  enabled: false
+---
+
+Inspect the finite-ground CPW's eigenmodes. See the
+[eigenmode requirements](../../../simulation/requirements/eigenmode.html).
+The public coupon is 500 µm long, with a 10 µm signal, 6 µm gaps and
+80 µm grounds. This current-PDK case selects Al 100 nm on Si 500 µm,
+explicitly replacing the prior Nb sheet model. It has no wave/lumped ports.
+The body-first facade uses native mesh behavior; it does not expose the prior
+CPW `LengthMeshSpec` operation.
+
+Use [SCGSim 2.0.0rc1](https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de)
+in a separately selected consumer environment. The exact source revision is recorded
+in the controls below. Execution is disabled; no native solve or returned-result
+claim is made. `AUTHORING_ONLY` constructs non-solving inputs; preparation/run
+are explicit, and analysis reads an independent returned directory.
+
+## Setup and Imports
+
+```{python}
+#| id: hfss-eigenmode-0
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+from uuid import uuid4
+
+import gdsfactory as gf
+from IPython.display import display
+from scgsim.aedt import (
+    AedtResources,
+    EigenmodeRunControl,
+    EigenmodeSim,
+    PdkMaterial,
+    resolve_results,
+)
+from scgsim.geometry import GeometryPlan
+
+import orpen_sc_pdk
+from orpen_sc_pdk.cells import finite_ground_cpw_coupon
+from orpen_sc_pdk.materials import get_material_records
+from orpen_sc_pdk.tech import get_single_die_layer_stack
+```
+
+## Setup and Run Controls
+
+```{python}
+#| id: hfss-eigenmode-1
+WORKFLOW_ACTION = "AUTHORING_ONLY"  # AUTHORING_ONLY | prepare_handoff | run | analyze_handoff
+RUN_ID = f"cpw_hfss_eigenmode_{uuid4().hex}"
+OUTPUT_ROOT = Path.cwd() / ".artifacts" / "CpwFiniteGround"
+RUN_DIR = OUTPUT_ROOT / RUN_ID
+RETURNED_RUN_DIR = None  # Set independently to an immutable returned-run directory.
+SCGSIM_RUNTIME_REVISION = "85d8bedb733b1e17737d935029618351b30ea5de"
+RESOURCES = AedtResources(cores=4, ram_limit_percent=30)
+MODELING = "solid"
+# CPW trace length along X (um).
+trace_length_um = 500.0
+# Signal conductor width (um).
+signal_width_um = 10.0
+# Gap from signal to each ground conductor (um).
+gap_um = 6.0
+# Width of each ground conductor (um).
+ground_width_um = 80.0
+# Substrate thickness below the metal (um).
+substrate_thickness_um = 500.0
+# AEDT version used for project generation.
+aedt_version = "2024.2"
+# AEDT project name.
+project_name = RUN_ID
+# AEDT design name.
+design_name = "CpwFiniteGroundEigenmode"
+# Padding around the model in -X, +X, -Y, +Y, -Z, +Z directions (um).
+region_padding_um = (100.0, 100.0, 100.0, 100.0, 1000.0, 1000.0)
+# Minimum search frequency (GHz), requested modes, pass limit, and convergence delta (%).
+# Minimum eigenfrequency search bound (GHz).
+minimum_frequency_ghz = 3.0
+# Number of eigenmodes requested.
+num_modes = 2
+# Maximum adaptive passes.
+maximum_passes = 6
+# Pass convergence threshold on frequency change (%).
+maximum_delta_frequency_percent = 5.0
+```
+
+## Create Simulation Component / Coupon
+
+```{python}
+#| id: hfss-eigenmode-2
+if WORKFLOW_ACTION != "analyze_handoff":
+    orpen_sc_pdk.activate()
+    gf.clear_cache()
+    coupon = finite_ground_cpw_coupon()
+    layer_stack = get_single_die_layer_stack()
+    material_records = get_material_records()
+```
+
+## Initialize AEDT Project / App
+
+```{python}
+#| id: hfss-eigenmode-3
+# Only the generated native runner owns an AEDT session.
+```
+
+## Import GDS and Build the HFSS/Q3D/Q2D Model
+
+```{python}
+#| id: hfss-eigenmode-4
+if WORKFLOW_ACTION != "analyze_handoff":
+    plan = GeometryPlan(
+        coupon,
+        root_id="cpw",
+        layer_stack=layer_stack,
+        material_records=material_records,
+        coupon_padding_um=0.0,
+    )
+    plan.set_nets(
+        {
+            "Signal": ("cpw/SIGNAL",),
+            "GroundPlus": ("cpw/GROUND_PLUS",),
+            "GroundMinus": ("cpw/GROUND_MINUS",),
+        }
+    )
+    plan.set_vacuum_region(padding=(100.0, 100.0, 1000.0))
+    snapshot = plan.prepare()
+```
+
+## Geometry Verification
+
+```{python}
+#| id: hfss-eigenmode-5
+if WORKFLOW_ACTION != "analyze_handoff":
+    display(coupon)
+    display({"bbox_um": str(coupon.dbbox())})
+```
+
+## Materials and Boundaries
+
+```{python}
+#| id: hfss-eigenmode-6
+if WORKFLOW_ACTION != "analyze_handoff":
+    material_records = get_material_records()
+    materials = {
+        material_id: PdkMaterial(
+            material_id,
+            material_records[material_id]["material_kind"],
+            material_records[material_id]["is_superconducting"],
+            material_records[material_id]["aedt_library_name"],
+        )
+        for material_id in ("vacuum", "Si", "Al")
+    }
+```
+
+## Ports / Nets / Excitations
+
+```{python}
+#| id: hfss-eigenmode-7
+if WORKFLOW_ACTION != "analyze_handoff":
+    sim = EigenmodeSim(modeling=MODELING)
+    sim.set_plan(snapshot)
+    sim.set_output_dir(RUN_DIR)
+    # No wave or lumped excitations in this Eigenmode case.
+```
+
+## Simulation Setup
+
+```{python}
+#| id: hfss-eigenmode-8
+if WORKFLOW_ACTION != "analyze_handoff":
+    run_control = EigenmodeRunControl(
+        "Setup1", minimum_frequency_ghz, num_modes, maximum_passes, maximum_delta_frequency_percent
+    )
+    sim.set_eigenmode(
+        project_name=project_name,
+        design_name=design_name,
+        run_control=run_control,
+        resources=RESOURCES,
+    )
+```
+
+## Simulation Configuration
+
+```{python}
+#| id: hfss-eigenmode-9
+if WORKFLOW_ACTION != "analyze_handoff":
+    display(sim.input_summary())
+```
+
+## Solve and Export
+
+```{python}
+#| id: hfss-eigenmode-10
+if WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    HANDOFF = sim.prepare_handoff()
+    display(HANDOFF)
+    if WORKFLOW_ACTION == "run":
+        subprocess.run([str(HANDOFF.script_path)], cwd=HANDOFF.run_dir, check=True)
+```
+
+## Adaptive-Pass Convergence / Solver Diagnostics
+
+```{python}
+#| id: hfss-eigenmode-11
+if WORKFLOW_ACTION == "analyze_handoff":
+    result = resolve_results(Path(RETURNED_RUN_DIR))
+    result.show_all_results(show_details=True)
+```
+
+## Results: Plots and Readable Tables
+
+### Physics Analysis Results
+
+```{python}
+#| id: hfss-eigenmode-physics
+if WORKFLOW_ACTION == "analyze_handoff":
+    display(result.physics_results())
+```
+
+### Simulation Performance / Benchmarks
+
+```{python}
+#| id: hfss-eigenmode-benchmark
+if WORKFLOW_ACTION == "analyze_handoff":
+    display(result.simulation_benchmark())
+```
+
+## Save and Release AEDT
+
+```{python}
+#| id: hfss-eigenmode-13
+if WORKFLOW_ACTION == "analyze_handoff":
+    display({"project": result.project_path, "receipt": result.receipt_path})
+elif WORKFLOW_ACTION in {"prepare_handoff", "run"}:
+    display(HANDOFF.archive_path)
+```

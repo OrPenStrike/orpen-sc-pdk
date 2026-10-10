@@ -1,0 +1,71 @@
+---
+title: "Q2D cross-section extraction"
+description: "Extract per-unit-length quantities from an explicitly defined uniform CPW section."
+sidebar: simulation
+---
+
+## Purpose and selected cross-section
+
+Calculate per-unit-length matrices for the finite-ground CPW cross-section.
+The selected system consists of a Signal rectangle, two reference Ground
+rectangles, a substrate and surrounding region, assumed uniform along the
+line. Finite launchers, bends, resonator ends and three-dimensional contacts
+are outside this model.
+
+Use the section notebook's own geometry. Its dimensions are not automatically
+the same as the finite 3D CPW coupon, so the two examples are not equivalent
+merely because they share a family name.
+
+## Geometry, reference and settings choices
+
+State the section axes, rectangle extents, conductor thickness, material
+records and substrate extent. Keep separated Ground rectangles assigned to
+the intended reference group. Specify surrounding-region/exterior treatment,
+requested matrix families and ordering.
+
+This section is authored directly in two dimensions. It needs neither a
+GDS import nor a three-dimensional port sheet or source/sink face assignment.
+Extraction frequency and material treatment define the requested line
+response; mesh and adaptive controls govern its numerical calculation.
+Their exact values remain in the notebook.
+
+::: {.callout-note}
+Any impedance or propagation quantity must identify its source matrix,
+per-length units and derivation convention. It is not a finite-device
+transmission measurement.
+:::
+
+## Workflow
+
+::: {.panel-tabset}
+
+### Palace
+
+A wave-port or mode calculation using Palace is a different formulation.
+A comparison must explicitly match the section, material model and
+per-length conventions rather than re-labeling mode output as Q2D extraction.
+
+### AEDT
+
+Use [Finite-ground CPW Q2D](../../notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb).
+Create the native section, inspect conductor/reference grouping and materials,
+then extract the requested per-length matrices. Resolve the returned data
+independently of the live section session.
+
+:::
+
+## Expected outputs
+
+Retain native section dimensions, thicknesses, material assignments and
+conductor grouping. Return frequency-labeled per-unit-length C/G and R/L
+matrices with ordering, units and adaptive history. Include requested line
+quantities with their explicit matrix reduction/derivation.
+
+When comparing to a 3D model, identify the actual matched slice and the finite
+effects intentionally excluded. This page creates no new section dimensions
+or cross-model agreement threshold.
+
+Continue with [source ownership](../tools/source-ownership.qmd),
+[materials and stack](../tools/materials-stack-z.qmd),
+[mesh/numerical controls](../tools/mesh-fem-amr.qmd) and
+[handoff/reporting](../tools/handoff-resolve-report.qmd).

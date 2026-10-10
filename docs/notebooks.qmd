@@ -1,96 +1,84 @@
 ---
 title: "Simulation"
-description: "Publication-safe OrPen notebooks using SCGSim runtimes."
+description: "Define the simulation need, then select a layout and notebook that can demonstrate it."
+sidebar: simulation
 ---
 
-OrPen owns public notebook source because each notebook demonstrates a public
-component or cross-section from this PDK. SCGSim owns every reusable simulation
-stage: semantic geometry, mesh/config generation, handoff, result resolution,
-and reports.
+Start with what a simulation must let you do—not with available layouts or
+solver commands. The **Pages × Notebook suite** connects candidate requirements
+to canonical notebook cases. Pages explain the intended product and observations;
+notebooks own concrete settings and real tool calls. No new solved results are
+claimed for the source-only suite.
 
-Notebook folders classify the simulated thing first. A thing may contain
-Palace, AEDT, single-run, or sweep notebooks without duplicating runtime logic.
+OrPen owns fabrication facts, public source layouts and the user's model intent.
+SCGSim owns the reusable toolchain that must carry those facts through native
+modeling, execution and returned results. A notebook is an operation and
+evidence entry point; it does not replace either contract.
 
-## Choose the notebook's runtime cohort
+## Two requirement perspectives
 
-The ordinary project's dependency remains
-[SCGSim 1.1.0rc1](https://github.com/OrPenStrike/scgsim/tree/2eed1eb4a9bcc7b1b020feb4953d5ed27e7d7b71).
-The five revised examples below declare a separate consumer environment using
-[SCGSim v2 development (2.0.0.dev1)](https://github.com/OrPenStrike/scgsim/tree/cc1424c84ffe9d295a57dbabb3c2ab6431110f6c).
-Follow each canonical
-source's installation instructions in that separate environment; selecting an
-ordinary project dependency group does not select the v2 cohort.
+The layers describe **who needs what**, not a ranking of important and minor
+features.
 
-### Source-only v2 examples
+- **Layer 1 · OrPen user requirements** states the physical product and the
+  high-level Palace/AEDT workflow required to produce it.
+- **Layer 2 · SCGSim tool requirements** states the geometry, model, numerical
+  evidence and portable-result requirements shared by those workflows.
 
-| Example | Rendered source | Canonical paired source |
-|---|---|---|
-| SimplePad AEDT Q3D | [Notebook](notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/aedt_q3d.qmd) |
-| SimplePad AEDT HFSS eigenmode | [Notebook](notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.qmd) |
-| SimplePad Palace electrostatic | [Notebook](notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/palace_electrostatic.qmd) |
-| SimplePad Palace eigenmode | [Notebook](notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/SimplePad/palace_eigenmode.qmd) |
-| CircularPad Palace eigenmode | [Notebook](notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb) | [QMD](https://github.com/OrPenStrike/orpen-sc-pdk/blob/develop/notebooks/src/ComponentSimulation/CircularPad/palace_eigenmode.qmd) |
+OrPen is the requirements customer: it supplies source/process facts and model
+intent, and inspects the final product. SCGSim owns implementation and solver
+integration. These pages do not prescribe API calls or track implementation status.
 
-These revised sources have not been executed as part of this documentation
-update. Rendering is execution-disabled and preserves checked-in outputs; old
-outputs are historical evidence, not successful execution of the revised v2
-source. Notebook-local historical stacks can differ from the PDK's current
-100 nm metal default. OrPen supplies source layouts and semantic intent;
-SCGSim owns native geometry, meshes, solvers, resolution and reports.
+Read a Layer 1 page first, follow its Layer 2 links, and only then select a
+layout and notebook. One requirement may need several notebooks; one layout
+may support several requirements. Neither count is fixed.
 
-## Existing component examples and historical evidence
+## Layer 1 · OrPen user requirements
 
-### Kosen2024 Xmon
+| I need to… | Requirement contract |
+| --- | --- |
+| Extract capacitance with an explicit conductor/reference convention | [Electrostatic and capacitance extraction](simulation/requirements/electrostatic-capacitance.qmd) |
+| Find modes of an explicitly bounded electromagnetic model | [Ordinary eigenmode](simulation/requirements/eigenmode.qmd) |
+| Include explicit linear circuit loads in a mode calculation | [Lumped RLC eigenmode](simulation/requirements/lumped-rlc-eigenmode.qmd) |
+| Interpret participation and loss with declared field and interface provenance | [EPR and loss analysis](simulation/requirements/epr-loss.qmd) |
+| Excite a terminal network through Lumped or Wave ports | [Driven Terminal](simulation/requirements/driven-terminal.qmd) |
+| Excite and read a modal port network | [Driven Modal](simulation/requirements/driven-modal.qmd) |
+| Extract resistance and inductance with real source/sink assignments | [Q3D AC/RL extraction](simulation/requirements/q3d-acrl.qmd) |
+| Extract per-unit-length quantities from an authored cross-section | [Q2D cross-section extraction](simulation/requirements/q2d-cross-section.qmd) |
 
-- [Palace Route A Electrostatic](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb)
-- [Palace Route B Electrostatic](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb)
-- [AEDT Q3D grounded C11](notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb)
-- [Palace Route A Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb)
-- [Palace Route B Eigenmode](notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb)
-- [Electrostatic boundary alignment](notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb)
+## Layer 2 · SCGSim tool requirements
 
-#### RF-grounded electrostatic evidence
+Use [source and ownership](simulation/tools/source-ownership.qmd) to bind
+identities; [curves, holes and transforms](simulation/tools/curves-holes-transforms.qmd)
+to preserve shape meaning; [materials, stack and Z](simulation/tools/materials-stack-z.qmd)
+to declare physical representation; and [contacts and multilevel structures](simulation/tools/contacts-multilevel.qmd)
+to distinguish contact from overlap. [Mesh, FEM and AMR](simulation/tools/mesh-fem-amr.qmd)
+covers discretization evidence. [Handoff, Resolve and Report](simulation/tools/handoff-resolve-report.qmd)
+covers the usable returned workflow.
 
-The current comparison uses one common public boundary: `xmon_pad` is the sole
-terminal; four couplers, both die grounds, and eight bumps form one Ground;
-the exterior has its natural zero-charge boundary. Lateral vacuum padding is
-0 µm and the z padding is ±1000 µm. The public geometry is
-309.5 µm × 24.65 µm with a 20 µm gap and silicon εr = 11.9.
+## Select evidence, not just a picture
 
-| Model | Selected C11 (fF) | EC/h (MHz) |
-|---|---:|---:|
-| Palace A′ — substrate-face sheet | 99.3030125873 | 195.0618497866 |
-| Palace A — metal-gap-equivalent sheet | 99.78426582503 | 194.1210787543 |
-| Palace B — finite metal | 99.44860318002 | 194.7762834798 |
-| AEDT Q3D — physical-geometry diagnostic | 97.52280968178212 | 198.6225518713 |
+A [source inspection plate](public-pdk-examples/test-components.md) shows the
+authored geometry. It is not evidence of native lowering, conductor assignment,
+mesh conformity or solving. Track source availability, preparation, native
+model readback, solving, strict resolution and reporting separately.
 
-![Palace AMR traces and the four selected RF-grounded C11 values.](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/comparison.png){fig-alt="Palace A-prime, A, and Route B AMR traces beside a bar chart comparing their selected grounded C11 values with the AEDT Q3D diagnostic."}
+The [notebook catalog](simulation/notebooks.qmd) links source ownership,
+curves/holes/transforms and multilevel contact observations; pad and finite-CPW
+cases; shared RLC and Lumped/Wave Terminal cases; and Q2D extraction. It also
+keeps historical examples and evidence separate. A linked notebook is a candidate
+starting point, not proof that it satisfies a new requirement. Missing source
+semantics or unsupported operations stay visible; do not fill them with guessed
+native identities or plausible output.
 
-The Palace rows are the last complete hash-bound snapshots from receipts that
-remain failed after exit 137; they are not completed-run claims. Q3D completed
-20 adaptive passes, but its capacitance matrix stopped at 0.429585% rather
-than the requested 0.1%; its AC-RL extraction converged. These differences are
-evidence only: no solver-agreement Gate or scientific acceptance is claimed.
+## Review and next steps
 
-Exact identities, receipt hashes, and unrounded values remain in the
-[run-set manifest](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/run_set.json)
-and [results table](notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/results.csv).
+Review physical meaning and expected observations before choosing concrete
+operation controls. These contracts introduce no numerical accuracy threshold
+or solver-agreement criterion. Native convergence classifications and warnings
+remain visible, but do not themselves establish research adequacy.
 
-### Finite-ground CPW
-
-- [AEDT HFSS Driven Terminal](notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_terminal.ipynb)
-- [AEDT HFSS Driven Modal](notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.ipynb)
-- [AEDT HFSS Eigenmode](notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb)
-- [AEDT Q3D](notebooks/ComponentSimulation/CpwFiniteGround/aedt_q3d.ipynb)
-
-## Cross-section simulation
-
-- [Finite-ground CPW AEDT Q2D](notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb)
-
-## Layout catalog
-
-- [Public PDK component inventory](notebooks/Public_Docs/component_gallery.ipynb)
-
-Palace and AEDT remain separate notebooks because AEDT is optional. Install
-only the matching dependency group. The checked-in notebook is the complete
-handoff-to-report workflow; it is not a second runtime implementation.
+The current suite remains **CONVERGING / LOCAL CANDIDATE**. Its clean derived
+notebooks are source-only, with native preparation, meshing and solving
+separately controlled. The ordinary environment and dependency pins remain
+unchanged. Historical output is not execution of a revised source.

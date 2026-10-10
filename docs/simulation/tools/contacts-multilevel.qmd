@@ -1,0 +1,77 @@
+---
+title: "Contacts across physical levels"
+description: "Model intended connections and clearances in bumps, posts, decks and excitation supports."
+sidebar: simulation
+---
+
+A contact declaration must correspond to the modeled conductor connection.
+A non-contact crossing must retain its clearance. The final product must make
+both inspectable before its matrices or fields are interpreted.
+
+## Input supplied by OrPen
+
+- Positive metal regions/holes and intended body-to-body contacts.
+- Physical levels, material, finite Z and opposing face orientation.
+- Same-Net membership, separate Nets and intended crossing clearances.
+- Named nonmetal supports, contact conductors, normals and directed integration/current lines.
+
+A support rectangle is not conductor metal. A Ground label alone is not
+evidence that two bodies touch.
+
+## Backend requirements
+
+::: {.panel-tabset}
+
+### Palace
+
+| Stage | Required delivery |
+| --- | --- |
+| Native geometry | Preserve requested conductor interfaces and PEC exclusions; identify shared boundaries and dielectric/air gaps. |
+| Electrical assignment | Preserve potential/PEC/lumped selections and intended Net meaning. |
+| Discretization | Show the shared-interface mesh topology for requested conformal contacts; do not replace intended contact with coincident disconnected faces. |
+| Results | Keep current/field/energy or capacitance interpretation bound to the modeled contacts. |
+
+### AEDT
+
+| Stage | Required delivery |
+| --- | --- |
+| Native geometry | Build contacting bodies/sheets and actual gaps under the selected Z map; expose overlap and endpoint placement. |
+| Electrical assignment | Preserve one-Net/multiple-body membership and exact port/terminal reference targets. |
+| Discretization | Let native meshing use the declared model; retain geometry/assignment readback separately from adaptive evidence. |
+| Results | Keep matrix/terminal/field output bound to actual native body and Net assignments. |
+
+:::
+
+Grouping must retain source ownership and holes without creating unintended
+shorts. One Net may contain several native bodies; their shared label does
+not replace observation of the intended interfaces.
+
+## Final product to inspect
+
+- Flip-chip: bump endpoints on lower and upper Ground; central Pad remains separate.
+- Airbridge: deck-to-post and post-to-Ground contacts; bridge crosses Signal without touching it.
+- Lumped support: native support plane, terminal owners and current direction.
+- A native geometry/contact view followed by the relevant mesh/assignment and solved-output evidence.
+
+Use the [small bump and airbridge coupons](../../public-pdk-examples/test-components.md)
+for these contact questions; the larger resonator serves the system-level port
+question. No new numerical contact tolerance is specified.
+
+::: {.callout-note title="Follow each intended interface"}
+
+[Multilevel contacts](../../notebooks/ComponentSimulation/GeometrySemantics/geometry_multilevel_contacts.ipynb)
+shows the bump/lower-Ground and bump/upper-Ground interfaces, and the
+deck/post/base-Ground chain. Inspect source footprints and Z first, actual
+native contact/clearance next, and mesh or terminal assignment before reading
+the corresponding solved quantity. Signal clearance is a separate required
+observation from Ground continuity.
+
+:::
+
+For lumped excitation, retain the support's normal separately from its
+directed Signal-to-Ground current/integration line. A correct support plane
+does not by itself establish the terminal owners or direction.
+
+Serves [capacitance](../requirements/electrostatic-capacitance.qmd),
+[lumped RLC](../requirements/lumped-rlc-eigenmode.qmd),
+[driven terminal](../requirements/driven-terminal.qmd) and [Q3D](../requirements/q3d-acrl.qmd).

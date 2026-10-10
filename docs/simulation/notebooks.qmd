@@ -1,0 +1,135 @@
+---
+title: "Pages × Notebook catalog"
+description: "Canonical source-only cases, downloadable notebooks and separately retained historical evidence."
+sidebar: simulation
+---
+
+OrPen owns public notebook source because each notebook demonstrates a public
+component or cross-section from this PDK. SCGSim owns every reusable simulation
+stage: semantic geometry, mesh/config generation, handoff, result resolution,
+and reports.
+
+Notebook folders classify the simulated thing first. A thing may contain
+Palace, AEDT, single-run, or sweep notebooks without duplicating runtime logic.
+
+Start with the [Simulation requirements](../notebooks.qmd), then select an
+example for the observation it can actually support:
+
+- Pad examples: [capacitance](requirements/electrostatic-capacitance.qmd),
+  [eigenmode](requirements/eigenmode.qmd), and [EPR / loss](requirements/epr-loss.qmd).
+- CPW examples: [Driven Terminal](requirements/driven-terminal.qmd),
+  [Driven Modal](requirements/driven-modal.qmd), [Q3D AC / RL](requirements/q3d-acrl.qmd),
+  and [Q2D cross-sections](requirements/q2d-cross-section.qmd).
+- Shared resonator examples: [Lumped RLC eigenmode](requirements/lumped-rlc-eigenmode.qmd)
+  and [Lumped/Wave Terminal](requirements/driven-terminal.qmd), with their own
+  explicitly authored loads and excitation; ordinary eigenmode is not a substitute.
+
+Pages explain the intended physical product and tool behavior. Notebooks own
+case settings, source observations and explicit operation stages. The current
+suite is **SOURCE ONLY / CONVERGING**: authoring and clean publication artifacts
+do not establish native geometry, mesh or solved-result coverage.
+
+## Current source-only suite
+
+The suite targets [SCGSim v2 RC1](https://github.com/OrPenStrike/scgsim/tree/85d8bedb733b1e17737d935029618351b30ea5de)
+in a separate consumer environment. Follow each source's environment instructions;
+the ordinary project environment and pins are unchanged. Canonical QMDs own
+Markdown, code order and settings. Clean derived IPYNBs are downloadable
+publication/execution artifacts, not another editable authority.
+
+| Case | Notebook / download | Canonical source download |
+| --- | --- | --- |
+| Source ownership | [View](../notebooks/ComponentSimulation/GeometrySemantics/geometry_source_ownership.ipynb) · <a href="../notebooks/ComponentSimulation/GeometrySemantics/geometry_source_ownership.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/GeometrySemantics/geometry_source_ownership.qmd" download>QMD</a> |
+| Curves, holes and transforms | [View](../notebooks/ComponentSimulation/GeometrySemantics/geometry_curves_holes_transforms.ipynb) · <a href="../notebooks/ComponentSimulation/GeometrySemantics/geometry_curves_holes_transforms.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/GeometrySemantics/geometry_curves_holes_transforms.qmd" download>QMD</a> |
+| Multilevel contacts | [View](../notebooks/ComponentSimulation/GeometrySemantics/geometry_multilevel_contacts.ipynb) · <a href="../notebooks/ComponentSimulation/GeometrySemantics/geometry_multilevel_contacts.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/GeometrySemantics/geometry_multilevel_contacts.qmd" download>QMD</a> |
+| SimplePad Q3D | [View](../notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb) · <a href="../notebooks/ComponentSimulation/SimplePad/aedt_q3d.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/SimplePad/aedt_q3d.qmd" download>QMD</a> |
+| SimplePad HFSS Eigenmode/EPR | [View](../notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb) · <a href="../notebooks/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/SimplePad/aedt_hfss_eigenmode.qmd" download>QMD</a> |
+| SimplePad Palace Electrostatic | [View](../notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb) · <a href="../notebooks/ComponentSimulation/SimplePad/palace_electrostatic.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/SimplePad/palace_electrostatic.qmd" download>QMD</a> |
+| SimplePad Palace Eigenmode/EPR | [View](../notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb) · <a href="../notebooks/ComponentSimulation/SimplePad/palace_eigenmode.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/SimplePad/palace_eigenmode.qmd" download>QMD</a> |
+| CircularPad Palace Eigenmode/EPR | [View](../notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb) · <a href="../notebooks/ComponentSimulation/CircularPad/palace_eigenmode.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/CircularPad/palace_eigenmode.qmd" download>QMD</a> |
+| Finite CPW Palace Eigenmode/EPR | [View](../notebooks/ComponentSimulation/CpwFiniteGround/palace_eigenmode.ipynb) · <a href="../notebooks/ComponentSimulation/CpwFiniteGround/palace_eigenmode.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/CpwFiniteGround/palace_eigenmode.qmd" download>QMD</a> |
+| Finite CPW HFSS Eigenmode | [View](../notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb) · <a href="../notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/CpwFiniteGround/aedt_hfss_eigenmode.qmd" download>QMD</a> |
+| Finite CPW Q3D AC/RL | [View](../notebooks/ComponentSimulation/CpwFiniteGround/aedt_q3d.ipynb) · <a href="../notebooks/ComponentSimulation/CpwFiniteGround/aedt_q3d.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/CpwFiniteGround/aedt_q3d.qmd" download>QMD</a> |
+| Shared resonator — RLC Eigenmode | [View](../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_eigenmode_rlc.ipynb) · <a href="../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_eigenmode_rlc.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_eigenmode_rlc.qmd" download>QMD</a> |
+| Shared resonator — Lumped Terminal | [View](../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_lumped.ipynb) · <a href="../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_lumped.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_lumped.qmd" download>QMD</a> |
+| Shared resonator — Wave Terminal | [View](../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_wave.ipynb) · <a href="../notebooks/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_wave.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/ComponentSimulation/CpwMeanderAirbridge/aedt_hfss_driven_terminal_wave.qmd" download>QMD</a> |
+| Finite CPW Q2D section | [View](../notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb) · <a href="../notebooks/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.ipynb" data-noresolveinput download>IPYNB</a> | <a href="../notebooks/src/CrossSectionSimulation/CpwFiniteGround/aedt_q2d.qmd" download>QMD</a> |
+
+The three resonator QMDs share one authoring cell. Download its companion
+<a href="../notebooks/src/ComponentSimulation/CpwMeanderAirbridge/_source_input.qmd" download>_source_input.qmd</a>
+to the same directory when rebuilding those QMDs. Their derived IPYNBs already
+contain that cell and do not need the companion.
+
+The shared resonator cases use the selected reproducible 17-bridge source pair:
+launcher/Lumped and boundary-cut/Wave geometry serve distinct excitation
+questions. Geometry source observations, preparation, native readback, solve,
+returned-run Resolve and Report remain separate stages. Resolve/Report do not
+request another solve.
+
+Current PDK base metal is 0.1 µm. The explicitly authored Q2D section instead
+keeps its Nb 0.2 µm thickness, 10 µm gap and 40 µm grounds; it is not an
+automatic slice or equivalent result of a 3D coupon. Concrete settings remain
+in the notebooks rather than being repeated in requirement pages.
+
+### Driven Modal compatibility blocker
+
+The selected SCGSim checkpoint has no body-first Driven Modal interface.
+The [historical Modal authoring note](../notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.ipynb)
+and its <a href="../notebooks/src/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_modal.qmd" download>nonexecutable QMD</a>
+retain the authored case without guessed native-object bindings. A usable
+current Modal notebook remains incomplete; Terminal is not a substitute.
+
+Historical output is not execution of these revised sources. The current suite
+does not claim that every branch is complete, supported or natively observed.
+
+## Existing component examples and historical evidence
+
+### Kosen2024 Xmon
+
+- [Palace Route A Electrostatic](../notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_electrostatic.ipynb)
+- [Palace Route B Electrostatic](../notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_electrostatic.ipynb)
+- [AEDT Q3D grounded C11](../notebooks/ComponentSimulation/Kosen2024_Xmon/aedt_q3d.ipynb)
+- [Palace Route A Eigenmode](../notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_a_eigenmode.ipynb)
+- [Palace Route B Eigenmode](../notebooks/ComponentSimulation/Kosen2024_Xmon/palace_route_b_eigenmode.ipynb)
+- [Electrostatic boundary alignment](../notebooks/ComponentSimulation/Kosen2024_Xmon/electrostatic_boundary_alignment.ipynb)
+
+#### RF-grounded electrostatic evidence
+
+The current comparison uses one common public boundary: `xmon_pad` is the sole
+terminal; four couplers, both die grounds, and eight bumps form one Ground;
+the exterior has its natural zero-charge boundary. Lateral vacuum padding is
+0 µm and the z padding is ±1000 µm. The public geometry is
+309.5 µm × 24.65 µm with a 20 µm gap and silicon εr = 11.9.
+
+| Model | Selected C11 (fF) | EC/h (MHz) |
+|---|---:|---:|
+| Palace A′ — substrate-face sheet | 99.3030125873 | 195.0618497866 |
+| Palace A — metal-gap-equivalent sheet | 99.78426582503 | 194.1210787543 |
+| Palace B — finite metal | 99.44860318002 | 194.7762834798 |
+| AEDT Q3D — physical-geometry diagnostic | 97.52280968178212 | 198.6225518713 |
+
+![Palace AMR traces and the four selected RF-grounded C11 values.](../notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/comparison.png){fig-alt="Palace A-prime, A, and Route B AMR traces beside a bar chart comparing their selected grounded C11 values with the AEDT Q3D diagnostic."}
+
+The Palace rows are the last complete hash-bound snapshots from receipts that
+remain failed after exit 137; they are not completed-run claims. Q3D completed
+20 adaptive passes, but its capacitance matrix stopped at 0.429585% rather
+than the requested 0.1%; its AC-RL extraction converged. These differences are
+evidence only: no solver-agreement Gate or scientific acceptance is claimed.
+
+Exact identities, receipt hashes, and unrounded values remain in the
+[run-set manifest](../notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/run_set.json)
+and [results table](../notebooks/ComponentSimulation/Kosen2024_Xmon/evidence/results.csv).
+
+### Historical finite-ground CPW Terminal
+
+[The earlier HFSS Driven Terminal entry](../notebooks/ComponentSimulation/CpwFiniteGround/aedt_hfss_driven_terminal.ipynb)
+retains its original source/runtime meaning. It is not the shared 17-bridge
+Lumped/Wave pair and does not establish execution of that current candidate.
+
+## Layout catalog
+
+- [Public PDK component inventory](../notebooks/Public_Docs/component_gallery.ipynb)
+
+Palace and AEDT remain separate notebooks because AEDT is optional. Use the
+selected source's environment, not an assumed interchangeable runtime. Notebook
+stages consume SCGSim; they do not implement a second solver runtime.

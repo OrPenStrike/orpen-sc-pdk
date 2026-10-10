@@ -12,9 +12,12 @@ from orpen_sc_pdk.cells import (
     bspline_strip,
     capacitive_coupling_intrinsic_individual_purcell_filter_readout_resonators,
     circular_pad_capacitor,
-    cpw_t_junction,
     cpw_airbridge_coupon,
+    cpw_meander_airbridge_lumped_coupon,
+    cpw_meander_airbridge_wave_coupon,
+    cpw_t_junction,
     dicing_edge,
+    finite_ground_cpw_coupon,
     flip_chip_pad_coupon,
     indium_bump,
     indium_ground,
@@ -90,6 +93,9 @@ _cells = {
     "bspline_strip": bspline_strip,
     "flip_chip_pad_coupon": flip_chip_pad_coupon,
     "cpw_airbridge_coupon": cpw_airbridge_coupon,
+    "cpw_meander_airbridge_lumped_coupon": cpw_meander_airbridge_lumped_coupon,
+    "cpw_meander_airbridge_wave_coupon": cpw_meander_airbridge_wave_coupon,
+    "finite_ground_cpw_coupon": finite_ground_cpw_coupon,
 }
 
 _cross_sections = {
